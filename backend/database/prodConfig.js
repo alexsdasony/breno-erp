@@ -4,7 +4,11 @@ const { Pool } = pkg;
 let pool = null;
 
 export async function getDatabase() {
+  console.log('🔍 [prodConfig] NODE_ENV:', process.env.NODE_ENV);
+  console.log('🔍 [prodConfig] DATABASE_URL existe:', !!process.env.DATABASE_URL);
+  
   if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
+    console.log('✅ [prodConfig] Usando PostgreSQL');
     // PostgreSQL para produção (Render)
     if (!pool) {
       pool = new Pool({
@@ -16,6 +20,7 @@ export async function getDatabase() {
     }
     return pool;
   } else {
+    console.log('✅ [prodConfig] Usando SQLite via init.js');
     // SQLite para desenvolvimento (importa a configuração original)
     const { getDatabase: getSQLiteDB } = await import('./init.js');
     return getSQLiteDB();

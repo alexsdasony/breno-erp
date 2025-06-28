@@ -95,10 +95,15 @@ app.use('*', (req, res) => {
 // Initialize database and start server
 async function startServer() {
   try {
+    console.log('🔍 [server] NODE_ENV:', process.env.NODE_ENV);
+    console.log('🔍 [server] DATABASE_URL existe:', !!process.env.DATABASE_URL);
+    
     if (process.env.NODE_ENV === 'production') {
+      console.log('⚡ [server] Inicializando PostgreSQL...');
       await initProductionDatabase();
       console.log('🔥 Production mode: PostgreSQL database');
     } else {
+      console.log('⚡ [server] Inicializando SQLite...');
       await initDatabase();
       console.log('🛠️  Development mode: SQLite database');
     }

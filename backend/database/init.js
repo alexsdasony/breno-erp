@@ -211,9 +211,12 @@ async function createTables() {
 }
 
 export function getDatabase() {
+  console.log('🔍 [init.js] getDatabase chamado, db existe:', !!db);
   if (!db) {
+    console.error('❌ [init.js] ERRO: Database not initialized!');
     throw new Error('Database not initialized. Call initDatabase() first.');
   }
+  console.log('✅ [init.js] Retornando SQLite database');
   return db;
 }
 
