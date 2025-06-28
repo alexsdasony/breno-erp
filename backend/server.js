@@ -22,6 +22,7 @@ import costCentersRoutes from './routes/costCenters.js';
 import segmentsRoutes from './routes/segments.js';
 import integrationsRoutes from './routes/integrations.js';
 import metricsRoutes from './routes/metrics.js';
+import debugRoutes from './routes/debug.js'; // TEMPORÁRIO
 
 // Import database
 import { initProductionDatabase } from './database/prodConfig.js';
@@ -67,6 +68,7 @@ app.use('/api/cost-centers', costCentersRoutes);
 app.use('/api/segments', segmentsRoutes);
 app.use('/api/integrations', integrationsRoutes);
 app.use('/api/metrics', metricsRoutes);
+app.use('/api/debug', debugRoutes); // TEMPORÁRIO
 
 // Health check
 app.get('/api/health', (req, res) => {
