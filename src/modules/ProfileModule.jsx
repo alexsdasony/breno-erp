@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { User, Mail, Edit3, Save, Shield, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppData } from '@/hooks/useAppData.js';
 
 const ProfileModule = () => {
   const { currentUser, updateUserProfile, changeUserPassword, data } = useAppData();

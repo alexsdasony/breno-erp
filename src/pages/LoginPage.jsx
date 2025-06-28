@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppData } from '@/hooks/useAppData.js';
 import { LogIn, UserPlus, Briefcase, KeyRound } from 'lucide-react';
 
 const LoginPage = () => {
@@ -12,7 +12,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { loginUser } = useAppData();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       toast({
@@ -23,17 +23,25 @@ const LoginPage = () => {
       return;
     }
 
-    const success = loginUser(email, password);
-    if (success) {
+    try {
+      const success = await loginUser(email, password);
+      if (success) {
+        toast({
+          title: "Login Bem-sucedido!",
+          description: "Redirecionando para o painel...",
+        });
+        navigate('/');
+      } else {
+        toast({
+          title: "Falha no Login",
+          description: "Email ou senha inválidos. Tente novamente.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Login Bem-sucedido!",
-        description: "Redirecionando para o painel...",
-      });
-      navigate('/');
-    } else {
-      toast({
-        title: "Falha no Login",
-        description: "Email ou senha inválidos. Tente novamente.",
+        title: "Erro no Login",
+        description: "Falha na conexão. Tente novamente.",
         variant: "destructive",
       });
     }

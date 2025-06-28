@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppData } from '@/hooks/useAppData.js';
 import { UserPlus, LogIn, Briefcase } from 'lucide-react';
 
 const RegisterPage = () => {
@@ -14,7 +14,7 @@ const RegisterPage = () => {
   const navigate = useNavigate();
   const { registerUser } = useAppData();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !email || !password || !confirmPassword) {
       toast({
@@ -33,17 +33,25 @@ const RegisterPage = () => {
       return;
     }
 
-    const success = registerUser(name, email, password);
-    if (success) {
+    try {
+      const success = await registerUser(name, email, password);
+      if (success) {
+        toast({
+          title: "Cadastro Realizado!",
+          description: "Seu usuário foi criado. Faça login para continuar.",
+        });
+        navigate('/login');
+      } else {
+        toast({
+          title: "Falha no Cadastro",
+          description: "Este email já está em uso. Tente outro.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Cadastro Realizado!",
-        description: "Seu usuário foi criado. Faça login para continuar.",
-      });
-      navigate('/login');
-    } else {
-      toast({
-        title: "Falha no Cadastro",
-        description: "Este email já está em uso. Tente outro.",
+        title: "Erro no Cadastro",
+        description: "Falha na conexão. Tente novamente.",
         variant: "destructive",
       });
     }

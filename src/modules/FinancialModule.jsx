@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppData } from '@/hooks/useAppData.js';
 
 const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
   const { data, activeSegmentId } = useAppData();

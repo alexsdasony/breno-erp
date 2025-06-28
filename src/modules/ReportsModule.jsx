@@ -12,7 +12,7 @@ import {
   Briefcase
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppData } from '@/hooks/useAppData.js';
 
 const ReportsModule = () => {
   const { data, activeSegmentId } = useAppData();
