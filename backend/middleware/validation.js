@@ -1,0 +1,108 @@
+import { body, query, param, validationResult } from 'express-validator';
+
+export const handleValidationErrors = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      error: 'Validation failed',
+      details: errors.array()
+    });
+  }
+  next();
+};
+
+// Auth validations
+export const validateRegister = [
+  body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
+  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  handleValidationErrors
+];
+
+export const validateLogin = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  body('password').notEmpty().withMessage('Password required'),
+  handleValidationErrors
+];
+
+// Transaction validations
+export const validateTransaction = [
+  body('type').isIn(['receita', 'despesa']).withMessage('Type must be receita or despesa'),
+  body('description').trim().isLength({ min: 1 }).withMessage('Description required'),
+  body('amount').isFloat({ min: 0 }).withMessage('Amount must be a positive number'),
+  body('date').isISO8601().withMessage('Valid date required'),
+  body('category').trim().isLength({ min: 1 }).withMessage('Category required'),
+  body('segment_id').isInt({ min: 1 }).withMessage('Valid segment ID required'),
+  handleValidationErrors
+];
+
+// Product validations
+export const validateProduct = [
+  body('name').trim().isLength({ min: 1 }).withMessage('Name required'),
+  body('stock').isInt({ min: 0 }).withMessage('Stock must be a non-negative integer'),
+  body('min_stock').isInt({ min: 0 }).withMessage('Min stock must be a non-negative integer'),
+  body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+  body('category').trim().isLength({ min: 1 }).withMessage('Category required'),
+  body('segment_id').isInt({ min: 1 }).withMessage('Valid segment ID required'),
+  handleValidationErrors
+];
+
+// Customer validations
+export const validateCustomer = [
+  body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
+  body('email').optional().isEmail().normalizeEmail().withMessage('Valid email required'),
+  body('cpf').optional().matches(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/).withMessage('CPF format: 000.000.000-00'),
+  handleValidationErrors
+];
+
+// Sale validations
+export const validateSale = [
+  body('customer_id').isInt({ min: 1 }).withMessage('Valid customer ID required'),
+  body('customer_name').trim().isLength({ min: 1 }).withMessage('Customer name required'),
+  body('product').trim().isLength({ min: 1 }).withMessage('Product required'),
+  body('quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
+  body('total').isFloat({ min: 0 }).withMessage('Total must be a positive number'),
+  body('date').isISO8601().withMessage('Valid date required'),
+  body('status').isIn(['Pendente', 'Concluída', 'Cancelada']).withMessage('Invalid status'),
+  body('segment_id').isInt({ min: 1 }).withMessage('Valid segment ID required'),
+  handleValidationErrors
+];
+
+// Billing validations
+export const validateBilling = [
+  body('customer_id').isInt({ min: 1 }).withMessage('Valid customer ID required'),
+  body('customer_name').trim().isLength({ min: 1 }).withMessage('Customer name required'),
+  body('amount').isFloat({ min: 0 }).withMessage('Amount must be a positive number'),
+  body('due_date').isISO8601().withMessage('Valid due date required'),
+  body('status').isIn(['Pendente', 'Paga', 'Vencida', 'Cancelada']).withMessage('Invalid status'),
+  body('segment_id').isInt({ min: 1 }).withMessage('Valid segment ID required'),
+  handleValidationErrors
+];
+
+// Segment validations
+export const validateSegment = [
+  body('name').trim().isLength({ min: 1 }).withMessage('Name required'),
+  body('description').optional().trim(),
+  handleValidationErrors
+];
+
+// Cost Center validations
+export const validateCostCenter = [
+  body('name').trim().isLength({ min: 1 }).withMessage('Name required'),
+  body('segment_id').optional().isInt({ min: 1 }).withMessage('Valid segment ID required'),
+  handleValidationErrors
+];
+
+// Pagination and filtering
+export const validatePagination = [
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be at least 1'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
+  query('segment_id').optional().isInt({ min: 1 }).withMessage('Valid segment ID required'),
+  handleValidationErrors
+];
+
+// ID parameter validation
+export const validateId = [
+  param('id').isInt({ min: 1 }).withMessage('Valid ID required'),
+  handleValidationErrors
+]; 
