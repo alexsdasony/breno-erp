@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { useAppData } from '@/hooks/useAppData.js';
+import { useAppData } from '@/hooks/useAppData.jsx';
 import { LogIn, UserPlus, Briefcase, KeyRound } from 'lucide-react';
 
 const LoginPage = () => {

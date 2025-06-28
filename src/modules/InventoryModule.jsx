@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -14,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
-import { useAppData } from '@/hooks/useAppData.js';
+import { useAppData } from '@/hooks/useAppData.jsx';
 
 const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
   const { data, activeSegmentId } = useAppData();

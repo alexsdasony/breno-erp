@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -12,7 +11,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAppData } from '@/hooks/useAppData.js';
+import { useAppData } from '@/hooks/useAppData.jsx';
 
 const DashboardModule = ({ metrics, setActiveModule }) => {
   const { data, activeSegmentId } = useAppData();

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, Edit, Trash2, Search, Filter, FileDown } from 'lucide-react';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useAppData } from '@/hooks/useAppData.js';
+import { useAppData } from '@/hooks/useAppData.jsx';
 
 const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, deleteAccountPayable, importData, toast }) => {
   const { data, activeSegmentId } = useAppData();

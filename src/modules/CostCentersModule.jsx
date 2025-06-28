@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Building, Plus, Edit, Trash2, Save, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
-import { useAppData } from '@/hooks/useAppData.js';
+import { useAppData } from '@/hooks/useAppData.jsx';
 
 const CostCentersModule = ({ addCostCenter, updateCostCenter, deleteCostCenter, toast, importData }) => {
   const { data, activeSegmentId } = useAppData();
