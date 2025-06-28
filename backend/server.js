@@ -24,7 +24,6 @@ import integrationsRoutes from './routes/integrations.js';
 import metricsRoutes from './routes/metrics.js';
 
 // Import database
-import { initDatabase } from './database/init.js';
 import { initProductionDatabase } from './database/prodConfig.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -95,23 +94,13 @@ app.use('*', (req, res) => {
 // Initialize database and start server
 async function startServer() {
   try {
-    console.log('🔍 [server] NODE_ENV:', process.env.NODE_ENV);
-    console.log('🔍 [server] DATABASE_URL existe:', !!process.env.DATABASE_URL);
-    
-    if (process.env.NODE_ENV === 'production') {
-      console.log('⚡ [server] Inicializando PostgreSQL...');
-      await initProductionDatabase();
-      console.log('🔥 Production mode: PostgreSQL database');
-    } else {
-      console.log('⚡ [server] Inicializando SQLite...');
-      await initDatabase();
-      console.log('🛠️  Development mode: SQLite database');
-    }
+    await initProductionDatabase();
+    console.log('🔥 PostgreSQL database initialized');
     
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`📊 Database: ${process.env.NODE_ENV === 'production' ? 'PostgreSQL' : 'SQLite'}`);
+      console.log(`📊 Database: PostgreSQL`);
       console.log(`🔗 CORS Origin: ${process.env.CORS_ORIGIN || 'http://localhost:5173'}`);
     });
   } catch (error) {
