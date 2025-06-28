@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { getDatabase } from '../database/init.js';
+import { getDatabase } from '../database/prodConfig.js';
 import { validateRegister, validateLogin } from '../middleware/validation.js';
 import { authenticateToken } from '../middleware/auth.js';
 

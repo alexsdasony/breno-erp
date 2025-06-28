@@ -1,5 +1,5 @@
+import { getDatabase } from '../database/prodConfig.js';
 import jwt from 'jsonwebtoken';
-import { getDatabase } from '../database/init.js';
 
 export const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];

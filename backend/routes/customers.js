@@ -1,5 +1,5 @@
 import express from 'express';
-import { getDatabase } from '../database/init.js';
+import { getDatabase } from '../database/prodConfig.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { validateCustomer, validateId, validatePagination } from '../middleware/validation.js';
 
