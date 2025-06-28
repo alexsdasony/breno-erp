@@ -11,7 +11,7 @@ const router = express.Router();
 router.post('/register', validateRegister, async (req, res) => {
   try {
     const { name, email, password, segmentId } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Check if user already exists
     const existingUser = await db.get('SELECT id FROM users WHERE email = ?', [email]);
@@ -58,7 +58,7 @@ router.post('/register', validateRegister, async (req, res) => {
 router.post('/login', validateLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Find user
     const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
@@ -97,7 +97,7 @@ router.post('/login', validateLogin, async (req, res) => {
 // Get current user
 router.get('/me', authenticateToken, async (req, res) => {
   try {
-    const db = getDatabase();
+    const db = await getDatabase();
     const user = await db.get(
       'SELECT id, name, email, role, segment_id FROM users WHERE id = ?',
       [req.user.id]
@@ -119,7 +119,7 @@ router.get('/me', authenticateToken, async (req, res) => {
 router.put('/profile', authenticateToken, async (req, res) => {
   try {
     const { name, email } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Check if email is already taken by another user
     if (email !== req.user.email) {
@@ -159,7 +159,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
 router.put('/password', authenticateToken, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Get current user with password
     const user = await db.get('SELECT * FROM users WHERE id = ?', [req.user.id]);

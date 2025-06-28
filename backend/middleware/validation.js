@@ -93,6 +93,26 @@ export const validateCostCenter = [
   handleValidationErrors
 ];
 
+// Accounts Payable validations
+export const validateAccountPayable = [
+  body('supplier').trim().isLength({ min: 1 }).withMessage('Supplier required'),
+  body('description').trim().isLength({ min: 1 }).withMessage('Description required'),
+  body('amount').isFloat({ min: 0 }).withMessage('Amount must be a positive number'),
+  body('due_date').isISO8601().withMessage('Valid due date required'),
+  body('status').isIn(['pending', 'paid', 'overdue']).withMessage('Invalid status'),
+  body('segment_id').optional().isInt({ min: 1 }).withMessage('Valid segment ID required'),
+  handleValidationErrors
+];
+
+// Integration validations
+export const validateIntegration = [
+  body('name').trim().isLength({ min: 1 }).withMessage('Name required'),
+  body('type').trim().isLength({ min: 1 }).withMessage('Type required'),
+  body('config').isObject().withMessage('Config must be an object'),
+  body('segment_id').optional().isInt({ min: 1 }).withMessage('Valid segment ID required'),
+  handleValidationErrors
+];
+
 // Pagination and filtering
 export const validatePagination = [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be at least 1'),
