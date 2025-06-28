@@ -211,12 +211,7 @@ export default defineConfig({
 	},
 	build: {
 		rollupOptions: {
-			external: [
-				'@babel/parser',
-				'@babel/traverse',
-				'@babel/generator',
-				'@babel/types'
-			]
+			// Removed external modules that were causing module loading issues
 		}
 	}
 });
