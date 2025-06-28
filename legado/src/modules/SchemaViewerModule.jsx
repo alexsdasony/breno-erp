@@ -167,23 +167,23 @@ const SchemaViewerModule = ({ data }) => {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-green-400 mb-4 flex items-center">
-            <Database className="w-6 h-6 mr-2" />
-            Schema do Banco de Dados (PostgreSQL)
-          </h2>
-          <p className="text-gray-400 mb-6">
-            Esta é uma representação da estrutura de dados do banco PostgreSQL em produção.
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <Database className="w-8 h-8 mr-3 text-indigo-400" />
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
+            Schema do Banco de Dados (localStorage)
+          </h1>
         </div>
-        <div className="flex items-center justify-between">
-          <Button onClick={handleDownloadSchema} className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700">
-            <Download className="w-4 h-4 mr-2" />
-            Baixar Schema (JSON)
-          </Button>
-        </div>
+        <Button onClick={handleDownloadSchema} className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700">
+          <Download className="w-4 h-4 mr-2" />
+          Baixar Schema (JSON)
+        </Button>
       </div>
+      <p className="text-muted-foreground">
+        Esta é uma representação da estrutura de dados atualmente armazenada no localStorage.
+        Cada seção representa uma "tabela" ou entidade de dados. O botão acima permite baixar
+        um arquivo JSON com uma descrição formal deste schema.
+      </p>
 
       {renderSchemaForEntity("transactions", data.transactions)}
       {renderSchemaForEntity("products", data.products)}

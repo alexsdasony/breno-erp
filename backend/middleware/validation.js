@@ -93,7 +93,7 @@ export const validateCostCenter = [
   handleValidationErrors
 ];
 
-// Accounts Payable validations
+// Accounts Payable validations - EXPORT EXPLÍCITO
 export const validateAccountPayable = [
   body('supplier').trim().isLength({ min: 1 }).withMessage('Supplier required'),
   body('description').trim().isLength({ min: 1 }).withMessage('Description required'),
@@ -124,5 +124,15 @@ export const validatePagination = [
 // ID parameter validation
 export const validateId = [
   param('id').isInt({ min: 1 }).withMessage('Valid ID required'),
+  handleValidationErrors
+];
+
+// NFe validations
+export const validateNFe = [
+  body('customer_name').trim().isLength({ min: 1 }).withMessage('Customer name required'),
+  body('total').isFloat({ min: 0 }).withMessage('Total must be a positive number'),
+  body('date').isISO8601().withMessage('Valid date required'),
+  body('status').isIn(['Emitida', 'Cancelada']).withMessage('Invalid status'),
+  body('segment_id').optional().isInt({ min: 1 }).withMessage('Valid segment ID required'),
   handleValidationErrors
 ]; 

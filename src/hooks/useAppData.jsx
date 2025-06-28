@@ -1,6 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { toast } from '@/components/ui/use-toast';
-import { initialData as appInitialData } from '@/config/initialData';
 import apiService from '@/services/api';
 
 const AppDataContext = createContext();
@@ -10,19 +9,12 @@ const defaultInitialData = {
   products: [],
   sales: [],
   customers: [],
-  costCenters: [
-    { id: 1, name: 'Administrativo' }, { id: 2, name: 'Vendas' },
-    { id: 3, name: 'Marketing' }, { id: 4, name: 'Estoque' },
-    { id: 5, name: 'Operacional' }
-  ],
+  costCenters: [],
   nfeList: [],
   integrations: {
     imobzi: { apiKey: '', enabled: false }
   },
-  billings: [
-    { id: 1, customerId: 1, customerName: 'João Silva', amount: 150.00, dueDate: '2024-02-10', status: 'Paga', paymentDate: '2024-02-08' },
-    { id: 2, customerId: 2, customerName: 'Maria Santos', amount: 200.00, dueDate: '2024-02-15', status: 'Pendente', paymentDate: null },
-  ],
+  billings: [],
   users: [], 
 };
 
@@ -31,6 +23,7 @@ export const AppDataProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [segments, setSegments] = useState([]);
+  const [activeSegmentId, setActiveSegmentId] = useState(null);
 
   // Initialize app data and check authentication
   useEffect(() => {
@@ -46,6 +39,19 @@ export const AppDataProvider = ({ children }) => {
             // Load segments for the user
             const segmentsResponse = await apiService.getSegments();
             setSegments(segmentsResponse.segments || []);
+            
+            // Load initial data
+            await Promise.all([
+              loadTransactions(),
+              loadProducts(),
+              loadCustomers(),
+              loadSales(),
+              loadBillings(),
+              loadCostCenters(),
+              loadNFes(),
+              loadAccountsPayable(),
+              loadIntegrations()
+            ]);
           } catch (error) {
             console.error('Authentication check failed:', error);
             apiService.setToken(null);
@@ -577,6 +583,7 @@ export const AppDataProvider = ({ children }) => {
     currentUser,
     loading,
     segments,
+    activeSegmentId,
     
     // Authentication functions
     registerUser,

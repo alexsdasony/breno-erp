@@ -1,19 +1,26 @@
 import { useState, useEffect } from 'react';
 
 export const useAuth = (data, setData) => {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    const savedUser = localStorage.getItem('erpCurrentUser');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('erpCurrentUser', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('erpCurrentUser');
+    }
+  }, [currentUser]);
 
   const registerUser = (name, email, password) => {
-    const newUser = {
-      id: data.users.length + 1,
-      name,
-      email,
-      password,
-      role: 'user'
-    };
-    
+    const existingUser = data.users.find(user => user.email === email);
+    if (existingUser) {
+      return false;
+    }
+    const newUser = { id: Date.now(), name, email, password, role: 'user' };
     setData(prev => ({ ...prev, users: [...prev.users, newUser] }));
-    setCurrentUser(newUser);
     return true;
   };
 
