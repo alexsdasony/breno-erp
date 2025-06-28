@@ -25,6 +25,7 @@ import metricsRoutes from './routes/metrics.js';
 
 // Import database
 import { initDatabase } from './database/init.js';
+import { initProductionDatabase } from './database/prodConfig.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -94,14 +95,22 @@ app.use('*', (req, res) => {
 // Initialize database and start server
 async function startServer() {
   try {
-    await initDatabase();
-    app.listen(PORT, () => {
+    if (process.env.NODE_ENV === 'production') {
+      await initProductionDatabase();
+      console.log('🔥 Production mode: PostgreSQL database');
+    } else {
+      await initDatabase();
+      console.log('🛠️  Development mode: SQLite database');
+    }
+    
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`🌐 Environment: ${process.env.NODE_ENV}`);
-      console.log(`📊 Database: ${process.env.DB_PATH}`);
+      console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`📊 Database: ${process.env.NODE_ENV === 'production' ? 'PostgreSQL' : 'SQLite'}`);
+      console.log(`🔗 CORS Origin: ${process.env.CORS_ORIGIN || 'http://localhost:5173'}`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
 }
