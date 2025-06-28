@@ -10,7 +10,7 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
   try {
     const { page = 1, limit = 50, segment_id } = req.query;
     const offset = (page - 1) * limit;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     let query = 'SELECT * FROM cost_centers WHERE 1=1';
     let countQuery = 'SELECT COUNT(*) as count FROM cost_centers WHERE 1=1';
@@ -50,7 +50,7 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
 router.post('/', authenticateToken, validateCostCenter, async (req, res) => {
   try {
     const { name, segment_id } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     if (segment_id) {
       const segment = await db.get('SELECT id FROM segments WHERE id = ?', [segment_id]);
@@ -82,7 +82,7 @@ router.put('/:id', authenticateToken, validateId, validateCostCenter, async (req
   try {
     const { id } = req.params;
     const { name, segment_id } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const existingCostCenter = await db.get('SELECT * FROM cost_centers WHERE id = ?', [id]);
     if (!existingCostCenter) {
@@ -111,7 +111,7 @@ router.put('/:id', authenticateToken, validateId, validateCostCenter, async (req
 router.delete('/:id', authenticateToken, validateId, async (req, res) => {
   try {
     const { id } = req.params;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const costCenter = await db.get('SELECT * FROM cost_centers WHERE id = ?', [id]);
     if (!costCenter) {

@@ -10,7 +10,7 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
   try {
     const { page = 1, limit = 50, segment_id, category, low_stock } = req.query;
     const offset = (page - 1) * limit;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     let query = 'SELECT * FROM products WHERE 1=1';
     let countQuery = 'SELECT COUNT(*) as count FROM products WHERE 1=1';
@@ -63,7 +63,7 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
 router.get('/:id', authenticateToken, validateId, async (req, res) => {
   try {
     const { id } = req.params;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const product = await db.get('SELECT * FROM products WHERE id = ?', [id]);
 
@@ -92,7 +92,7 @@ router.get('/:id', authenticateToken, validateId, async (req, res) => {
 router.post('/', authenticateToken, validateProduct, async (req, res) => {
   try {
     const { name, stock, min_stock, price, category, segment_id } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Verify segment exists
     const segment = await db.get('SELECT id FROM segments WHERE id = ?', [segment_id]);
@@ -132,7 +132,7 @@ router.put('/:id', authenticateToken, validateId, validateProduct, async (req, r
   try {
     const { id } = req.params;
     const { name, stock, min_stock, price, category, segment_id } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Check if product exists
     const existingProduct = await db.get('SELECT * FROM products WHERE id = ?', [id]);
@@ -178,7 +178,7 @@ router.patch('/:id/stock', authenticateToken, validateId, async (req, res) => {
   try {
     const { id } = req.params;
     const { stock, operation = 'set' } = req.body; // operation: 'set', 'add', 'subtract'
-    const db = getDatabase();
+    const db = await getDatabase();
 
     if (typeof stock !== 'number' || stock < 0) {
       return res.status(400).json({ error: 'Stock must be a non-negative number' });
@@ -228,7 +228,7 @@ router.patch('/:id/stock', authenticateToken, validateId, async (req, res) => {
 router.delete('/:id', authenticateToken, validateId, async (req, res) => {
   try {
     const { id } = req.params;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Check if product exists
     const product = await db.get('SELECT * FROM products WHERE id = ?', [id]);
@@ -261,7 +261,7 @@ router.delete('/:id', authenticateToken, validateId, async (req, res) => {
 router.get('/alerts/low-stock', authenticateToken, async (req, res) => {
   try {
     const { segment_id } = req.query;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     let query = 'SELECT * FROM products WHERE stock <= min_stock';
     const params = [];
@@ -287,7 +287,7 @@ router.get('/alerts/low-stock', authenticateToken, async (req, res) => {
 router.post('/bulk', authenticateToken, async (req, res) => {
   try {
     const { products } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     if (!Array.isArray(products) || products.length === 0) {
       return res.status(400).json({ error: 'Invalid products data' });

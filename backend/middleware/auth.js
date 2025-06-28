@@ -13,7 +13,7 @@ export const authenticateToken = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Get user from database to ensure they still exist
-    const db = getDatabase();
+    const db = await getDatabase();
     const user = await db.get(
       'SELECT id, name, email, role, segment_id FROM users WHERE id = ?',
       [decoded.userId]
@@ -44,7 +44,7 @@ export const optionalAuth = async (req, res, next) => {
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const db = getDatabase();
+      const db = await getDatabase();
       const user = await db.get(
         'SELECT id, name, email, role, segment_id FROM users WHERE id = ?',
         [decoded.userId]

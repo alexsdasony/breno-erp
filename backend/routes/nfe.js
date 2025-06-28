@@ -10,7 +10,7 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
   try {
     const { page = 1, limit = 50, segment_id, status } = req.query;
     const offset = (page - 1) * limit;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     let query = 'SELECT * FROM nfe WHERE 1=1';
     let countQuery = 'SELECT COUNT(*) as count FROM nfe WHERE 1=1';
@@ -57,7 +57,7 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
 router.post('/', authenticateToken, async (req, res) => {
   try {
     const { number, customer_name, date, total, status, segment_id } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     if (!number || !customer_name || !date || !total) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -93,7 +93,7 @@ router.put('/:id', authenticateToken, validateId, async (req, res) => {
   try {
     const { id } = req.params;
     const { number, customer_name, date, total, status, segment_id } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const existingNfe = await db.get('SELECT * FROM nfe WHERE id = ?', [id]);
     if (!existingNfe) {
@@ -122,7 +122,7 @@ router.put('/:id', authenticateToken, validateId, async (req, res) => {
 router.delete('/:id', authenticateToken, validateId, async (req, res) => {
   try {
     const { id } = req.params;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const nfe = await db.get('SELECT * FROM nfe WHERE id = ?', [id]);
     if (!nfe) {

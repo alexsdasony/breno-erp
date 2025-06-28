@@ -8,7 +8,7 @@ const router = express.Router();
 // Get all integrations
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const integrations = await db.all(
       'SELECT id, name, enabled, created_at, updated_at FROM integrations ORDER BY name ASC'
@@ -26,7 +26,7 @@ router.get('/', authenticateToken, async (req, res) => {
 router.get('/:name', authenticateToken, async (req, res) => {
   try {
     const { name } = req.params;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const integration = await db.get(
       'SELECT * FROM integrations WHERE name = ?',
@@ -50,7 +50,7 @@ router.put('/:name', authenticateToken, async (req, res) => {
   try {
     const { name } = req.params;
     const { api_key, enabled, config } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Check if integration exists
     const existingIntegration = await db.get(
@@ -91,7 +91,7 @@ router.put('/:name', authenticateToken, async (req, res) => {
 router.post('/:name/test', authenticateToken, async (req, res) => {
   try {
     const { name } = req.params;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const integration = await db.get(
       'SELECT * FROM integrations WHERE name = ?',

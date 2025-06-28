@@ -10,7 +10,7 @@ router.get('/', authenticateToken, requireAdmin, validatePagination, async (req,
   try {
     const { page = 1, limit = 50 } = req.query;
     const offset = (page - 1) * limit;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const users = await db.all(
       'SELECT id, name, email, role, segment_id, created_at, updated_at FROM users ORDER BY name ASC LIMIT ? OFFSET ?',
@@ -39,7 +39,7 @@ router.get('/', authenticateToken, requireAdmin, validatePagination, async (req,
 router.get('/:id', authenticateToken, requireAdmin, validateId, async (req, res) => {
   try {
     const { id } = req.params;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const user = await db.get(
       'SELECT id, name, email, role, segment_id, created_at, updated_at FROM users WHERE id = ?',

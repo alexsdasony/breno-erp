@@ -10,7 +10,7 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
   try {
     const { page = 1, limit = 50, search } = req.query;
     const offset = (page - 1) * limit;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     let query = 'SELECT * FROM customers WHERE 1=1';
     let countQuery = 'SELECT COUNT(*) as count FROM customers WHERE 1=1';
@@ -52,7 +52,7 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
 router.get('/:id', authenticateToken, validateId, async (req, res) => {
   try {
     const { id } = req.params;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const customer = await db.get('SELECT * FROM customers WHERE id = ?', [id]);
 
@@ -88,7 +88,7 @@ router.get('/:id', authenticateToken, validateId, async (req, res) => {
 router.post('/', authenticateToken, validateCustomer, async (req, res) => {
   try {
     const { name, cpf, email, phone, address, city, state } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Check if CPF already exists (if provided)
     if (cpf) {
@@ -129,7 +129,7 @@ router.put('/:id', authenticateToken, validateId, validateCustomer, async (req, 
   try {
     const { id } = req.params;
     const { name, cpf, email, phone, address, city, state } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Check if customer exists
     const existingCustomer = await db.get('SELECT * FROM customers WHERE id = ?', [id]);
@@ -181,7 +181,7 @@ router.put('/:id', authenticateToken, validateId, validateCustomer, async (req, 
 router.delete('/:id', authenticateToken, validateId, async (req, res) => {
   try {
     const { id } = req.params;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Check if customer exists
     const customer = await db.get('SELECT * FROM customers WHERE id = ?', [id]);
@@ -219,7 +219,7 @@ router.delete('/:id', authenticateToken, validateId, async (req, res) => {
 router.post('/bulk', authenticateToken, async (req, res) => {
   try {
     const { customers } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     if (!Array.isArray(customers) || customers.length === 0) {
       return res.status(400).json({ error: 'Invalid customers data' });

@@ -10,7 +10,7 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
   try {
     const { page = 1, limit = 50, segment_id, status, customer_id, start_date, end_date } = req.query;
     const offset = (page - 1) * limit;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     let query = 'SELECT * FROM sales WHERE 1=1';
     let countQuery = 'SELECT COUNT(*) as count FROM sales WHERE 1=1';
@@ -79,7 +79,7 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
 router.get('/:id', authenticateToken, validateId, async (req, res) => {
   try {
     const { id } = req.params;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const sale = await db.get('SELECT * FROM sales WHERE id = ?', [id]);
 
@@ -105,7 +105,7 @@ router.get('/:id', authenticateToken, validateId, async (req, res) => {
 router.post('/', authenticateToken, validateSale, async (req, res) => {
   try {
     const { customer_id, customer_name, product, quantity, total, date, status, segment_id } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Verify customer exists
     const customer = await db.get('SELECT id FROM customers WHERE id = ?', [customer_id]);
@@ -157,7 +157,7 @@ router.put('/:id', authenticateToken, validateId, validateSale, async (req, res)
   try {
     const { id } = req.params;
     const { customer_id, customer_name, product, quantity, total, date, status, segment_id } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Check if sale exists
     const existingSale = await db.get('SELECT * FROM sales WHERE id = ?', [id]);
@@ -221,7 +221,7 @@ router.put('/:id', authenticateToken, validateId, validateSale, async (req, res)
 router.delete('/:id', authenticateToken, validateId, async (req, res) => {
   try {
     const { id } = req.params;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Check if sale exists
     const sale = await db.get('SELECT * FROM sales WHERE id = ?', [id]);
@@ -251,7 +251,7 @@ router.delete('/:id', authenticateToken, validateId, async (req, res) => {
 router.get('/analytics/summary', authenticateToken, async (req, res) => {
   try {
     const { segment_id, start_date, end_date } = req.query;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     let whereClause = 'WHERE 1=1';
     const params = [];
@@ -303,7 +303,7 @@ router.get('/analytics/summary', authenticateToken, async (req, res) => {
 router.post('/bulk', authenticateToken, async (req, res) => {
   try {
     const { sales } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     if (!Array.isArray(sales) || sales.length === 0) {
       return res.status(400).json({ error: 'Invalid sales data' });

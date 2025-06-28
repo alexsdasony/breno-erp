@@ -10,7 +10,7 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
   try {
     const { page = 1, limit = 50, segment_id, status, overdue } = req.query;
     const offset = (page - 1) * limit;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     let query = 'SELECT * FROM billings WHERE 1=1';
     let countQuery = 'SELECT COUNT(*) as count FROM billings WHERE 1=1';
@@ -62,7 +62,7 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
 router.post('/', authenticateToken, validateBilling, async (req, res) => {
   try {
     const { customer_id, customer_name, amount, due_date, status, segment_id } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const customer = await db.get('SELECT id FROM customers WHERE id = ?', [customer_id]);
     if (!customer) {
@@ -97,7 +97,7 @@ router.put('/:id', authenticateToken, validateId, validateBilling, async (req, r
   try {
     const { id } = req.params;
     const { customer_id, customer_name, amount, due_date, status, payment_date, segment_id } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const existingBilling = await db.get('SELECT * FROM billings WHERE id = ?', [id]);
     if (!existingBilling) {
@@ -126,7 +126,7 @@ router.put('/:id', authenticateToken, validateId, validateBilling, async (req, r
 router.delete('/:id', authenticateToken, validateId, async (req, res) => {
   try {
     const { id } = req.params;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const billing = await db.get('SELECT * FROM billings WHERE id = ?', [id]);
     if (!billing) {

@@ -8,7 +8,7 @@ const router = express.Router();
 // Get all segments
 router.get('/', authenticateToken, validatePagination, async (req, res) => {
   try {
-    const db = getDatabase();
+    const db = await getDatabase();
     const { page = 1, limit = 50 } = req.query;
     const offset = (page - 1) * limit;
 
@@ -39,7 +39,7 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
 router.get('/:id', authenticateToken, validateId, async (req, res) => {
   try {
     const { id } = req.params;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const segment = await db.get('SELECT * FROM segments WHERE id = ?', [id]);
 
@@ -59,7 +59,7 @@ router.get('/:id', authenticateToken, validateId, async (req, res) => {
 router.post('/', authenticateToken, validateSegment, async (req, res) => {
   try {
     const { name, description } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Check if segment name already exists
     const existingSegment = await db.get('SELECT id FROM segments WHERE name = ?', [name]);
@@ -90,7 +90,7 @@ router.put('/:id', authenticateToken, validateId, validateSegment, async (req, r
   try {
     const { id } = req.params;
     const { name, description } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Check if segment exists
     const existingSegment = await db.get('SELECT * FROM segments WHERE id = ?', [id]);
@@ -129,7 +129,7 @@ router.put('/:id', authenticateToken, validateId, validateSegment, async (req, r
 router.delete('/:id', authenticateToken, validateId, async (req, res) => {
   try {
     const { id } = req.params;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Check if segment exists
     const segment = await db.get('SELECT * FROM segments WHERE id = ?', [id]);

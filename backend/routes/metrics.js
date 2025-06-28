@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const { segment_id, start_date, end_date } = req.query;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     let whereClause = 'WHERE 1=1';
     const params = [];
@@ -139,7 +139,7 @@ router.get('/', authenticateToken, async (req, res) => {
 router.get('/financial', authenticateToken, async (req, res) => {
   try {
     const { segment_id, period = '30' } = req.query;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - parseInt(period));
@@ -230,7 +230,7 @@ router.get('/financial', authenticateToken, async (req, res) => {
 router.get('/sales', authenticateToken, async (req, res) => {
   try {
     const { segment_id, period = '30' } = req.query;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - parseInt(period));
