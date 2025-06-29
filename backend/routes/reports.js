@@ -1,5 +1,4 @@
 import express from 'express';
-import { authenticateToken as auth } from '../middleware/auth.js';
 import pkg from 'pg';
 const { Pool } = pkg;
 
@@ -98,15 +97,15 @@ router.get('/dre', validateDateRange, async (req, res) => {
         t.cost_center,
         cc.name as cost_center_name,
         coa.id as account_id,
-        coa.code as account_code,
-        coa.name as account_name,
+        coa.account_code,
+        coa.account_name,
         coa.account_type,
-        coa.category
+        coa.account_category
       FROM transactions t
       LEFT JOIN cost_centers cc ON t.cost_center = cc.name
-      LEFT JOIN chart_of_accounts coa ON t.category = coa.category
+      LEFT JOIN chart_of_accounts coa ON t.category = coa.account_type
       WHERE ${whereClause}
-      ORDER BY t.date DESC, coa.code
+      ORDER BY t.date DESC, coa.account_code
     `;
 
     const result = await client.query(mainQuery, params);
@@ -206,7 +205,7 @@ router.get('/dre', validateDateRange, async (req, res) => {
 });
 
 // Exportar DRE em diferentes formatos
-router.get('/dre/export', auth, validateDateRange, async (req, res) => {
+router.get('/dre/export', validateDateRange, async (req, res) => {
   const client = await pool.connect();
   
   try {
@@ -378,7 +377,7 @@ function generatePDF(dreData) {
 }
 
 // Relatório de conciliação bancária
-router.get('/bank-reconciliation', auth, validateDateRange, async (req, res) => {
+router.get('/bank-reconciliation', validateDateRange, async (req, res) => {
   const client = await pool.connect();
   
   try {
@@ -417,7 +416,7 @@ router.get('/bank-reconciliation', auth, validateDateRange, async (req, res) => 
         cca.is_primary
       FROM transactions t
       LEFT JOIN cost_centers cc ON t.cost_center = cc.name
-      LEFT JOIN chart_of_accounts coa ON t.category = coa.category
+      LEFT JOIN chart_of_accounts coa ON t.category = coa.account_type
       LEFT JOIN cost_center_accounts cca ON cc.id = cca.cost_center_id AND coa.id = cca.account_id
       WHERE ${whereClause}
       ORDER BY t.date DESC, coa.code
@@ -482,7 +481,7 @@ router.get('/bank-reconciliation', auth, validateDateRange, async (req, res) => 
 });
 
 // Relatório de fluxo de caixa
-router.get('/cash-flow', auth, validateDateRange, async (req, res) => {
+router.get('/cash-flow', validateDateRange, async (req, res) => {
   const client = await pool.connect();
   
   try {
