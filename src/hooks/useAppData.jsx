@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import apiService from '@/services/api';
+import { calculateMetrics } from '@/utils/metrics';
 
 const AppDataContext = createContext();
 
@@ -35,6 +36,11 @@ export const AppDataProvider = ({ children }) => {
   const [segments, setSegments] = useState([]);
   const [activeSegmentId, setActiveSegmentId] = useState(null);
   const [lazyState, setLazyState] = useState(defaultLazyState);
+
+  // Calculate metrics from local data
+  const metrics = React.useMemo(() => {
+    return calculateMetrics(data, activeSegmentId);
+  }, [data, activeSegmentId]);
 
   // Initialize app data and check authentication
   useEffect(() => {
@@ -769,6 +775,7 @@ export const AppDataProvider = ({ children }) => {
       ...data,
       segments: segments || []
     },
+    metrics,
     setData,
     currentUser,
     loading,

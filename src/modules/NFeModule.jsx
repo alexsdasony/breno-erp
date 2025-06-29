@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileSpreadsheet, 
@@ -18,10 +18,11 @@ import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData';
 
 const NFeModule = () => {
-  const { data, metrics, addNFe, updateNFe, deleteNFe, importData, toast } = useAppData();
+  const { data, metrics, addNFe, updateNFe, deleteNFe, importData, toast, loadNFes, currentUser, loading } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentNFe, setCurrentNFe] = useState(null);
+  const [localLoading, setLocalLoading] = useState(false);
   const [formData, setFormData] = useState({
     number: '',
     customerId: '',
@@ -29,6 +30,34 @@ const NFeModule = () => {
     total: '', 
     status: 'Pendente'
   });
+
+  // Garantir que os dados NFe estão carregados
+  useEffect(() => {
+    const ensureNFeDataLoaded = async () => {
+      if (!loading && currentUser && (!data.nfeList || data.nfeList.length === 0)) {
+        console.log('🔄 NFe Module: Loading NFe data...');
+        setLocalLoading(true);
+        try {
+          const segmentFilter = currentUser.segment_id ? { segment_id: currentUser.segment_id } : {};
+          await loadNFes(segmentFilter);
+          console.log('✅ NFe Module: Data loaded successfully');
+        } catch (error) {
+          console.error('❌ NFe Module: Failed to load data:', error);
+        } finally {
+          setLocalLoading(false);
+        }
+      }
+    };
+
+    ensureNFeDataLoaded();
+  }, [loading, currentUser, data.nfeList, loadNFes]);
+
+  // Safe data access with fallbacks
+  const safeNFeList = data.nfeList || [];
+  const safeCustomers = data.customers || [];
+  const safeMetrics = metrics || { totalNFe: 0 };
+
+  console.log('🎯 NFe Module render - NFe count:', safeNFeList.length, 'Customers:', safeCustomers.length);
 
   const resetForm = () => {
     setFormData({
@@ -68,7 +97,7 @@ const NFeModule = () => {
 
   const handleCustomerSelect = (e) => {
     const customerId = e.target.value;
-    const selectedCustomer = data.customers.find(c => c.id === parseInt(customerId));
+    const selectedCustomer = safeCustomers.find(c => c.id === parseInt(customerId));
     if (selectedCustomer) {
       setFormData({ ...formData, customerId: selectedCustomer.id, customerName: selectedCustomer.name });
     } else {
@@ -101,6 +130,18 @@ const NFeModule = () => {
   };
 
   const nfeHeaders = ['number', 'customerName', 'date', 'total', 'status'];
+
+  // Show loading state
+  if (loading || localLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <FileSpreadsheet className="w-12 h-12 mx-auto mb-4 opacity-50 animate-pulse" />
+          <p className="text-muted-foreground">Carregando dados das NF-es...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -137,7 +178,7 @@ const NFeModule = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total de NF-es</p>
-              <p className="text-2xl font-bold text-indigo-400">{metrics.totalNFe}</p>
+              <p className="text-2xl font-bold text-indigo-400">{safeMetrics.totalNFe || 0}</p>
             </div>
             <FileSpreadsheet className="w-8 h-8 text-indigo-400" />
           </div>
@@ -150,7 +191,7 @@ const NFeModule = () => {
             <div>
               <p className="text-sm text-muted-foreground">NF-es Emitidas</p>
               <p className="text-2xl font-bold text-green-400">
-                {data.nfeList.filter(nfe => nfe.status === 'Emitida').length}
+                {safeNFeList.filter(nfe => nfe.status === 'Emitida').length}
               </p>
             </div>
             <Send className="w-8 h-8 text-green-400" />
@@ -164,7 +205,7 @@ const NFeModule = () => {
             <div>
               <p className="text-sm text-muted-foreground">NF-es Pendentes</p>
               <p className="text-2xl font-bold text-yellow-400">
-                {data.nfeList.filter(nfe => nfe.status === 'Pendente').length}
+                {safeNFeList.filter(nfe => nfe.status === 'Pendente').length}
               </p>
             </div>
             <FileText className="w-8 h-8 text-yellow-400" />
@@ -202,7 +243,7 @@ const NFeModule = () => {
                   className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                 >
                   <option value="">Selecione um cliente</option>
-                  {data.customers.map(customer => (
+                  {safeCustomers.map(customer => (
                     <option key={customer.id} value={customer.id}>{customer.name} ({customer.cpf})</option>
                   ))}
                 </select>
@@ -286,7 +327,7 @@ const NFeModule = () => {
               </tr>
             </thead>
             <tbody>
-              {data.nfeList.map(nfe => (
+              {safeNFeList.map(nfe => (
                 <motion.tr
                   key={nfe.id}
                   initial={{ opacity: 0 }}
@@ -346,7 +387,7 @@ const NFeModule = () => {
               ))}
             </tbody>
           </table>
-          {data.nfeList.length === 0 && (
+          {safeNFeList.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <FileSpreadsheet className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>Nenhuma NF-e encontrada</p>
