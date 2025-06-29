@@ -104,7 +104,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
             <div>
               <p className="text-sm text-muted-foreground">Valor Total do Estoque</p>
               <p className="text-2xl font-bold text-green-400">
-                R$ {filteredProducts.reduce((sum, p) => sum + (p.stock * p.price), 0).toLocaleString('pt-BR')}
+                R$ {filteredProducts.reduce((sum, p) => sum + (Number(p.stock || 0) * Number(p.price || 0)), 0).toLocaleString('pt-BR')}
               </p>
             </div>
             <DollarSign className="w-8 h-8 text-green-400" />

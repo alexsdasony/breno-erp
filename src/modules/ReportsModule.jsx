@@ -23,20 +23,20 @@ const ReportsModule = () => {
 
     const receitaBruta = transactions
       .filter(t => t.type === 'receita')
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
 
     const deducoesReceita = 0;
     const receitaLiquida = receitaBruta - deducoesReceita;
 
     const custoProdutosVendidos = transactions
       .filter(t => t.type === 'despesa' && (t.category === 'Compras' || t.category === 'Estoque'))
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
     
     const lucroBruto = receitaLiquida - custoProdutosVendidos;
 
     const despesasOperacionais = transactions
       .filter(t => t.type === 'despesa' && t.category !== 'Compras' && t.category !== 'Estoque')
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
     
     const lucroOperacional = lucroBruto - despesasOperacionais;
     const lucroLiquido = lucroOperacional; 
@@ -51,8 +51,8 @@ const ReportsModule = () => {
     const customerIds = new Set(segmentSales.map(s => s.customerId));
     const segmentTransactions = data.transactions.filter(t => t.segmentId === segment.id);
     
-    const faturamento = segmentTransactions.filter(t => t.type === 'receita').reduce((sum, t) => sum + t.amount, 0);
-    const despesas = segmentTransactions.filter(t => t.type === 'despesa').reduce((sum, t) => sum + t.amount, 0);
+    const faturamento = segmentTransactions.filter(t => t.type === 'receita').reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    const despesas = segmentTransactions.filter(t => t.type === 'despesa').reduce((sum, t) => sum + Number(t.amount || 0), 0);
 
     return {
       ...segment,
