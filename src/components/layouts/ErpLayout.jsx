@@ -71,10 +71,10 @@ const ErpLayout = () => {
     navigate('/login');
   };
   
-  const menuItems = [
+  const menuItems = React.useMemo(() => [
     ...appMenuItems,
     { id: 'profile', label: 'Meu Perfil', icon: UserCircle } 
-  ];
+  ], []);
 
   React.useEffect(() => {
     const currentPath = location.pathname.substring(1);
