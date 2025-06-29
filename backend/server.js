@@ -22,6 +22,8 @@ import costCentersRoutes from './routes/costCenters.js';
 import segmentsRoutes from './routes/segments.js';
 import integrationsRoutes from './routes/integrations.js';
 import metricsRoutes from './routes/metrics.js';
+import chartOfAccountsRoutes from './routes/chartOfAccounts.js';
+import costCenterAccountsRoutes from './routes/costCenterAccounts.js';
 import debugRoutes from './routes/debug.js'; // TEMPORÁRIO
 
 // Import database
@@ -115,6 +117,8 @@ app.use('/api/cost-centers', costCentersRoutes);
 app.use('/api/segments', segmentsRoutes);
 app.use('/api/integrations', integrationsRoutes);
 app.use('/api/metrics', metricsRoutes);
+app.use('/api/chart-of-accounts', chartOfAccountsRoutes);
+app.use('/api/cost-center-accounts', costCenterAccountsRoutes);
 app.use('/api/debug', debugRoutes); // TEMPORÁRIO
 
 // Health check

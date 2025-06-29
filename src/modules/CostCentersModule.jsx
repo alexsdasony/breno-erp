@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building, Plus, Edit, Trash2, Save, XCircle } from 'lucide-react';
+import { Building, Plus, Edit, Trash2, Save, XCircle, CreditCard, Settings, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
@@ -8,8 +8,11 @@ import { useAppData } from '@/hooks/useAppData.jsx';
 const CostCentersModule = ({ toast }) => {
   const { data, activeSegmentId, ensureCostCentersLoaded, addCostCenter, updateCostCenter, deleteCostCenter, importData } = useAppData();
   const [showForm, setShowForm] = useState(false);
+  const [showAccountsModal, setShowAccountsModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentCostCenter, setCurrentCostCenter] = useState(null);
+  const [accounts, setAccounts] = useState([]);
+  const [costCenterAccounts, setCostCenterAccounts] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
@@ -23,6 +26,48 @@ const CostCentersModule = ({ toast }) => {
     ensureCostCentersLoaded();
   }, [ensureCostCentersLoaded]);
 
+  // Load accounts when needed
+  useEffect(() => {
+    if (showAccountsModal) {
+      loadAccounts();
+      loadCostCenterAccounts();
+    }
+  }, [showAccountsModal, currentCostCenter]);
+
+  const loadAccounts = async () => {
+    try {
+      const response = await fetch('/api/chart-of-accounts', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const accountsData = await response.json();
+        setAccounts(accountsData);
+      }
+    } catch (error) {
+      console.error('Error loading accounts:', error);
+    }
+  };
+
+  const loadCostCenterAccounts = async () => {
+    if (!currentCostCenter) return;
+    
+    try {
+      const response = await fetch(`/api/cost-center-accounts/cost-center/${currentCostCenter.id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const costCenterAccountsData = await response.json();
+        setCostCenterAccounts(costCenterAccountsData);
+      }
+    } catch (error) {
+      console.error('Error loading cost center accounts:', error);
+    }
+  };
+
   const handleAddNew = () => {
     setIsEditing(false);
     setCurrentCostCenter(null);
@@ -35,6 +80,11 @@ const CostCentersModule = ({ toast }) => {
     setCurrentCostCenter(costCenter);
     setFormData({ name: costCenter.name, segmentId: costCenter.segmentId });
     setShowForm(true);
+  };
+
+  const handleManageAccounts = (costCenter) => {
+    setCurrentCostCenter(costCenter);
+    setShowAccountsModal(true);
   };
 
   const handleDelete = (id) => {
@@ -64,6 +114,78 @@ const CostCentersModule = ({ toast }) => {
     setIsEditing(false);
   };
 
+  const handleAddAccount = async (accountId, allocationPercentage = 100, isPrimary = false) => {
+    try {
+      const response = await fetch('/api/cost-center-accounts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          cost_center_id: currentCostCenter.id,
+          account_id: accountId,
+          allocation_percentage: allocationPercentage,
+          is_primary: isPrimary
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Sucesso",
+          description: "Conta adicionada ao centro de custo.",
+        });
+        loadCostCenterAccounts();
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Erro",
+          description: error.error || "Erro ao adicionar conta.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error adding account:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao adicionar conta.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRemoveAccount = async (relationshipId) => {
+    try {
+      const response = await fetch(`/api/cost-center-accounts/${relationshipId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Sucesso",
+          description: "Conta removida do centro de custo.",
+        });
+        loadCostCenterAccounts();
+      } else {
+        toast({
+          title: "Erro",
+          description: "Erro ao remover conta.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error removing account:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao remover conta.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const costCenterHeaders = ['name', 'segmentId'];
   const filteredCostCenters = data.costCenters.filter(cc => !activeSegmentId || cc.segmentId === activeSegmentId);
 
@@ -78,7 +200,7 @@ const CostCentersModule = ({ toast }) => {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-400 to-cyan-500 bg-clip-text text-transparent">
             Gerenciar Centros de Custo
           </h1>
-          <p className="text-muted-foreground mt-2">Adicione, edite ou remova centros de custo.</p>
+          <p className="text-muted-foreground mt-2">Adicione, edite ou remova centros de custo e suas contas contábeis.</p>
         </div>
         <div className="flex space-x-2">
           <ImportDataButton 
@@ -142,6 +264,7 @@ const CostCentersModule = ({ toast }) => {
                 <tr className="border-b border-border">
                   <th className="text-left p-3">Nome</th>
                   <th className="text-left p-3">Segmento</th>
+                  <th className="text-center p-3">Contas</th>
                   <th className="text-center p-3">Ações</th>
                 </tr>
               </thead>
@@ -151,9 +274,28 @@ const CostCentersModule = ({ toast }) => {
                     <td className="p-3 font-medium">{cc.name}</td>
                     <td className="p-3">{segments.find(s => s.id === cc.segmentId)?.name || 'N/A'}</td>
                     <td className="p-3 text-center">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <CreditCard className="w-3 h-3 mr-1" />
+                        {costCenterAccounts.filter(cca => cca.cost_center_id === cc.id).length} contas
+                      </span>
+                    </td>
+                    <td className="p-3 text-center">
                       <div className="flex justify-center space-x-1">
-                        <Button variant="ghost" size="sm" title="Editar" onClick={() => handleEdit(cc)}><Edit className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="sm" title="Excluir" onClick={() => handleDelete(cc.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          title="Gerenciar Contas" 
+                          onClick={() => handleManageAccounts(cc)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <Settings className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Editar" onClick={() => handleEdit(cc)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Excluir" onClick={() => handleDelete(cc.id)}>
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
                       </div>
                     </td>
                   </motion.tr>
@@ -163,6 +305,123 @@ const CostCentersModule = ({ toast }) => {
           </div>
         )}
       </motion.div>
+
+      {/* Modal de Gerenciamento de Contas */}
+      <AnimatePresence>
+        {showAccountsModal && currentCostCenter && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowAccountsModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-effect rounded-xl p-6 border max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">
+                  Contas Contábeis - {currentCostCenter.name}
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAccountsModal(false)}
+                >
+                  <XCircle className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Contas Atribuídas */}
+                <div>
+                  <h4 className="text-md font-semibold mb-3 text-green-600">Contas Atribuídas</h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {costCenterAccounts.length === 0 ? (
+                      <p className="text-muted-foreground text-sm">Nenhuma conta atribuída</p>
+                    ) : (
+                      costCenterAccounts.map((cca) => (
+                        <div key={cca.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border">
+                          <div className="flex-1">
+                            <div className="flex items-center">
+                              <CreditCard className="w-4 h-4 mr-2 text-green-600" />
+                              <span className="font-medium text-sm">{cca.account_code}</span>
+                              {cca.is_primary && (
+                                <span className="ml-2 px-2 py-1 bg-green-200 text-green-800 text-xs rounded-full">
+                                  Principal
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">{cca.account_name}</p>
+                            <p className="text-xs text-gray-500">{cca.account_category}</p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-500">{cca.allocation_percentage}%</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveAccount(cca.id)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Contas Disponíveis */}
+                <div>
+                  <h4 className="text-md font-semibold mb-3 text-blue-600">Contas Disponíveis</h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {accounts.length === 0 ? (
+                      <p className="text-muted-foreground text-sm">Carregando contas...</p>
+                    ) : (
+                      accounts
+                        .filter(account => !costCenterAccounts.some(cca => cca.account_id === account.id))
+                        .map((account) => (
+                          <div key={account.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border">
+                            <div className="flex-1">
+                              <div className="flex items-center">
+                                <CreditCard className="w-4 h-4 mr-2 text-blue-600" />
+                                <span className="font-medium text-sm">{account.account_code}</span>
+                                <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                                  account.account_type === 'expense' ? 'bg-red-200 text-red-800' :
+                                  account.account_type === 'revenue' ? 'bg-green-200 text-green-800' :
+                                  account.account_type === 'asset' ? 'bg-blue-200 text-blue-800' :
+                                  account.account_type === 'liability' ? 'bg-orange-200 text-orange-800' :
+                                  'bg-gray-200 text-gray-800'
+                                }`}>
+                                  {account.account_type}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600 mt-1">{account.account_name}</p>
+                              <p className="text-xs text-gray-500">{account.account_category}</p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleAddAccount(account.id)}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

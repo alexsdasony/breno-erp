@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { getDatabase } from '../database/prodConfig.js';
 import { validateRegister, validateLogin } from '../middleware/validation.js';
 import { authenticateToken } from '../middleware/auth.js';
+import ChatProService from '../services/chatpro.js';
 
 const router = express.Router();
 
@@ -314,6 +315,126 @@ router.post('/refresh', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Token refresh error:', error);
     res.status(500).json({ error: 'Failed to refresh token' });
+  }
+});
+
+// Request password reset
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email, phone } = req.body;
+    const db = await getDatabase();
+
+    // Validate input
+    if (!email && !phone) {
+      return res.status(400).json({ error: 'Email or phone number is required' });
+    }
+
+    // Find user by email or phone
+    let user;
+    if (email) {
+      user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+    } else {
+      user = await db.get('SELECT * FROM users WHERE phone = ?', [phone]);
+    }
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Generate reset code (6 digits)
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Store reset code in database
+    await db.run(
+      'UPDATE users SET reset_code = ?, reset_code_expiry = ? WHERE id = ?',
+      [resetCode, resetExpiry.toISOString(), user.id]
+    );
+
+    // Send WhatsApp message if phone is available
+    if (user.phone) {
+      try {
+        const chatproService = new ChatProService();
+        await chatproService.sendPasswordResetMessage(user.phone, resetCode, user.name);
+        
+        res.json({ 
+          message: 'Password reset code sent via WhatsApp',
+          method: 'whatsapp'
+        });
+      } catch (whatsappError) {
+        console.error('WhatsApp send error:', whatsappError);
+        // Fallback to email if WhatsApp fails
+        res.json({ 
+          message: 'Password reset code generated (WhatsApp failed, check console)',
+          method: 'email_fallback',
+          resetCode: resetCode // Only for development
+        });
+      }
+    } else {
+      // Email fallback (for development)
+      console.log(`[DEV] Password reset code for ${user.email}: ${resetCode}`);
+      res.json({ 
+        message: 'Password reset code generated (check console for development)',
+        method: 'email_dev',
+        resetCode: resetCode // Only for development
+      });
+    }
+
+  } catch (error) {
+    console.error('Password reset request error:', error);
+    res.status(500).json({ error: 'Failed to process password reset request' });
+  }
+});
+
+// Verify reset code and set new password
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, phone, resetCode, newPassword } = req.body;
+    const db = await getDatabase();
+
+    // Validate input
+    if (!resetCode || !newPassword) {
+      return res.status(400).json({ error: 'Reset code and new password are required' });
+    }
+
+    // Find user by email or phone
+    let user;
+    if (email) {
+      user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+    } else if (phone) {
+      user = await db.get('SELECT * FROM users WHERE phone = ?', [phone]);
+    } else {
+      return res.status(400).json({ error: 'Email or phone number is required' });
+    }
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if reset code is valid and not expired
+    if (!user.reset_code || user.reset_code !== resetCode) {
+      return res.status(400).json({ error: 'Invalid reset code' });
+    }
+
+    if (!user.reset_code_expiry || new Date() > new Date(user.reset_code_expiry)) {
+      return res.status(400).json({ error: 'Reset code has expired' });
+    }
+
+    // Hash new password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    // Update password and clear reset code
+    await db.run(
+      'UPDATE users SET password = ?, reset_code = NULL, reset_code_expiry = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [hashedPassword, user.id]
+    );
+
+    res.json({ message: 'Password reset successfully' });
+
+  } catch (error) {
+    console.error('Password reset error:', error);
+    res.status(500).json({ error: 'Failed to reset password' });
   }
 });
 

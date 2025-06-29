@@ -118,7 +118,15 @@ class ApiService {
   }
 
   async changePassword(passwordData) {
-    return this.put('/auth/change-password', passwordData);
+    return this.put('/auth/password', passwordData);
+  }
+
+  async requestPasswordReset(data) {
+    return this.post('/auth/forgot-password', data);
+  }
+
+  async resetPassword(data) {
+    return this.post('/auth/reset-password', data);
   }
 
   // Segments endpoints

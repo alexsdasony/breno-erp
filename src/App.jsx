@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -7,6 +6,7 @@ import { useAppData } from '@/hooks/useAppData.jsx';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import ErpLayout from '@/components/layouts/ErpLayout'; 
 
 const App = () => {
@@ -18,6 +18,7 @@ const App = () => {
         <Route path="/login" element={!currentUser ? <LoginPage /> : <Navigate to="/" />} />
         <Route path="/register" element={!currentUser ? <RegisterPage /> : <Navigate to="/" />} />
         <Route path="/forgot-password" element={!currentUser ? <ForgotPasswordPage /> : <Navigate to="/" />} />
+        <Route path="/reset-password" element={!currentUser ? <ResetPasswordPage /> : <Navigate to="/" />} />
         <Route 
           path="/*" 
           element={currentUser ? <ErpLayout /> : <Navigate to="/login" />} 

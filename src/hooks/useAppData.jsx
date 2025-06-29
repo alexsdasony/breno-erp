@@ -196,6 +196,31 @@ export const AppDataProvider = ({ children }) => {
     }
   };
 
+  const requestPasswordReset = async (email, phone = null) => {
+    try {
+      const response = await apiService.requestPasswordReset({ email, phone });
+      return response;
+    } catch (error) {
+      console.error('Password reset request error:', error);
+      throw error;
+    }
+  };
+
+  const resetPassword = async (email, phone, resetCode, newPassword) => {
+    try {
+      const response = await apiService.resetPassword({ 
+        email, 
+        phone, 
+        resetCode, 
+        newPassword 
+      });
+      return response;
+    } catch (error) {
+      console.error('Password reset error:', error);
+      throw error;
+    }
+  };
+
   // LAZY LOADING FUNCTIONS
   const ensureCostCentersLoaded = async () => {
     if (lazyState.costCenters.loaded || lazyState.costCenters.loading) {
@@ -789,6 +814,8 @@ export const AppDataProvider = ({ children }) => {
     logoutUser,
     updateUserProfile,
     changeUserPassword,
+    requestPasswordReset,
+    resetPassword,
     
     // Data loading functions
     loadTransactions,
