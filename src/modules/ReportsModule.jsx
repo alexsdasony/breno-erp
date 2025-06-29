@@ -216,67 +216,158 @@ const ReportsModule = ({ toast }) => {
           <Filter className="w-5 h-5 mr-2" />
           Filtros do Relatório
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div>
-            <label className="block text-sm font-medium mb-1">Data Inicial</label>
+            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+              Data Inicial
+            </label>
             <input
+              id="startDate"
+              name="startDate"
               type="date"
               value={filters.startDate}
-              onChange={(e) => setFilters({...filters, startDate: e.target.value})}
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+              onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          
           <div>
-            <label className="block text-sm font-medium mb-1">Data Final</label>
+            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+              Data Final
+            </label>
             <input
+              id="endDate"
+              name="endDate"
               type="date"
               value={filters.endDate}
-              onChange={(e) => setFilters({...filters, endDate: e.target.value})}
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+              onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          
           <div>
-            <label className="block text-sm font-medium mb-1">Centro de Custo</label>
+            <label htmlFor="costCenter" className="block text-sm font-medium text-gray-700 mb-1">
+              Centro de Custo
+            </label>
             <select
+              id="costCenter"
+              name="costCenter"
               value={filters.costCenterId}
-              onChange={(e) => setFilters({...filters, costCenterId: e.target.value})}
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+              onChange={(e) => setFilters({ ...filters, costCenterId: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Todos os centros</option>
+              <option value="">Todos os Centros</option>
               {costCenters.map(center => (
-                <option key={center.id} value={center.id}>{center.name}</option>
+                <option key={center.id} value={center.id}>
+                  {center.name}
+                </option>
               ))}
             </select>
           </div>
+          
           <div>
-            <label className="block text-sm font-medium mb-1">Tipo de Conta</label>
+            <label htmlFor="accountType" className="block text-sm font-medium text-gray-700 mb-1">
+              Tipo de Conta
+            </label>
             <select
+              id="accountType"
+              name="accountType"
               value={filters.accountType}
-              onChange={(e) => setFilters({...filters, accountType: e.target.value})}
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+              onChange={(e) => setFilters({ ...filters, accountType: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Todos os tipos</option>
-              <option value="revenue">Receitas</option>
-              <option value="expense">Despesas</option>
-              <option value="asset">Ativos</option>
-              <option value="liability">Passivos</option>
-              <option value="equity">Patrimônio Líquido</option>
+              <option value="">Todos os Tipos</option>
+              <option value="receita">Receita</option>
+              <option value="despesa">Despesa</option>
+              <option value="ativo">Ativo</option>
+              <option value="passivo">Passivo</option>
+              <option value="patrimonio">Patrimônio</option>
             </select>
           </div>
         </div>
-        <div className="mt-4">
-          <label className="block text-sm font-medium mb-1">Agrupar por</label>
-          <select
-            value={filters.groupBy}
-            onChange={(e) => setFilters({...filters, groupBy: e.target.value})}
-            className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-          >
-            <option value="account_type">Tipo de Conta</option>
-            <option value="cost_center">Centro de Custo</option>
-            <option value="month">Mês</option>
-          </select>
+        
+        {/* Agrupamento */}
+        <div className="mb-6">
+          <label htmlFor="groupBy" className="block text-sm font-medium text-gray-700 mb-2">
+            Agrupar por:
+          </label>
+          <div className="flex flex-wrap gap-3">
+            <label className="flex items-center">
+              <input
+                id="groupByAccount"
+                name="groupBy"
+                type="radio"
+                value="account"
+                checked={filters.groupBy === 'account'}
+                onChange={(e) => setFilters({ ...filters, groupBy: e.target.value })}
+                className="mr-2"
+              />
+              Conta Contábil
+            </label>
+            <label className="flex items-center">
+              <input
+                id="groupByCostCenter"
+                name="groupBy"
+                type="radio"
+                value="costCenter"
+                checked={filters.groupBy === 'costCenter'}
+                onChange={(e) => setFilters({ ...filters, groupBy: e.target.value })}
+                className="mr-2"
+              />
+              Centro de Custo
+            </label>
+            <label className="flex items-center">
+              <input
+                id="groupByBoth"
+                name="groupBy"
+                type="radio"
+                value="both"
+                checked={filters.groupBy === 'both'}
+                onChange={(e) => setFilters({ ...filters, groupBy: e.target.value })}
+                className="mr-2"
+              />
+              Ambos
+            </label>
+          </div>
         </div>
       </motion.div>
+
+      {/* Botões de Ação */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <Button
+          onClick={generateDRE}
+          disabled={loading}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+          aria-label="Gerar relatório DRE"
+        >
+          {loading ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+          ) : (
+            <BarChart3 className="h-4 w-4" />
+          )}
+          {loading ? 'Gerando...' : 'Gerar DRE'}
+        </Button>
+        
+        <Button
+          onClick={() => exportDRE('pdf')}
+          disabled={!dreData || loading}
+          className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+          aria-label="Exportar DRE para PDF"
+        >
+          <Download className="h-4 w-4" />
+          Exportar PDF
+        </Button>
+        
+        <Button
+          onClick={() => exportDRE('excel')}
+          disabled={!dreData || loading}
+          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+          aria-label="Exportar DRE para Excel"
+        >
+          <Download className="h-4 w-4" />
+          Exportar Excel
+        </Button>
+      </div>
 
       {/* Resumo Executivo */}
       {dreData && (
