@@ -136,8 +136,10 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
             <h3 className="text-lg font-semibold mb-4">Gerar Nova NF-e</h3>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Número NF-e</label>
+                <label htmlFor="nfeNumber" className="block text-sm font-medium mb-2">Número NF-e</label>
                 <input
+                  id="nfeNumber"
+                  name="number"
                   type="text"
                   value={formData.number}
                   onChange={(e) => setFormData({...formData, number: e.target.value})}
@@ -167,8 +169,10 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Valor Total</label>
+                <label htmlFor="nfeTotal" className="block text-sm font-medium mb-2">Valor Total</label>
                 <input
+                  id="nfeTotal"
+                  name="total"
                   type="number"
                   step="0.01"
                   value={formData.total}
@@ -248,7 +252,7 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
                   <td className="p-3">{nfe.customerName}</td>
                   <td className="p-3">{nfe.date}</td>
                   <td className="p-3 text-right font-medium text-green-400">
-                    R$ {parseFloat(nfe.total).toLocaleString('pt-BR')}
+                    R$ {(parseFloat(nfe.total || 0) || 0).toLocaleString('pt-BR')}
                   </td>
                   <td className="p-3 text-center">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${

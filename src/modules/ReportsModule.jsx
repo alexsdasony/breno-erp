@@ -126,10 +126,10 @@ const ReportsModule = () => {
                 <motion.tr key={metric.id} className="border-b border-border/50 hover:bg-muted/50">
                   <td className="p-3 font-medium">{metric.name}</td>
                   <td className="p-3 text-center">{metric.totalClientes}</td>
-                  <td className="p-3 text-right text-green-400">R$ {metric.faturamento.toLocaleString('pt-BR')}</td>
-                  <td className="p-3 text-right text-red-400">R$ {metric.despesas.toLocaleString('pt-BR')}</td>
-                  <td className={`p-3 text-right font-bold ${metric.saldo >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    R$ {metric.saldo.toLocaleString('pt-BR')}
+                  <td className="p-3 text-right text-green-400">R$ {(metric.faturamento || 0).toLocaleString('pt-BR')}</td>
+                  <td className="p-3 text-right text-red-400">R$ {(metric.despesas || 0).toLocaleString('pt-BR')}</td>
+                  <td className={`p-3 text-right font-medium ${(metric.saldo || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    R$ {(metric.saldo || 0).toLocaleString('pt-BR')}
                   </td>
                 </motion.tr>
               ))}
@@ -147,7 +147,7 @@ const DREItem = ({ label, value, bold = false, final = false, positive = false }
       {label}
     </span>
     <span className={`${bold ? 'font-semibold' : ''} ${positive && value !== 0 ? 'text-green-400' : value < 0 ? 'text-red-400' : ''}`}>
-      R$ {value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      R$ {(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
     </span>
   </div>
 );

@@ -51,7 +51,31 @@ export const validateProduct = [
 export const validateCustomer = [
   body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
   body('email').optional().isEmail().normalizeEmail().withMessage('Valid email required'),
-  body('cpf').optional().matches(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/).withMessage('CPF format: 000.000.000-00'),
+  body('document').optional().custom((value) => {
+    if (!value) return true; // Document is optional
+    
+    const numbers = value.replace(/\D/g, '');
+    
+    // CPF validation (11 digits)
+    if (numbers.length === 11) {
+      const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
+      if (!cpfRegex.test(value)) {
+        throw new Error('CPF format: 000.000.000-00');
+      }
+      return true;
+    }
+    
+    // CNPJ validation (14 digits)
+    if (numbers.length === 14) {
+      const cnpjRegex = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/;
+      if (!cnpjRegex.test(value)) {
+        throw new Error('CNPJ format: 00.000.000/0000-00');
+      }
+      return true;
+    }
+    
+    throw new Error('Document must be a valid CPF (11 digits) or CNPJ (14 digits)');
+  }).withMessage('Invalid document format'),
   handleValidationErrors
 ];
 

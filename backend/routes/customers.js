@@ -19,8 +19,8 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
 
     // Add search filter
     if (search) {
-      query += ' AND (name LIKE ? OR email LIKE ? OR cpf LIKE ?)';
-      countQuery += ' AND (name LIKE ? OR email LIKE ? OR cpf LIKE ?)';
+      query += ' AND (name LIKE ? OR email LIKE ? OR document LIKE ?)';
+      countQuery += ' AND (name LIKE ? OR email LIKE ? OR document LIKE ?)';
       const searchTerm = `%${search}%`;
       params.push(searchTerm, searchTerm, searchTerm);
       countParams.push(searchTerm, searchTerm, searchTerm);
@@ -87,14 +87,14 @@ router.get('/:id', authenticateToken, validateId, async (req, res) => {
 // Create new customer
 router.post('/', authenticateToken, validateCustomer, async (req, res) => {
   try {
-    const { name, cpf, email, phone, address, city, state } = req.body;
+    const { name, document, email, phone, address, city, state } = req.body;
     const db = await getDatabase();
 
-    // Check if CPF already exists (if provided)
-    if (cpf) {
-      const existingCustomer = await db.get('SELECT id FROM customers WHERE cpf = ?', [cpf]);
+    // Check if document already exists (if provided)
+    if (document) {
+      const existingCustomer = await db.get('SELECT id FROM customers WHERE document = ?', [document]);
       if (existingCustomer) {
-        return res.status(400).json({ error: 'Customer with this CPF already exists' });
+        return res.status(400).json({ error: 'Customer with this document already exists' });
       }
     }
 
@@ -107,8 +107,8 @@ router.post('/', authenticateToken, validateCustomer, async (req, res) => {
     }
 
     const result = await db.run(
-      'INSERT INTO customers (name, cpf, email, phone, address, city, state) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, cpf || null, email || null, phone || null, address || null, city || null, state || null]
+      'INSERT INTO customers (name, document, email, phone, address, city, state) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [name, document || null, email || null, phone || null, address || null, city || null, state || null]
     );
 
     const customer = await db.get('SELECT * FROM customers WHERE id = ?', [result.lastID]);
@@ -128,7 +128,7 @@ router.post('/', authenticateToken, validateCustomer, async (req, res) => {
 router.put('/:id', authenticateToken, validateId, validateCustomer, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, cpf, email, phone, address, city, state } = req.body;
+    const { name, document, email, phone, address, city, state } = req.body;
     const db = await getDatabase();
 
     // Check if customer exists
@@ -137,14 +137,14 @@ router.put('/:id', authenticateToken, validateId, validateCustomer, async (req, 
       return res.status(404).json({ error: 'Customer not found' });
     }
 
-    // Check if CPF is taken by another customer (if provided and changed)
-    if (cpf && cpf !== existingCustomer.cpf) {
-      const cpfConflict = await db.get(
-        'SELECT id FROM customers WHERE cpf = ? AND id != ?',
-        [cpf, id]
+    // Check if document is taken by another customer (if provided and changed)
+    if (document && document !== existingCustomer.document) {
+      const documentConflict = await db.get(
+        'SELECT id FROM customers WHERE document = ? AND id != ?',
+        [document, id]
       );
-      if (cpfConflict) {
-        return res.status(400).json({ error: 'CPF already taken by another customer' });
+      if (documentConflict) {
+        return res.status(400).json({ error: 'Document already taken by another customer' });
       }
     }
 
@@ -160,8 +160,8 @@ router.put('/:id', authenticateToken, validateId, validateCustomer, async (req, 
     }
 
     await db.run(
-      'UPDATE customers SET name = ?, cpf = ?, email = ?, phone = ?, address = ?, city = ?, state = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [name, cpf || null, email || null, phone || null, address || null, city || null, state || null, id]
+      'UPDATE customers SET name = ?, document = ?, email = ?, phone = ?, address = ?, city = ?, state = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [name, document || null, email || null, phone || null, address || null, city || null, state || null, id]
     );
 
     const customer = await db.get('SELECT * FROM customers WHERE id = ?', [id]);
@@ -238,10 +238,10 @@ router.post('/bulk', authenticateToken, async (req, res) => {
         }
 
         // Check for duplicates
-        if (customer.cpf) {
-          const existingCpf = await db.get('SELECT id FROM customers WHERE cpf = ?', [customer.cpf]);
-          if (existingCpf) {
-            errors.push({ index: i, error: 'CPF already exists' });
+        if (customer.document) {
+          const existingDocument = await db.get('SELECT id FROM customers WHERE document = ?', [customer.document]);
+          if (existingDocument) {
+            errors.push({ index: i, error: 'Document already exists' });
             continue;
           }
         }
@@ -255,10 +255,10 @@ router.post('/bulk', authenticateToken, async (req, res) => {
         }
 
         const result = await db.run(
-          'INSERT INTO customers (name, cpf, email, phone, address, city, state, total_purchases, last_purchase_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO customers (name, document, email, phone, address, city, state, total_purchases, last_purchase_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
           [
             customer.name,
-            customer.cpf || null,
+            customer.document || null,
             customer.email || null,
             customer.phone || null,
             customer.address || null,

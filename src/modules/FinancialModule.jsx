@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -93,7 +92,7 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total de Receitas</p>
-              <p className="text-2xl font-bold text-green-400">R$ {metrics.totalRevenue.toLocaleString('pt-BR')}</p>
+              <p className="text-2xl font-bold text-green-400">R$ {(metrics.totalRevenue || 0).toLocaleString('pt-BR')}</p>
             </div>
             <TrendingUp className="w-8 h-8 text-green-400" />
           </div>
@@ -102,7 +101,7 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total de Despesas</p>
-              <p className="text-2xl font-bold text-red-400">R$ {metrics.totalExpenses.toLocaleString('pt-BR')}</p>
+              <p className="text-2xl font-bold text-red-400">R$ {(metrics.totalExpenses || 0).toLocaleString('pt-BR')}</p>
             </div>
             <TrendingDown className="w-8 h-8 text-red-400" />
           </div>
@@ -111,7 +110,7 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Lucro Líquido</p>
-              <p className={`text-2xl font-bold ${metrics.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>R$ {metrics.profit.toLocaleString('pt-BR')}</p>
+              <p className={`text-2xl font-bold ${(metrics.profit || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>R$ {(metrics.profit || 0).toLocaleString('pt-BR')}</p>
             </div>
             <DollarSign className={`w-8 h-8 ${metrics.profit >= 0 ? 'text-green-400' : 'text-red-400'}`} />
           </div>
@@ -143,16 +142,41 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">Descrição</label>
-                <input type="text" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" placeholder="Descrição da transação" />
+                <label htmlFor="transactionDescription" className="block text-sm font-medium mb-2">Descrição</label>
+                <input 
+                  id="transactionDescription"
+                  name="description"
+                  type="text" 
+                  value={formData.description} 
+                  onChange={(e) => setFormData({...formData, description: e.target.value})} 
+                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
+                  placeholder="Descrição da transação" 
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Categoria</label>
-                <input type="text" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" placeholder="Ex: Vendas, Compras, Serviços" />
+                <label htmlFor="transactionCategory" className="block text-sm font-medium mb-2">Categoria</label>
+                <input 
+                  id="transactionCategory"
+                  name="category"
+                  type="text" 
+                  value={formData.category} 
+                  onChange={(e) => setFormData({...formData, category: e.target.value})} 
+                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
+                  placeholder="Ex: Vendas, Compras, Serviços" 
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Valor</label>
-                <input type="number" step="0.01" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" placeholder="0,00" />
+                <label htmlFor="transactionAmount" className="block text-sm font-medium mb-2">Valor</label>
+                <input 
+                  id="transactionAmount"
+                  name="amount"
+                  type="number" 
+                  step="0.01" 
+                  value={formData.amount} 
+                  onChange={(e) => setFormData({...formData, amount: e.target.value})} 
+                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
+                  placeholder="0,00" 
+                />
               </div>
               {formData.type === 'despesa' && (
                 <div>
@@ -204,7 +228,7 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
                     </span>
                   </td>
                   <td className={`p-3 text-right font-medium ${transaction.type === 'receita' ? 'text-green-400' : 'text-red-400'}`}>
-                    {transaction.type === 'receita' ? '+' : '-'}R$ {transaction.amount.toLocaleString('pt-BR')}
+                    {transaction.type === 'receita' ? '+' : '-'}R$ {(transaction.amount || 0).toLocaleString('pt-BR')}
                   </td>
                   <td className="p-3 text-center">
                     <div className="flex justify-center space-x-2">

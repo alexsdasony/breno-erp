@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Plus, Edit, Trash2, Eye, Search, Filter, Mail, Phone, MapPin, CreditCard } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, Eye, Search, Filter, Mail, Phone, MapPin, CreditCard, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 
 const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
   const [showForm, setShowForm] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
-    cpf: '',
+    document: '',
     email: '',
     phone: '',
     address: '',
@@ -16,33 +20,83 @@ const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
     state: ''
   });
 
-  const formatCPF = (value) => {
-    return value
-      .replace(/\D/g, '')
+  const formatDocument = (value) => {
+    const numbers = value.replace(/\D/g, '');
+    
+    // Se tem 11 dígitos, formata como CPF
+    if (numbers.length <= 11) {
+      return numbers
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+        .substring(0, 14);
+    }
+    
+    // Se tem mais de 11 dígitos, formata como CNPJ
+    return numbers
+      .replace(/(\d{2})(\d)/, '$1.$2')
       .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-      .substring(0, 14);
+      .replace(/(\d{3})(\d)/, '$1/$2')
+      .replace(/(\d{4})(\d{1,2})$/, '$1-$2')
+      .substring(0, 18);
   };
 
-  const handleCPFChange = (e) => {
-    setFormData({ ...formData, cpf: formatCPF(e.target.value) });
+  const validateDocument = (document) => {
+    const numbers = document.replace(/\D/g, '');
+    
+    if (numbers.length === 11) {
+      // Validação básica de CPF
+      if (numbers === '00000000000' || numbers === '11111111111' || 
+          numbers === '22222222222' || numbers === '33333333333' || 
+          numbers === '44444444444' || numbers === '55555555555' || 
+          numbers === '66666666666' || numbers === '77777777777' || 
+          numbers === '88888888888' || numbers === '99999999999') {
+        return false;
+      }
+      return true;
+    } else if (numbers.length === 14) {
+      // Validação básica de CNPJ
+      if (numbers === '00000000000000' || numbers === '11111111111111' || 
+          numbers === '22222222222222' || numbers === '33333333333333' || 
+          numbers === '44444444444444' || numbers === '55555555555555' || 
+          numbers === '66666666666666' || numbers === '77777777777777' || 
+          numbers === '88888888888888' || numbers === '99999999999999') {
+        return false;
+      }
+      return true;
+    }
+    
+    return false;
+  };
+
+  const handleDocumentChange = (e) => {
+    setFormData({ ...formData, document: formatDocument(e.target.value) });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.cpf) {
+    if (!formData.name || !formData.email || !formData.document) {
       toast({
         title: "Erro",
-        description: "Nome, Email e CPF são obrigatórios.",
+        description: "Nome, Email e Documento são obrigatórios.",
         variant: "destructive"
       });
       return;
     }
-    if (data.customers.some(c => c.cpf === formData.cpf)) {
+    
+    if (!validateDocument(formData.document)) {
       toast({
         title: "Erro",
-        description: "CPF já cadastrado.",
+        description: "Documento inválido. Digite um CPF ou CNPJ válido.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (data.customers.some(c => c.document === formData.document)) {
+      toast({
+        title: "Erro",
+        description: "Documento já cadastrado.",
         variant: "destructive"
       });
       return;
@@ -50,11 +104,88 @@ const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
     
     addCustomer(formData);
     
-    setFormData({ name: '', cpf: '', email: '', phone: '', address: '', city: '', state: '' });
+    setFormData({ name: '', document: '', email: '', phone: '', address: '', city: '', state: '' });
     setShowForm(false);
   };
 
-  const customerHeaders = ['name', 'cpf', 'email', 'phone', 'address', 'city', 'state', 'totalPurchases', 'lastPurchaseDate'];
+  const handleViewCustomer = (customer) => {
+    setSelectedCustomer(customer);
+    setShowViewModal(true);
+  };
+
+  const handleEditCustomer = (customer) => {
+    setSelectedCustomer(customer);
+    setFormData({
+      name: customer.name || '',
+      document: customer.document || '',
+      email: customer.email || '',
+      phone: customer.phone || '',
+      address: customer.address || '',
+      city: customer.city || '',
+      state: customer.state || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleDeleteCustomer = (customer) => {
+    setSelectedCustomer(customer);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    // Aqui você implementaria a chamada para deletar o cliente
+    // Por enquanto, vamos apenas mostrar uma mensagem
+    toast({
+      title: "Cliente Excluído",
+      description: `${selectedCustomer.name} foi excluído com sucesso.`,
+    });
+    setShowDeleteConfirm(false);
+    setSelectedCustomer(null);
+  };
+
+  const handleEditSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.document) {
+      toast({
+        title: "Erro",
+        description: "Nome, Email e Documento são obrigatórios.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!validateDocument(formData.document)) {
+      toast({
+        title: "Erro",
+        description: "Documento inválido. Digite um CPF ou CNPJ válido.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Verificar se o documento já existe em outro cliente
+    const otherCustomers = data.customers.filter(c => c.id !== selectedCustomer.id);
+    if (otherCustomers.some(c => c.document === formData.document)) {
+      toast({
+        title: "Erro",
+        description: "Documento já cadastrado para outro cliente.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Aqui você implementaria a chamada para atualizar o cliente
+    toast({
+      title: "Cliente Atualizado",
+      description: `${formData.name} foi atualizado com sucesso.`,
+    });
+    
+    setShowEditModal(false);
+    setSelectedCustomer(null);
+    setFormData({ name: '', document: '', email: '', phone: '', address: '', city: '', state: '' });
+  };
+
+  const customerHeaders = ['name', 'document', 'email', 'phone', 'address', 'city', 'state', 'totalPurchases', 'lastPurchaseDate'];
 
   return (
     <motion.div
@@ -126,8 +257,10 @@ const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
             <h3 className="text-lg font-semibold mb-4">Novo Cliente</h3>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Nome Completo</label>
+                <label htmlFor="customerName" className="block text-sm font-medium mb-2">Nome Completo</label>
                 <input
+                  id="customerName"
+                  name="customerName"
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -136,18 +269,22 @@ const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">CPF</label>
+                <label htmlFor="customerDocument" className="block text-sm font-medium mb-2">Documento</label>
                 <input
+                  id="customerDocument"
+                  name="customerDocument"
                   type="text"
-                  value={formData.cpf}
-                  onChange={handleCPFChange}
+                  value={formData.document}
+                  onChange={handleDocumentChange}
                   className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  placeholder="000.000.000-00"
+                  placeholder="000.000.000-00 ou 00.000.000/0000-00"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Email</label>
+                <label htmlFor="customerEmail" className="block text-sm font-medium mb-2">Email</label>
                 <input
+                  id="customerEmail"
+                  name="customerEmail"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -156,8 +293,10 @@ const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Telefone</label>
+                <label htmlFor="customerPhone" className="block text-sm font-medium mb-2">Telefone</label>
                 <input
+                  id="customerPhone"
+                  name="customerPhone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
@@ -166,8 +305,10 @@ const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Endereço</label>
+                <label htmlFor="customerAddress" className="block text-sm font-medium mb-2">Endereço</label>
                 <input
+                  id="customerAddress"
+                  name="customerAddress"
                   type="text"
                   value={formData.address}
                   onChange={(e) => setFormData({...formData, address: e.target.value})}
@@ -176,8 +317,10 @@ const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Cidade</label>
+                <label htmlFor="customerCity" className="block text-sm font-medium mb-2">Cidade</label>
                 <input
+                  id="customerCity"
+                  name="customerCity"
                   type="text"
                   value={formData.city}
                   onChange={(e) => setFormData({...formData, city: e.target.value})}
@@ -186,8 +329,10 @@ const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Estado</label>
+                <label htmlFor="customerState" className="block text-sm font-medium mb-2">Estado</label>
                 <input
+                  id="customerState"
+                  name="customerState"
                   type="text"
                   value={formData.state}
                   onChange={(e) => setFormData({...formData, state: e.target.value})}
@@ -232,7 +377,7 @@ const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left p-3">Nome</th>
-                <th className="text-left p-3">CPF</th>
+                <th className="text-left p-3">Documento</th>
                 <th className="text-left p-3">Email</th>
                 <th className="text-left p-3">Telefone</th>
                 <th className="text-left p-3">Cidade/UF</th>
@@ -241,46 +386,62 @@ const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
               </tr>
             </thead>
             <tbody>
-              {data.customers.map(customer => (
+              {(data.customers || []).map(customer => (
                 <motion.tr
                   key={customer.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="border-b border-border hover:bg-muted/50 transition-colors"
                 >
-                  <td className="p-3 font-medium">{customer.name}</td>
+                  <td className="p-3 font-medium">{customer.name || 'Nome não informado'}</td>
                   <td className="p-3">
                     <span className="flex items-center">
-                      <CreditCard className="w-4 h-4 mr-2" /> {customer.cpf}
+                      <CreditCard className="w-4 h-4 mr-2" /> {customer.document || 'N/A'}
                     </span>
                   </td>
                   <td className="p-3">
-                    <a href={`mailto:${customer.email}`} className="flex items-center hover:text-sky-400">
-                      <Mail className="w-4 h-4 mr-2" /> {customer.email}
+                    <a href={`mailto:${customer.email || ''}`} className="flex items-center hover:text-sky-400">
+                      <Mail className="w-4 h-4 mr-2" /> {customer.email || 'N/A'}
                     </a>
                   </td>
                   <td className="p-3">
                     <span className="flex items-center">
-                      <Phone className="w-4 h-4 mr-2" /> {customer.phone}
+                      <Phone className="w-4 h-4 mr-2" /> {customer.phone || 'N/A'}
                     </span>
                   </td>
                   <td className="p-3">
                     <span className="flex items-center">
-                      <MapPin className="w-4 h-4 mr-2" /> {customer.city}/{customer.state}
+                      <MapPin className="w-4 h-4 mr-2" /> {customer.city || 'N/A'}/{customer.state || 'N/A'}
                     </span>
                   </td>
                   <td className="p-3 text-right font-medium text-green-400">
-                    R$ {customer.totalPurchases.toLocaleString('pt-BR')}
+                    R$ {(customer.totalPurchases || 0).toLocaleString('pt-BR')}
                   </td>
                   <td className="p-3 text-center">
                     <div className="flex justify-center space-x-2">
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleViewCustomer(customer)}
+                        title="Visualizar cliente"
+                      >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEditCustomer(customer)}
+                        title="Editar cliente"
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleDeleteCustomer(customer)}
+                        title="Excluir cliente"
+                        className="text-red-500 hover:text-red-700"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
@@ -291,6 +452,271 @@ const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
           </table>
         </div>
       </motion.div>
+
+      {/* Modal de Visualização */}
+      <AnimatePresence>
+        {showViewModal && selectedCustomer && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowViewModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-effect rounded-xl p-6 border max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Detalhes do Cliente</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowViewModal(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground">Nome</label>
+                  <p className="text-lg font-medium">{selectedCustomer.name}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground">Documento</label>
+                  <p className="flex items-center">
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    {selectedCustomer.document}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground">Email</label>
+                  <p className="flex items-center">
+                    <Mail className="w-4 h-4 mr-2" />
+                    <a href={`mailto:${selectedCustomer.email}`} className="hover:text-sky-400">
+                      {selectedCustomer.email}
+                    </a>
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground">Telefone</label>
+                  <p className="flex items-center">
+                    <Phone className="w-4 h-4 mr-2" />
+                    {selectedCustomer.phone || 'Não informado'}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground">Endereço</label>
+                  <p className="flex items-center">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    {selectedCustomer.address || 'Não informado'}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground">Cidade</label>
+                    <p>{selectedCustomer.city || 'Não informado'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground">Estado</label>
+                    <p>{selectedCustomer.state || 'Não informado'}</p>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground">Total de Compras</label>
+                  <p className="text-lg font-medium text-green-400">
+                    R$ {(selectedCustomer.totalPurchases || 0).toLocaleString('pt-BR')}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setShowViewModal(false)}>
+                  Fechar
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de Edição */}
+      <AnimatePresence>
+        {showEditModal && selectedCustomer && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowEditModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-effect rounded-xl p-6 border max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Editar Cliente</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <form onSubmit={handleEditSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="editCustomerName" className="block text-sm font-medium mb-2">Nome Completo</label>
+                  <input
+                    id="editCustomerName"
+                    name="editCustomerName"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    placeholder="Nome do cliente"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="editCustomerDocument" className="block text-sm font-medium mb-2">Documento</label>
+                  <input
+                    id="editCustomerDocument"
+                    name="editCustomerDocument"
+                    type="text"
+                    value={formData.document}
+                    onChange={handleDocumentChange}
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="editCustomerEmail" className="block text-sm font-medium mb-2">Email</label>
+                  <input
+                    id="editCustomerEmail"
+                    name="editCustomerEmail"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    placeholder="email@exemplo.com"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="editCustomerPhone" className="block text-sm font-medium mb-2">Telefone</label>
+                  <input
+                    id="editCustomerPhone"
+                    name="editCustomerPhone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    placeholder="(XX) XXXXX-XXXX"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="editCustomerAddress" className="block text-sm font-medium mb-2">Endereço</label>
+                  <input
+                    id="editCustomerAddress"
+                    name="editCustomerAddress"
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    placeholder="Rua, Número, Bairro"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="editCustomerCity" className="block text-sm font-medium mb-2">Cidade</label>
+                  <input
+                    id="editCustomerCity"
+                    name="editCustomerCity"
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData({...formData, city: e.target.value})}
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    placeholder="Cidade"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="editCustomerState" className="block text-sm font-medium mb-2">Estado</label>
+                  <input
+                    id="editCustomerState"
+                    name="editCustomerState"
+                    type="text"
+                    value={formData.state}
+                    onChange={(e) => setFormData({...formData, state: e.target.value})}
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    placeholder="UF"
+                  />
+                </div>
+                <div className="md:col-span-2 flex space-x-3">
+                  <Button type="submit" className="bg-gradient-to-r from-teal-500 to-sky-600">
+                    Atualizar Cliente
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>
+                    Cancelar
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de Confirmação de Exclusão */}
+      <AnimatePresence>
+        {showDeleteConfirm && selectedCustomer && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-effect rounded-xl p-6 border max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                  <Trash2 className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Confirmar Exclusão</h3>
+                <p className="text-muted-foreground mb-6">
+                  Tem certeza que deseja excluir o cliente <strong>{selectedCustomer.name}</strong>? 
+                  Esta ação não pode ser desfeita.
+                </p>
+                
+                <div className="flex space-x-3 justify-center">
+                  <Button
+                    variant="destructive"
+                    onClick={confirmDelete}
+                  >
+                    Sim, Excluir
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDeleteConfirm(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

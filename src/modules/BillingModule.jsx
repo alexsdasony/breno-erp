@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -131,7 +130,7 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total a Receber</p>
-              <p className="text-2xl font-bold text-yellow-400">R$ {metrics.totalPendingAmount.toLocaleString('pt-BR')}</p>
+              <p className="text-2xl font-bold text-yellow-400">R$ {(metrics.totalPendingAmount || 0).toLocaleString('pt-BR')}</p>
             </div>
             <DollarSign className="w-8 h-8 text-yellow-400" />
           </div>
@@ -163,12 +162,28 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Valor</label>
-                <input type="number" step="0.01" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" placeholder="0,00" />
+                <label htmlFor="billingAmount" className="block text-sm font-medium mb-2">Valor</label>
+                <input 
+                  id="billingAmount"
+                  name="amount"
+                  type="number" 
+                  step="0.01" 
+                  value={formData.amount} 
+                  onChange={(e) => setFormData({...formData, amount: e.target.value})} 
+                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
+                  placeholder="0,00" 
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Data de Vencimento</label>
-                <input type="date" value={formData.dueDate} onChange={(e) => setFormData({...formData, dueDate: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" />
+                <label htmlFor="billingDueDate" className="block text-sm font-medium mb-2">Data de Vencimento</label>
+                <input 
+                  id="billingDueDate"
+                  name="dueDate"
+                  type="date" 
+                  value={formData.dueDate} 
+                  onChange={(e) => setFormData({...formData, dueDate: e.target.value})} 
+                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
+                />
               </div>
                <div>
                 <label className="block text-sm font-medium mb-2">Status</label>
@@ -212,7 +227,7 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
                 <motion.tr key={billing.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
                   <td className="p-3 font-medium">{billing.customerName}</td>
                   <td className="p-3">{segments.find(s => s.id === billing.segmentId)?.name || 'N/A'}</td>
-                  <td className="p-3 text-right">R$ {billing.amount.toLocaleString('pt-BR')}</td>
+                  <td className="p-3 text-right">R$ {(billing.amount || 0).toLocaleString('pt-BR')}</td>
                   <td className={`p-3 font-medium text-center ${getStatusColor(billing.status)}`}>
                     <span className="flex items-center justify-center">{getStatusIcon(billing.status)}{billing.status}</span>
                   </td>
