@@ -196,6 +196,24 @@ const CustomersModule = ({ metrics, toast }) => {
       .reduce((total, sale) => total + Number(sale.total || 0), 0);
   };
 
+  // Função para detectar se é PF ou PJ baseado no documento
+  const getCustomerType = (document) => {
+    if (!document) return 'N/A';
+    const numbers = document.replace(/\D/g, '');
+    if (numbers.length === 11) return 'PF';
+    if (numbers.length === 14) return 'PJ';
+    return 'N/A';
+  };
+
+  // Função para obter o tipo de documento
+  const getDocumentType = (document) => {
+    if (!document) return 'N/A';
+    const numbers = document.replace(/\D/g, '');
+    if (numbers.length === 11) return 'CPF';
+    if (numbers.length === 14) return 'CNPJ';
+    return 'N/A';
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -338,15 +356,42 @@ const CustomersModule = ({ metrics, toast }) => {
               </div>
               <div>
                 <label htmlFor="customerState" className="block text-sm font-medium mb-2">Estado</label>
-                <input
+                <select
                   id="customerState"
                   name="customerState"
-                  type="text"
                   value={formData.state}
                   onChange={(e) => setFormData({...formData, state: e.target.value})}
                   className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  placeholder="UF"
-                />
+                >
+                  <option value="">Selecione o Estado</option>
+                  <option value="AC">Acre</option>
+                  <option value="AL">Alagoas</option>
+                  <option value="AP">Amapá</option>
+                  <option value="AM">Amazonas</option>
+                  <option value="BA">Bahia</option>
+                  <option value="CE">Ceará</option>
+                  <option value="DF">Distrito Federal</option>
+                  <option value="ES">Espírito Santo</option>
+                  <option value="GO">Goiás</option>
+                  <option value="MA">Maranhão</option>
+                  <option value="MT">Mato Grosso</option>
+                  <option value="MS">Mato Grosso do Sul</option>
+                  <option value="MG">Minas Gerais</option>
+                  <option value="PA">Pará</option>
+                  <option value="PB">Paraíba</option>
+                  <option value="PR">Paraná</option>
+                  <option value="PE">Pernambuco</option>
+                  <option value="PI">Piauí</option>
+                  <option value="RJ">Rio de Janeiro</option>
+                  <option value="RN">Rio Grande do Norte</option>
+                  <option value="RS">Rio Grande do Sul</option>
+                  <option value="RO">Rondônia</option>
+                  <option value="RR">Roraima</option>
+                  <option value="SC">Santa Catarina</option>
+                  <option value="SP">São Paulo</option>
+                  <option value="SE">Sergipe</option>
+                  <option value="TO">Tocantins</option>
+                </select>
               </div>
               <div className="md:col-span-2 flex space-x-3">
                 <Button type="submit" className="bg-gradient-to-r from-teal-500 to-sky-600">
@@ -385,6 +430,7 @@ const CustomersModule = ({ metrics, toast }) => {
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left p-3">Nome</th>
+                <th className="text-left p-3">Tipo</th>
                 <th className="text-left p-3">Documento</th>
                 <th className="text-left p-3">Email</th>
                 <th className="text-left p-3">Telefone</th>
@@ -403,9 +449,23 @@ const CustomersModule = ({ metrics, toast }) => {
                 >
                   <td className="p-3 font-medium">{customer.name || 'Nome não informado'}</td>
                   <td className="p-3">
-                    <span className="flex items-center">
-                      <CreditCard className="w-4 h-4 mr-2" /> {customer.document || 'N/A'}
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      getCustomerType(customer.document) === 'PF' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : getCustomerType(customer.document) === 'PJ' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {getCustomerType(customer.document)}
                     </span>
+                  </td>
+                  <td className="p-3">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground">{getDocumentType(customer.document)}</span>
+                      <span className="flex items-center">
+                        <CreditCard className="w-4 h-4 mr-2" /> {customer.document || 'N/A'}
+                      </span>
+                    </div>
                   </td>
                   <td className="p-3">
                     <a href={`mailto:${customer.email || ''}`} className="flex items-center hover:text-sky-400">
@@ -493,6 +553,24 @@ const CustomersModule = ({ metrics, toast }) => {
                 <div>
                   <label className="block text-sm font-medium text-muted-foreground">Nome</label>
                   <p className="text-lg font-medium">{selectedCustomer.name}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground">Tipo</label>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      getCustomerType(selectedCustomer.document) === 'PF' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : getCustomerType(selectedCustomer.document) === 'PJ' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {getCustomerType(selectedCustomer.document)}
+                    </span>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground">Tipo de Documento</label>
+                    <p className="text-sm">{getDocumentType(selectedCustomer.document)}</p>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-muted-foreground">Documento</label>
@@ -655,15 +733,42 @@ const CustomersModule = ({ metrics, toast }) => {
                 </div>
                 <div>
                   <label htmlFor="editCustomerState" className="block text-sm font-medium mb-2">Estado</label>
-                  <input
+                  <select
                     id="editCustomerState"
                     name="editCustomerState"
-                    type="text"
                     value={formData.state}
                     onChange={(e) => setFormData({...formData, state: e.target.value})}
                     className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                    placeholder="UF"
-                  />
+                  >
+                    <option value="">Selecione o Estado</option>
+                    <option value="AC">Acre</option>
+                    <option value="AL">Alagoas</option>
+                    <option value="AP">Amapá</option>
+                    <option value="AM">Amazonas</option>
+                    <option value="BA">Bahia</option>
+                    <option value="CE">Ceará</option>
+                    <option value="DF">Distrito Federal</option>
+                    <option value="ES">Espírito Santo</option>
+                    <option value="GO">Goiás</option>
+                    <option value="MA">Maranhão</option>
+                    <option value="MT">Mato Grosso</option>
+                    <option value="MS">Mato Grosso do Sul</option>
+                    <option value="MG">Minas Gerais</option>
+                    <option value="PA">Pará</option>
+                    <option value="PB">Paraíba</option>
+                    <option value="PR">Paraná</option>
+                    <option value="PE">Pernambuco</option>
+                    <option value="PI">Piauí</option>
+                    <option value="RJ">Rio de Janeiro</option>
+                    <option value="RN">Rio Grande do Norte</option>
+                    <option value="RS">Rio Grande do Sul</option>
+                    <option value="RO">Rondônia</option>
+                    <option value="RR">Roraima</option>
+                    <option value="SC">Santa Catarina</option>
+                    <option value="SP">São Paulo</option>
+                    <option value="SE">Sergipe</option>
+                    <option value="TO">Tocantins</option>
+                  </select>
                 </div>
                 <div className="md:col-span-2 flex space-x-3">
                   <Button type="submit" className="bg-gradient-to-r from-teal-500 to-sky-600">
