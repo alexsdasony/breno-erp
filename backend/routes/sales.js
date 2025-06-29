@@ -18,11 +18,11 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
     const countParams = [];
 
     // Add filters
-    if (segment_id) {
+    if (segment_id && segment_id !== 'null' && segment_id !== '') {
       query += ' AND segment_id = ?';
       countQuery += ' AND segment_id = ?';
-      params.push(segment_id);
-      countParams.push(segment_id);
+      params.push(parseInt(segment_id));
+      countParams.push(parseInt(segment_id));
     }
 
     if (status) {

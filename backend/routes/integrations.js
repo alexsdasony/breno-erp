@@ -9,12 +9,61 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
+    
+    // Get integrations settings from database
+    const integrations = await db.all('SELECT * FROM integrations ORDER BY name ASC');
+    
+    // Default integrations structure if none exist
+    const defaultIntegrations = [
+      {
+        id: 1,
+        name: 'WhatsApp Business',
+        description: 'Integração com WhatsApp para notificações',
+        status: 'inactive',
+        config: {
+          phone: '',
+          token: '',
+          webhook_url: ''
+        }
+      },
+      {
+        id: 2,
+        name: 'Mercado Pago',
+        description: 'Gateway de pagamento',
+        status: 'inactive',
+        config: {
+          access_token: '',
+          public_key: '',
+          webhook_url: ''
+        }
+      },
+      {
+        id: 3,
+        name: 'Correios',
+        description: 'Cálculo de frete e rastreamento',
+        status: 'inactive',
+        config: {
+          user: '',
+          password: '',
+          contract: ''
+        }
+      },
+      {
+        id: 4,
+        name: 'NFe.io',
+        description: 'Emissão de notas fiscais',
+        status: 'inactive',
+        config: {
+          api_key: '',
+          company_id: ''
+        }
+      }
+    ];
 
-    const integrations = await db.all(
-      'SELECT id, name, enabled, created_at, updated_at FROM integrations ORDER BY name ASC'
-    );
-
-    res.json({ integrations });
+    res.json({
+      integrations: integrations.length > 0 ? integrations : defaultIntegrations,
+      total: integrations.length > 0 ? integrations.length : defaultIntegrations.length
+    });
 
   } catch (error) {
     console.error('Get integrations error:', error);
@@ -22,16 +71,13 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Get integration by name
-router.get('/:name', authenticateToken, async (req, res) => {
+// Get integration by ID
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
-    const { name } = req.params;
+    const { id } = req.params;
     const db = await getDatabase();
 
-    const integration = await db.get(
-      'SELECT * FROM integrations WHERE name = ?',
-      [name]
-    );
+    const integration = await db.get('SELECT * FROM integrations WHERE id = ?', [id]);
 
     if (!integration) {
       return res.status(404).json({ error: 'Integration not found' });
@@ -45,40 +91,26 @@ router.get('/:name', authenticateToken, async (req, res) => {
   }
 });
 
-// Create or update integration
-router.put('/:name', authenticateToken, async (req, res) => {
+// Update integration
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
-    const { name } = req.params;
-    const { api_key, enabled, config } = req.body;
+    const { id } = req.params;
+    const { name, description, status, config } = req.body;
     const db = await getDatabase();
 
-    // Check if integration exists
-    const existingIntegration = await db.get(
-      'SELECT * FROM integrations WHERE name = ?',
-      [name]
+    await db.run(
+      'UPDATE integrations SET name = ?, description = ?, status = ?, config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [name, description, status, JSON.stringify(config), id]
     );
 
-    let integration;
-
-    if (existingIntegration) {
-      // Update existing integration
-      await db.run(
-        'UPDATE integrations SET api_key = ?, enabled = ?, config = ?, updated_at = CURRENT_TIMESTAMP WHERE name = ?',
-        [api_key || null, enabled ? 1 : 0, config ? JSON.stringify(config) : null, name]
-      );
-      integration = await db.get('SELECT * FROM integrations WHERE name = ?', [name]);
-    } else {
-      // Create new integration
-      const result = await db.run(
-        'INSERT INTO integrations (name, api_key, enabled, config) VALUES (?, ?, ?, ?)',
-        [name, api_key || null, enabled ? 1 : 0, config ? JSON.stringify(config) : null]
-      );
-      integration = await db.get('SELECT * FROM integrations WHERE id = ?', [result.lastID]);
-    }
+    const updatedIntegration = await db.get('SELECT * FROM integrations WHERE id = ?', [id]);
 
     res.json({
       message: 'Integration updated successfully',
-      integration
+      integration: {
+        ...updatedIntegration,
+        config: JSON.parse(updatedIntegration.config)
+      }
     });
 
   } catch (error) {

@@ -14,9 +14,10 @@ router.get('/', authenticateToken, async (req, res) => {
     let whereClause = 'WHERE 1=1';
     const params = [];
 
-    if (segment_id) {
+    // Only filter by segment if user is not master (segment_id = null means see all)
+    if (segment_id && segment_id !== 'null' && segment_id !== '') {
       whereClause += ' AND segment_id = ?';
-      params.push(segment_id);
+      params.push(parseInt(segment_id));
     }
 
     if (start_date) {
@@ -42,9 +43,9 @@ router.get('/', authenticateToken, async (req, res) => {
     // Product metrics
     let productWhereClause = '1=1';
     const productParams = [];
-    if (segment_id) {
+    if (segment_id && segment_id !== 'null' && segment_id !== '') {
       productWhereClause += ' AND segment_id = ?';
-      productParams.push(segment_id);
+      productParams.push(parseInt(segment_id));
     }
 
     const [productsData, lowStockData] = await Promise.all([
@@ -68,10 +69,10 @@ router.get('/', authenticateToken, async (req, res) => {
     let customerQuery = 'SELECT COUNT(DISTINCT id) as total FROM customers';
     let customerParams = [];
 
-    if (segment_id) {
+    if (segment_id && segment_id !== 'null' && segment_id !== '') {
       // For segment filtering, count customers who have sales in that segment
       customerQuery = 'SELECT COUNT(DISTINCT customer_id) as total FROM sales WHERE segment_id = ?';
-      customerParams = [segment_id];
+      customerParams = [parseInt(segment_id)];
     }
 
     const customersData = await db.get(customerQuery, customerParams);
@@ -148,9 +149,9 @@ router.get('/financial', authenticateToken, async (req, res) => {
     let whereClause = 'WHERE date >= ?';
     const params = [startDateStr];
 
-    if (segment_id) {
+    if (segment_id && segment_id !== 'null' && segment_id !== '') {
       whereClause += ' AND segment_id = ?';
-      params.push(segment_id);
+      params.push(parseInt(segment_id));
     }
 
     // Daily revenue and expenses

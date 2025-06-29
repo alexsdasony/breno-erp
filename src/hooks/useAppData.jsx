@@ -40,16 +40,18 @@ export const AppDataProvider = ({ children }) => {
             const segmentsResponse = await apiService.getSegments();
             setSegments(segmentsResponse.segments || []);
             
-            // Load initial data
+            // Load initial data with user's segment context
+            const segmentFilter = userProfile.user.segment_id ? { segment_id: userProfile.user.segment_id } : {};
+            
             await Promise.all([
-              loadTransactions(),
-              loadProducts(),
-              loadCustomers(),
-              loadSales(),
-              loadBillings(),
-              loadCostCenters(),
-              loadNFes(),
-              loadAccountsPayable(),
+              loadTransactions(segmentFilter),
+              loadProducts(segmentFilter),
+              loadCustomers(), // Customers are global - no segment filter
+              loadSales(segmentFilter),
+              loadBillings(segmentFilter),
+              loadCostCenters(segmentFilter),
+              loadNFes(segmentFilter),
+              loadAccountsPayable(segmentFilter),
               loadIntegrations()
             ]);
           } catch (error) {
@@ -552,7 +554,9 @@ export const AppDataProvider = ({ children }) => {
   // Metrics functions
   const getDashboardMetrics = async (params = {}) => {
     try {
-      return await apiService.getDashboardMetrics(params);
+      // Add user's segment context if available
+      const segmentFilter = currentUser?.segment_id ? { segment_id: currentUser.segment_id } : {};
+      return await apiService.getDashboardMetrics({ ...segmentFilter, ...params });
     } catch (error) {
       console.error('Get dashboard metrics error:', error);
       throw error;
@@ -561,7 +565,9 @@ export const AppDataProvider = ({ children }) => {
 
   const getFinancialMetrics = async (params = {}) => {
     try {
-      return await apiService.getFinancialMetrics(params);
+      // Add user's segment context if available
+      const segmentFilter = currentUser?.segment_id ? { segment_id: currentUser.segment_id } : {};
+      return await apiService.getFinancialMetrics({ ...segmentFilter, ...params });
     } catch (error) {
       console.error('Get financial metrics error:', error);
       throw error;
