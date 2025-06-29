@@ -1,0 +1,6 @@
+---
+description: Sempre utilize o comando say (shellscript) para dizer em voz alta o resumo do que está fazendo em tempo real, principalmente quando concluir uma tarefa
+globs: 
+alwaysApply: false
+---
+Utilie o comando do shellscript say para dar ao orquestrador/usuario feedback em tempo real das suas ações que estão sendo realizadas e principalmente informar quando terminar a tarefa requerida
