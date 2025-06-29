@@ -10,16 +10,16 @@ router.get('/', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
     
-    // Get integrations settings from database
-    const integrations = await db.all('SELECT * FROM integrations ORDER BY name ASC');
+    // Get integrations settings from database - using correct column names
+    const integrations = await db.all('SELECT id, name, api_key, enabled, config, created_at, updated_at FROM integrations ORDER BY name ASC');
     
     // Default integrations structure if none exist
     const defaultIntegrations = [
       {
         id: 1,
         name: 'WhatsApp Business',
-        description: 'Integração com WhatsApp para notificações',
-        status: 'inactive',
+        api_key: '',
+        enabled: false,
         config: {
           phone: '',
           token: '',
@@ -29,8 +29,8 @@ router.get('/', authenticateToken, async (req, res) => {
       {
         id: 2,
         name: 'Mercado Pago',
-        description: 'Gateway de pagamento',
-        status: 'inactive',
+        api_key: '',
+        enabled: false,
         config: {
           access_token: '',
           public_key: '',
@@ -40,8 +40,8 @@ router.get('/', authenticateToken, async (req, res) => {
       {
         id: 3,
         name: 'Correios',
-        description: 'Cálculo de frete e rastreamento',
-        status: 'inactive',
+        api_key: '',
+        enabled: false,
         config: {
           user: '',
           password: '',
@@ -51,8 +51,8 @@ router.get('/', authenticateToken, async (req, res) => {
       {
         id: 4,
         name: 'NFe.io',
-        description: 'Emissão de notas fiscais',
-        status: 'inactive',
+        api_key: '',
+        enabled: false,
         config: {
           api_key: '',
           company_id: ''
@@ -60,9 +60,17 @@ router.get('/', authenticateToken, async (req, res) => {
       }
     ];
 
+    // Format response with correct structure
+    const formattedIntegrations = integrations.length > 0 
+      ? integrations.map(integration => ({
+          ...integration,
+          config: integration.config ? JSON.parse(integration.config) : {}
+        }))
+      : defaultIntegrations;
+
     res.json({
-      integrations: integrations.length > 0 ? integrations : defaultIntegrations,
-      total: integrations.length > 0 ? integrations.length : defaultIntegrations.length
+      integrations: formattedIntegrations,
+      total: formattedIntegrations.length
     });
 
   } catch (error) {
@@ -95,12 +103,12 @@ router.get('/:id', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, status, config } = req.body;
+    const { name, api_key, enabled, config } = req.body;
     const db = await getDatabase();
 
     await db.run(
-      'UPDATE integrations SET name = ?, description = ?, status = ?, config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [name, description, status, JSON.stringify(config), id]
+      'UPDATE integrations SET name = ?, api_key = ?, enabled = ?, config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [name, api_key, enabled, JSON.stringify(config), id]
     );
 
     const updatedIntegration = await db.get('SELECT * FROM integrations WHERE id = ?', [id]);
@@ -109,7 +117,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
       message: 'Integration updated successfully',
       integration: {
         ...updatedIntegration,
-        config: JSON.parse(updatedIntegration.config)
+        config: updatedIntegration.config ? JSON.parse(updatedIntegration.config) : {}
       }
     });
 

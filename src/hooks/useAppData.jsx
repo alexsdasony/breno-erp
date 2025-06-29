@@ -590,6 +590,7 @@ export const AppDataProvider = ({ children }) => {
     loading,
     segments,
     activeSegmentId,
+    setActiveSegmentId,
     
     // Authentication functions
     registerUser,
