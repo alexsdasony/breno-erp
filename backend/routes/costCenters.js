@@ -6,7 +6,7 @@ import { validateCostCenter, validateId, validatePagination } from '../middlewar
 const router = express.Router();
 
 // Get all cost centers
-router.get('/', authenticateToken, validatePagination, async (req, res) => {
+router.get('/', validatePagination, async (req, res) => {
   try {
     const { page = 1, limit = 50, segment_id } = req.query;
     const offset = (page - 1) * limit;

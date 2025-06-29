@@ -6,7 +6,7 @@ import { getDatabase } from '../database/prodConfig.js';
 const router = express.Router();
 
 // Get all accounts
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const db = await getDatabase();
     const accounts = await db.all(`
