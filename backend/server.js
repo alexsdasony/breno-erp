@@ -47,14 +47,55 @@ app.use(helmet());
 app.use(compression());
 app.use(morgan('combined'));
 app.use(limiter);
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || [
-    'https://breno-erp.vercel.app',
-    'http://localhost:5173',
-    'http://localhost:3000'
-  ],
-  credentials: true
-}));
+
+// Enhanced CORS configuration with debug
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Lista de origens permitidas
+    const allowedOrigins = [
+      'https://breno-erp.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:3000'
+    ];
+    
+    // Se CORS_ORIGIN está definido, usar ele em vez da lista
+    if (process.env.CORS_ORIGIN) {
+      allowedOrigins.push(process.env.CORS_ORIGIN);
+    }
+    
+    // Permitir requests sem origin (ex: Postman, curl)
+    if (!origin) return callback(null, true);
+    
+    // Debug: log da origem
+    console.log(`🌐 CORS Request from origin: ${origin}`);
+    
+    if (allowedOrigins.includes(origin)) {
+      console.log(`✅ CORS Allowed: ${origin}`);
+      callback(null, true);
+    } else {
+      console.log(`❌ CORS Blocked: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Origin',
+    'X-Requested-With', 
+    'Content-Type',
+    'Accept',
+    'Authorization',
+    'sec-ch-ua',
+    'sec-ch-ua-mobile',
+    'sec-ch-ua-platform',
+    'User-Agent',
+    'Referer'
+  ]
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
