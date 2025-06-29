@@ -2,11 +2,12 @@ export const calculateMetrics = (data, segmentId = null) => {
   
   const filterBySegment = (item) => !segmentId || item.segmentId === segmentId;
 
-  const transactions = data.transactions.filter(filterBySegment);
-  const products = data.products.filter(filterBySegment);
-  const sales = data.sales.filter(filterBySegment);
-  const billings = data.billings.filter(filterBySegment);
-  const nfeList = data.nfeList.filter(filterBySegment);
+  // Safe array access with fallbacks
+  const transactions = (data.transactions || []).filter(filterBySegment);
+  const products = (data.products || []).filter(filterBySegment);
+  const sales = (data.sales || []).filter(filterBySegment);
+  const billings = (data.billings || []).filter(filterBySegment);
+  const nfeList = (data.nfeList || []).filter(filterBySegment);
   
   const totalRevenue = transactions
     .filter(t => t.type === 'receita')
@@ -21,7 +22,7 @@ export const calculateMetrics = (data, segmentId = null) => {
   const totalSales = sales.length;
   
   const customerIdsFromSales = new Set(sales.map(s => s.customerId));
-  const totalCustomers = segmentId ? customerIdsFromSales.size : data.customers.length;
+  const totalCustomers = segmentId ? customerIdsFromSales.size : (data.customers || []).length;
 
   const totalNFe = nfeList.length;
 
