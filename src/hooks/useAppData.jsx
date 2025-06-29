@@ -428,17 +428,23 @@ export const AppDataProvider = ({ children }) => {
   
   const addNFe = async (nfe) => {
     try {
-      const response = await apiService.createNFe(nfe);
+      const response = await apiService.createNFe({
+        ...nfe,
+        customer_name: nfe.customerName,
+        total: parseFloat(nfe.total),
+        date: new Date().toISOString().split('T')[0],
+        segmentId: activeSegmentId
+      });
       
       // Update local state
       setData(prev => ({
         ...prev,
-        nfeList: [response.nfe, ...prev.nfeList]
+        nfeList: [...prev.nfeList, response.nfe]
       }));
       
       toast({
-        title: "NF-e Gerada!",
-        description: "Nova NF-e foi adicionada à lista."
+        title: "NF-e Criada!",
+        description: "A Nota Fiscal Eletrônica foi criada com sucesso."
       });
       
       return response.nfe;
@@ -446,7 +452,66 @@ export const AppDataProvider = ({ children }) => {
       console.error('Add NFe error:', error);
       toast({
         title: "Erro!",
-        description: "Falha ao gerar NF-e. Tente novamente.",
+        description: "Falha ao criar NF-e. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const updateNFe = async (id, nfeData) => {
+    try {
+      const response = await apiService.updateNFe(id, {
+        ...nfeData,
+        customer_name: nfeData.customerName,
+        total: parseFloat(nfeData.total),
+        segment_id: activeSegmentId
+      });
+      
+      // Update local state
+      setData(prev => ({
+        ...prev,
+        nfeList: prev.nfeList.map(nfe => 
+          nfe.id === id ? response.nfe : nfe
+        )
+      }));
+      
+      toast({
+        title: "NF-e Atualizada!",
+        description: "A Nota Fiscal Eletrônica foi atualizada com sucesso."
+      });
+      
+      return response.nfe;
+    } catch (error) {
+      console.error('Update NFe error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao atualizar NF-e. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const deleteNFe = async (nfeId) => {
+    try {
+      await apiService.deleteNFe(nfeId);
+      
+      // Update local state
+      setData(prev => ({
+        ...prev,
+        nfeList: prev.nfeList.filter(nfe => nfe.id !== nfeId)
+      }));
+      
+      toast({
+        title: "NF-e Excluída!",
+        description: "A Nota Fiscal Eletrônica foi excluída com sucesso."
+      });
+    } catch (error) {
+      console.error('Delete NFe error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao excluir NF-e. Tente novamente.",
         variant: "destructive"
       });
       throw error;
@@ -756,7 +821,11 @@ export const AppDataProvider = ({ children }) => {
     // Segments functions
     addSegment,
     updateSegment,
-    deleteSegment
+    deleteSegment,
+    
+    // NFe functions
+    updateNFe,
+    deleteNFe
   };
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
