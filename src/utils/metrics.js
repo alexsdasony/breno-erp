@@ -12,11 +12,11 @@ export const calculateMetrics = (data, segmentId = null) => {
   
   const totalRevenue = transactions
     .filter(t => t.type === 'receita')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
   
   const totalExpenses = transactions
     .filter(t => t.type === 'despesa')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
   
   const totalProducts = products.length;
   const lowStockProducts = products.filter(p => p.stock <= p.minStock).length;
@@ -32,7 +32,7 @@ export const calculateMetrics = (data, segmentId = null) => {
   const defaultRate = totalBillings > 0 ? (overdueBillings / totalBillings) * 100 : 0;
   const totalPendingAmount = billings
     .filter(b => b.status === 'Pendente' || b.status === 'Vencida')
-    .reduce((sum, b) => sum + b.amount, 0);
+    .reduce((sum, b) => sum + Number(b.amount || 0), 0);
 
   return {
     totalRevenue,

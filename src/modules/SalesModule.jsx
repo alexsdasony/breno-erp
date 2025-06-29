@@ -176,7 +176,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
             <div>
               <p className="text-sm text-muted-foreground">Faturamento Total</p>
               <p className="text-2xl font-bold text-green-400">
-                R$ {(filteredSales.reduce((sum, s) => sum + (s.total || 0), 0) || 0).toLocaleString('pt-BR')}
+                R$ {(filteredSales.reduce((sum, s) => sum + Number(s.total || 0), 0) || 0).toLocaleString('pt-BR')}
               </p>
             </div>
             <DollarSign className="w-8 h-8 text-green-400" />

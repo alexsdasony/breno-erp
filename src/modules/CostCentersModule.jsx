@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
 
-const CostCentersModule = ({ addCostCenter, updateCostCenter, deleteCostCenter, toast, importData }) => {
-  const { data, activeSegmentId, ensureCostCentersLoaded } = useAppData();
+const CostCentersModule = ({ toast }) => {
+  const { data, activeSegmentId, ensureCostCentersLoaded, addCostCenter, updateCostCenter, deleteCostCenter, importData } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentCostCenter, setCurrentCostCenter] = useState(null);
@@ -53,7 +53,7 @@ const CostCentersModule = ({ addCostCenter, updateCostCenter, deleteCostCenter, 
     }
 
     if (isEditing && currentCostCenter) {
-      updateCostCenter({ ...currentCostCenter, name: formData.name, segmentId: parseInt(formData.segmentId) });
+      updateCostCenter(currentCostCenter.id, { name: formData.name, segmentId: parseInt(formData.segmentId) });
     } else {
       addCostCenter({ name: formData.name, segmentId: parseInt(formData.segmentId) });
     }

@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import apiService from '@/services/api';
+import { calculateMetrics } from '@/utils/metrics';
 
 const AppDataContext = createContext();
 
@@ -35,6 +36,11 @@ export const AppDataProvider = ({ children }) => {
   const [segments, setSegments] = useState([]);
   const [activeSegmentId, setActiveSegmentId] = useState(null);
   const [lazyState, setLazyState] = useState(defaultLazyState);
+
+  // Calculate metrics from local data
+  const metrics = React.useMemo(() => {
+    return calculateMetrics(data, activeSegmentId);
+  }, [data, activeSegmentId]);
 
   // Initialize app data and check authentication
   useEffect(() => {
@@ -428,17 +434,23 @@ export const AppDataProvider = ({ children }) => {
   
   const addNFe = async (nfe) => {
     try {
-      const response = await apiService.createNFe(nfe);
+      const response = await apiService.createNFe({
+        ...nfe,
+        customer_name: nfe.customerName,
+        total: parseFloat(nfe.total),
+        date: new Date().toISOString().split('T')[0],
+        segmentId: activeSegmentId
+      });
       
       // Update local state
       setData(prev => ({
         ...prev,
-        nfeList: [response.nfe, ...prev.nfeList]
+        nfeList: [...prev.nfeList, response.nfe]
       }));
       
       toast({
-        title: "NF-e Gerada!",
-        description: "Nova NF-e foi adicionada à lista."
+        title: "NF-e Criada!",
+        description: "A Nota Fiscal Eletrônica foi criada com sucesso."
       });
       
       return response.nfe;
@@ -446,7 +458,66 @@ export const AppDataProvider = ({ children }) => {
       console.error('Add NFe error:', error);
       toast({
         title: "Erro!",
-        description: "Falha ao gerar NF-e. Tente novamente.",
+        description: "Falha ao criar NF-e. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const updateNFe = async (id, nfeData) => {
+    try {
+      const response = await apiService.updateNFe(id, {
+        ...nfeData,
+        customer_name: nfeData.customerName,
+        total: parseFloat(nfeData.total),
+        segment_id: activeSegmentId
+      });
+      
+      // Update local state
+      setData(prev => ({
+        ...prev,
+        nfeList: prev.nfeList.map(nfe => 
+          nfe.id === id ? response.nfe : nfe
+        )
+      }));
+      
+      toast({
+        title: "NF-e Atualizada!",
+        description: "A Nota Fiscal Eletrônica foi atualizada com sucesso."
+      });
+      
+      return response.nfe;
+    } catch (error) {
+      console.error('Update NFe error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao atualizar NF-e. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const deleteNFe = async (nfeId) => {
+    try {
+      await apiService.deleteNFe(nfeId);
+      
+      // Update local state
+      setData(prev => ({
+        ...prev,
+        nfeList: prev.nfeList.filter(nfe => nfe.id !== nfeId)
+      }));
+      
+      toast({
+        title: "NF-e Excluída!",
+        description: "A Nota Fiscal Eletrônica foi excluída com sucesso."
+      });
+    } catch (error) {
+      console.error('Delete NFe error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao excluir NF-e. Tente novamente.",
         variant: "destructive"
       });
       throw error;
@@ -561,6 +632,77 @@ export const AppDataProvider = ({ children }) => {
     }
   };
 
+  // Segments functions
+  const addSegment = async (segmentData) => {
+    try {
+      const response = await apiService.createSegment(segmentData);
+      
+      // Update local state
+      setSegments(prev => [...prev, response.segment]);
+      
+      toast({
+        title: "Segmento Criado!",
+        description: "O segmento foi criado com sucesso."
+      });
+      
+      return response.segment;
+    } catch (error) {
+      console.error('Add segment error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao criar segmento. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const updateSegment = async (id, segmentData) => {
+    try {
+      const response = await apiService.updateSegment(id, segmentData);
+      
+      // Update local state
+      setSegments(prev => prev.map(s => s.id === id ? response.segment : s));
+      
+      toast({
+        title: "Segmento Atualizado!",
+        description: "O segmento foi atualizado com sucesso."
+      });
+      
+      return response.segment;
+    } catch (error) {
+      console.error('Update segment error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao atualizar segmento. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const deleteSegment = async (segmentId) => {
+    try {
+      await apiService.deleteSegment(segmentId);
+      
+      // Update local state
+      setSegments(prev => prev.filter(s => s.id !== segmentId));
+      
+      toast({
+        title: "Segmento Excluído!",
+        description: "O segmento foi excluído com sucesso."
+      });
+    } catch (error) {
+      console.error('Delete segment error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao excluir segmento. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   const importData = async (importedItems, type) => {
     try {
       let response;
@@ -633,6 +775,7 @@ export const AppDataProvider = ({ children }) => {
       ...data,
       segments: segments || []
     },
+    metrics,
     setData,
     currentUser,
     loading,
@@ -680,7 +823,16 @@ export const AppDataProvider = ({ children }) => {
     
     // Lazy loading functions
     ensureCostCentersLoaded,
-    ensureAccountsPayableLoaded
+    ensureAccountsPayableLoaded,
+    
+    // Segments functions
+    addSegment,
+    updateSegment,
+    deleteSegment,
+    
+    // NFe functions
+    updateNFe,
+    deleteNFe
   };
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

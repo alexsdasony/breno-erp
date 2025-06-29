@@ -15,9 +15,13 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
+import { useAppData } from '@/hooks/useAppData';
 
-const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
+const NFeModule = () => {
+  const { data, metrics, addNFe, updateNFe, deleteNFe, importData, toast } = useAppData();
   const [showForm, setShowForm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentNFe, setCurrentNFe] = useState(null);
   const [formData, setFormData] = useState({
     number: '',
     customerId: '',
@@ -26,9 +30,50 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
     status: 'Pendente'
   });
 
+  // Safe data access with fallbacks
+  const safeNFeList = data.nfeList || [];
+  const safeCustomers = data.customers || [];
+  const safeMetrics = metrics || { totalNFe: 0 };
+
+  const resetForm = () => {
+    setFormData({
+      number: '',
+      customerId: '',
+      customerName: '',
+      total: '', 
+      status: 'Pendente'
+    });
+    setIsEditing(false);
+    setCurrentNFe(null);
+    setShowForm(false);
+  };
+
+  const handleEdit = (nfe) => {
+    setCurrentNFe(nfe);
+    setFormData({
+      number: nfe.number,
+      customerId: nfe.customer_id || '',
+      customerName: nfe.customer_name || nfe.customerName,
+      total: nfe.total,
+      status: nfe.status
+    });
+    setIsEditing(true);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (nfeId) => {
+    if (window.confirm('Tem certeza que deseja excluir esta NF-e?')) {
+      try {
+        await deleteNFe(nfeId);
+      } catch (error) {
+        console.error('Erro ao excluir NF-e:', error);
+      }
+    }
+  };
+
   const handleCustomerSelect = (e) => {
     const customerId = e.target.value;
-    const selectedCustomer = data.customers.find(c => c.id === parseInt(customerId));
+    const selectedCustomer = safeCustomers.find(c => c.id === parseInt(customerId));
     if (selectedCustomer) {
       setFormData({ ...formData, customerId: selectedCustomer.id, customerName: selectedCustomer.name });
     } else {
@@ -36,8 +81,9 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (!formData.number || !formData.customerId || !formData.total) {
       toast({
         title: "Erro",
@@ -46,11 +92,17 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
       });
       return;
     }
-    
-    addNFe(formData);
-    
-    setFormData({ number: '', customerId: '', customerName: '', total: '', status: 'Pendente' });
-    setShowForm(false);
+
+    try {
+      if (isEditing && currentNFe) {
+        await updateNFe(currentNFe.id, formData);
+      } else {
+        await addNFe(formData);
+      }
+      resetForm();
+    } catch (error) {
+      console.error('Erro ao salvar NF-e:', error);
+    }
   };
 
   const nfeHeaders = ['number', 'customerName', 'date', 'total', 'status'];
@@ -70,7 +122,7 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
         </div>
         <div className="flex space-x-2">
           <ImportDataButton 
-            onDataImported={importData} 
+            onImport={importData} 
             expectedHeaders={nfeHeaders}
             moduleName="NF-es"
             importAction="nfeList"
@@ -90,7 +142,7 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total de NF-es</p>
-              <p className="text-2xl font-bold text-indigo-400">{metrics.totalNFe}</p>
+              <p className="text-2xl font-bold text-indigo-400">{safeMetrics.totalNFe || 0}</p>
             </div>
             <FileSpreadsheet className="w-8 h-8 text-indigo-400" />
           </div>
@@ -103,7 +155,7 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
             <div>
               <p className="text-sm text-muted-foreground">NF-es Emitidas</p>
               <p className="text-2xl font-bold text-green-400">
-                {data.nfeList.filter(nfe => nfe.status === 'Emitida').length}
+                {safeNFeList.filter(nfe => nfe.status === 'Emitida').length}
               </p>
             </div>
             <Send className="w-8 h-8 text-green-400" />
@@ -117,7 +169,7 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
             <div>
               <p className="text-sm text-muted-foreground">NF-es Pendentes</p>
               <p className="text-2xl font-bold text-yellow-400">
-                {data.nfeList.filter(nfe => nfe.status === 'Pendente').length}
+                {safeNFeList.filter(nfe => nfe.status === 'Pendente').length}
               </p>
             </div>
             <FileText className="w-8 h-8 text-yellow-400" />
@@ -133,7 +185,9 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
             exit={{ opacity: 0, height: 0 }}
             className="glass-effect rounded-xl p-6 border"
           >
-            <h3 className="text-lg font-semibold mb-4">Gerar Nova NF-e</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              {isEditing ? 'Editar NF-e' : 'Gerar Nova NF-e'}
+            </h3>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="nfeNumber" className="block text-sm font-medium mb-2">Número NF-e</label>
@@ -155,7 +209,7 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
                   className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                 >
                   <option value="">Selecione um cliente</option>
-                  {data.customers.map(customer => (
+                  {safeCustomers.map(customer => (
                     <option key={customer.id} value={customer.id}>{customer.name} ({customer.cpf})</option>
                   ))}
                 </select>
@@ -195,9 +249,9 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
               </div>
               <div className="md:col-span-2 flex space-x-3">
                 <Button type="submit" className="bg-gradient-to-r from-indigo-500 to-purple-600">
-                  Gerar NF-e
+                  {isEditing ? 'Atualizar NF-e' : 'Gerar NF-e'}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
               </div>
@@ -241,7 +295,7 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
               </tr>
             </thead>
             <tbody>
-              {data.nfeList.map(nfe => (
+              {safeNFeList.map(nfe => (
                 <motion.tr
                   key={nfe.id}
                   initial={{ opacity: 0 }}
@@ -249,10 +303,10 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
                   className="border-b border-border hover:bg-muted/50 transition-colors"
                 >
                   <td className="p-3 font-medium">{nfe.number}</td>
-                  <td className="p-3">{nfe.customerName}</td>
+                  <td className="p-3">{nfe.customer_name || nfe.customerName}</td>
                   <td className="p-3">{nfe.date}</td>
                   <td className="p-3 text-right font-medium text-green-400">
-                    R$ {(parseFloat(nfe.total || 0) || 0).toLocaleString('pt-BR')}
+                    R$ {(Number(nfe.total || 0) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="p-3 text-center">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -279,10 +333,20 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
                        <Button variant="ghost" size="sm" title="Enviar por Email (Simulado)">
                         <Send className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" title="Editar">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        title="Editar"
+                        onClick={() => handleEdit(nfe)}
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" title="Cancelar NF-e (Simulado)">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        title="Cancelar NF-e"
+                        onClick={() => handleDelete(nfe.id)}
+                      >
                         <Trash2 className="w-4 h-4 text-red-500" />
                       </Button>
                     </div>
@@ -291,6 +355,21 @@ const NFeModule = ({ data, metrics, addNFe, toast, importData }) => {
               ))}
             </tbody>
           </table>
+          
+          {safeNFeList.length === 0 && (
+            <div className="text-center py-12 text-muted-foreground">
+              <FileSpreadsheet className="w-16 h-16 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-medium mb-2">Nenhuma NF-e encontrada</h3>
+              <p className="text-sm mb-4">Não existem notas fiscais eletrônicas cadastradas no sistema.</p>
+              <Button 
+                onClick={() => setShowForm(true)}
+                className="bg-gradient-to-r from-indigo-500 to-purple-600"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Criar primeira NF-e
+              </Button>
+            </div>
+          )}
         </div>
       </motion.div>
     </motion.div>
