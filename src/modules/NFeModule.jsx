@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileSpreadsheet, 
@@ -18,11 +18,10 @@ import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData';
 
 const NFeModule = () => {
-  const { data, metrics, addNFe, updateNFe, deleteNFe, importData, toast, loadNFes, currentUser, loading } = useAppData();
+  const { data, metrics, addNFe, updateNFe, deleteNFe, importData, toast } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentNFe, setCurrentNFe] = useState(null);
-  const [localLoading, setLocalLoading] = useState(false);
   const [formData, setFormData] = useState({
     number: '',
     customerId: '',
@@ -31,33 +30,10 @@ const NFeModule = () => {
     status: 'Pendente'
   });
 
-  // Garantir que os dados NFe estão carregados
-  useEffect(() => {
-    const ensureNFeDataLoaded = async () => {
-      if (!loading && currentUser && (!data.nfeList || data.nfeList.length === 0)) {
-        console.log('🔄 NFe Module: Loading NFe data...');
-        setLocalLoading(true);
-        try {
-          const segmentFilter = currentUser.segment_id ? { segment_id: currentUser.segment_id } : {};
-          await loadNFes(segmentFilter);
-          console.log('✅ NFe Module: Data loaded successfully');
-        } catch (error) {
-          console.error('❌ NFe Module: Failed to load data:', error);
-        } finally {
-          setLocalLoading(false);
-        }
-      }
-    };
-
-    ensureNFeDataLoaded();
-  }, [loading, currentUser, data.nfeList, loadNFes]);
-
   // Safe data access with fallbacks
   const safeNFeList = data.nfeList || [];
   const safeCustomers = data.customers || [];
   const safeMetrics = metrics || { totalNFe: 0 };
-
-  console.log('🎯 NFe Module render - NFe count:', safeNFeList.length, 'Customers:', safeCustomers.length);
 
   const resetForm = () => {
     setFormData({
@@ -130,18 +106,6 @@ const NFeModule = () => {
   };
 
   const nfeHeaders = ['number', 'customerName', 'date', 'total', 'status'];
-
-  // Show loading state
-  if (loading || localLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <FileSpreadsheet className="w-12 h-12 mx-auto mb-4 opacity-50 animate-pulse" />
-          <p className="text-muted-foreground">Carregando dados das NF-es...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <motion.div
@@ -387,11 +351,19 @@ const NFeModule = () => {
               ))}
             </tbody>
           </table>
+          
           {safeNFeList.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              <FileSpreadsheet className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Nenhuma NF-e encontrada</p>
-              <p className="text-sm">Clique em "Nova NF-e" para começar</p>
+            <div className="text-center py-12 text-muted-foreground">
+              <FileSpreadsheet className="w-16 h-16 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-medium mb-2">Nenhuma NF-e encontrada</h3>
+              <p className="text-sm mb-4">Não existem notas fiscais eletrônicas cadastradas no sistema.</p>
+              <Button 
+                onClick={() => setShowForm(true)}
+                className="bg-gradient-to-r from-indigo-500 to-purple-600"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Criar primeira NF-e
+              </Button>
             </div>
           )}
         </div>
