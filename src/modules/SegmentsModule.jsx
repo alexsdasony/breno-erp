@@ -29,7 +29,6 @@ const SegmentsModule = () => {
 
   const handleDelete = (id) => {
     deleteSegment(id);
-    toast({ title: "Segmento excluído com sucesso!", variant: "destructive" });
   };
 
   const handleSubmit = (e) => {
@@ -44,7 +43,7 @@ const SegmentsModule = () => {
     }
 
     if (isEditing && currentSegment) {
-      updateSegment({ ...currentSegment, ...formData });
+      updateSegment(currentSegment.id, formData);
     } else {
       addSegment(formData);
     }

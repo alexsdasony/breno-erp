@@ -561,6 +561,77 @@ export const AppDataProvider = ({ children }) => {
     }
   };
 
+  // Segments functions
+  const addSegment = async (segmentData) => {
+    try {
+      const response = await apiService.createSegment(segmentData);
+      
+      // Update local state
+      setSegments(prev => [...prev, response.segment]);
+      
+      toast({
+        title: "Segmento Criado!",
+        description: "O segmento foi criado com sucesso."
+      });
+      
+      return response.segment;
+    } catch (error) {
+      console.error('Add segment error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao criar segmento. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const updateSegment = async (id, segmentData) => {
+    try {
+      const response = await apiService.updateSegment(id, segmentData);
+      
+      // Update local state
+      setSegments(prev => prev.map(s => s.id === id ? response.segment : s));
+      
+      toast({
+        title: "Segmento Atualizado!",
+        description: "O segmento foi atualizado com sucesso."
+      });
+      
+      return response.segment;
+    } catch (error) {
+      console.error('Update segment error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao atualizar segmento. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const deleteSegment = async (segmentId) => {
+    try {
+      await apiService.deleteSegment(segmentId);
+      
+      // Update local state
+      setSegments(prev => prev.filter(s => s.id !== segmentId));
+      
+      toast({
+        title: "Segmento Excluído!",
+        description: "O segmento foi excluído com sucesso."
+      });
+    } catch (error) {
+      console.error('Delete segment error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao excluir segmento. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   const importData = async (importedItems, type) => {
     try {
       let response;
@@ -680,7 +751,12 @@ export const AppDataProvider = ({ children }) => {
     
     // Lazy loading functions
     ensureCostCentersLoaded,
-    ensureAccountsPayableLoaded
+    ensureAccountsPayableLoaded,
+    
+    // Segments functions
+    addSegment,
+    updateSegment,
+    deleteSegment
   };
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
