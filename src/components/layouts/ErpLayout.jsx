@@ -27,16 +27,32 @@ import SegmentsModule from '@/modules/SegmentsModule';
 
 const ErpLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeModule, setActiveModule] = useState(location.pathname.substring(1) || 'dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
   const appData = useAppData();
   const { currentUser, logoutUser, data, activeSegmentId, setActiveSegmentId, loading } = appData;
   const metrics = calculateMetrics(data, activeSegmentId);
-  const navigate = useNavigate();
 
   const isAdmin = currentUser?.role === 'admin';
 
+  // TODOS OS HOOKS DEVEM SER CHAMADOS ANTES DE QUALQUER EARLY RETURN
+  const menuItems = React.useMemo(() => [
+    ...appMenuItems,
+    { id: 'profile', label: 'Meu Perfil', icon: UserCircle } 
+  ], []);
+
+  React.useEffect(() => {
+    const currentPath = location.pathname.substring(1);
+    if (menuItems.some(item => item.id === currentPath)) {
+      setActiveModule(currentPath);
+    } else if (currentPath === '' || currentPath === '/') {
+      setActiveModule('dashboard');
+    }
+  }, [location.pathname, menuItems]);
+
+  // AGORA sim podemos fazer early returns
   // Show loading screen during initialization
   if (loading) {
     return (
@@ -70,20 +86,6 @@ const ErpLayout = () => {
     toast({ title: "Logout realizado", description: "Você foi desconectado." });
     navigate('/login');
   };
-  
-  const menuItems = React.useMemo(() => [
-    ...appMenuItems,
-    { id: 'profile', label: 'Meu Perfil', icon: UserCircle } 
-  ], []);
-
-  React.useEffect(() => {
-    const currentPath = location.pathname.substring(1);
-    if (menuItems.some(item => item.id === currentPath)) {
-      setActiveModule(currentPath);
-    } else if (currentPath === '' || currentPath === '/') {
-      setActiveModule('dashboard');
-    }
-  }, [location.pathname, menuItems]);
 
   const renderModuleContent = (moduleName) => {
     const moduleProps = { ...appData, metrics, toast, setActiveModule };
