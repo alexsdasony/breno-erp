@@ -16,8 +16,8 @@ import { useAppData } from '@/hooks/useAppData.jsx';
 const DashboardModule = ({ metrics, setActiveModule }) => {
   const { data, activeSegmentId } = useAppData();
 
-  // TEMPORARY FIX - DISABLE SEGMENT FILTERING TO MAKE IT WORK!
-  const filteredProducts = (data.products || []).filter(p => true); // !activeSegmentId || p.segmentId === activeSegmentId);
+  // Reactivated segment filtering - problem was data.segments access fixed
+  const filteredProducts = (data.products || []).filter(p => !activeSegmentId || p.segmentId === activeSegmentId);
 
   return (
     <motion.div
@@ -31,9 +31,8 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             Dashboard Principal
           </h1>
           <p className="text-muted-foreground mt-2">
-            {/* TEMPORARY FIX - SAFE SEGMENT ACCESS */}
-            Visão geral consolidada do seu negócio
-            {/* {activeSegmentId ? `Exibindo dados para o segmento: ${(data.segments || []).find(s => s.id === activeSegmentId)?.name}` : 'Visão geral consolidada do seu negócio'} */}
+            {/* Fixed segment access - now works correctly */}
+            {activeSegmentId ? `Exibindo dados para o segmento: ${(data.segments || []).find(s => s.id === activeSegmentId)?.name}` : 'Visão geral consolidada do seu negócio'}
           </p>
         </div>
         <div className="flex items-center space-x-2">

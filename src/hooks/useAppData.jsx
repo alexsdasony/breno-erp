@@ -629,7 +629,10 @@ export const AppDataProvider = ({ children }) => {
   };
 
   const value = {
-    data,
+    data: {
+      ...data,
+      segments: segments || []
+    },
     setData,
     currentUser,
     loading,
