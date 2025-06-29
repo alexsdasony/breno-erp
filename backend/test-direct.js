@@ -10,22 +10,23 @@ const pool = new Pool({
 
 async function testDirect() {
   try {
-    console.log('🧪 Testando PostgreSQL direto...');
+    console.log('🔍 Analisando usuários no banco...');
     
-    // Teste básico
-    const result = await pool.query('SELECT 1 as test');
-    console.log('✅ Conexão OK:', result.rows[0]);
+    // Verificar usuários
+    const usersResult = await pool.query('SELECT * FROM users');
+    console.log('\n👥 USUÁRIOS NO BANCO:');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     
-    // Teste INSERT direto
-    const insertResult = await pool.query(
-      'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id',
-      ['Teste Direto', 'teste@direto.com', 'senha123', 'user']
-    );
-    console.log('✅ Insert OK:', insertResult.rows[0]);
-    
-    // Teste SELECT direto
-    const selectResult = await pool.query('SELECT * FROM users WHERE email = $1', ['teste@direto.com']);
-    console.log('✅ Select OK:', selectResult.rows[0]);
+    usersResult.rows.forEach(user => {
+      console.log(`ID: ${user.id}`);
+      console.log(`Nome: ${user.name}`);
+      console.log(`Email: ${user.email}`);
+      console.log(`Password (primeiros 20 chars): ${user.password.substring(0, 20)}...`);
+      console.log(`Comprimento total: ${user.password.length} caracteres`);
+      console.log(`Role: ${user.role}`);
+      console.log(`Parece hash bcrypt: ${user.password.startsWith('$2') ? 'SIM' : 'NÃO - PROBLEMA DETECTADO!'}`);
+      console.log('---');
+    });
     
   } catch (error) {
     console.error('❌ Erro:', error.message);

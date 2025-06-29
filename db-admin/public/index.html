@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizons Database Console</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a2332 50%, #0f1419 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 191, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 102, 102, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255, 191, 0, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .header {
+            padding: 32px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(255, 191, 0, 0.05) 0%, rgba(0, 102, 102, 0.05) 100%);
+            pointer-events: none;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            background: linear-gradient(135deg, #ffbf00 0%, #006666 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .status-text {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .tab {
+            background: transparent;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: #64748b;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255, 191, 0, 0.1) 0%, rgba(0, 102, 102, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .tab.active {
+            color: #ffbf00;
+            background: rgba(255, 191, 0, 0.1);
+            border: 1px solid rgba(255, 191, 0, 0.2);
+        }
+
+        .tab:hover:not(.active) {
+            color: #e2e8f0;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .content {
+            min-height: 600px;
+            overflow: hidden;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 24px;
+            height: 600px;
+        }
+
+        .sidebar {
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            color: #ffbf00;
+            margin-bottom: 20px;
+            font-weight: 500;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .table-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 6px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .table-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 191, 0, 0.2);
+        }
+
+        .table-item.active {
+            background: rgba(255, 191, 0, 0.1);
+            border-color: rgba(255, 191, 0, 0.3);
+            color: #ffbf00;
+        }
+
+        .table-icon {
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, #ffbf00 0%, #006666 100%);
+            border-radius: 3px;
+            opacity: 0.8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 16px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        th {
+            background: rgba(0, 102, 102, 0.2);
+            font-weight: 600;
+            color: #ffbf00;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.8rem;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ffbf00 0%, #ff8f00 100%);
+            color: #0a0e1a;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.85rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 191, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #006666 0%, #004d4d 100%);
+            color: #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 8px 24px rgba(0, 102, 102, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 32px;
+            border-radius: 16px;
+            background: rgba(10, 14, 26, 0.95);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 191, 0, 0.2);
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-header h3 {
+            color: #ffbf00;
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+
+        .close {
+            font-size: 24px;
+            font-weight: 300;
+            cursor: pointer;
+            color: #64748b;
+            transition: color 0.3s ease;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .close:hover {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #ffbf00;
+            box-shadow: 0 0 0 3px rgba(255, 191, 0, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .query-section {
+            padding: 24px;
+        }
+
+        .query-input {
+            width: 100%;
+            height: 140px;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        .query-input:focus {
+            outline: none;
+            border-color: #ffbf00;
+            box-shadow: 0 0 0 3px rgba(255, 191, 0, 0.1);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 24px;
+        }
+
+        .info-card {
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #ffbf00 0%, #006666 100%);
+        }
+
+        .info-card h3 {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-card p {
+            font-size: 1.8rem;
+            font-weight: 300;
+            color: #ffbf00;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 0 0 12px 12px;
+        }
+
+        .structure-table th {
+            background: rgba(0, 102, 102, 0.3);
+        }
+
+        .type-badge {
+            background: rgba(255, 191, 0, 0.2);
+            color: #ffbf00;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .nullable-yes {
+            color: #10b981;
+        }
+
+        .nullable-no {
+            color: #ef4444;
+        }
+
+        /* Toast System */
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toast {
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            min-width: 300px;
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transform: translateX(400px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            background: rgba(16, 185, 129, 0.9);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .toast.error {
+            background: rgba(239, 68, 68, 0.9);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .toast.info {
+            background: rgba(59, 130, 246, 0.9);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .toast.warning {
+            background: rgba(245, 158, 11, 0.9);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        /* Confirmation Modal */
+        .confirm-modal {
+            display: none;
+            position: fixed;
+            z-index: 1500;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+        }
+
+        .confirm-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 400px;
+            padding: 32px;
+            border-radius: 16px;
+            background: rgba(10, 14, 26, 0.95);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .confirm-content h3 {
+            color: #ef4444;
+            margin-bottom: 16px;
+            font-size: 1.25rem;
+        }
+
+        .confirm-content p {
+            color: #94a3b8;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .sidebar {
+                height: 200px;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1;
+                min-width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header glass">
+            <h1>Horizons Database Console</h1>
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span class="status-text" id="statusText">Initializing connection...</span>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('tables')">Tables</button>
+            <button class="tab" onclick="showTab('structure')">Structure</button>
+            <button class="tab" onclick="showTab('query')">SQL Query</button>
+            <button class="tab" onclick="showTab('info')">Database Info</button>
+        </div>
+
+        <div class="content glass">
+            <!-- Tables Tab -->
+            <div id="tabTables" class="tab-content">
+                <div class="layout">
+                    <div class="sidebar">
+                        <h3>Database Tables</h3>
+                        <div id="tablesList">
+                            <div class="loading">Loading tables...</div>
+                        </div>
+                    </div>
+                    <div class="main-content">
+                        <div id="tableContent">
+                            <div class="empty-state">
+                                <p>Select a table to view data</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Structure Tab -->
+            <div id="tabStructure" class="tab-content" style="display: none;">
+                <div class="layout">
+                    <div class="sidebar">
+                        <h3>Database Tables</h3>
+                        <div id="structureTablesList">
+                            <div class="loading">Loading tables...</div>
+                        </div>
+                    </div>
+                    <div class="main-content">
+                        <div id="structureContent">
+                            <div class="empty-state">
+                                <p>Select a table to view structure</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Query Tab -->
+            <div id="tabQuery" class="tab-content" style="display: none;">
+                <div class="query-section">
+                    <h3 style="margin-bottom: 20px; color: #ffbf00;">Execute SQL Query</h3>
+                    <textarea id="queryInput" class="query-input" placeholder="Enter your SELECT query here...
+Example: SELECT * FROM users LIMIT 10;"></textarea>
+                    <div style="margin-top: 16px;">
+                        <button class="btn" onclick="executeQuery()">Execute Query</button>
+                    </div>
+                    <div id="queryResult"></div>
+                </div>
+            </div>
+
+            <!-- Info Tab -->
+            <div id="tabInfo" class="tab-content" style="display: none;">
+                <div id="databaseInfo">
+                    <div class="loading">Loading database information...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Record Modal -->
+    <div id="recordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add Record</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="recordForm">
+                <div id="formFields"></div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn">Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="confirm-modal">
+        <div class="confirm-content">
+            <h3>Confirm Action</h3>
+            <p id="confirmMessage">Are you sure you want to proceed?</p>
+            <div class="confirm-actions">
+                <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn btn-danger" id="confirmButton">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        let currentTable = null;
+        let currentOffset = 0;
+        let currentStructure = null;
+        let editingRecord = null;
+        let confirmCallback = null;
+        const limit = 50;
+
+        // Toast System
+        function showToast(message, type = 'info', duration = 4000) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            
+            document.getElementById('toastContainer').appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, duration);
+        }
+
+        // Confirmation Modal
+        function showConfirmModal(message, callback) {
+            document.getElementById('confirmMessage').textContent = message;
+            document.getElementById('confirmModal').style.display = 'block';
+            confirmCallback = callback;
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+            confirmCallback = null;
+        }
+
+        document.getElementById('confirmButton').onclick = function() {
+            if (confirmCallback) {
+                confirmCallback();
+                closeConfirmModal();
+            }
+        };
+
+        // Connection Status
+        async function checkConnection() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                const statusDot = document.getElementById('statusDot');
+                const statusText = document.getElementById('statusText');
+                
+                if (data.status === 'OK') {
+                    statusDot.style.background = '#10b981';
+                    statusText.textContent = 'PostgreSQL Connected';
+                } else {
+                    statusDot.style.background = '#ef4444';
+                    statusText.textContent = 'Connection Error';
+                }
+            } catch (error) {
+                document.getElementById('statusDot').style.background = '#ef4444';
+                document.getElementById('statusText').textContent = 'Server Offline';
+            }
+        }
+
+        // Load Tables
+        async function loadTables() {
+            try {
+                const response = await fetch('/api/tables');
+                const tables = await response.json();
+                
+                const tablesList = document.getElementById('tablesList');
+                
+                if (tables.length === 0) {
+                    tablesList.innerHTML = '<div class="empty-state">No tables found</div>';
+                    return;
+                }
+                
+                tablesList.innerHTML = tables.map(table => `
+                    <div class="table-item" onclick="selectTable('${table.table_name}')">
+                        <div class="table-icon"></div>
+                        <span>${table.table_name}</span>
+                    </div>
+                `).join('');
+            } catch (error) {
+                document.getElementById('tablesList').innerHTML = 
+                    '<div class="error">Error loading tables</div>';
+            }
+        }
+
+        // Select Table
+        async function selectTable(tableName) {
+            document.querySelectorAll('.table-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.closest('.table-item').classList.add('active');
+            
+            currentTable = tableName;
+            currentOffset = 0;
+            await loadTableData(tableName);
+        }
+
+        // Load Table Data
+        async function loadTableData(tableName) {
+            const tableContent = document.getElementById('tableContent');
+            tableContent.innerHTML = '<div class="loading">Loading data...</div>';
+            
+            try {
+                // Load structure first
+                const structureResponse = await fetch(`/api/tables/${tableName}/structure`);
+                currentStructure = await structureResponse.json();
+                
+                // Load table data
+                const dataResponse = await fetch(`/api/tables/${tableName}/data?limit=${limit}&offset=${currentOffset}`);
+                const { data, total } = await dataResponse.json();
+                
+                // Render table
+                let html = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h3 style="color: #ffbf00; font-size: 1.5rem;">Table: ${tableName}</h3>
+                        <button class="btn" onclick="openAddModal('${tableName}')">Add Record</button>
+                    </div>
+                    <div style="margin-bottom: 20px; color: #64748b;">
+                        Total records: ${total}
+                    </div>
+                `;
+                
+                if (data.length > 0) {
+                    const columns = Object.keys(data[0]);
+                    html += `
+                        <div style="overflow-x: auto; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        ${columns.map(key => `<th>${key}</th>`).join('')}
+                                        <th style="width: 140px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.map(row => {
+                                        const rowId = row.id || row[columns[0]];
+                                        return `
+                                            <tr>
+                                                ${Object.values(row).map(value => `
+                                                    <td>${value !== null ? String(value).substring(0, 100) : '<em>null</em>'}${String(value || '').length > 100 ? '...' : ''}</td>
+                                                `).join('')}
+                                                <td>
+                                                    <div class="action-buttons">
+                                                        <button class="btn btn-small btn-secondary" onclick="openEditModal('${tableName}', ${JSON.stringify(row).replace(/"/g, '&quot;')})">Edit</button>
+                                                        <button class="btn btn-small btn-danger" onclick="confirmDeleteRecord('${tableName}', '${rowId}')">Delete</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    // Add pagination
+                    html += `
+                        <div class="pagination">
+                            <button class="btn btn-secondary" onclick="previousPage()" ${currentOffset === 0 ? 'disabled' : ''}>
+                                Previous
+                            </button>
+                            <span style="color: #94a3b8;">
+                                Showing ${currentOffset + 1} - ${Math.min(currentOffset + limit, total)} of ${total}
+                            </span>
+                            <button class="btn btn-secondary" onclick="nextPage()" ${currentOffset + limit >= total ? 'disabled' : ''}>
+                                Next
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    html += '<div class="empty-state">No records found</div>';
+                }
+                
+                tableContent.innerHTML = html;
+                
+            } catch (error) {
+                tableContent.innerHTML = '<div class="error">Error loading table data</div>';
+                showToast('Error loading table data', 'error');
+            }
+        }
+
+        // Load Table Structure
+        async function loadTableStructure(tableName) {
+            const structureContent = document.getElementById('structureContent');
+            structureContent.innerHTML = '<div class="loading">Loading structure...</div>';
+            
+            try {
+                const response = await fetch(`/api/tables/${tableName}/structure`);
+                const structure = await response.json();
+                
+                let html = `
+                    <h3 style="margin-bottom: 24px; color: #ffbf00; font-size: 1.5rem;">Table Structure: ${tableName}</h3>
+                    <div style="overflow-x: auto; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                        <table class="structure-table">
+                            <thead>
+                                <tr>
+                                    <th>Column</th>
+                                    <th>Type</th>
+                                    <th>Nullable</th>
+                                    <th>Default</th>
+                                    <th>Max Length</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${structure.map(col => `
+                                    <tr>
+                                        <td><strong>${col.column_name}</strong></td>
+                                        <td><span class="type-badge">${col.data_type}</span></td>
+                                        <td class="${col.is_nullable === 'YES' ? 'nullable-yes' : 'nullable-no'}">
+                                            ${col.is_nullable === 'YES' ? 'Yes' : 'No'}
+                                        </td>
+                                        <td>${col.column_default || '<em>-</em>'}</td>
+                                        <td>${col.character_maximum_length || '<em>-</em>'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                structureContent.innerHTML = html;
+                
+            } catch (error) {
+                structureContent.innerHTML = '<div class="error">Error loading table structure</div>';
+                showToast('Error loading table structure', 'error');
+            }
+        }
+
+        // Pagination
+        async function previousPage() {
+            if (currentOffset > 0) {
+                currentOffset -= limit;
+                await loadTableData(currentTable);
+            }
+        }
+
+        async function nextPage() {
+            currentOffset += limit;
+            await loadTableData(currentTable);
+        }
+
+        // CRUD Functions
+        function openAddModal(tableName) {
+            if (!currentStructure) return;
+            
+            editingRecord = null;
+            document.getElementById('modalTitle').textContent = `Add Record - ${tableName}`;
+            
+            const formFields = document.getElementById('formFields');
+            formFields.innerHTML = currentStructure
+                .filter(col => col.column_name !== 'id' && col.column_name !== 'created_at' && col.column_name !== 'updated_at')
+                .map(col => `
+                    <div class="form-group">
+                        <label>${col.column_name}${col.is_nullable === 'NO' ? ' *' : ''}</label>
+                        <input type="${getInputType(col.data_type)}" 
+                               name="${col.column_name}" 
+                               ${col.is_nullable === 'NO' ? 'required' : ''}
+                               placeholder="${col.data_type}">
+                    </div>
+                `).join('');
+            
+            document.getElementById('recordModal').style.display = 'block';
+        }
+
+        function openEditModal(tableName, record) {
+            if (!currentStructure) return;
+            
+            editingRecord = record;
+            document.getElementById('modalTitle').textContent = `Edit Record - ${tableName}`;
+            
+            const formFields = document.getElementById('formFields');
+            formFields.innerHTML = currentStructure
+                .filter(col => col.column_name !== 'id' && col.column_name !== 'created_at' && col.column_name !== 'updated_at')
+                .map(col => `
+                    <div class="form-group">
+                        <label>${col.column_name}${col.is_nullable === 'NO' ? ' *' : ''}</label>
+                        <input type="${getInputType(col.data_type)}" 
+                               name="${col.column_name}" 
+                               value="${record[col.column_name] || ''}"
+                               ${col.is_nullable === 'NO' ? 'required' : ''}
+                               placeholder="${col.data_type}">
+                    </div>
+                `).join('');
+            
+            document.getElementById('recordModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('recordModal').style.display = 'none';
+            editingRecord = null;
+        }
+
+        function getInputType(dataType) {
+            const type = dataType.toLowerCase();
+            if (type.includes('int') || type.includes('numeric') || type.includes('decimal')) return 'number';
+            if (type.includes('date')) return 'date';
+            if (type.includes('time')) return 'time';
+            if (type.includes('bool')) return 'checkbox';
+            if (type.includes('text')) return 'text';
+            return 'text';
+        }
+
+        async function saveRecord(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                let response;
+                if (editingRecord) {
+                    response = await fetch(`/api/tables/${currentTable}/records/${editingRecord.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                } else {
+                    response = await fetch(`/api/tables/${currentTable}/records`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    closeModal();
+                    await loadTableData(currentTable);
+                    showToast(editingRecord ? 'Record updated successfully!' : 'Record added successfully!', 'success');
+                } else {
+                    showToast('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error saving record: ' + error.message, 'error');
+            }
+        }
+
+        function confirmDeleteRecord(tableName, recordId) {
+            showConfirmModal('Are you sure you want to delete this record? This action cannot be undone.', 
+                () => deleteRecord(tableName, recordId));
+        }
+
+        async function deleteRecord(tableName, recordId) {
+            try {
+                const response = await fetch(`/api/tables/${tableName}/records/${recordId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    await loadTableData(tableName);
+                    showToast('Record deleted successfully!', 'success');
+                } else {
+                    showToast('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error deleting record: ' + error.message, 'error');
+            }
+        }
+
+        // Execute Query
+        async function executeQuery() {
+            const query = document.getElementById('queryInput').value.trim();
+            const resultDiv = document.getElementById('queryResult');
+            
+            if (!query) {
+                showToast('Please enter a SQL query', 'warning');
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="loading">Executing query...</div>';
+            
+            try {
+                const response = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    resultDiv.innerHTML = `<div class="error">${data.error}</div>`;
+                    showToast('Query execution failed', 'error');
+                    return;
+                }
+                
+                if (data.rows.length === 0) {
+                    resultDiv.innerHTML = '<div class="empty-state">No results found</div>';
+                    showToast('Query executed successfully - no results', 'info');
+                    return;
+                }
+                
+                let html = `
+                    <div style="margin-top: 24px;">
+                        <h4 style="color: #ffbf00; margin-bottom: 16px;">Results (${data.rowCount} records)</h4>
+                        <div style="overflow-x: auto; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        ${Object.keys(data.rows[0]).map(key => `<th>${key}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.rows.map(row => `
+                                        <tr>
+                                            ${Object.values(row).map(value => `
+                                                <td>${value !== null ? String(value).substring(0, 100) : '<em>null</em>'}${String(value || '').length > 100 ? '...' : ''}</td>
+                                            `).join('')}
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                
+                resultDiv.innerHTML = html;
+                showToast('Query executed successfully!', 'success');
+                
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">Error executing query</div>';
+                showToast('Error executing query', 'error');
+            }
+        }
+
+        // Load Database Info
+        async function loadDatabaseInfo() {
+            try {
+                const response = await fetch('/api/database/info');
+                const info = await response.json();
+                
+                const html = `
+                    <div class="info-grid">
+                        <div class="info-card">
+                            <h3>PostgreSQL Version</h3>
+                            <p>${info.version.split(' ')[1]}</p>
+                        </div>
+                        <div class="info-card">
+                            <h3>Database Size</h3>
+                            <p>${info.size}</p>
+                        </div>
+                        <div class="info-card">
+                            <h3>Total Tables</h3>
+                            <p>${info.tablesCount}</p>
+                        </div>
+                        <div class="info-card">
+                            <h3>Database Name</h3>
+                            <p>breno_erp</p>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('databaseInfo').innerHTML = html;
+            } catch (error) {
+                document.getElementById('databaseInfo').innerHTML = 
+                    '<div class="error">Error loading database information</div>';
+                showToast('Error loading database info', 'error');
+            }
+        }
+
+        // Tab Management
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+            
+            event.target.classList.add('active');
+            document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`).style.display = 'block';
+            
+            if (tabName === 'info') {
+                loadDatabaseInfo();
+            } else if (tabName === 'structure') {
+                loadStructureTables();
+            }
+        }
+
+        function loadStructureTables() {
+            const structureTablesList = document.getElementById('structureTablesList');
+            structureTablesList.innerHTML = document.getElementById('tablesList').innerHTML;
+            
+            structureTablesList.querySelectorAll('.table-item').forEach(item => {
+                item.onclick = function() {
+                    const tableName = this.textContent.trim();
+                    
+                    structureTablesList.querySelectorAll('.table-item').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    loadTableStructure(tableName);
+                };
+            });
+        }
+
+        // Initialize Application
+        document.addEventListener('DOMContentLoaded', () => {
+            checkConnection();
+            loadTables();
+            
+            document.getElementById('recordForm').addEventListener('submit', saveRecord);
+            
+            // Close modals when clicking outside
+            window.onclick = function(event) {
+                const recordModal = document.getElementById('recordModal');
+                const confirmModal = document.getElementById('confirmModal');
+                
+                if (event.target === recordModal) {
+                    closeModal();
+                }
+                if (event.target === confirmModal) {
+                    closeConfirmModal();
+                }
+            };
+        });
+    </script>
+</body>
+</html> 
+</html> 

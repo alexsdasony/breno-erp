@@ -51,7 +51,7 @@ const LoginPage = () => {
           <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mb-4">
             <Briefcase className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white">Bem-vindo ao ERP Pro</h1>
+          <h1 className="text-3xl font-bold text-white">ERP PRO</h1>
           <p className="text-gray-400">Faça login para continuar</p>
         </div>
 
