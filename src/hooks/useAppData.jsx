@@ -29,6 +29,7 @@ export const AppDataProvider = ({ children }) => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        setLoading(true);
         // Check if user is authenticated
         const token = apiService.getToken();
         if (token) {
@@ -41,7 +42,10 @@ export const AppDataProvider = ({ children }) => {
             setSegments(segmentsResponse.segments || []);
             
             // Load initial data with user's segment context
+            // Master user (segment_id = null) sees ALL data, others see filtered data
             const segmentFilter = userProfile.user.segment_id ? { segment_id: userProfile.user.segment_id } : {};
+            
+            console.log('🔥 Loading data for user:', userProfile.user.name, 'segment_id:', userProfile.user.segment_id);
             
             await Promise.all([
               loadTransactions(segmentFilter),
@@ -51,12 +55,15 @@ export const AppDataProvider = ({ children }) => {
               loadBillings(segmentFilter),
               loadCostCenters(segmentFilter),
               loadNFes(segmentFilter),
-              loadAccountsPayable(segmentFilter),
-              loadIntegrations()
+              loadAccountsPayable(segmentFilter)
+              // REMOVED loadIntegrations() - causing issues
             ]);
+            
+            console.log('✅ All data loaded successfully');
           } catch (error) {
             console.error('Authentication check failed:', error);
             apiService.setToken(null);
+            setCurrentUser(null);
           }
         }
       } catch (error) {
@@ -88,17 +95,47 @@ export const AppDataProvider = ({ children }) => {
 
   const loginUser = async (email, password) => {
     try {
+      console.log('🚀 Starting login process...');
       const response = await apiService.login({ email, password });
-      if (response.token) {
+      
+      if (response.token && response.user) {
+        console.log('✅ Login successful! User:', response.user.name, 'ID:', response.user.id, 'segment_id:', response.user.segment_id);
+        
         setCurrentUser(response.user);
+        setLoading(true); // Show loading while we fetch data
+        
         // Load segments for the user
         const segmentsResponse = await apiService.getSegments();
         setSegments(segmentsResponse.segments || []);
+        
+        // Load initial data immediately after login
+        // Master user (segment_id = null) sees ALL data
+        const segmentFilter = response.user.segment_id ? { segment_id: response.user.segment_id } : {};
+        
+        console.log('📊 Loading all data with filter:', segmentFilter);
+        
+        // Load all data in parallel
+        await Promise.all([
+          loadTransactions(segmentFilter),
+          loadProducts(segmentFilter),
+          loadCustomers(), // Global
+          loadSales(segmentFilter),
+          loadBillings(segmentFilter),
+          loadCostCenters(segmentFilter),
+          loadNFes(segmentFilter),
+          loadAccountsPayable(segmentFilter)
+          // REMOVED integrations - causing issues
+        ]);
+        
+        setLoading(false); // Stop loading after data is loaded
+        console.log('🎉 All data loaded! Ready to show dashboard');
+        
         return true;
       }
       return false;
     } catch (error) {
       console.error('Login error:', error);
+      setLoading(false);
       throw error;
     }
   };
@@ -232,16 +269,17 @@ export const AppDataProvider = ({ children }) => {
     }
   };
 
-  const loadIntegrations = async () => {
-    try {
-      const response = await apiService.getIntegrations();
-      setData(prev => ({ ...prev, integrations: response.integrations }));
-      return response;
-    } catch (error) {
-      console.error('Load integrations error:', error);
-      throw error;
-    }
-  };
+  // COMMENTED OUT - loadIntegrations causing issues
+  // const loadIntegrations = async () => {
+  //   try {
+  //     const response = await apiService.getIntegrations();
+  //     setData(prev => ({ ...prev, integrations: response.integrations }));
+  //     return response;
+  //   } catch (error) {
+  //     console.error('Load integrations error:', error);
+  //     throw error;
+  //   }
+  // };
 
   const addTransaction = async (transaction) => {
     try {
@@ -486,35 +524,36 @@ export const AppDataProvider = ({ children }) => {
     }
   };
 
-  const updateIntegrationSettings = async (integrationName, settings) => {
-    try {
-      const response = await apiService.updateIntegration(integrationName, settings);
-      
-      // Update local state
-      setData(prev => ({
-        ...prev,
-        integrations: {
-          ...prev.integrations,
-          [integrationName]: response.integration || settings
-        }
-      }));
-      
-      toast({
-        title: "Integração Atualizada!",
-        description: "Configurações da integração foram salvas com sucesso."
-      });
-      
-      return response;
-    } catch (error) {
-      console.error('Update integration error:', error);
-      toast({
-        title: "Erro!",
-        description: "Falha ao atualizar integração. Tente novamente.",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
+  // COMMENTED OUT - updateIntegrationSettings causing issues
+  // const updateIntegrationSettings = async (integrationName, settings) => {
+  //   try {
+  //     const response = await apiService.updateIntegration(integrationName, settings);
+  //     
+  //     // Update local state
+  //     setData(prev => ({
+  //       ...prev,
+  //       integrations: {
+  //         ...prev.integrations,
+  //         [integrationName]: response.integration || settings
+  //       }
+  //     }));
+  //     
+  //     toast({
+  //       title: "Integração Atualizada!",
+  //       description: "Configurações da integração foram salvas com sucesso."
+  //     });
+  //     
+  //     return response;
+  //   } catch (error) {
+  //     console.error('Update integration error:', error);
+  //     toast({
+  //       title: "Erro!",
+  //       description: "Falha ao atualizar integração. Tente novamente.",
+  //       variant: "destructive"
+  //     });
+  //     throw error;
+  //   }
+  // };
 
   const importData = async (importedItems, type) => {
     try {
@@ -608,7 +647,7 @@ export const AppDataProvider = ({ children }) => {
     loadCostCenters,
     loadNFes,
     loadAccountsPayable,
-    loadIntegrations,
+    // loadIntegrations, // REMOVED - causing issues
     
     // Data creation functions
     addTransaction,
@@ -622,7 +661,7 @@ export const AppDataProvider = ({ children }) => {
     // Data update/delete functions
     updateCostCenter,
     deleteCostCenter,
-    updateIntegrationSettings,
+    // updateIntegrationSettings, // REMOVED - causing issues
     
     // Import function
     importData,
