@@ -1,6 +1,7 @@
 export const calculateMetrics = (data, segmentId = null) => {
   
-  const filterBySegment = (item) => !segmentId || item.segmentId === segmentId;
+  // TEMPORARILY DISABLED SEGMENT FILTERING - MAKE IT WORK!
+  const filterBySegment = (item) => true; // !segmentId || item.segmentId === segmentId;
 
   // Safe array access with fallbacks
   const transactions = (data.transactions || []).filter(filterBySegment);

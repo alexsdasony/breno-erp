@@ -81,11 +81,18 @@ const ErpLayout = () => {
     return null;
   }
 
+  const handleSegmentChange = (segmentId) => {
+    setActiveSegmentId(segmentId);
+  };
+
   const handleLogout = () => {
     logoutUser();
     toast({ title: "Logout realizado", description: "Você foi desconectado." });
     navigate('/login');
   };
+  
+  // TEMPORARY FIX - SAFE SEGMENT ACCESS
+  const activeSegment = (data.segments || []).find(s => s.id === activeSegmentId);
 
   const renderModuleContent = (moduleName) => {
     const moduleProps = { ...appData, metrics, toast, setActiveModule };
@@ -118,8 +125,6 @@ const ErpLayout = () => {
       default: return <Navigate to="/dashboard" replace />;
     }
   };
-
-  const activeSegment = data.segments.find(s => s.id === activeSegmentId);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
