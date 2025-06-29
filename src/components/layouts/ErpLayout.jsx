@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -38,14 +37,8 @@ const ErpLayout = () => {
 
   const isAdmin = currentUser?.role === 'admin';
 
-  // Redirect to login if not authenticated and not loading
-  if (!loading && !currentUser) {
-    navigate('/login');
-    return null;
-  }
-
-  // Show loading screen while app initializes
-  if (loading || !currentUser) {
+  // Show loading screen during initialization
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <motion.div 
@@ -57,21 +50,19 @@ const ErpLayout = () => {
             <Briefcase className="w-8 h-8 text-white" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">ERP Pro</h2>
-          <p className="text-gray-400">
-            {loading ? 'Carregando sistema...' : 'Carregando dados do usuário...'}
-          </p>
+          <p className="text-gray-400">Carregando sistema...</p>
           <div className="mt-4 flex justify-center">
             <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
           </div>
-          {currentUser && (
-            <p className="text-sm text-gray-500 mt-2">
-              Bem-vindo, {currentUser.name}! 
-              {currentUser.segment_id === null && <span className="text-yellow-400 ml-1">(MASTER)</span>}
-            </p>
-          )}
         </motion.div>
       </div>
     );
+  }
+
+  // Only redirect after loading is complete and user is not authenticated
+  if (!currentUser) {
+    navigate('/login');
+    return null;
   }
 
   const handleLogout = () => {

@@ -96,13 +96,14 @@ export const AppDataProvider = ({ children }) => {
   const loginUser = async (email, password) => {
     try {
       console.log('🚀 Starting login process...');
+      setLoading(true); // Set loading FIRST
+      
       const response = await apiService.login({ email, password });
       
       if (response.token && response.user) {
         console.log('✅ Login successful! User:', response.user.name, 'ID:', response.user.id, 'segment_id:', response.user.segment_id);
         
         setCurrentUser(response.user);
-        setLoading(true); // Show loading while we fetch data
         
         // Load segments for the user
         const segmentsResponse = await apiService.getSegments();
@@ -127,16 +128,18 @@ export const AppDataProvider = ({ children }) => {
           // REMOVED integrations - causing issues
         ]);
         
-        setLoading(false); // Stop loading after data is loaded
         console.log('🎉 All data loaded! Ready to show dashboard');
         
         return true;
       }
+      setLoading(false);
       return false;
     } catch (error) {
       console.error('Login error:', error);
       setLoading(false);
       throw error;
+    } finally {
+      setLoading(false); // Always set loading to false
     }
   };
 
