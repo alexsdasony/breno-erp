@@ -20,6 +20,7 @@ import NFeModule from '@/modules/NFeModule';
 import IntegrationsModule from '@/modules/IntegrationsModule';
 import BillingModule from '@/modules/BillingModule';
 import CostCentersModule from '@/modules/CostCentersModule';
+import ChartOfAccountsModule from '@/modules/ChartOfAccountsModule';
 import SchemaViewerModule from '@/modules/SchemaViewerModule';
 import ProfileModule from '@/modules/ProfileModule';
 import AccountsPayableModule from '@/modules/AccountsPayableModule';
@@ -119,6 +120,7 @@ const ErpLayout = () => {
         console.log('🎯 Renderizando CustomersModule com props:', moduleProps); // Debug log
         return <CustomersModule {...moduleProps} />;
       case 'costCenters': return <CostCentersModule {...moduleProps} />;
+      case 'chartOfAccounts': return <ChartOfAccountsModule {...moduleProps} />;
       case 'segments': return <SegmentsModule {...moduleProps} />;
       case 'nfe': return <NFeModule {...moduleProps} />;
       // case 'integrations': return <IntegrationsModule {...moduleProps} />; // REMOVED - causing issues
