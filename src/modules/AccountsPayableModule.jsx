@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Edit, Trash2, Search, Filter, FileDown } from 'lucide-react';
@@ -8,7 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAppData } from '@/hooks/useAppData.jsx';
 
 const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, deleteAccountPayable, importData, toast }) => {
-  const { data, activeSegmentId } = useAppData();
+  const { data, activeSegmentId, ensureAccountsPayableLoaded } = useAppData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,6 +22,12 @@ const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, delete
   });
 
   const segments = data.segments || [];
+
+  // Lazy load accountsPayable when component mounts
+  useEffect(() => {
+    console.log('🔄 AccountsPayableModule: Ensuring accountsPayable are loaded...');
+    ensureAccountsPayableLoaded();
+  }, [ensureAccountsPayableLoaded]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

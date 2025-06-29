@@ -5,17 +5,27 @@ import apiService from '@/services/api';
 const AppDataContext = createContext();
 
 const defaultInitialData = {
+  // Essential data (loaded on login)
   transactions: [],
   products: [],
   sales: [],
   customers: [],
-  costCenters: [],
   nfeList: [],
+  billings: [],
+  
+  // Optional data (lazy loaded)
+  costCenters: [],
+  accountsPayable: [],
   integrations: {
     imobzi: { apiKey: '', enabled: false }
   },
-  billings: [],
   users: [], 
+};
+
+// Lazy loading state
+const defaultLazyState = {
+  costCenters: { loaded: false, loading: false },
+  accountsPayable: { loaded: false, loading: false },
 };
 
 export const AppDataProvider = ({ children }) => {
@@ -24,6 +34,7 @@ export const AppDataProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [segments, setSegments] = useState([]);
   const [activeSegmentId, setActiveSegmentId] = useState(null);
+  const [lazyState, setLazyState] = useState(defaultLazyState);
 
   // Initialize app data and check authentication
   useEffect(() => {
@@ -41,25 +52,23 @@ export const AppDataProvider = ({ children }) => {
             const segmentsResponse = await apiService.getSegments();
             setSegments(segmentsResponse.segments || []);
             
-            // Load initial data with user's segment context
-            // Master user (segment_id = null) sees ALL data, others see filtered data
+            // Load ONLY ESSENTIAL data with user's segment context
             const segmentFilter = userProfile.user.segment_id ? { segment_id: userProfile.user.segment_id } : {};
             
-            console.log('🔥 Loading data for user:', userProfile.user.name, 'segment_id:', userProfile.user.segment_id);
+            console.log('🚀 LAZY LOADING: Loading ESSENTIAL data only for user:', userProfile.user.name, 'segment_id:', userProfile.user.segment_id);
             
+            // Load only essential data for dashboard
             await Promise.all([
               loadTransactions(segmentFilter),
               loadProducts(segmentFilter),
               loadCustomers(), // Customers are global - no segment filter
               loadSales(segmentFilter),
               loadBillings(segmentFilter),
-              loadCostCenters(segmentFilter),
-              loadNFes(segmentFilter),
-              loadAccountsPayable(segmentFilter)
-              // REMOVED loadIntegrations() - causing issues
+              loadNFes(segmentFilter)
+              // REMOVED: costCenters, accountsPayable (lazy loaded)
             ]);
             
-            console.log('✅ All data loaded successfully');
+            console.log('✅ ESSENTIAL data loaded successfully (lazy loading active)');
           } catch (error) {
             console.error('Authentication check failed:', error);
             apiService.setToken(null);
@@ -109,26 +118,23 @@ export const AppDataProvider = ({ children }) => {
         const segmentsResponse = await apiService.getSegments();
         setSegments(segmentsResponse.segments || []);
         
-        // Load initial data immediately after login
-        // Master user (segment_id = null) sees ALL data
+        // Load ONLY ESSENTIAL data immediately after login
         const segmentFilter = response.user.segment_id ? { segment_id: response.user.segment_id } : {};
         
-        console.log('📊 Loading all data with filter:', segmentFilter);
+        console.log('🎯 LAZY LOADING: Loading ESSENTIAL data only:', segmentFilter);
         
-        // Load all data in parallel
+        // Load only essential data for dashboard (6 requests instead of 8)
         await Promise.all([
           loadTransactions(segmentFilter),
           loadProducts(segmentFilter),
           loadCustomers(), // Global
           loadSales(segmentFilter),
           loadBillings(segmentFilter),
-          loadCostCenters(segmentFilter),
-          loadNFes(segmentFilter),
-          loadAccountsPayable(segmentFilter)
-          // REMOVED integrations - causing issues
+          loadNFes(segmentFilter)
+          // REMOVED: costCenters, accountsPayable (lazy loaded on demand)
         ]);
         
-        console.log('🎉 All data loaded! Ready to show dashboard');
+        console.log('🎉 ESSENTIAL data loaded! Dashboard ready (lazy loading active)');
         
         return true;
       }
@@ -149,12 +155,14 @@ export const AppDataProvider = ({ children }) => {
       setCurrentUser(null);
       setSegments([]);
       setData(defaultInitialData);
+      setLazyState(defaultLazyState); // Reset lazy state
     } catch (error) {
       console.error('Logout error:', error);
       // Even if logout fails on server, clear local state
       setCurrentUser(null);
       setSegments([]);
       setData(defaultInitialData);
+      setLazyState(defaultLazyState);
     }
   };
 
@@ -182,6 +190,44 @@ export const AppDataProvider = ({ children }) => {
     }
   };
 
+  // LAZY LOADING FUNCTIONS
+  const ensureCostCentersLoaded = async () => {
+    if (lazyState.costCenters.loaded || lazyState.costCenters.loading) {
+      return;
+    }
+
+    console.log('🔄 LAZY LOADING: Loading costCenters on demand...');
+    setLazyState(prev => ({ ...prev, costCenters: { ...prev.costCenters, loading: true } }));
+    
+    try {
+      const segmentFilter = currentUser?.segment_id ? { segment_id: currentUser.segment_id } : {};
+      await loadCostCenters(segmentFilter);
+      setLazyState(prev => ({ ...prev, costCenters: { loaded: true, loading: false } }));
+      console.log('✅ LAZY LOADING: costCenters loaded successfully');
+    } catch (error) {
+      console.error('Failed to lazy load costCenters:', error);
+      setLazyState(prev => ({ ...prev, costCenters: { loaded: false, loading: false } }));
+    }
+  };
+
+  const ensureAccountsPayableLoaded = async () => {
+    if (lazyState.accountsPayable.loaded || lazyState.accountsPayable.loading) {
+      return;
+    }
+
+    console.log('🔄 LAZY LOADING: Loading accountsPayable on demand...');
+    setLazyState(prev => ({ ...prev, accountsPayable: { ...prev.accountsPayable, loading: true } }));
+    
+    try {
+      const segmentFilter = currentUser?.segment_id ? { segment_id: currentUser.segment_id } : {};
+      await loadAccountsPayable(segmentFilter);
+      setLazyState(prev => ({ ...prev, accountsPayable: { loaded: true, loading: false } }));
+      console.log('✅ LAZY LOADING: accountsPayable loaded successfully');
+    } catch (error) {
+      console.error('Failed to lazy load accountsPayable:', error);
+      setLazyState(prev => ({ ...prev, accountsPayable: { loaded: false, loading: false } }));
+    }
+  };
 
   // Data loading functions
   const loadTransactions = async (params = {}) => {
@@ -271,18 +317,6 @@ export const AppDataProvider = ({ children }) => {
       throw error;
     }
   };
-
-  // COMMENTED OUT - loadIntegrations causing issues
-  // const loadIntegrations = async () => {
-  //   try {
-  //     const response = await apiService.getIntegrations();
-  //     setData(prev => ({ ...prev, integrations: response.integrations }));
-  //     return response;
-  //   } catch (error) {
-  //     console.error('Load integrations error:', error);
-  //     throw error;
-  //   }
-  // };
 
   const addTransaction = async (transaction) => {
     try {
@@ -527,37 +561,6 @@ export const AppDataProvider = ({ children }) => {
     }
   };
 
-  // COMMENTED OUT - updateIntegrationSettings causing issues
-  // const updateIntegrationSettings = async (integrationName, settings) => {
-  //   try {
-  //     const response = await apiService.updateIntegration(integrationName, settings);
-  //     
-  //     // Update local state
-  //     setData(prev => ({
-  //       ...prev,
-  //       integrations: {
-  //         ...prev.integrations,
-  //         [integrationName]: response.integration || settings
-  //       }
-  //     }));
-  //     
-  //     toast({
-  //       title: "Integração Atualizada!",
-  //       description: "Configurações da integração foram salvas com sucesso."
-  //     });
-  //     
-  //     return response;
-  //   } catch (error) {
-  //     console.error('Update integration error:', error);
-  //     toast({
-  //       title: "Erro!",
-  //       description: "Falha ao atualizar integração. Tente novamente.",
-  //       variant: "destructive"
-  //     });
-  //     throw error;
-  //   }
-  // };
-
   const importData = async (importedItems, type) => {
     try {
       let response;
@@ -650,7 +653,6 @@ export const AppDataProvider = ({ children }) => {
     loadCostCenters,
     loadNFes,
     loadAccountsPayable,
-    // loadIntegrations, // REMOVED - causing issues
     
     // Data creation functions
     addTransaction,
@@ -664,7 +666,6 @@ export const AppDataProvider = ({ children }) => {
     // Data update/delete functions
     updateCostCenter,
     deleteCostCenter,
-    // updateIntegrationSettings, // REMOVED - causing issues
     
     // Import function
     importData,
@@ -672,7 +673,11 @@ export const AppDataProvider = ({ children }) => {
     // Metrics functions
     getDashboardMetrics,
     getFinancialMetrics,
-    getSalesMetrics
+    getSalesMetrics,
+    
+    // Lazy loading functions
+    ensureCostCentersLoaded,
+    ensureAccountsPayableLoaded
   };
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

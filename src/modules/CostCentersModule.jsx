@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building, Plus, Edit, Trash2, Save, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
 
 const CostCentersModule = ({ addCostCenter, updateCostCenter, deleteCostCenter, toast, importData }) => {
-  const { data, activeSegmentId } = useAppData();
+  const { data, activeSegmentId, ensureCostCentersLoaded } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentCostCenter, setCurrentCostCenter] = useState(null);
@@ -17,6 +16,12 @@ const CostCentersModule = ({ addCostCenter, updateCostCenter, deleteCostCenter, 
   });
 
   const segments = data.segments || [];
+
+  // Lazy load costCenters when component mounts
+  useEffect(() => {
+    console.log('🔄 CostCentersModule: Ensuring costCenters are loaded...');
+    ensureCostCentersLoaded();
+  }, [ensureCostCentersLoaded]);
 
   const handleAddNew = () => {
     setIsEditing(false);
