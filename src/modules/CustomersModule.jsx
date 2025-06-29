@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Plus, Edit, Trash2, Eye, Search, Filter, Mail, Phone, MapPin, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
+import { useAppData } from '@/hooks/useAppData.jsx';
 
-const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
+const CustomersModule = ({ metrics, toast }) => {
+  const { data, addCustomer, importData } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -56,6 +58,13 @@ const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
 
   const customerHeaders = ['name', 'cpf', 'email', 'phone', 'address', 'city', 'state', 'totalPurchases', 'lastPurchaseDate'];
 
+  // Calcular total de compras por cliente baseado nas vendas
+  const getCustomerTotalPurchases = (customerId) => {
+    return data.sales
+      .filter(sale => sale.customerId === customerId && sale.status === 'Concluída')
+      .reduce((total, sale) => total + Number(sale.total || 0), 0);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -71,10 +80,9 @@ const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
         </div>
         <div className="flex space-x-2">
           <ImportDataButton 
-            onDataImported={importData} 
-            expectedHeaders={customerHeaders}
+            onImport={(parsedData) => importData(parsedData, 'customers')}
             moduleName="Clientes"
-            importAction="customers"
+            expectedHeaders={customerHeaders}
           />
           <Button onClick={() => setShowForm(!showForm)} className="bg-gradient-to-r from-teal-500 to-sky-600 hover:from-teal-600 hover:to-sky-700">
             <Plus className="w-4 h-4 mr-2" />
@@ -270,7 +278,7 @@ const CustomersModule = ({ data, metrics, addCustomer, toast, importData }) => {
                     </span>
                   </td>
                   <td className="p-3 text-right font-medium text-green-400">
-                    R$ {customer.totalPurchases.toLocaleString('pt-BR')}
+                    R$ {getCustomerTotalPurchases(customer.id).toLocaleString('pt-BR')}
                   </td>
                   <td className="p-3 text-center">
                     <div className="flex justify-center space-x-2">
