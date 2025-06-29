@@ -301,7 +301,7 @@ class ApiService {
 
   // Metrics endpoints
   async getDashboardMetrics(params = {}) {
-    return this.get('/metrics/dashboard', params);
+    return this.get('/metrics', params);
   }
 
   async getFinancialMetrics(params = {}) {

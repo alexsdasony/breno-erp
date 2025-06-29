@@ -36,8 +36,8 @@ router.get('/', authenticateToken, async (req, res) => {
       db.get(`SELECT SUM(amount) as total FROM transactions ${whereClause} AND type = 'despesa'`, params)
     ]);
 
-    const totalRevenue = revenueData.total || 0;
-    const totalExpenses = expenseData.total || 0;
+    const totalRevenue = parseFloat(revenueData.total) || 0;
+    const totalExpenses = parseFloat(expenseData.total) || 0;
     const profit = totalRevenue - totalExpenses;
 
     // Product metrics
@@ -91,7 +91,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     const totalBillings = billingsData.total;
     const overdueBillings = overdueBillingsData.total;
-    const totalPendingAmount = totalPendingData.total || 0;
+    const totalPendingAmount = parseFloat(totalPendingData.total) || 0;
     const defaultRate = totalBillings > 0 ? (overdueBillings / totalBillings) * 100 : 0;
 
     res.json({
@@ -209,14 +209,14 @@ router.get('/financial', authenticateToken, async (req, res) => {
       categoryData,
       monthlyComparison: {
         current: {
-          revenue: currentMonthData.revenue || 0,
-          expenses: currentMonthData.expenses || 0,
-          profit: (currentMonthData.revenue || 0) - (currentMonthData.expenses || 0)
+          revenue: parseFloat(currentMonthData.revenue) || 0,
+          expenses: parseFloat(currentMonthData.expenses) || 0,
+          profit: (parseFloat(currentMonthData.revenue) || 0) - (parseFloat(currentMonthData.expenses) || 0)
         },
         previous: {
-          revenue: lastMonthData.revenue || 0,
-          expenses: lastMonthData.expenses || 0,
-          profit: (lastMonthData.revenue || 0) - (lastMonthData.expenses || 0)
+          revenue: parseFloat(lastMonthData.revenue) || 0,
+          expenses: parseFloat(lastMonthData.expenses) || 0,
+          profit: (parseFloat(lastMonthData.revenue) || 0) - (parseFloat(lastMonthData.expenses) || 0)
         }
       }
     });

@@ -56,7 +56,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             <div>
               <p className="text-sm text-muted-foreground">Receita Total</p>
               <p className="text-2xl font-bold text-green-400">
-                R$ {metrics.totalRevenue.toLocaleString('pt-BR')}
+                R$ {metrics.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
             <div className="p-3 bg-green-500/20 rounded-lg">
@@ -73,7 +73,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             <div>
               <p className="text-sm text-muted-foreground">Despesas</p>
               <p className="text-2xl font-bold text-red-400">
-                R$ {metrics.totalExpenses.toLocaleString('pt-BR')}
+                R$ {metrics.totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
             <div className="p-3 bg-red-500/20 rounded-lg">
@@ -135,7 +135,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Receitas</span>
               <span className="text-green-400 font-medium">
-                R$ {metrics.totalRevenue.toLocaleString('pt-BR')}
+                R$ {metrics.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
@@ -147,7 +147,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Despesas</span>
               <span className="text-red-400 font-medium">
-                R$ {metrics.totalExpenses.toLocaleString('pt-BR')}
+                R$ {metrics.totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
@@ -222,7 +222,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
                 <p className={`font-medium ${
                   transaction.type === 'receita' ? 'text-green-400' : 'text-red-400'
                 }`}>
-                  {transaction.type === 'receita' ? '+' : '-'}R$ {transaction.amount.toLocaleString('pt-BR')}
+                  {transaction.type === 'receita' ? '+' : '-'}R$ {transaction.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
                 <p className="text-sm text-muted-foreground">{transaction.date}</p>
               </div>
