@@ -728,6 +728,94 @@ export const AppDataProvider = ({ children }) => {
     }
   };
 
+  // User management functions (admin only)
+  const loadUsers = async (params = {}) => {
+    try {
+      const response = await apiService.getUsers(params);
+      setData(prev => ({ ...prev, users: response.users || [] }));
+      return response;
+    } catch (error) {
+      console.error('Load users error:', error);
+      throw error;
+    }
+  };
+
+  const createUser = async (userData) => {
+    try {
+      const response = await apiService.createUser(userData);
+      
+      // Update local state
+      setData(prev => ({ ...prev, users: [...prev.users, response.user] }));
+      
+      toast({
+        title: "Usuário Criado!",
+        description: "O usuário foi criado com sucesso."
+      });
+      
+      return response.user;
+    } catch (error) {
+      console.error('Create user error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao criar usuário. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const updateUser = async (id, userData) => {
+    try {
+      const response = await apiService.updateUser(id, userData);
+      
+      // Update local state
+      setData(prev => ({ 
+        ...prev, 
+        users: prev.users.map(u => u.id === id ? response.user : u) 
+      }));
+      
+      toast({
+        title: "Usuário Atualizado!",
+        description: "O usuário foi atualizado com sucesso."
+      });
+      
+      return response.user;
+    } catch (error) {
+      console.error('Update user error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao atualizar usuário. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    try {
+      await apiService.deleteUser(userId);
+      
+      // Update local state
+      setData(prev => ({ 
+        ...prev, 
+        users: prev.users.filter(u => u.id !== userId) 
+      }));
+      
+      toast({
+        title: "Usuário Excluído!",
+        description: "O usuário foi excluído com sucesso."
+      });
+    } catch (error) {
+      console.error('Delete user error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao excluir usuário. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   const importData = async (importedItems, type) => {
     try {
       let response;
@@ -856,6 +944,12 @@ export const AppDataProvider = ({ children }) => {
     addSegment,
     updateSegment,
     deleteSegment,
+    
+    // User management functions (admin only)
+    loadUsers,
+    createUser,
+    updateUser,
+    deleteUser,
     
     // NFe functions
     updateNFe,

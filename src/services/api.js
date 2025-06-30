@@ -324,6 +324,22 @@ class ApiService {
   async getUsers(params = {}) {
     return this.get('/users', params);
   }
+
+  async getUserById(id) {
+    return this.get(`/users/${id}`);
+  }
+
+  async createUser(userData) {
+    return this.post('/users', userData);
+  }
+
+  async updateUser(id, userData) {
+    return this.put(`/users/${id}`, userData);
+  }
+
+  async deleteUser(id) {
+    return this.delete(`/users/${id}`);
+  }
 }
 
 // Create and export singleton instance

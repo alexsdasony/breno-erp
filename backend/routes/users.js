@@ -9,7 +9,7 @@ const router = express.Router();
 // Get all users with segment info (admin only)
 router.get('/', authenticateToken, requireAdmin, validatePagination, async (req, res) => {
   try {
-    const { page = 1, limit = 50, segment_id } = req.query;
+    const { page = 1, limit = 50, segment_id, status } = req.query;
     const offset = (page - 1) * limit;
     const db = await getDatabase();
 
@@ -21,6 +21,7 @@ router.get('/', authenticateToken, requireAdmin, validatePagination, async (req,
         u.email, 
         u.role, 
         u.segment_id,
+        u.status,
         u.created_at, 
         u.updated_at,
         s.name as segment_name
@@ -31,17 +32,32 @@ router.get('/', authenticateToken, requireAdmin, validatePagination, async (req,
     let params = [];
     let countParams = [];
 
+    // Build WHERE clause
+    let whereConditions = [];
+    
     // Filter by segment if requested
     if (segment_id !== undefined) {
       if (segment_id === 'null' || segment_id === '') {
-        query += ' WHERE u.segment_id IS NULL';
-        countQuery += ' WHERE u.segment_id IS NULL';
+        whereConditions.push('u.segment_id IS NULL');
       } else {
-        query += ' WHERE u.segment_id = ?';
-        countQuery += ' WHERE u.segment_id = ?';
+        whereConditions.push('u.segment_id = ?');
         params.push(parseInt(segment_id));
         countParams.push(parseInt(segment_id));
       }
+    }
+    
+    // Filter by status if requested
+    if (status) {
+      whereConditions.push('u.status = ?');
+      params.push(status);
+      countParams.push(status);
+    }
+    
+    // Apply WHERE conditions
+    if (whereConditions.length > 0) {
+      const whereClause = ' WHERE ' + whereConditions.join(' AND ');
+      query += whereClause;
+      countQuery += whereClause;
     }
 
     query += ' ORDER BY u.name ASC LIMIT ? OFFSET ?';
@@ -59,6 +75,7 @@ router.get('/', authenticateToken, requireAdmin, validatePagination, async (req,
       name: user.name,
       email: user.email,
       role: user.role,
+      status: user.status,
       segment_id: user.segment_id, // null for master users
       segment: user.segment_id ? {
         id: user.segment_id,
@@ -99,6 +116,7 @@ router.get('/:id', authenticateToken, requireAdmin, validateId, async (req, res)
         u.email, 
         u.role, 
         u.segment_id,
+        u.status,
         u.created_at, 
         u.updated_at,
         s.name as segment_name
@@ -120,6 +138,7 @@ router.get('/:id', authenticateToken, requireAdmin, validateId, async (req, res)
       name: user.name,
       email: user.email,
       role: user.role,
+      status: user.status,
       segment_id: user.segment_id,
       segment: user.segment_id ? {
         id: user.segment_id,
@@ -152,9 +171,9 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Name, email and password are required' });
     }
 
-    // Validate role
-    if (!['user', 'admin'].includes(role)) {
-      return res.status(400).json({ error: 'Invalid role. Must be user or admin' });
+    // Validate role if provided
+    if (role && role !== '' && !['user', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role. Must be user, admin, or empty' });
     }
 
     // Check if email already exists
@@ -171,17 +190,18 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       }
     }
 
-    // Normalize segment_id: admin users should be null (master), empty becomes null
-    const normalizedSegmentId = (role === 'admin' || segment_id === '' || segment_id === 0 || segment_id === '0') ? null : segment_id;
+    // Normalize role and segment_id
+    const normalizedRole = role === '' ? null : role;
+    const normalizedSegmentId = (normalizedRole === 'admin' || segment_id === '' || segment_id === 0 || segment_id === '0') ? null : segment_id;
 
     // Hash password
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Insert user
+    // Insert user with default status 'bloqueado' and normalized role
     const result = await db.run(
-      'INSERT INTO users (name, email, password, role, segment_id) VALUES (?, ?, ?, ?, ?)',
-      [name, email, hashedPassword, role, normalizedSegmentId]
+      'INSERT INTO users (name, email, password, role, segment_id, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, email, hashedPassword, normalizedRole, normalizedSegmentId, 'bloqueado']
     );
 
     // Get created user with segment info
@@ -192,6 +212,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
         u.email, 
         u.role, 
         u.segment_id,
+        u.status,
         u.created_at,
         s.name as segment_name
       FROM users u
@@ -205,6 +226,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       name: newUser.name,
       email: newUser.email,
       role: newUser.role,
+      status: newUser.status,
       segment_id: newUser.segment_id,
       segment: newUser.segment_id ? {
         id: newUser.segment_id,
@@ -229,7 +251,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 router.put('/:id', authenticateToken, requireAdmin, validateId, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, role, segment_id } = req.body;
+    const { name, email, role, segment_id, status } = req.body;
     const db = await getDatabase();
 
     // Validate required fields
@@ -238,8 +260,13 @@ router.put('/:id', authenticateToken, requireAdmin, validateId, async (req, res)
     }
 
     // Validate role if provided
-    if (role && !['user', 'admin'].includes(role)) {
-      return res.status(400).json({ error: 'Invalid role. Must be user or admin' });
+    if (role && role !== '' && !['user', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role. Must be user, admin, or empty' });
+    }
+
+    // Validate status if provided
+    if (status && !['ativo', 'bloqueado', 'inativo'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Must be ativo, bloqueado, or inativo' });
     }
 
     // Check if user exists
@@ -264,14 +291,25 @@ router.put('/:id', authenticateToken, requireAdmin, validateId, async (req, res)
       }
     }
 
-    // Normalize segment_id: admin users should be null (master), empty becomes null
-    const finalRole = role || existingUser.role;
+    // Normalize role and segment_id
+    const finalRole = role === '' ? null : (role || existingUser.role);
     const normalizedSegmentId = (finalRole === 'admin' || segment_id === '' || segment_id === 0 || segment_id === '0') ? null : segment_id;
 
     // Update user
+    const updateFields = ['name = ?', 'email = ?', 'role = ?', 'segment_id = ?'];
+    const updateValues = [name, email, finalRole, normalizedSegmentId];
+    
+    if (status) {
+      updateFields.push('status = ?');
+      updateValues.push(status);
+    }
+    
+    updateFields.push('updated_at = CURRENT_TIMESTAMP');
+    updateValues.push(id);
+    
     await db.run(
-      'UPDATE users SET name = ?, email = ?, role = ?, segment_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [name, email, finalRole, normalizedSegmentId, id]
+      `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`,
+      updateValues
     );
 
     // Get updated user with segment info
@@ -282,6 +320,7 @@ router.put('/:id', authenticateToken, requireAdmin, validateId, async (req, res)
         u.email, 
         u.role, 
         u.segment_id,
+        u.status,
         u.updated_at,
         s.name as segment_name
       FROM users u
@@ -295,6 +334,7 @@ router.put('/:id', authenticateToken, requireAdmin, validateId, async (req, res)
       name: updatedUser.name,
       email: updatedUser.email,
       role: updatedUser.role,
+      status: updatedUser.status,
       segment_id: updatedUser.segment_id,
       segment: updatedUser.segment_id ? {
         id: updatedUser.segment_id,

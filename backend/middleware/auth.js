@@ -19,12 +19,26 @@ export const authenticateToken = async (req, res, next) => {
     // Get user from database to ensure they still exist
     const db = await getDatabase();
     const user = await db.get(
-      'SELECT id, name, email, role, segment_id FROM users WHERE id = ?',
+      'SELECT id, name, email, role, segment_id, status FROM users WHERE id = ?',
       [decoded.userId]
     );
 
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
+    }
+
+    // Check if user is blocked or inactive
+    if (user.status === 'bloqueado') {
+      return res.status(403).json({ error: 'Account is blocked. Please contact administrator.' });
+    }
+
+    if (user.status === 'inativo') {
+      return res.status(403).json({ error: 'Account is inactive. Please contact administrator.' });
+    }
+
+    // Check if user has a role (perfil de acesso)
+    if (!user.role) {
+      return res.status(403).json({ error: 'No access profile assigned. Please contact administrator.' });
     }
 
     req.user = user;

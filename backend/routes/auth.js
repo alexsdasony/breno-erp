@@ -24,10 +24,10 @@ router.post('/register', validateRegister, async (req, res) => {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Insert user
+    // Insert user with default status 'bloqueado' and no role (sem perfil de acesso)
     const result = await db.run(
-      'INSERT INTO users (name, email, password, segment_id) VALUES (?, ?, ?, ?)',
-      [name, email, hashedPassword, segmentId || null]
+      'INSERT INTO users (name, email, password, role, segment_id, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, email, hashedPassword, null, segmentId || null, 'bloqueado']
     );
 
     // Generate JWT token
@@ -65,6 +65,20 @@ router.post('/login', validateLogin, async (req, res) => {
     const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Check if user is blocked or inactive
+    if (user.status === 'bloqueado') {
+      return res.status(403).json({ error: 'Account is blocked. Please contact administrator.' });
+    }
+
+    if (user.status === 'inativo') {
+      return res.status(403).json({ error: 'Account is inactive. Please contact administrator.' });
+    }
+
+    // Check if user has a role (perfil de acesso)
+    if (!user.role) {
+      return res.status(403).json({ error: 'No access profile assigned. Please contact administrator.' });
     }
 
     // Verify password
