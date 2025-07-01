@@ -79,8 +79,37 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
     return null;
   };
 
-  const billingHeaders = ['customerId', 'customerName', 'amount', 'dueDate', 'status', 'paymentDate', 'segmentId'];
-  const filteredBillings = data.billings.filter(b => !activeSegmentId || activeSegmentId === 0 || b.segmentId === activeSegmentId);
+  // Função para atualizar status pendente para vencido se necessário
+  function getStatusWithDueDate(billing) {
+    if (billing.status === 'Pendente') {
+      const dueStr = billing.dueDate || billing.due_date;
+      if (!dueStr) return billing.status;
+      const due = new Date(dueStr);
+      if (isNaN(due.getTime())) return billing.status;
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      if (due < today) {
+        return 'Vencida';
+      }
+    }
+    return billing.status;
+  }
+
+  // Usar status calculado em toda a renderização e nos filtros
+  const filteredBillings = (data.billings || [])
+    .map(billing => ({ ...billing, status: getStatusWithDueDate(billing) }))
+    .filter(b => !activeSegmentId || activeSegmentId === 0 || b.segmentId === activeSegmentId);
+
+  // Log de depuração para analisar dados recebidos
+  console.log('data.billings:', data.billings);
+  console.log('filteredBillings:', filteredBillings);
+  if (filteredBillings && filteredBillings.length > 0) {
+    filteredBillings.forEach((b, i) => {
+      if (!b.customerName || !b.amount || !b.segmentId) {
+        console.warn('Cobrança com campo ausente:', { index: i, billing: b });
+      }
+    });
+  }
 
   return (
     <motion.div
@@ -99,7 +128,6 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
           <ImportDataButton 
             onImport={(parsedData) => importData(parsedData, 'billings', activeSegmentId)}
             moduleName="Cobranças"
-            expectedHeaders={billingHeaders}
           />
           <Button onClick={() => setShowForm(!showForm)} className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700">
             <Plus className="w-4 h-4 mr-2" />
@@ -226,11 +254,11 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
             <tbody>
               {filteredBillings.map(billing => (
                 <motion.tr key={billing.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
-                  <td className="p-3 font-medium">{billing.customerName}</td>
+                  <td className="p-3 font-medium">{billing.customerName || 'N/A'}</td>
                   <td className="p-3">{segments.find(s => s.id === billing.segmentId)?.name || 'N/A'}</td>
-                  <td className="p-3 text-right">R$ {(billing.amount || 0).toLocaleString('pt-BR')}</td>
-                  <td className={`p-3 font-medium text-center ${getStatusColor(billing.status)}`}>
-                    <span className="flex items-center justify-center">{getStatusIcon(billing.status)}{billing.status}</span>
+                  <td className="p-3 text-right font-medium">{formatCurrency(billing.amount || 0)}</td>
+                  <td className="p-3 text-center">
+                    {billing.status || 'N/A'}
                   </td>
                   <td className="p-3 text-center">
                     <div className="flex justify-center space-x-1">
@@ -242,7 +270,7 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
                   </td>
                 </motion.tr>
               ))}
-               {filteredBillings.length === 0 && (<tr><td colSpan="6" className="p-4 text-center text-muted-foreground">Nenhuma cobrança registrada.</td></tr>)}
+              {filteredBillings.length === 0 && (<tr><td colSpan="6" className="p-4 text-center text-muted-foreground">Nenhuma cobrança registrada.</td></tr>)}
             </tbody>
           </table>
         </div>

@@ -73,7 +73,22 @@ const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, delete
     deleteAccountPayable(id);
   };
 
+  // Função para atualizar status pendente para vencido se necessário
+  function getStatusWithDueDate(account) {
+    if (account.status === 'pending') {
+      const due = new Date(account.due_date || account.dueDate);
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      if (!isNaN(due.getTime()) && due < today) {
+        return 'overdue';
+      }
+    }
+    return account.status;
+  }
+
+  // Usar status calculado em toda a renderização e nos filtros
   const filteredAccounts = (data.accountsPayable || [])
+    .map(account => ({ ...account, status: getStatusWithDueDate(account) }))
     .filter(account => !activeSegmentId || (account.segment_id || account.segmentId) === activeSegmentId)
     .filter(account => 
       account.supplier.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -105,6 +120,11 @@ const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, delete
     toast({ title: "Exportado!", description: "Dados de contas a pagar exportados." });
   };
 
+  // Consolidado de valores por status
+  const totalPaga = filteredAccounts.filter(a => a.status === 'paid').reduce((sum, a) => sum + Number(a.amount || 0), 0);
+  const totalVencida = filteredAccounts.filter(a => a.status === 'overdue').reduce((sum, a) => sum + Number(a.amount || 0), 0);
+  const totalPendente = filteredAccounts.filter(a => a.status === 'pending').reduce((sum, a) => sum + Number(a.amount || 0), 0);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -124,6 +144,22 @@ const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, delete
           <Button onClick={() => openModal()} className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
             <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Conta
           </Button>
+        </div>
+      </div>
+
+      {/* Consolidado de valores */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="glass-effect rounded-xl p-6 border flex flex-col items-center">
+          <span className="text-sm text-muted-foreground mb-1">Total Paga</span>
+          <span className="text-2xl font-bold text-green-400">{formatCurrency(totalPaga)}</span>
+        </div>
+        <div className="glass-effect rounded-xl p-6 border flex flex-col items-center">
+          <span className="text-sm text-muted-foreground mb-1">Total Vencida</span>
+          <span className="text-2xl font-bold text-red-400">{formatCurrency(totalVencida)}</span>
+        </div>
+        <div className="glass-effect rounded-xl p-6 border flex flex-col items-center">
+          <span className="text-sm text-muted-foreground mb-1">Total Pendente</span>
+          <span className="text-2xl font-bold text-yellow-400">{formatCurrency(totalPendente)}</span>
         </div>
       </div>
 
