@@ -19,6 +19,13 @@ import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
 
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString('pt-BR');
+}
+
 const BillingModule = ({ metrics, addBilling, toast, importData }) => {
   const { data, activeSegmentId } = useAppData();
   const [showForm, setShowForm] = useState(false);

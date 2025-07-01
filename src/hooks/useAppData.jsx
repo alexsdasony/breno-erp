@@ -657,6 +657,95 @@ export const AppDataProvider = ({ children }) => {
     }
   };
 
+  const addAccountPayable = async (account) => {
+    try {
+      const response = await apiService.createAccountPayable({
+        ...account,
+        due_date: account.dueDate,
+        segment_id: account.segmentId
+      });
+      
+      // Update local state
+      setData(prev => ({
+        ...prev,
+        accountsPayable: [response.account, ...prev.accountsPayable]
+      }));
+      
+      toast({
+        title: "Conta a Pagar Adicionada!",
+        description: "Nova conta a pagar foi registrada com sucesso."
+      });
+      
+      return response.account;
+    } catch (error) {
+      console.error('Add account payable error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao adicionar conta a pagar. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const updateAccountPayable = async (account) => {
+    try {
+      const response = await apiService.updateAccountPayable(account.id, {
+        ...account,
+        due_date: account.dueDate,
+        segment_id: account.segmentId
+      });
+      
+      // Update local state
+      setData(prev => ({
+        ...prev,
+        accountsPayable: prev.accountsPayable.map(acc => 
+          acc.id === account.id ? response.account : acc
+        )
+      }));
+      
+      toast({
+        title: "Conta a Pagar Atualizada!",
+        description: "A conta a pagar foi atualizada com sucesso."
+      });
+      
+      return response.account;
+    } catch (error) {
+      console.error('Update account payable error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao atualizar conta a pagar. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const deleteAccountPayable = async (accountId) => {
+    try {
+      await apiService.deleteAccountPayable(accountId);
+      
+      // Update local state
+      setData(prev => ({
+        ...prev,
+        accountsPayable: prev.accountsPayable.filter(acc => acc.id !== accountId)
+      }));
+      
+      toast({
+        title: "Conta a Pagar Excluída!",
+        description: "A conta a pagar foi excluída com sucesso."
+      });
+    } catch (error) {
+      console.error('Delete account payable error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao excluir conta a pagar. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   // Segments functions
   const addSegment = async (segmentData) => {
     try {
@@ -923,10 +1012,13 @@ export const AppDataProvider = ({ children }) => {
     addNFe,
     addBilling,
     addCostCenter,
+    addAccountPayable,
     
     // Data update/delete functions
     updateCostCenter,
     deleteCostCenter,
+    updateAccountPayable,
+    deleteAccountPayable,
     
     // Import function
     importData,

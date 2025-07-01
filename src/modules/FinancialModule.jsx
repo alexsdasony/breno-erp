@@ -15,6 +15,13 @@ import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
 
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString('pt-BR');
+}
+
 const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
   const { data, activeSegmentId } = useAppData();
   const [showForm, setShowForm] = useState(false);
@@ -219,7 +226,7 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
             <tbody>
               {filteredTransactions.map(transaction => (
                 <motion.tr key={transaction.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
-                  <td className="p-3">{transaction.date}</td>
+                  <td className="p-3">{formatDate(transaction.date)}</td>
                   <td className="p-3 font-medium">{transaction.description}</td>
                   <td className="p-3">{segments.find(s => s.id === transaction.segmentId)?.name || 'N/A'}</td>
                   <td className="p-3">

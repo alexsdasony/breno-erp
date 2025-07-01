@@ -16,6 +16,13 @@ import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
 
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString('pt-BR');
+}
+
 const SalesModule = ({ metrics, addSale, toast, importData }) => {
   const { data, activeSegmentId } = useAppData();
   const [showForm, setShowForm] = useState(false);
@@ -280,7 +287,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
             <tbody>
               {filteredSales.map(sale => (
                 <motion.tr key={sale.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
-                  <td className="p-3">{sale.date}</td>
+                  <td className="p-3">{formatDate(sale.date)}</td>
                   <td className="p-3 font-medium">{sale.customerName}</td>
                   <td className="p-3">{segments.find(s => s.id === sale.segmentId)?.name || 'N/A'}</td>
                   <td className="p-3 text-right font-medium text-green-400">R$ {(sale.total || 0).toLocaleString('pt-BR')}</td>

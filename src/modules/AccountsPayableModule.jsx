@@ -57,9 +57,9 @@ const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, delete
         supplier: account.supplier,
         description: account.description,
         amount: account.amount,
-        dueDate: account.dueDate,
+        dueDate: account.due_date || account.dueDate,
         status: account.status,
-        segmentId: account.segmentId
+        segmentId: account.segment_id || account.segmentId
       });
     } else {
       setCurrentAccount(null);
@@ -73,7 +73,7 @@ const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, delete
   };
 
   const filteredAccounts = (data.accountsPayable || [])
-    .filter(account => !activeSegmentId || account.segmentId === activeSegmentId)
+    .filter(account => !activeSegmentId || (account.segment_id || account.segmentId) === activeSegmentId)
     .filter(account => 
       account.supplier.toLowerCase().includes(searchTerm.toLowerCase()) ||
       account.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -103,6 +103,14 @@ const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, delete
     link.click();
     toast({ title: "Exportado!", description: "Dados de contas a pagar exportados." });
   };
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    // Aceita tanto '2024-06-27' quanto '2024-06-27T00:00:00Z'
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('pt-BR');
+  }
 
   return (
     <motion.div
@@ -166,9 +174,9 @@ const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, delete
             {filteredAccounts.map((account) => (
               <motion.tr key={account.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="border-b border-slate-800 hover:bg-slate-800/60">
                 <td className="p-3">{account.supplier}</td>
-                <td className="p-3">{segments.find(s => s.id === account.segmentId)?.name || 'N/A'}</td>
+                <td className="p-3">{segments.find(s => s.id === (account.segment_id || account.segmentId))?.name || 'N/A'}</td>
                 <td className="p-3 text-right">{parseFloat(account.amount).toFixed(2)}</td>
-                <td className="p-3 text-center">{new Date(account.dueDate + 'T00:00:00').toLocaleDateString()}</td>
+                <td className="p-3 text-center">{formatDate(account.due_date || account.dueDate)}</td>
                 <td className="p-3 text-center"><span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(account.status)}`}>{account.status === 'pending' ? 'Pendente' : account.status === 'paid' ? 'Paga' : 'Vencida'}</span></td>
                 <td className="p-3 text-center space-x-2">
                   <Button variant="ghost" size="sm" onClick={() => openModal(account)} className="text-blue-400 hover:text-blue-300"><Edit className="h-4 w-4" /></Button>
