@@ -247,6 +247,7 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
                 <th className="text-left p-3">Cliente</th>
                 <th className="text-left p-3">Segmento</th>
                 <th className="text-right p-3">Valor</th>
+                <th className="text-center p-3">Vencimento</th>
                 <th className="text-center p-3">Status</th>
                 <th className="text-center p-3">Ações</th>
               </tr>
@@ -257,6 +258,7 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
                   <td className="p-3 font-medium">{billing.customerName || 'N/A'}</td>
                   <td className="p-3">{segments.find(s => s.id === billing.segmentId)?.name || 'N/A'}</td>
                   <td className="p-3 text-right font-medium">{formatCurrency(billing.amount || 0)}</td>
+                  <td className="p-3 text-center">{formatDate(billing.dueDate || billing.due_date)}</td>
                   <td className="p-3 text-center">
                     {billing.status || 'N/A'}
                   </td>
