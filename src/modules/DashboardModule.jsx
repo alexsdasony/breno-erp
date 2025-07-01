@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData.jsx';
+import { formatCurrency } from '@/lib/utils.js';
 
 const DashboardModule = ({ metrics, setActiveModule }) => {
   const { data, activeSegmentId } = useAppData();
@@ -56,7 +57,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             <div>
               <p className="text-sm text-muted-foreground">Receita Total</p>
               <p className="text-2xl font-bold text-green-400">
-                R$ {(metrics.totalRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatCurrency(metrics.totalRevenue || 0)}
               </p>
             </div>
             <div className="p-3 bg-green-500/20 rounded-lg">
@@ -73,7 +74,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             <div>
               <p className="text-sm text-muted-foreground">Despesas</p>
               <p className="text-2xl font-bold text-red-400">
-                R$ {(metrics.totalExpenses || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatCurrency(metrics.totalExpenses || 0)}
               </p>
             </div>
             <div className="p-3 bg-red-500/20 rounded-lg">
@@ -135,7 +136,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Receitas</span>
               <span className="text-green-400 font-medium">
-                R$ {(metrics.totalRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatCurrency(metrics.totalRevenue || 0)}
               </span>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
@@ -147,7 +148,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Despesas</span>
               <span className="text-red-400 font-medium">
-                R$ {(metrics.totalExpenses || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatCurrency(metrics.totalExpenses || 0)}
               </span>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
@@ -222,7 +223,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
                 <p className={`font-medium ${
                   transaction.type === 'receita' ? 'text-green-400' : 'text-red-400'
                 }`}>
-                  {transaction.type === 'receita' ? '+' : '-'}R$ {(transaction.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {transaction.type === 'receita' ? '+' : '-'}{formatCurrency(transaction.amount || 0)}
                 </p>
                 <p className="text-sm text-muted-foreground">{transaction.date}</p>
               </div>

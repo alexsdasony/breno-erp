@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart3, TrendingUp, TrendingDown, DollarSign, PieChart, Filter, Download, Calendar, Building, BookOpen, Target, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData.jsx';
+import { formatCurrency } from '@/lib/utils.js';
 
 const ReportsModule = ({ toast }) => {
   const { data, activeSegmentId } = useAppData();
@@ -140,13 +141,6 @@ const ReportsModule = ({ toast }) => {
         variant: "destructive"
       });
     }
-  };
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value || 0);
   };
 
   const getAccountTypeColor = (type) => {

@@ -14,13 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
-
-function formatDate(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d)) return '';
-  return d.toLocaleDateString('pt-BR');
-}
+import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
   const { data, activeSegmentId } = useAppData();
@@ -99,7 +93,7 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total de Receitas</p>
-              <p className="text-2xl font-bold text-green-400">R$ {(metrics.totalRevenue || 0).toLocaleString('pt-BR')}</p>
+              <p className="text-2xl font-bold text-green-400">{formatCurrency(metrics.totalRevenue || 0)}</p>
             </div>
             <TrendingUp className="w-8 h-8 text-green-400" />
           </div>
@@ -108,7 +102,7 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total de Despesas</p>
-              <p className="text-2xl font-bold text-red-400">R$ {(metrics.totalExpenses || 0).toLocaleString('pt-BR')}</p>
+              <p className="text-2xl font-bold text-red-400">{formatCurrency(metrics.totalExpenses || 0)}</p>
             </div>
             <TrendingDown className="w-8 h-8 text-red-400" />
           </div>
@@ -117,7 +111,7 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Lucro Líquido</p>
-              <p className={`text-2xl font-bold ${(metrics.profit || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>R$ {(metrics.profit || 0).toLocaleString('pt-BR')}</p>
+              <p className={`text-2xl font-bold ${(metrics.profit || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>{formatCurrency(metrics.profit || 0)}</p>
             </div>
             <DollarSign className={`w-8 h-8 ${metrics.profit >= 0 ? 'text-green-400' : 'text-red-400'}`} />
           </div>
@@ -235,7 +229,7 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
                     </span>
                   </td>
                   <td className={`p-3 text-right font-medium ${transaction.type === 'receita' ? 'text-green-400' : 'text-red-400'}`}>
-                    {transaction.type === 'receita' ? '+' : '-'}R$ {(transaction.amount || 0).toLocaleString('pt-BR')}
+                    {transaction.type === 'receita' ? '+' : '-'}{formatCurrency(transaction.amount || 0)}
                   </td>
                   <td className="p-3 text-center">
                     <div className="flex justify-center space-x-2">

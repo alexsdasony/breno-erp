@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData';
+import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const NFeModule = () => {
   const { data, metrics, addNFe, updateNFe, deleteNFe, importData, toast } = useAppData();
@@ -306,7 +307,7 @@ const NFeModule = () => {
                   <td className="p-3">{nfe.customer_name || nfe.customerName}</td>
                   <td className="p-3">{nfe.date}</td>
                   <td className="p-3 text-right font-medium text-green-400">
-                    R$ {(Number(nfe.total || 0) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    {formatCurrency(nfe.total || 0)}
                   </td>
                   <td className="p-3 text-center">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${

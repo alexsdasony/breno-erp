@@ -18,13 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
-
-function formatDate(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d)) return '';
-  return d.toLocaleDateString('pt-BR');
-}
+import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const BillingModule = ({ metrics, addBilling, toast, importData }) => {
   const { data, activeSegmentId } = useAppData();
@@ -137,7 +131,7 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total a Receber</p>
-              <p className="text-2xl font-bold text-yellow-400">R$ {(metrics.totalPendingAmount || 0).toLocaleString('pt-BR')}</p>
+              <p className="text-2xl font-bold text-yellow-400">{formatCurrency(metrics.totalPendingAmount || 0)}</p>
             </div>
             <DollarSign className="w-8 h-8 text-yellow-400" />
           </div>

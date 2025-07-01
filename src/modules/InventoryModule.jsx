@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
+import { formatCurrency } from '@/lib/utils.js';
 
 const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
   const { data, activeSegmentId } = useAppData();
@@ -162,7 +163,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
             <div>
               <p className="text-sm text-muted-foreground">Valor Total do Estoque</p>
               <p className="text-2xl font-bold text-green-400">
-                R$ {(filteredProducts.reduce((sum, p) => sum + (Number(p.stock || 0) * Number(p.price || 0)), 0) || 0).toLocaleString('pt-BR')}
+                {formatCurrency(filteredProducts.reduce((sum, p) => sum + (Number(p.stock || 0) * Number(p.price || 0)), 0) || 0)}
               </p>
             </div>
             <DollarSign className="w-8 h-8 text-green-400" />
@@ -283,7 +284,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
                   <td className="p-3 font-medium">{product.name}</td>
                   <td className="p-3">{segments.find(s => s.id === product.segmentId)?.name || 'N/A'}</td>
                   <td className="p-3 text-center">{product.stock}</td>
-                  <td className="p-3 text-right font-medium">R$ {(product.price || 0).toLocaleString('pt-BR')}</td>
+                  <td className="p-3 text-right font-medium">{formatCurrency(product.price || 0)}</td>
                   <td className="p-3 text-center">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${product.stock <= product.minStock ? 'bg-red-500/20 text-red-400' : product.stock <= product.minStock * 2 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
                       {product.stock <= product.minStock ? 'Crítico' : product.stock <= product.minStock * 2 ? 'Baixo' : 'Normal'}
@@ -375,7 +376,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
                 <div>
                   <label className="block text-sm font-medium text-muted-foreground">Preço</label>
                   <p className="text-lg font-medium text-green-400">
-                    R$ {(selectedProduct.price || 0).toLocaleString('pt-BR')}
+                    {formatCurrency(selectedProduct.price || 0)}
                   </p>
                 </div>
                 <div>

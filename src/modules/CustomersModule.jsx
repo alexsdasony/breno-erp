@@ -4,6 +4,7 @@ import { Users, Plus, Edit, Trash2, Eye, Search, Filter, Mail, Phone, MapPin, Cr
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
+import { formatCurrency } from '@/lib/utils.js';
 
 const CustomersModule = ({ metrics, toast }) => {
   const { data, addCustomer, importData } = useAppData();
@@ -483,7 +484,7 @@ const CustomersModule = ({ metrics, toast }) => {
                     </span>
                   </td>
                   <td className="p-3 text-right font-medium text-green-400">
-                    R$ {(customer.totalPurchases || 0).toLocaleString('pt-BR')}
+                    {formatCurrency(customer.totalPurchases || 0)}
                   </td>
                   <td className="p-3 text-center">
                     <div className="flex justify-center space-x-2">
@@ -615,7 +616,7 @@ const CustomersModule = ({ metrics, toast }) => {
                 <div>
                   <label className="block text-sm font-medium text-muted-foreground">Total de Compras</label>
                   <p className="text-lg font-medium text-green-400">
-                    R$ {(selectedCustomer.totalPurchases || 0).toLocaleString('pt-BR')}
+                    {formatCurrency(selectedCustomer.totalPurchases || 0)}
                   </p>
                 </div>
               </div>
