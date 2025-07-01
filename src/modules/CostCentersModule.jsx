@@ -187,7 +187,7 @@ const CostCentersModule = ({ toast }) => {
   };
 
   const costCenterHeaders = ['name', 'segmentId'];
-  const filteredCostCenters = data.costCenters.filter(cc => !activeSegmentId || cc.segmentId === activeSegmentId);
+  const filteredCostCenters = data.costCenters.filter(cc => !activeSegmentId || activeSegmentId === 0 || cc.segmentId === activeSegmentId);
 
   return (
     <motion.div

@@ -58,7 +58,7 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
   };
 
   const transactionHeaders = ['type', 'description', 'amount', 'category', 'costCenter', 'date', 'segmentId'];
-  const filteredTransactions = data.transactions.filter(t => !activeSegmentId || t.segmentId === activeSegmentId);
+  const filteredTransactions = data.transactions.filter(t => !activeSegmentId || activeSegmentId === 0 || t.segmentId === activeSegmentId);
   const segments = data.segments || [];
 
   return (
@@ -183,7 +183,7 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
                   <label className="block text-sm font-medium mb-2">Centro de Custo</label>
                   <select value={formData.costCenter} onChange={(e) => setFormData({...formData, costCenter: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
                     <option value="">Selecione...</option>
-                    {data.costCenters.filter(cc => !activeSegmentId || cc.segmentId === activeSegmentId).map(cc => <option key={cc.id} value={cc.name}>{cc.name}</option>)}
+                    {data.costCenters.filter(cc => !activeSegmentId || activeSegmentId === 0 || cc.segmentId === activeSegmentId).map(cc => <option key={cc.id} value={cc.name}>{cc.name}</option>)}
                   </select>
                 </div>
               )}

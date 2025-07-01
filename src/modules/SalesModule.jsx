@@ -122,7 +122,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
   };
 
   const saleHeaders = ['customerId', 'customerName', 'product', 'quantity', 'total', 'status', 'date', 'segmentId'];
-  const filteredSales = data.sales.filter(s => !activeSegmentId || s.segmentId === activeSegmentId);
+  const filteredSales = data.sales.filter(s => !activeSegmentId || activeSegmentId === 0 || s.segmentId === activeSegmentId);
   const segments = data.segments || [];
   const productsForSegment = data.products.filter(p => !formData.segmentId || p.segmentId === parseInt(formData.segmentId));
 

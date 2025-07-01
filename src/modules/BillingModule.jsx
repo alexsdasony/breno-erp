@@ -79,7 +79,7 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
   };
 
   const billingHeaders = ['customerId', 'customerName', 'amount', 'dueDate', 'status', 'paymentDate', 'segmentId'];
-  const filteredBillings = data.billings.filter(b => !activeSegmentId || b.segmentId === activeSegmentId);
+  const filteredBillings = data.billings.filter(b => !activeSegmentId || activeSegmentId === 0 || b.segmentId === activeSegmentId);
 
   return (
     <motion.div

@@ -34,7 +34,7 @@ export const AppDataProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [segments, setSegments] = useState([]);
-  const [activeSegmentId, setActiveSegmentId] = useState(null);
+  const [activeSegmentId, setActiveSegmentId] = useState(0);
   const [lazyState, setLazyState] = useState(defaultLazyState);
 
   // Calculate metrics from local data

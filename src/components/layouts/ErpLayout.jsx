@@ -217,9 +217,9 @@ const ErpLayout = () => {
                   <DropdownMenuContent className="w-48">
                     <DropdownMenuLabel>Filtrar por Segmento</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => setActiveSegmentId(null)}>
-                      Todos os Segmentos
-                    </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setActiveSegmentId(0)}>
+              Todos os Segmentos
+            </DropdownMenuItem>
                     {data.segments.map(segment => (
                       <DropdownMenuItem key={segment.id} onSelect={() => setActiveSegmentId(segment.id)}>
                         {segment.name}

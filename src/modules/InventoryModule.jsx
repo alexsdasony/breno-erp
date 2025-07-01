@@ -109,7 +109,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
   };
 
   const productHeaders = ['name', 'stock', 'minStock', 'price', 'category', 'segmentId'];
-  const filteredProducts = data.products.filter(p => !activeSegmentId || p.segmentId === activeSegmentId);
+  const filteredProducts = data.products.filter(p => !activeSegmentId || activeSegmentId === 0 || p.segmentId === activeSegmentId);
   const segments = data.segments || [];
 
   return (

@@ -17,7 +17,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
   const { data, activeSegmentId } = useAppData();
 
   // Reactivated segment filtering - problem was data.segments access fixed
-  const filteredProducts = (data.products || []).filter(p => !activeSegmentId || p.segmentId === activeSegmentId);
+  const filteredProducts = (data.products || []).filter(p => !activeSegmentId || activeSegmentId === 0 || p.segmentId === activeSegmentId);
 
   return (
     <motion.div
@@ -32,7 +32,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
           </h1>
           <p className="text-muted-foreground mt-2">
             {/* Fixed segment access - now works correctly */}
-            {activeSegmentId ? `Exibindo dados para o segmento: ${(data.segments || []).find(s => s.id === activeSegmentId)?.name}` : 'Visão geral consolidada do seu negócio'}
+            {activeSegmentId && activeSegmentId !== 0 ? `Exibindo dados para o segmento: ${(data.segments || []).find(s => s.id === activeSegmentId)?.name}` : 'Visão geral consolidada do seu negócio'}
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -202,7 +202,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
           </Button>
         </div>
         <div className="space-y-3 max-h-72 overflow-y-auto scrollbar-hide">
-          {data.transactions.filter(t => !activeSegmentId || t.segmentId === activeSegmentId).slice(0, 5).map(transaction => (
+          {data.transactions.filter(t => !activeSegmentId || activeSegmentId === 0 || t.segmentId === activeSegmentId).slice(0, 5).map(transaction => (
             <div key={transaction.id} className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-lg transition-colors">
               <div className="flex items-center space-x-3">
                 <div className={`p-2 rounded-lg ${

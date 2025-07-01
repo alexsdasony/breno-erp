@@ -5,9 +5,7 @@ import '@/index.css';
 import { AppDataProvider } from '@/hooks/useAppData.jsx';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <AppDataProvider>
-      <App />
-    </AppDataProvider>
-  </React.StrictMode>
+  <AppDataProvider>
+    <App />
+  </AppDataProvider>
 );
