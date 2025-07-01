@@ -31,6 +31,8 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
     status: 'Pendente',
     segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
   });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   const segments = data.segments || [];
 
@@ -96,9 +98,22 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
   }
 
   // Usar status calculado em toda a renderização e nos filtros
-  const filteredBillings = (data.billings || [])
-    .map(billing => ({ ...billing, status: getStatusWithDueDate(billing) }))
-    .filter(b => !activeSegmentId || activeSegmentId === 0 || b.segmentId === activeSegmentId);
+  let filteredBillings = (data.billings || [])
+    .map(billing => ({ ...billing, status: getStatusWithDueDate(billing) }));
+
+  // Filtro por segmento
+  filteredBillings = filteredBillings.filter(b => !activeSegmentId || activeSegmentId === 0 || b.segmentId === activeSegmentId);
+
+  // Filtro por busca
+  filteredBillings = filteredBillings.filter(billing =>
+    (billing.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (billing.status || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Filtro por status
+  filteredBillings = filteredBillings.filter(billing =>
+    filterStatus === 'all' || billing.status === filterStatus
+  );
 
   // Log de depuração para analisar dados recebidos
   console.log('data.billings:', data.billings);
@@ -110,6 +125,14 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
       }
     });
   }
+
+  // Cálculo dinâmico dos painéis
+  const totalBillings = filteredBillings.length;
+  const overdueBillings = filteredBillings.filter(b => b.status === 'Vencida').length;
+  const defaultRate = totalBillings > 0 ? (overdueBillings / totalBillings) * 100 : 0;
+  const totalPendingAmount = filteredBillings
+    .filter(b => b.status === 'Pendente' || b.status === 'Vencida')
+    .reduce((sum, b) => sum + Number(b.amount || 0), 0);
 
   return (
     <motion.div
@@ -141,16 +164,16 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Índice de Inadimplência</p>
-              <p className={`text-2xl font-bold ${metrics.defaultRate > 10 ? 'text-red-400' : 'text-green-400'}`}>{metrics.defaultRate.toFixed(2)}%</p>
+              <p className={`text-2xl font-bold ${defaultRate > 10 ? 'text-red-400' : 'text-green-400'}`}>{defaultRate.toFixed(2)}%</p>
             </div>
-            <AlertTriangle className={`w-8 h-8 ${metrics.defaultRate > 10 ? 'text-red-400' : 'text-green-400'}`} />
+            <AlertTriangle className={`w-8 h-8 ${defaultRate > 10 ? 'text-red-400' : 'text-green-400'}`} />
           </div>
         </motion.div>
         <motion.div whileHover={{ scale: 1.02 }} className="glass-effect rounded-xl p-6 gradient-card border">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Cobranças Vencidas</p>
-              <p className="text-2xl font-bold text-red-400">{metrics.overdueBillings}</p>
+              <p className="text-2xl font-bold text-red-400">{overdueBillings}</p>
             </div>
             <Clock className="w-8 h-8 text-red-400" />
           </div>
@@ -159,7 +182,7 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total a Receber</p>
-              <p className="text-2xl font-bold text-yellow-400">{formatCurrency(metrics.totalPendingAmount || 0)}</p>
+              <p className="text-2xl font-bold text-yellow-400">{formatCurrency(totalPendingAmount)}</p>
             </div>
             <DollarSign className="w-8 h-8 text-yellow-400" />
           </div>
@@ -236,8 +259,25 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Histórico de Cobranças</h3>
           <div className="flex space-x-2">
-            <Button variant="outline" size="sm"><Search className="w-4 h-4 mr-2" />Buscar</Button>
-            <Button variant="outline" size="sm"><Filter className="w-4 h-4 mr-2" />Filtrar</Button>
+            <input
+              type="text"
+              placeholder="Buscar por cliente ou status..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="p-2 border rounded-md bg-muted text-sm"
+              style={{ minWidth: 180 }}
+            />
+            <select
+              value={filterStatus}
+              onChange={e => setFilterStatus(e.target.value)}
+              className="p-2 border rounded-md bg-muted text-sm"
+            >
+              <option value="all">Todos</option>
+              <option value="Pendente">Pendente</option>
+              <option value="Paga">Paga</option>
+              <option value="Vencida">Vencida</option>
+              <option value="Cancelada">Cancelada</option>
+            </select>
           </div>
         </div>
         <div className="overflow-x-auto max-h-96 scrollbar-hide">
