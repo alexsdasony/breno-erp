@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency } from '@/lib/utils.js';
+import { formatDate } from '@/lib/utils.js';
 
 const DashboardModule = ({ metrics, setActiveModule }) => {
   const { data, activeSegmentId } = useAppData();
@@ -225,7 +226,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
                 }`}>
                   {transaction.type === 'receita' ? '+' : '-'}{formatCurrency(transaction.amount || 0)}
                 </p>
-                <p className="text-sm text-muted-foreground">{transaction.date}</p>
+                <p className="text-sm text-muted-foreground">{formatDate(transaction.date)}</p>
               </div>
             </div>
           ))}
