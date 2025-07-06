@@ -28,7 +28,8 @@ const NFeModule = () => {
     customerId: '',
     customerName: '',
     total: '', 
-    status: 'Pendente'
+    status: 'Pendente',
+    date: new Date().toISOString().split('T')[0] // Data atual como padrão
   });
 
   // Safe data access with fallbacks
@@ -42,7 +43,8 @@ const NFeModule = () => {
       customerId: '',
       customerName: '',
       total: '', 
-      status: 'Pendente'
+      status: 'Pendente',
+      date: new Date().toISOString().split('T')[0] // Data atual como padrão
     });
     setIsEditing(false);
     setCurrentNFe(null);
@@ -56,7 +58,8 @@ const NFeModule = () => {
       customerId: nfe.customer_id || '',
       customerName: nfe.customer_name || nfe.customerName,
       total: nfe.total,
-      status: nfe.status
+      status: nfe.status,
+      date: nfe.date
     });
     setIsEditing(true);
     setShowForm(true);
@@ -109,7 +112,7 @@ const NFeModule = () => {
           <div class="nfe-info">
             <div>
               <strong>Cliente:</strong> ${nfe.customer_name || nfe.customerName}<br>
-              <strong>Data de Emissão:</strong> ${nfe.date}<br>
+              <strong>Data de Emissão:</strong> ${formatDate(nfe.date)}<br>
               <strong>Status:</strong> 
               <span class="status status-${nfe.status.toLowerCase()}">${nfe.status}</span>
             </div>
@@ -276,7 +279,7 @@ const NFeModule = () => {
           <div class="nfe-info">
             <div>
               <strong>Cliente:</strong> ${nfe.customer_name || nfe.customerName}<br>
-              <strong>Data de Emissão:</strong> ${nfe.date}<br>
+              <strong>Data de Emissão:</strong> ${formatDate(nfe.date)}<br>
               <strong>Status:</strong> ${nfe.status}
             </div>
             <div>
@@ -331,7 +334,7 @@ Segue em anexo a NF-e ${nfe.number} referente ao cliente ${nfe.customer_name || 
 
 Dados da NF-e:
 - Número: ${nfe.number}
-- Data de Emissão: ${nfe.date}
+- Data de Emissão: ${formatDate(nfe.date)}
 - Valor Total: R$ ${parseFloat(nfe.total).toFixed(2).replace('.', ',')}
 - Status: ${nfe.status}
 
@@ -518,6 +521,17 @@ Sistema ERP
                 />
               </div>
               <div>
+                <label htmlFor="nfeDate" className="block text-sm font-medium mb-2">Data de Emissão</label>
+                <input
+                  id="nfeDate"
+                  name="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({...formData, date: e.target.value})}
+                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium mb-2">Cliente</label>
                 <select
                   value={formData.customerId}
@@ -620,7 +634,7 @@ Sistema ERP
                 >
                   <td className="p-3 font-medium">{nfe.number}</td>
                   <td className="p-3">{nfe.customer_name || nfe.customerName}</td>
-                  <td className="p-3">{nfe.date}</td>
+                  <td className="p-3">{formatDate(nfe.date)}</td>
                   <td className="p-3 text-right font-medium text-green-400">
                     {formatCurrency(nfe.total || 0)}
                   </td>
