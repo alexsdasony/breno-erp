@@ -85,7 +85,15 @@ const NFeModule = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    console.log('🔍 Debug NFe - FormData:', formData);
+    console.log('🔍 Debug NFe - Validação:', {
+      number: !!formData.number,
+      customerId: !!formData.customerId,
+      total: !!formData.total
+    });
+    
     if (!formData.number || !formData.customerId || !formData.total) {
+      console.log('❌ Debug NFe - Validação falhou');
       toast({
         title: "Erro",
         description: "Número NF-e, Cliente e Total são obrigatórios.",
@@ -95,14 +103,24 @@ const NFeModule = () => {
     }
 
     try {
+      console.log('🔍 Debug NFe - Iniciando criação/edição');
       if (isEditing && currentNFe) {
+        console.log('🔍 Debug NFe - Editando NF-e:', currentNFe.id);
         await updateNFe(currentNFe.id, formData);
       } else {
-        await addNFe(formData);
+        console.log('🔍 Debug NFe - Criando nova NF-e');
+        const result = await addNFe(formData);
+        console.log('🔍 Debug NFe - Resultado:', result);
       }
+      console.log('✅ Debug NFe - Operação concluída com sucesso');
       resetForm();
     } catch (error) {
-      console.error('Erro ao salvar NF-e:', error);
+      console.error('❌ Debug NFe - Erro na operação:', error);
+      toast({
+        title: "Erro",
+        description: `Falha ao ${isEditing ? 'atualizar' : 'criar'} NF-e: ${error.message}`,
+        variant: "destructive"
+      });
     }
   };
 

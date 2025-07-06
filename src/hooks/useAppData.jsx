@@ -465,13 +465,21 @@ export const AppDataProvider = ({ children }) => {
   
   const addNFe = async (nfe) => {
     try {
-      const response = await apiService.createNFe({
+      console.log('🔍 Debug addNFe - Dados recebidos:', nfe);
+      
+      const nfeData = {
         ...nfe,
         customer_name: nfe.customerName,
         total: parseFloat(nfe.total),
         date: new Date().toISOString().split('T')[0],
         segmentId: activeSegmentId
-      });
+      };
+      
+      console.log('🔍 Debug addNFe - Dados processados:', nfeData);
+      console.log('🔍 Debug addNFe - Token atual:', apiService.getToken());
+      
+      const response = await apiService.createNFe(nfeData);
+      console.log('🔍 Debug addNFe - Resposta da API:', response);
       
       // Update local state
       setData(prev => ({
@@ -486,7 +494,10 @@ export const AppDataProvider = ({ children }) => {
       
       return response.nfe;
     } catch (error) {
-      console.error('Add NFe error:', error);
+      console.error('❌ Debug addNFe - Erro completo:', error);
+      console.error('❌ Debug addNFe - Mensagem de erro:', error.message);
+      console.error('❌ Debug addNFe - Stack trace:', error.stack);
+      
       toast({
         title: "Erro!",
         description: "Falha ao criar NF-e. Tente novamente.",
