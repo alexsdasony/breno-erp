@@ -6,7 +6,7 @@ import { calculateMetrics } from '@/utils/metrics';
 const AppDataContext = createContext();
 
 const defaultInitialData = {
-  // Essential data (loaded on login)
+  // Essential data (loaded on login) - LIMITED SIZE
   transactions: [],
   products: [],
   sales: [],
@@ -264,7 +264,9 @@ export const AppDataProvider = ({ children }) => {
   const loadTransactions = async (params = {}) => {
     try {
       const response = await apiService.getTransactions(params);
-      setData(prev => ({ ...prev, transactions: response.transactions }));
+      // Limit transactions to prevent quota exceeded error
+      const limitedTransactions = (response.transactions || []).slice(0, 1000);
+      setData(prev => ({ ...prev, transactions: limitedTransactions }));
       return response;
     } catch (error) {
       console.error('Load transactions error:', error);
@@ -297,7 +299,9 @@ export const AppDataProvider = ({ children }) => {
   const loadSales = async (params = {}) => {
     try {
       const response = await apiService.getSales(params);
-      setData(prev => ({ ...prev, sales: response.sales }));
+      // Limit sales to prevent quota exceeded error
+      const limitedSales = (response.sales || []).slice(0, 500);
+      setData(prev => ({ ...prev, sales: limitedSales }));
       return response;
     } catch (error) {
       console.error('Load sales error:', error);
@@ -308,7 +312,9 @@ export const AppDataProvider = ({ children }) => {
   const loadBillings = async (params = {}) => {
     try {
       const response = await apiService.getBillings(params);
-      setData(prev => ({ ...prev, billings: response.billings }));
+      // Limit billings to prevent quota exceeded error
+      const limitedBillings = (response.billings || []).slice(0, 500);
+      setData(prev => ({ ...prev, billings: limitedBillings }));
       return response;
     } catch (error) {
       console.error('Load billings error:', error);

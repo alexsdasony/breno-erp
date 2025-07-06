@@ -4,6 +4,7 @@ import { BarChart3, TrendingUp, TrendingDown, DollarSign, PieChart, Filter, Down
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency } from '@/lib/utils.js';
+import apiService from '@/services/api.js';
 
 const ReportsModule = ({ toast }) => {
   const { data, activeSegmentId } = useAppData();
@@ -33,62 +34,40 @@ const ReportsModule = ({ toast }) => {
 
   const loadCostCenters = async () => {
     try {
-      const response = await fetch('/api/cost-centers', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setCostCenters(data);
-      }
+      const data = await apiService.get('/cost-centers');
+      // Garantir que costCenters seja sempre um array
+      setCostCenters(Array.isArray(data) ? data : (data?.costCenters || []));
     } catch (error) {
       console.error('Error loading cost centers:', error);
+      setCostCenters([]); // Fallback para array vazio
     }
   };
 
   const loadChartOfAccounts = async () => {
     try {
-      const response = await fetch('/api/chart-of-accounts', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setChartOfAccounts(data);
-      }
+      const data = await apiService.get('/chart-of-accounts');
+      // Garantir que chartOfAccounts seja sempre um array
+      setChartOfAccounts(Array.isArray(data) ? data : (data?.chartOfAccounts || []));
     } catch (error) {
       console.error('Error loading chart of accounts:', error);
+      setChartOfAccounts([]); // Fallback para array vazio
     }
   };
 
   const generateDRE = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/reports/dre?${new URLSearchParams({
+      const params = {
         startDate: filters.startDate,
         endDate: filters.endDate,
         costCenterId: filters.costCenterId,
         accountType: filters.accountType,
         groupBy: filters.groupBy,
         segmentId: activeSegmentId || ''
-      })}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      };
 
-      if (response.ok) {
-        const data = await response.json();
-        setDreData(data);
-      } else {
-        toast({
-          title: "Erro",
-          description: "Erro ao gerar DRE.",
-          variant: "destructive"
-        });
-      }
+      const data = await apiService.get('/reports/dre', params);
+      setDreData(data);
     } catch (error) {
       console.error('Error generating DRE:', error);
       toast({
@@ -103,7 +82,7 @@ const ReportsModule = ({ toast }) => {
 
   const exportDRE = async (format = 'pdf') => {
     try {
-      const response = await fetch(`/api/reports/dre/export?${new URLSearchParams({
+      const params = {
         startDate: filters.startDate,
         endDate: filters.endDate,
         costCenterId: filters.costCenterId,
@@ -111,9 +90,11 @@ const ReportsModule = ({ toast }) => {
         groupBy: filters.groupBy,
         segmentId: activeSegmentId || '',
         format
-      })}`, {
+      };
+
+      const response = await fetch(`${apiService.baseURL}/reports/dre/export?${new URLSearchParams(params)}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${apiService.getToken()}`
         }
       });
 
@@ -251,11 +232,11 @@ const ReportsModule = ({ toast }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Todos os Centros</option>
-              {costCenters.map(center => (
+              {Array.isArray(costCenters) ? costCenters.map(center => (
                 <option key={center.id} value={center.id}>
                   {center.name}
                 </option>
-              ))}
+              )) : null}
             </select>
           </div>
           

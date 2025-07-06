@@ -96,7 +96,6 @@ const ErpLayout = () => {
   const activeSegment = (data.segments || []).find(s => s.id === activeSegmentId);
 
   const renderModuleContent = (moduleName) => {
-    console.log('🔍 Renderizando módulo:', moduleName); // Debug log
     const moduleProps = { ...appData, metrics, toast, setActiveModule };
     
     if (moduleName === 'schema' && !isAdmin) {
@@ -116,20 +115,15 @@ const ErpLayout = () => {
       case 'billing': return <BillingModule {...moduleProps} />;
       case 'inventory': return <InventoryModule {...moduleProps} />;
       case 'sales': return <SalesModule {...moduleProps} />;
-      case 'customers': 
-        console.log('🎯 Renderizando CustomersModule com props:', moduleProps); // Debug log
-        return <CustomersModule {...moduleProps} />;
+      case 'customers': return <CustomersModule {...moduleProps} />;
       case 'costCenters': return <CostCentersModule {...moduleProps} />;
       case 'chartOfAccounts': return <ChartOfAccountsModule {...moduleProps} />;
       case 'segments': return <SegmentsModule {...moduleProps} />;
       case 'nfe': return <NFeModule {...moduleProps} />;
-      // case 'integrations': return <IntegrationsModule {...moduleProps} />; // REMOVED - causing issues
       case 'reports': return <ReportsModule {...moduleProps} />;
       case 'schema': return <SchemaViewerModule {...moduleProps} />;
       case 'profile': return <ProfileModule {...moduleProps} />;
-      default: 
-        console.log('❌ Módulo não encontrado:', moduleName); // Debug log
-        return <Navigate to="/dashboard" replace />;
+      default: return <Navigate to="/dashboard" replace />;
     }
   };
 
