@@ -8,7 +8,13 @@ import {
   Package,
   ShoppingCart,
   Users,
-  AlertTriangle
+  AlertTriangle,
+  FileSpreadsheet,
+  CreditCard,
+  Clock,
+  DollarSign,
+  Send,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData.jsx';
@@ -20,6 +26,20 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
 
   // Reactivated segment filtering - problem was data.segments access fixed
   const filteredProducts = (data.products || []).filter(p => !activeSegmentId || activeSegmentId === 0 || p.segmentId === activeSegmentId);
+  const filteredNFeList = (data.nfeList || []).filter(n => !activeSegmentId || activeSegmentId === 0 || n.segmentId === activeSegmentId);
+  const filteredBillings = (data.billings || []).filter(b => !activeSegmentId || activeSegmentId === 0 || b.segmentId === activeSegmentId);
+
+  // Cálculos adicionais para painéis
+  const totalNFe = filteredNFeList.length;
+  const nfeEmitidas = filteredNFeList.filter(nfe => nfe.status === 'Emitida').length;
+  const nfePendentes = filteredNFeList.filter(nfe => nfe.status === 'Pendente').length;
+  
+  const totalBillings = filteredBillings.length;
+  const overdueBillings = filteredBillings.filter(b => b.status === 'Vencida').length;
+  const defaultRate = totalBillings > 0 ? (overdueBillings / totalBillings) * 100 : 0;
+  const totalPendingAmount = filteredBillings
+    .filter(b => b.status === 'Pendente' || b.status === 'Vencida')
+    .reduce((sum, b) => sum + Number(b.amount || 0), 0);
 
   return (
     <motion.div
@@ -49,6 +69,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
         </div>
       </div>
 
+      {/* Primeira linha de painéis - Métricas principais */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <motion.div
           whileHover={{ scale: 1.02 }}
@@ -121,6 +142,85 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             <Users className="w-4 h-4 text-blue-400 mr-1" />
             <span className="text-blue-400">{metrics.totalCustomers}</span>
             <span className="text-muted-foreground ml-2">clientes</span>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Segunda linha de painéis - NF-e e Cobranças */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="glass-effect rounded-xl p-6 gradient-card border"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Total NF-es</p>
+              <p className="text-2xl font-bold text-indigo-400">{totalNFe}</p>
+            </div>
+            <div className="p-3 bg-indigo-500/20 rounded-lg">
+              <FileSpreadsheet className="w-6 h-6 text-indigo-400" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between text-sm">
+            <div className="flex items-center">
+              <Send className="w-4 h-4 text-green-400 mr-1" />
+              <span className="text-green-400">{nfeEmitidas}</span>
+              <span className="text-muted-foreground ml-1">emitidas</span>
+            </div>
+            <div className="flex items-center">
+              <FileText className="w-4 h-4 text-yellow-400 mr-1" />
+              <span className="text-yellow-400">{nfePendentes}</span>
+              <span className="text-muted-foreground ml-1">pendentes</span>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="glass-effect rounded-xl p-6 gradient-card border"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Índice de Inadimplência</p>
+              <p className={`text-2xl font-bold ${defaultRate > 10 ? 'text-red-400' : 'text-green-400'}`}>
+                {defaultRate.toFixed(2)}%
+              </p>
+            </div>
+            <div className="p-3 bg-red-500/20 rounded-lg">
+              <AlertTriangle className={`w-6 h-6 ${defaultRate > 10 ? 'text-red-400' : 'text-green-400'}`} />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="glass-effect rounded-xl p-6 gradient-card border"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Cobranças Vencidas</p>
+              <p className="text-2xl font-bold text-red-400">{overdueBillings}</p>
+            </div>
+            <div className="p-3 bg-red-500/20 rounded-lg">
+              <Clock className="w-6 h-6 text-red-400" />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="glass-effect rounded-xl p-6 gradient-card border"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Total a Receber</p>
+              <p className="text-2xl font-bold text-yellow-400">
+                {formatCurrency(totalPendingAmount)}
+              </p>
+            </div>
+            <div className="p-3 bg-yellow-500/20 rounded-lg">
+              <DollarSign className="w-6 h-6 text-yellow-400" />
+            </div>
           </div>
         </motion.div>
       </div>
