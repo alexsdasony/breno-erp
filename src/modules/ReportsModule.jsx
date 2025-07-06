@@ -429,7 +429,7 @@ const ReportsModule = ({ toast }) => {
               <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
               <span className="ml-2">Gerando relatório...</span>
             </div>
-          ) : (
+          ) : dreData ? (
             <div className="space-y-6">
               {/* Receitas */}
               {dreData.revenues && dreData.revenues.length > 0 && (
@@ -500,6 +500,11 @@ const ReportsModule = ({ toast }) => {
                   </p>
                 </div>
               </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <BarChart3 className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <p>Nenhum dado disponível para o período selecionado.</p>
             </div>
           )}
         </motion.div>

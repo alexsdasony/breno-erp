@@ -101,7 +101,7 @@ router.get('/dre', validateDateRange, async (req, res) => {
         coa.account_category
       FROM transactions t
       LEFT JOIN cost_centers cc ON t.cost_center = cc.name
-      LEFT JOIN chart_of_accounts coa ON t.category = coa.account_type
+      LEFT JOIN chart_of_accounts coa ON t.category = coa.account_name
       WHERE ${whereClause}
       ORDER BY t.date DESC, coa.account_code
     `;
@@ -137,19 +137,20 @@ router.get('/dre', validateDateRange, async (req, res) => {
       const amount = parseFloat(transaction.amount) || 0;
       const accountType = transaction.account_type || 'unknown';
       const costCenterName = transaction.cost_center || 'Sem Centro de Custo';
+      const accountId = transaction.account_id || transaction.category;
 
       // Agrupar por conta contábil
-      if (!accountGroups[transaction.account_id]) {
-        accountGroups[transaction.account_id] = {
-          account_id: transaction.account_id,
-          account_code: transaction.account_code,
-          account_name: transaction.account_name,
+      if (!accountGroups[accountId]) {
+        accountGroups[accountId] = {
+          account_id: accountId,
+          account_code: transaction.account_code || transaction.category,
+          account_name: transaction.account_name || transaction.category,
           account_type: accountType,
           cost_center_name: transaction.cost_center_name,
           total: 0
         };
       }
-      accountGroups[transaction.account_id].total += amount;
+      accountGroups[accountId].total += amount;
 
       // Agrupar por centro de custo
       if (!costCenterGroups[costCenterName]) {
@@ -161,10 +162,11 @@ router.get('/dre', validateDateRange, async (req, res) => {
         };
       }
 
-      if (accountType === 'revenue') {
+      // Determinar se é receita ou despesa baseado no tipo da transação
+      if (transaction.type === 'receita' || accountType === 'revenue') {
         costCenterGroups[costCenterName].revenues += amount;
         dreData.summary.totalRevenues += amount;
-      } else if (accountType === 'expense') {
+      } else if (transaction.type === 'despesa' || accountType === 'expense') {
         costCenterGroups[costCenterName].expenses += amount;
         dreData.summary.totalExpenses += amount;
       }
@@ -172,9 +174,9 @@ router.get('/dre', validateDateRange, async (req, res) => {
 
     // Separar receitas e despesas
     Object.values(accountGroups).forEach(account => {
-      if (account.account_type === 'revenue') {
+      if (account.account_type === 'revenue' || account.total > 0) {
         dreData.revenues.push(account);
-      } else if (account.account_type === 'expense') {
+      } else if (account.account_type === 'expense' || account.total < 0) {
         dreData.expenses.push(account);
       }
       dreData.accountAnalysis.push(account);
