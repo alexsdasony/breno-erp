@@ -336,7 +336,10 @@ export const AppDataProvider = ({ children }) => {
   const loadNFes = async (params = {}) => {
     try {
       const response = await apiService.getNFes(params);
-      setData(prev => ({ ...prev, nfeList: response.nfes }));
+      setData(prev => ({
+        ...prev,
+        nfeList: response.nfeList || []
+      }));
       return response;
     } catch (error) {
       console.error('Load NFes error:', error);
@@ -484,7 +487,7 @@ export const AppDataProvider = ({ children }) => {
       // Update local state
       setData(prev => ({
         ...prev,
-        nfeList: [...prev.nfeList, response.nfe]
+        nfeList: [...(prev.nfeList || []), response.nfe]
       }));
       
       toast({
