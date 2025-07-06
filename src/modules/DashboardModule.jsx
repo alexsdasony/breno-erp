@@ -27,7 +27,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
   // Reactivated segment filtering - problem was data.segments access fixed
   const filteredProducts = (data.products || []).filter(p => !activeSegmentId || activeSegmentId === 0 || p.segmentId === activeSegmentId);
   const filteredNFeList = (data.nfeList || []).filter(n => !activeSegmentId || activeSegmentId === 0 || n.segmentId === activeSegmentId);
-  
+
   // Função para calcular status dinâmico baseado na data de vencimento (mesma lógica do BillingModule)
   function getStatusWithDueDate(billing) {
     if (billing.status === 'Pendente') {
