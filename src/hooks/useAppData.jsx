@@ -1062,7 +1062,10 @@ export const AppDataProvider = ({ children }) => {
     
     // NFe functions
     updateNFe,
-    deleteNFe
+    deleteNFe,
+    
+    // Toast function
+    toast
   };
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

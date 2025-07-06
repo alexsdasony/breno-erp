@@ -85,20 +85,37 @@ const NFeModule = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    console.log('🔍 Debug NFe - FormData:', formData);
-    console.log('🔍 Debug NFe - Validação:', {
-      number: !!formData.number,
-      customerId: !!formData.customerId,
-      total: !!formData.total
+    console.log('🔍 Debug NFe - FormData completo:', formData);
+    console.log('🔍 Debug NFe - Validação detalhada:', {
+      number: formData.number,
+      customerId: formData.customerId,
+      total: formData.total,
+      numberValid: !!formData.number && formData.number.trim() !== '',
+      customerIdValid: !!formData.customerId && formData.customerId !== '',
+      totalValid: !!formData.total && formData.total !== ''
     });
     
-    if (!formData.number || !formData.customerId || !formData.total) {
-      console.log('❌ Debug NFe - Validação falhou');
-      toast({
-        title: "Erro",
-        description: "Número NF-e, Cliente e Total são obrigatórios.",
-        variant: "destructive"
+    // Validação mais rigorosa
+    const numberValid = formData.number && formData.number.trim() !== '';
+    const customerIdValid = formData.customerId && formData.customerId !== '';
+    const totalValid = formData.total && formData.total !== '';
+    
+    if (!numberValid || !customerIdValid || !totalValid) {
+      console.log('❌ Debug NFe - Validação falhou:', {
+        numberValid,
+        customerIdValid,
+        totalValid
       });
+      
+      if (toast) {
+        toast({
+          title: "Erro",
+          description: "Número NF-e, Cliente e Total são obrigatórios.",
+          variant: "destructive"
+        });
+      } else {
+        alert("Erro: Número NF-e, Cliente e Total são obrigatórios.");
+      }
       return;
     }
 
@@ -116,11 +133,15 @@ const NFeModule = () => {
       resetForm();
     } catch (error) {
       console.error('❌ Debug NFe - Erro na operação:', error);
-      toast({
-        title: "Erro",
-        description: `Falha ao ${isEditing ? 'atualizar' : 'criar'} NF-e: ${error.message}`,
-        variant: "destructive"
-      });
+      if (toast) {
+        toast({
+          title: "Erro",
+          description: `Falha ao ${isEditing ? 'atualizar' : 'criar'} NF-e: ${error.message}`,
+          variant: "destructive"
+        });
+      } else {
+        alert(`Erro: Falha ao ${isEditing ? 'atualizar' : 'criar'} NF-e: ${error.message}`);
+      }
     }
   };
 
