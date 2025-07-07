@@ -101,7 +101,7 @@ router.get('/dre', validateDateRange, async (req, res) => {
         coa.account_category
       FROM transactions t
       LEFT JOIN cost_centers cc ON t.cost_center = cc.name
-      LEFT JOIN chart_of_accounts coa ON t.category = coa.account_name
+      LEFT JOIN chart_of_accounts coa ON t.category = coa.account_category
       WHERE ${whereClause}
       ORDER BY t.date DESC, coa.account_code
     `;
@@ -163,22 +163,56 @@ router.get('/dre', validateDateRange, async (req, res) => {
       }
 
       // Determinar se é receita ou despesa baseado no tipo da transação
-      if (transaction.type === 'receita' || accountType === 'revenue') {
+      if (transaction.type === 'receita') {
         costCenterGroups[costCenterName].revenues += amount;
         dreData.summary.totalRevenues += amount;
-      } else if (transaction.type === 'despesa' || accountType === 'expense') {
+      } else if (transaction.type === 'despesa') {
         costCenterGroups[costCenterName].expenses += amount;
         dreData.summary.totalExpenses += amount;
       }
     });
 
-    // Separar receitas e despesas
+    // Separar receitas e despesas baseado no tipo da transação
     Object.values(accountGroups).forEach(account => {
-      if (account.account_type === 'revenue' || account.total > 0) {
-        dreData.revenues.push(account);
-      } else if (account.account_type === 'expense' || account.total < 0) {
-        dreData.expenses.push(account);
+      // Verificar transações desta conta
+      const accountTransactions = transactions.filter(t => 
+        (t.account_id === account.account_id || t.category === account.account_code)
+      );
+      
+      // Calcular receitas e despesas separadamente
+      const revenues = accountTransactions.filter(t => t.type === 'receita');
+      const expenses = accountTransactions.filter(t => t.type === 'despesa');
+      
+      const totalRevenues = revenues.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      const totalExpenses = expenses.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      
+      // Log detalhado para debug
+      if (totalRevenues > 0 || totalExpenses > 0) {
+        console.log(`📊 Conta: ${account.account_name || account.account_code}`);
+        console.log(`   Receitas: ${revenues.length} transações, Total: R$ ${totalRevenues.toFixed(2)}`);
+        console.log(`   Despesas: ${expenses.length} transações, Total: R$ ${totalExpenses.toFixed(2)}`);
       }
+      
+      // Adicionar receitas se houver
+      if (totalRevenues > 0) {
+        dreData.revenues.push({
+          ...account,
+          total: totalRevenues,
+          type: 'receita',
+          category: 'receita'
+        });
+      }
+      
+      // Adicionar despesas se houver
+      if (totalExpenses > 0) {
+        dreData.expenses.push({
+          ...account,
+          total: totalExpenses,
+          type: 'despesa',
+          category: 'despesa'
+        });
+      }
+      
       dreData.accountAnalysis.push(account);
     });
 
@@ -187,9 +221,19 @@ router.get('/dre', validateDateRange, async (req, res) => {
 
     // Calcular resultado líquido e margem
     dreData.summary.netIncome = dreData.summary.totalRevenues - dreData.summary.totalExpenses;
+    dreData.summary.difference = dreData.summary.totalRevenues - dreData.summary.totalExpenses;
     dreData.summary.margin = dreData.summary.totalRevenues > 0 
       ? (dreData.summary.netIncome / dreData.summary.totalRevenues) * 100 
       : 0;
+
+    // Log dos totais finais
+    console.log('💰 RESUMO DRE:');
+    console.log(`   Total Receitas: R$ ${dreData.summary.totalRevenues.toFixed(2)}`);
+    console.log(`   Total Despesas: R$ ${dreData.summary.totalExpenses.toFixed(2)}`);
+    console.log(`   Resultado Líquido: R$ ${dreData.summary.netIncome.toFixed(2)}`);
+    console.log(`   Margem: ${dreData.summary.margin.toFixed(2)}%`);
+    console.log(`   Itens de Receita: ${dreData.revenues.length}`);
+    console.log(`   Itens de Despesa: ${dreData.expenses.length}`);
 
     // Ordenar dados
     dreData.revenues.sort((a, b) => b.total - a.total);
