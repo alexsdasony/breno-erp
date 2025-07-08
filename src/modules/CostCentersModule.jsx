@@ -22,7 +22,7 @@ const CostCentersModule = ({ toast }) => {
 
   // Lazy load costCenters when component mounts
   useEffect(() => {
-    console.log('🔄 CostCentersModule: Ensuring costCenters are loaded...');
+  
     ensureCostCentersLoaded();
   }, [ensureCostCentersLoaded]);
 

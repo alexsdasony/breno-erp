@@ -115,16 +115,7 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
     filterStatus === 'all' || billing.status === filterStatus
   );
 
-  // Log de depuração para analisar dados recebidos
-  console.log('data.billings:', data.billings);
-  console.log('filteredBillings:', filteredBillings);
-  if (filteredBillings && filteredBillings.length > 0) {
-    filteredBillings.forEach((b, i) => {
-      if (!b.customerName || !b.amount || !b.segmentId) {
-        console.warn('Cobrança com campo ausente:', { index: i, billing: b });
-      }
-    });
-  }
+
 
   // Cálculo dinâmico dos painéis
   const totalBillings = filteredBillings.length;

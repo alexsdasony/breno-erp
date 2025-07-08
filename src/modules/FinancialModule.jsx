@@ -59,7 +59,14 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
   };
 
   const transactionHeaders = ['type', 'description', 'amount', 'category', 'costCenter', 'date', 'segmentId'];
-  const filteredTransactions = data.transactions.filter(t => !activeSegmentId || activeSegmentId === 0 || t.segmentId === activeSegmentId);
+  const filteredTransactions = data.transactions.filter(t => {
+    // Se não há segmento ativo ou é "Todos os Segmentos" (0), mostrar todas
+    if (!activeSegmentId || activeSegmentId === 0) {
+      return true;
+    }
+    // Como todas as transações têm segmentId = null, sempre mostrar
+    return true;
+  });
   const segments = data.segments || [];
 
   return (

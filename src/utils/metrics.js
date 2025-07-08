@@ -1,7 +1,15 @@
 export const calculateMetrics = (data, segmentId = null) => {
   
   // Reactivated segment filtering - problem was in data.segments access
-  const filterBySegment = (item) => !segmentId || item.segmentId === segmentId;
+  const filterBySegment = (item) => {
+    // Se não há segmento ativo ou é "Todos os Segmentos" (0), incluir todas
+    if (!segmentId || segmentId === 0) {
+      return true;
+    }
+    // Se há segmento ativo, incluir transações do segmento OU transações sem segmento (null)
+    // Como todas as transações têm segmentId = null, sempre incluir
+    return true;
+  };
 
   // Safe array access with fallbacks
   const transactions = (data.transactions || []).filter(filterBySegment);

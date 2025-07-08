@@ -26,7 +26,7 @@ const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, delete
 
   // Lazy load accountsPayable when component mounts
   useEffect(() => {
-    console.log('🔄 AccountsPayableModule: Ensuring accountsPayable are loaded...');
+  
     ensureAccountsPayableLoaded();
   }, [ensureAccountsPayableLoaded]);
 

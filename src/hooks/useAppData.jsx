@@ -61,7 +61,7 @@ export const AppDataProvider = ({ children }) => {
             // Load ONLY ESSENTIAL data with user's segment context
             const segmentFilter = userProfile.user.segment_id ? { segment_id: userProfile.user.segment_id } : {};
             
-            console.log('🚀 LAZY LOADING: Loading ESSENTIAL data only for user:', userProfile.user.name, 'segment_id:', userProfile.user.segment_id);
+            console.log('🚀 Loading essential data for user:', userProfile.user.name);
             
             // Load only essential data for dashboard
             await Promise.all([
@@ -74,7 +74,7 @@ export const AppDataProvider = ({ children }) => {
               // REMOVED: costCenters, accountsPayable (lazy loaded)
             ]);
             
-            console.log('✅ ESSENTIAL data loaded successfully (lazy loading active)');
+            console.log('✅ Essential data loaded successfully');
           } catch (error) {
             console.error('Authentication check failed:', error);
             apiService.setToken(null);
@@ -127,7 +127,7 @@ export const AppDataProvider = ({ children }) => {
         // Load ONLY ESSENTIAL data immediately after login
         const segmentFilter = response.user.segment_id ? { segment_id: response.user.segment_id } : {};
         
-        console.log('🎯 LAZY LOADING: Loading ESSENTIAL data only:', segmentFilter);
+        console.log('🎯 Loading essential data for login');
         
         // Load only essential data for dashboard (6 requests instead of 8)
         await Promise.all([
@@ -140,7 +140,7 @@ export const AppDataProvider = ({ children }) => {
           // REMOVED: costCenters, accountsPayable (lazy loaded on demand)
         ]);
         
-        console.log('🎉 ESSENTIAL data loaded! Dashboard ready (lazy loading active)');
+        console.log('🎉 Dashboard ready');
         
         return true;
       }
@@ -227,14 +227,14 @@ export const AppDataProvider = ({ children }) => {
       return;
     }
 
-    console.log('🔄 LAZY LOADING: Loading costCenters on demand...');
+          console.log('🔄 Loading costCenters...');
     setLazyState(prev => ({ ...prev, costCenters: { ...prev.costCenters, loading: true } }));
     
     try {
       const segmentFilter = currentUser?.segment_id ? { segment_id: currentUser.segment_id } : {};
       await loadCostCenters(segmentFilter);
       setLazyState(prev => ({ ...prev, costCenters: { loaded: true, loading: false } }));
-      console.log('✅ LAZY LOADING: costCenters loaded successfully');
+      console.log('✅ CostCenters loaded successfully');
     } catch (error) {
       console.error('Failed to lazy load costCenters:', error);
       setLazyState(prev => ({ ...prev, costCenters: { loaded: false, loading: false } }));
@@ -246,14 +246,14 @@ export const AppDataProvider = ({ children }) => {
       return;
     }
 
-    console.log('🔄 LAZY LOADING: Loading accountsPayable on demand...');
+          console.log('🔄 Loading accountsPayable...');
     setLazyState(prev => ({ ...prev, accountsPayable: { ...prev.accountsPayable, loading: true } }));
     
     try {
       const segmentFilter = currentUser?.segment_id ? { segment_id: currentUser.segment_id } : {};
       await loadAccountsPayable(segmentFilter);
       setLazyState(prev => ({ ...prev, accountsPayable: { loaded: true, loading: false } }));
-      console.log('✅ LAZY LOADING: accountsPayable loaded successfully');
+      console.log('✅ AccountsPayable loaded successfully');
     } catch (error) {
       console.error('Failed to lazy load accountsPayable:', error);
       setLazyState(prev => ({ ...prev, accountsPayable: { loaded: false, loading: false } }));
@@ -457,9 +457,23 @@ export const AppDataProvider = ({ children }) => {
       return response.customer;
     } catch (error) {
       console.error('Add customer error:', error);
+      
+      // Tratar erros específicos da API
+      let errorMessage = "Falha ao adicionar cliente. Tente novamente.";
+      
+      if (error.message.includes('email already exists')) {
+        errorMessage = "Cliente com este email já existe.";
+      } else if (error.message.includes('document already exists')) {
+        errorMessage = "Cliente com este documento já existe.";
+      } else if (error.message.includes('Customer with this email already exists')) {
+        errorMessage = "Cliente com este email já existe.";
+      } else if (error.message.includes('Customer with this document already exists')) {
+        errorMessage = "Cliente com este documento já existe.";
+      }
+      
       toast({
         title: "Erro!",
-        description: "Falha ao adicionar cliente. Tente novamente.",
+        description: errorMessage,
         variant: "destructive"
       });
       throw error;
