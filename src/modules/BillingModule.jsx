@@ -13,16 +13,19 @@ import {
   Clock,
   DollarSign,
   Send,
-  CalendarDays
+  CalendarDays,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
-const BillingModule = ({ metrics, addBilling, toast, importData }) => {
+const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toast, importData }) => {
   const { data, activeSegmentId } = useAppData();
   const [showForm, setShowForm] = useState(false);
+  const [editingBilling, setEditingBilling] = useState(null);
+  const [viewingBilling, setViewingBilling] = useState(null);
   const [formData, setFormData] = useState({
     customerId: '',
     customerName: '',
@@ -57,14 +60,58 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
       return;
     }
     
-    addBilling({
-      ...formData,
-      amount: parseFloat(formData.amount),
-      segmentId: parseInt(formData.segmentId)
-    });
+    if (editingBilling) {
+      // Update existing billing
+      updateBilling(editingBilling.id, {
+        ...formData,
+        amount: parseFloat(formData.amount),
+        segmentId: parseInt(formData.segmentId)
+      });
+      setEditingBilling(null);
+    } else {
+      // Create new billing
+      addBilling({
+        ...formData,
+        amount: parseFloat(formData.amount),
+        segmentId: parseInt(formData.segmentId)
+      });
+    }
     
     setFormData({ customerId: '', customerName: '', amount: '', dueDate: '', status: 'Pendente', segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '') });
     setShowForm(false);
+  };
+
+  const handleEdit = (billing) => {
+    setEditingBilling(billing);
+    setFormData({
+      customerId: billing.customerId || billing.customer_id || '',
+      customerName: billing.customerName || '',
+      amount: billing.amount || '',
+      dueDate: billing.dueDate || billing.due_date || '',
+      status: billing.status || 'Pendente',
+      segmentId: billing.segmentId || billing.segment_id || activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+    });
+    setShowForm(true);
+  };
+
+  const handleView = (billing) => {
+    setViewingBilling(billing);
+  };
+
+  const handleDelete = async (billingId) => {
+    if (window.confirm('Tem certeza que deseja excluir esta cobrança?')) {
+      try {
+        await deleteBilling(billingId);
+      } catch (error) {
+        console.error('Delete billing error:', error);
+      }
+    }
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingBilling(null);
+    setFormData({ customerId: '', customerName: '', amount: '', dueDate: '', status: 'Pendente', segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '') });
   };
 
   const getStatusColor = (status) => {
@@ -188,7 +235,9 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
             exit={{ opacity: 0, height: 0 }}
             className="glass-effect rounded-xl p-6 border"
           >
-            <h3 className="text-lg font-semibold mb-4">Nova Cobrança</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              {editingBilling ? 'Editar Cobrança' : 'Nova Cobrança'}
+            </h3>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Segmento</label>
@@ -239,7 +288,7 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
               </div>
               <div className="md:col-span-2 flex space-x-3">
                 <Button type="submit" className="bg-gradient-to-r from-pink-500 to-rose-600">Salvar Cobrança</Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancelar</Button>
+                <Button type="button" variant="outline" onClick={handleCancel}>Cancelar</Button>
               </div>
             </form>
           </motion.div>
@@ -295,10 +344,39 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
                   </td>
                   <td className="p-3 text-center">
                     <div className="flex justify-center space-x-1">
-                      <Button variant="ghost" size="sm" title="Visualizar"><Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm" title="Editar"><Edit className="w-4 h-4" /></Button>
-                      {billing.status !== 'Paga' && (<Button variant="ghost" size="sm" title="Enviar Lembrete (Simulado)"><Send className="w-4 h-4" /></Button>)}
-                      <Button variant="ghost" size="sm" title="Excluir"><Trash2 className="w-4 h-4 text-red-500" /></Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        title="Visualizar"
+                        onClick={() => handleView(billing)}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        title="Editar"
+                        onClick={() => handleEdit(billing)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      {billing.status !== 'Paga' && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          title="Enviar Lembrete (Simulado)"
+                        >
+                          <Send className="w-4 h-4" />
+                        </Button>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        title="Excluir"
+                        onClick={() => handleDelete(billing.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
                     </div>
                   </td>
                 </motion.tr>
@@ -308,6 +386,85 @@ const BillingModule = ({ metrics, addBilling, toast, importData }) => {
           </table>
         </div>
       </motion.div>
+
+      {/* Modal de Visualização */}
+      <AnimatePresence>
+        {viewingBilling && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={() => setViewingBilling(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-effect rounded-xl p-6 border max-w-md w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Detalhes da Cobrança</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setViewingBilling(null)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Cliente</label>
+                  <p className="text-sm">{viewingBilling.customerName || 'N/A'}</p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Segmento</label>
+                  <p className="text-sm">
+                    {segments.find(s => s.id === viewingBilling.segmentId)?.name || 'N/A'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Valor</label>
+                  <p className="text-sm font-medium">{formatCurrency(viewingBilling.amount || 0)}</p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Data de Vencimento</label>
+                  <p className="text-sm">{formatDate(viewingBilling.dueDate || viewingBilling.due_date)}</p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Status</label>
+                  <p className={`text-sm font-medium ${getStatusColor(viewingBilling.status)}`}>
+                    {viewingBilling.status || 'N/A'}
+                  </p>
+                </div>
+                
+                {viewingBilling.description && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Descrição</label>
+                    <p className="text-sm">{viewingBilling.description}</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setViewingBilling(null)}
+                >
+                  Fechar
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

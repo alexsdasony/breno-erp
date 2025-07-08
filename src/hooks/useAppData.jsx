@@ -610,6 +610,60 @@ export const AppDataProvider = ({ children }) => {
     }
   };
 
+  const updateBilling = async (id, billingData) => {
+    try {
+      const response = await apiService.updateBilling(id, billingData);
+      
+      // Update local state
+      setData(prev => ({
+        ...prev,
+        billings: prev.billings.map(billing => 
+          billing.id === id ? response.billing : billing
+        )
+      }));
+      
+      toast({
+        title: "Cobrança Atualizada!",
+        description: "A cobrança foi atualizada com sucesso."
+      });
+      
+      return response.billing;
+    } catch (error) {
+      console.error('Update billing error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao atualizar cobrança. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const deleteBilling = async (billingId) => {
+    try {
+      await apiService.deleteBilling(billingId);
+      
+      // Update local state
+      setData(prev => ({
+        ...prev,
+        billings: prev.billings.filter(billing => billing.id !== billingId)
+      }));
+      
+      toast({
+        title: "Cobrança Excluída!",
+        description: "A cobrança foi excluída com sucesso."
+      });
+    } catch (error) {
+      console.error('Delete billing error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao excluir cobrança. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   const addCostCenter = async (costCenter) => {
     try {
       const response = await apiService.createCostCenter(costCenter);
@@ -1049,6 +1103,8 @@ export const AppDataProvider = ({ children }) => {
     addAccountPayable,
     
     // Data update/delete functions
+    updateBilling,
+    deleteBilling,
     updateCostCenter,
     deleteCostCenter,
     updateAccountPayable,
