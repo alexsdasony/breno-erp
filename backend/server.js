@@ -73,11 +73,15 @@ const corsOptions = {
     // Permitir requests sem origin (ex: Postman, curl)
     if (!origin) return callback(null, true);
     
-    // Debug: log da origem
-    console.log(`🌐 CORS Request from origin: ${origin}`);
+    // Debug: log da origem (reduzido para evitar quota excedida)
+    if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
+      console.log(`🌐 CORS Request from origin: ${origin}`);
+    }
     
     if (allowedOrigins.includes(origin)) {
-      console.log(`✅ CORS Allowed: ${origin}`);
+      if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
+        console.log(`✅ CORS Allowed: ${origin}`);
+      }
       callback(null, true);
     } else {
       console.log(`❌ CORS Blocked: ${origin}`);

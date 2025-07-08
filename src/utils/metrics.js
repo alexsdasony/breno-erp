@@ -1,14 +1,15 @@
 export const calculateMetrics = (data, segmentId = null) => {
   
-  // Reactivated segment filtering - problem was in data.segments access
+  // Corrigir filtro por segmento - lidar com ambos os nomes de campo
   const filterBySegment = (item) => {
     // Se não há segmento ativo ou é "Todos os Segmentos" (0), incluir todas
     if (!segmentId || segmentId === 0) {
       return true;
     }
-    // Se há segmento ativo, incluir transações do segmento OU transações sem segmento (null)
-    // Como todas as transações têm segmentId = null, sempre incluir
-    return true;
+    // Se há segmento ativo, incluir apenas itens do segmento específico
+    // Lidar com ambos os nomes de campo (segment_id do backend e segmentId do frontend)
+    const itemSegmentId = item.segmentId || item.segment_id;
+    return itemSegmentId === segmentId;
   };
 
   // Safe array access with fallbacks
@@ -31,7 +32,7 @@ export const calculateMetrics = (data, segmentId = null) => {
   const totalSales = sales.length;
   
   const customerIdsFromSales = new Set(sales.map(s => s.customerId));
-  const totalCustomers = segmentId ? customerIdsFromSales.size : (data.customers || []).length;
+  const totalCustomers = segmentId && segmentId !== 0 ? customerIdsFromSales.size : (data.customers || []).length;
 
   const totalNFe = nfeList.length;
 

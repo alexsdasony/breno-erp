@@ -63,16 +63,30 @@ export const AppDataProvider = ({ children }) => {
             
             console.log('🚀 Loading essential data for user:', userProfile.user.name);
             
-            // Load only essential data for dashboard
-            await Promise.all([
-              loadTransactions(segmentFilter),
-              loadProducts(segmentFilter),
-              loadCustomers(), // Customers are global - no segment filter
-              loadSales(segmentFilter),
-              loadBillings(segmentFilter),
-              loadNFes(segmentFilter)
-              // REMOVED: costCenters, accountsPayable (lazy loaded)
-            ]);
+            // Load data sequentially to avoid quota issues
+            console.log('📊 Loading transactions...');
+            await loadTransactions(segmentFilter);
+            
+            console.log('📦 Loading products...');
+            await loadProducts(segmentFilter);
+            
+            console.log('👥 Loading customers...');
+            await loadCustomers(segmentFilter);
+            
+            console.log('💰 Loading sales...');
+            await loadSales(segmentFilter);
+            
+            console.log('💳 Loading billings...');
+            await loadBillings(segmentFilter);
+            
+            console.log('📄 Loading NFe...');
+            await loadNFe(segmentFilter);
+            
+            console.log('💸 Loading accounts payable...');
+            await loadAccountsPayable(segmentFilter);
+            
+            console.log('🏢 Loading cost centers...');
+            await loadCostCenters(segmentFilter);
             
             console.log('✅ Essential data loaded successfully');
           } catch (error) {
@@ -129,16 +143,30 @@ export const AppDataProvider = ({ children }) => {
         
         console.log('🎯 Loading essential data for login');
         
-        // Load only essential data for dashboard (6 requests instead of 8)
-        await Promise.all([
-          loadTransactions(segmentFilter),
-          loadProducts(segmentFilter),
-          loadCustomers(), // Global
-          loadSales(segmentFilter),
-          loadBillings(segmentFilter),
-          loadNFes(segmentFilter)
-          // REMOVED: costCenters, accountsPayable (lazy loaded on demand)
-        ]);
+        // Load data sequentially to avoid quota issues
+        console.log('📊 Loading transactions...');
+        await loadTransactions(segmentFilter);
+        
+        console.log('📦 Loading products...');
+        await loadProducts(segmentFilter);
+        
+        console.log('👥 Loading customers...');
+        await loadCustomers(segmentFilter);
+        
+        console.log('💰 Loading sales...');
+        await loadSales(segmentFilter);
+        
+        console.log('💳 Loading billings...');
+        await loadBillings(segmentFilter);
+        
+        console.log('📄 Loading NFe...');
+        await loadNFe(segmentFilter);
+        
+        console.log('💸 Loading accounts payable...');
+        await loadAccountsPayable(segmentFilter);
+        
+        console.log('🏢 Loading cost centers...');
+        await loadCostCenters(segmentFilter);
         
         console.log('🎉 Dashboard ready');
         
@@ -264,9 +292,7 @@ export const AppDataProvider = ({ children }) => {
   const loadTransactions = async (params = {}) => {
     try {
       const response = await apiService.getTransactions(params);
-      // Limit transactions to prevent quota exceeded error
-      const limitedTransactions = (response.transactions || []).slice(0, 1000);
-      setData(prev => ({ ...prev, transactions: limitedTransactions }));
+      setData(prev => ({ ...prev, transactions: response.transactions || [] }));
       return response;
     } catch (error) {
       console.error('Load transactions error:', error);
@@ -277,7 +303,7 @@ export const AppDataProvider = ({ children }) => {
   const loadProducts = async (params = {}) => {
     try {
       const response = await apiService.getProducts(params);
-      setData(prev => ({ ...prev, products: response.products }));
+      setData(prev => ({ ...prev, products: response.products || [] }));
       return response;
     } catch (error) {
       console.error('Load products error:', error);
@@ -288,7 +314,7 @@ export const AppDataProvider = ({ children }) => {
   const loadCustomers = async (params = {}) => {
     try {
       const response = await apiService.getCustomers(params);
-      setData(prev => ({ ...prev, customers: response.customers }));
+      setData(prev => ({ ...prev, customers: response.customers || [] }));
       return response;
     } catch (error) {
       console.error('Load customers error:', error);
@@ -299,9 +325,7 @@ export const AppDataProvider = ({ children }) => {
   const loadSales = async (params = {}) => {
     try {
       const response = await apiService.getSales(params);
-      // Limit sales to prevent quota exceeded error
-      const limitedSales = (response.sales || []).slice(0, 500);
-      setData(prev => ({ ...prev, sales: limitedSales }));
+      setData(prev => ({ ...prev, sales: response.sales || [] }));
       return response;
     } catch (error) {
       console.error('Load sales error:', error);
@@ -312,9 +336,7 @@ export const AppDataProvider = ({ children }) => {
   const loadBillings = async (params = {}) => {
     try {
       const response = await apiService.getBillings(params);
-      // Limit billings to prevent quota exceeded error
-      const limitedBillings = (response.billings || []).slice(0, 500);
-      setData(prev => ({ ...prev, billings: limitedBillings }));
+      setData(prev => ({ ...prev, billings: response.billings || [] }));
       return response;
     } catch (error) {
       console.error('Load billings error:', error);
@@ -325,7 +347,7 @@ export const AppDataProvider = ({ children }) => {
   const loadCostCenters = async (params = {}) => {
     try {
       const response = await apiService.getCostCenters(params);
-      setData(prev => ({ ...prev, costCenters: response.costCenters }));
+      setData(prev => ({ ...prev, costCenters: response.costCenters || [] }));
       return response;
     } catch (error) {
       console.error('Load cost centers error:', error);
@@ -333,16 +355,13 @@ export const AppDataProvider = ({ children }) => {
     }
   };
 
-  const loadNFes = async (params = {}) => {
+  const loadNFe = async (params = {}) => {
     try {
       const response = await apiService.getNFes(params);
-      setData(prev => ({
-        ...prev,
-        nfeList: response.nfeList || []
-      }));
+      setData(prev => ({ ...prev, nfeList: response.nfeList || [] }));
       return response;
     } catch (error) {
-      console.error('Load NFes error:', error);
+      console.error('Load NFe error:', error);
       throw error;
     }
   };
@@ -350,7 +369,7 @@ export const AppDataProvider = ({ children }) => {
   const loadAccountsPayable = async (params = {}) => {
     try {
       const response = await apiService.getAccountsPayable(params);
-      setData(prev => ({ ...prev, accountsPayable: response.accountsPayable }));
+      setData(prev => ({ ...prev, accountsPayable: response.accountsPayable || [] }));
       return response;
     } catch (error) {
       console.error('Load accounts payable error:', error);
@@ -1089,7 +1108,7 @@ export const AppDataProvider = ({ children }) => {
     loadSales,
     loadBillings,
     loadCostCenters,
-    loadNFes,
+    loadNFe,
     loadAccountsPayable,
     
     // Data creation functions

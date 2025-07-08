@@ -94,12 +94,39 @@ export const validateSale = [
 
 // Billing validations
 export const validateBilling = [
-  body('customer_id').isInt({ min: 1 }).withMessage('Valid customer ID required'),
-  body('customer_name').trim().isLength({ min: 1 }).withMessage('Customer name required'),
-  body('amount').isFloat({ min: 0 }).withMessage('Amount must be a positive number'),
+  body('customer_id').custom((value) => {
+    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') {
+      throw new Error('Valid customer ID required');
+    }
+    const num = parseInt(value);
+    if (isNaN(num) || num < 1) {
+      throw new Error('Valid customer ID required');
+    }
+    return true;
+  }).withMessage('Valid customer ID required'),
+  body('customer_name').optional().trim().isLength({ min: 1 }).withMessage('Customer name must be at least 1 character if provided'),
+  body('amount').custom((value) => {
+    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') {
+      throw new Error('Amount is required');
+    }
+    const num = parseFloat(value);
+    if (isNaN(num) || num < 0) {
+      throw new Error('Amount must be a positive number');
+    }
+    return true;
+  }).withMessage('Amount must be a positive number'),
   body('due_date').isISO8601().withMessage('Valid due date required'),
   body('status').isIn(['Pendente', 'Paga', 'Vencida', 'Cancelada']).withMessage('Invalid status'),
-  body('segment_id').isInt({ min: 1 }).withMessage('Valid segment ID required'),
+  body('segment_id').custom((value) => {
+    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') {
+      throw new Error('Valid segment ID required');
+    }
+    const num = parseInt(value);
+    if (isNaN(num) || num < 1) {
+      throw new Error('Valid segment ID required');
+    }
+    return true;
+  }).withMessage('Valid segment ID required'),
   handleValidationErrors
 ];
 
@@ -140,9 +167,40 @@ export const validateIntegration = [
 // Pagination and filtering
 export const validatePagination = [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be at least 1'),
-  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
-  query('segment_id').optional().isInt({ min: 1 }).withMessage('Valid segment ID required'),
-  handleValidationErrors
+  query('limit').optional().custom((value) => {
+    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') return true; // Limit is optional
+    const num = parseInt(value);
+    if (isNaN(num) || num < 1 || num > 1000) {
+      throw new Error('Limit must be between 1 and 1000');
+    }
+    return true;
+  }).withMessage('Limit must be between 1 and 1000'),
+  query('segment_id').optional().custom((value) => {
+    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') return true; // segment_id is optional
+    const num = parseInt(value);
+    if (isNaN(num) || num < 1) {
+      throw new Error('Valid segment ID required');
+    }
+    return true;
+  }).withMessage('Valid segment ID required'),
+  query('startDate').optional().isISO8601().withMessage('Valid start date required'),
+  query('endDate').optional().isISO8601().withMessage('Valid end date required'),
+  query('costCenterId').optional().custom((value) => {
+    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') return true;
+    return true;
+  }),
+  query('accountType').optional().custom((value) => {
+    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') return true;
+    return true;
+  }),
+  query('groupBy').optional().custom((value) => {
+    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') return true;
+    return true;
+  }),
+  query('segmentId').optional().custom((value) => {
+    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') return true;
+    return true;
+  })
 ];
 
 // ID parameter validation

@@ -97,6 +97,7 @@ router.put('/:id', authenticateToken, validateId, validateBilling, async (req, r
   try {
     const { id } = req.params;
     const { customer_id, customer_name, amount, due_date, status, payment_date, segment_id } = req.body;
+    
     const db = await getDatabase();
 
     const existingBilling = await db.get('SELECT * FROM billings WHERE id = ?', [id]);
@@ -104,9 +105,18 @@ router.put('/:id', authenticateToken, validateId, validateBilling, async (req, r
       return res.status(404).json({ error: 'Billing not found' });
     }
 
+    // Se customer_name não foi fornecido, buscar pelo customer_id
+    let finalCustomerName = customer_name;
+    if (!finalCustomerName && customer_id) {
+      const customer = await db.get('SELECT name FROM customers WHERE id = ?', [customer_id]);
+      if (customer) {
+        finalCustomerName = customer.name;
+      }
+    }
+
     await db.run(
       'UPDATE billings SET customer_id = ?, customer_name = ?, amount = ?, due_date = ?, status = ?, payment_date = ?, segment_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [customer_id, customer_name, amount, due_date, status, payment_date || null, segment_id, id]
+      [customer_id, finalCustomerName, amount, due_date, status, payment_date || null, segment_id, id]
     );
 
     const billing = await db.get('SELECT * FROM billings WHERE id = ?', [id]);

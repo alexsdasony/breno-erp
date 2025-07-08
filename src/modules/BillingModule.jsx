@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CreditCard, 
@@ -32,12 +32,22 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
     amount: '',
     dueDate: '',
     status: 'Pendente',
-    segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+    segmentId: ''
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
   const segments = data.segments || [];
+
+  // Inicializar segmentId quando os dados estiverem disponíveis
+  useEffect(() => {
+    if (data.segments && data.segments.length > 0 && !formData.segmentId) {
+      setFormData(prev => ({
+        ...prev,
+        segmentId: activeSegmentId || data.segments[0].id
+      }));
+    }
+  }, [data.segments, activeSegmentId, formData.segmentId]);
 
   const handleCustomerSelect = (e) => {
     const customerId = e.target.value;
@@ -60,32 +70,43 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
       return;
     }
     
+    const billingData = {
+      customer_id: parseInt(formData.customerId),
+      customer_name: formData.customerName,
+      amount: parseFloat(formData.amount),
+      due_date: formData.dueDate,
+      status: formData.status,
+      segment_id: parseInt(formData.segmentId)
+    };
+    
     if (editingBilling) {
       // Update existing billing
-      updateBilling(editingBilling.id, {
-        ...formData,
-        amount: parseFloat(formData.amount),
-        segmentId: parseInt(formData.segmentId)
-      });
+      updateBilling(editingBilling.id, billingData);
       setEditingBilling(null);
     } else {
       // Create new billing
-      addBilling({
-        ...formData,
-        amount: parseFloat(formData.amount),
-        segmentId: parseInt(formData.segmentId)
-      });
+      addBilling(billingData);
     }
     
-    setFormData({ customerId: '', customerName: '', amount: '', dueDate: '', status: 'Pendente', segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '') });
+    setFormData({ customerId: '', customerName: '', amount: '', dueDate: '', status: 'Pendente', segmentId: '' });
     setShowForm(false);
   };
 
   const handleEdit = (billing) => {
     setEditingBilling(billing);
+    
+    // Buscar o nome do cliente se não estiver disponível
+    let customerName = billing.customerName || billing.customer_name || '';
+    if (!customerName && billing.customerId) {
+      const customer = data.customers.find(c => c.id === billing.customerId);
+      if (customer) {
+        customerName = customer.name;
+      }
+    }
+    
     setFormData({
       customerId: billing.customerId || billing.customer_id || '',
-      customerName: billing.customerName || '',
+      customerName: customerName,
       amount: billing.amount || '',
       dueDate: billing.dueDate || billing.due_date || '',
       status: billing.status || 'Pendente',
@@ -111,7 +132,7 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
   const handleCancel = () => {
     setShowForm(false);
     setEditingBilling(null);
-    setFormData({ customerId: '', customerName: '', amount: '', dueDate: '', status: 'Pendente', segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '') });
+    setFormData({ customerId: '', customerName: '', amount: '', dueDate: '', status: 'Pendente', segmentId: '' });
   };
 
   const getStatusColor = (status) => {
@@ -145,11 +166,11 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
   }
 
   // Usar status calculado em toda a renderização e nos filtros
-  let filteredBillings = (data.billings || [])
+  let allBillings = (data.billings || [])
     .map(billing => ({ ...billing, status: getStatusWithDueDate(billing) }));
 
   // Filtro por segmento
-  filteredBillings = filteredBillings.filter(b => !activeSegmentId || activeSegmentId === 0 || b.segmentId === activeSegmentId);
+  let filteredBillings = allBillings.filter(b => !activeSegmentId || activeSegmentId === 0 || (b.segmentId || b.segment_id) === activeSegmentId);
 
   // Filtro por busca
   filteredBillings = filteredBillings.filter(billing =>
@@ -162,13 +183,21 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
     filterStatus === 'all' || billing.status === filterStatus
   );
 
-
-
-  // Cálculo dinâmico dos painéis
-  const totalBillings = filteredBillings.length;
-  const overdueBillings = filteredBillings.filter(b => b.status === 'Vencida').length;
+  // Cálculo dos índices dinâmicos baseados no segmento ativo
+  const billingsForMetrics = activeSegmentId && activeSegmentId !== 0 ? filteredBillings : allBillings;
+  
+  const totalBillings = billingsForMetrics.length;
+  const overdueBillings = billingsForMetrics.filter(b => b.status === 'Vencida').length;
   const defaultRate = totalBillings > 0 ? (overdueBillings / totalBillings) * 100 : 0;
-  const totalPendingAmount = filteredBillings
+  const totalPendingAmount = billingsForMetrics
+    .filter(b => b.status === 'Pendente' || b.status === 'Vencida')
+    .reduce((sum, b) => sum + Number(b.amount || 0), 0);
+
+  // Cálculo dos índices gerais para comparação (quando há segmento ativo)
+  const totalAllBillings = allBillings.length;
+  const overdueAllBillings = allBillings.filter(b => b.status === 'Vencida').length;
+  const defaultRateAll = totalAllBillings > 0 ? (overdueAllBillings / totalAllBillings) * 100 : 0;
+  const totalPendingAmountAll = allBillings
     .filter(b => b.status === 'Pendente' || b.status === 'Vencida')
     .reduce((sum, b) => sum + Number(b.amount || 0), 0);
 
@@ -203,6 +232,11 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
             <div>
               <p className="text-sm text-muted-foreground">Índice de Inadimplência</p>
               <p className={`text-2xl font-bold ${defaultRate > 10 ? 'text-red-400' : 'text-green-400'}`}>{defaultRate.toFixed(2)}%</p>
+              {activeSegmentId && activeSegmentId !== 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Geral: {defaultRateAll.toFixed(2)}%
+                </p>
+              )}
             </div>
             <AlertTriangle className={`w-8 h-8 ${defaultRate > 10 ? 'text-red-400' : 'text-green-400'}`} />
           </div>
@@ -212,6 +246,11 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
             <div>
               <p className="text-sm text-muted-foreground">Cobranças Vencidas</p>
               <p className="text-2xl font-bold text-red-400">{overdueBillings}</p>
+              {activeSegmentId && activeSegmentId !== 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Geral: {overdueAllBillings}
+                </p>
+              )}
             </div>
             <Clock className="w-8 h-8 text-red-400" />
           </div>
@@ -221,6 +260,11 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
             <div>
               <p className="text-sm text-muted-foreground">Total a Receber</p>
               <p className="text-2xl font-bold text-yellow-400">{formatCurrency(totalPendingAmount)}</p>
+              {activeSegmentId && activeSegmentId !== 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Geral: {formatCurrency(totalPendingAmountAll)}
+                </p>
+              )}
             </div>
             <DollarSign className="w-8 h-8 text-yellow-400" />
           </div>
@@ -335,8 +379,8 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
             <tbody>
               {filteredBillings.map(billing => (
                 <motion.tr key={billing.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
-                  <td className="p-3 font-medium">{billing.customerName || 'N/A'}</td>
-                  <td className="p-3">{segments.find(s => s.id === billing.segmentId)?.name || 'N/A'}</td>
+                  <td className="p-3 font-medium">{billing.customerName || billing.customer_name || 'N/A'}</td>
+                  <td className="p-3">{segments.find(s => s.id === (billing.segmentId || billing.segment_id))?.name || 'N/A'}</td>
                   <td className="p-3 text-right font-medium">{formatCurrency(billing.amount || 0)}</td>
                   <td className="p-3 text-center">{formatDate(billing.dueDate || billing.due_date)}</td>
                   <td className="p-3 text-center">
@@ -418,13 +462,13 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
               <div className="space-y-3">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Cliente</label>
-                  <p className="text-sm">{viewingBilling.customerName || 'N/A'}</p>
+                  <p className="text-sm">{viewingBilling.customerName || viewingBilling.customer_name || 'N/A'}</p>
                 </div>
                 
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Segmento</label>
                   <p className="text-sm">
-                    {segments.find(s => s.id === viewingBilling.segmentId)?.name || 'N/A'}
+                    {segments.find(s => s.id === (viewingBilling.segmentId || viewingBilling.segment_id))?.name || 'N/A'}
                   </p>
                 </div>
                 

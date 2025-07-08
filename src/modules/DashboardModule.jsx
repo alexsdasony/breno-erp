@@ -14,12 +14,14 @@ import {
   Clock,
   DollarSign,
   Send,
-  FileText
+  FileText,
+  Filter
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency } from '@/lib/utils.js';
 import { formatDate } from '@/lib/utils.js';
+import { calculateMetrics } from '@/utils/metrics.js';
 
 const DashboardModule = ({ metrics, setActiveModule }) => {
   const { data, activeSegmentId } = useAppData();
@@ -62,6 +64,10 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
   const nfeEmitidas = filteredNFeList.filter(nfe => nfe.status === 'Emitida').length;
   const nfePendentes = filteredNFeList.filter(nfe => nfe.status === 'Pendente').length;
 
+  // Calcular métricas gerais (sem filtro de segmento) para comparação
+  const generalMetrics = calculateMetrics(data, 0);
+  const filteredMetrics = calculateMetrics(data, activeSegmentId);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -90,6 +96,43 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
         </div>
       </div>
 
+      {/* Mostrar comparação de índices quando segmento específico está selecionado */}
+      {activeSegmentId && activeSegmentId !== 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-effect rounded-xl p-4 border border-blue-500/20 bg-blue-500/5"
+        >
+          <div className="flex items-center mb-3">
+            <Filter className="w-5 h-5 text-blue-400 mr-2" />
+            <h3 className="text-lg font-semibold text-blue-400">Comparação de Índices</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Receitas:</span>
+              <div className="text-right">
+                <span className="text-green-400 font-medium">{formatCurrency(filteredMetrics.totalRevenue)}</span>
+                <span className="text-muted-foreground ml-2">({formatCurrency(generalMetrics.totalRevenue)} total)</span>
+              </div>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Despesas:</span>
+              <div className="text-right">
+                <span className="text-red-400 font-medium">{formatCurrency(filteredMetrics.totalExpenses)}</span>
+                <span className="text-muted-foreground ml-2">({formatCurrency(generalMetrics.totalExpenses)} total)</span>
+              </div>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Clientes:</span>
+              <div className="text-right">
+                <span className="text-blue-400 font-medium">{filteredMetrics.totalCustomers}</span>
+                <span className="text-muted-foreground ml-2">({generalMetrics.totalCustomers} total)</span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Primeira linha de painéis - Métricas principais */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <motion.div
@@ -100,7 +143,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             <div>
               <p className="text-sm text-muted-foreground">Receita Total</p>
               <p className="text-2xl font-bold text-green-400">
-                {formatCurrency(metrics.totalRevenue || 0)}
+                {formatCurrency(filteredMetrics.totalRevenue || 0)}
               </p>
             </div>
             <div className="p-3 bg-green-500/20 rounded-lg">
@@ -117,7 +160,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             <div>
               <p className="text-sm text-muted-foreground">Despesas</p>
               <p className="text-2xl font-bold text-red-400">
-                {formatCurrency(metrics.totalExpenses || 0)}
+                {formatCurrency(filteredMetrics.totalExpenses || 0)}
               </p>
             </div>
             <div className="p-3 bg-red-500/20 rounded-lg">
@@ -133,7 +176,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Produtos</p>
-              <p className="text-2xl font-bold text-blue-400">{metrics.totalProducts}</p>
+              <p className="text-2xl font-bold text-blue-400">{filteredMetrics.totalProducts}</p>
             </div>
             <div className="p-3 bg-blue-500/20 rounded-lg">
               <Package className="w-6 h-6 text-blue-400" />
@@ -141,7 +184,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
           </div>
           <div className="mt-4 flex items-center text-sm">
             <AlertTriangle className="w-4 h-4 text-yellow-400 mr-1" />
-            <span className="text-yellow-400">{metrics.lowStockProducts}</span>
+            <span className="text-yellow-400">{filteredMetrics.lowStockProducts}</span>
             <span className="text-muted-foreground ml-2">estoque baixo</span>
           </div>
         </motion.div>
@@ -153,7 +196,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Vendas</p>
-              <p className="text-2xl font-bold text-purple-400">{metrics.totalSales}</p>
+              <p className="text-2xl font-bold text-purple-400">{filteredMetrics.totalSales}</p>
             </div>
             <div className="p-3 bg-purple-500/20 rounded-lg">
               <ShoppingCart className="w-6 h-6 text-purple-400" />
@@ -161,7 +204,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
           </div>
           <div className="mt-4 flex items-center text-sm">
             <Users className="w-4 h-4 text-blue-400 mr-1" />
-            <span className="text-blue-400">{metrics.totalCustomers}</span>
+            <span className="text-blue-400">{filteredMetrics.totalCustomers}</span>
             <span className="text-muted-foreground ml-2">clientes</span>
           </div>
         </motion.div>
@@ -258,25 +301,25 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Receitas</span>
               <span className="text-green-400 font-medium">
-                {formatCurrency(metrics.totalRevenue || 0)}
+                {formatCurrency(filteredMetrics.totalRevenue || 0)}
               </span>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
               <div 
                 className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full"
-                style={{ width: `${metrics.totalRevenue > 0 ? (metrics.totalRevenue / (metrics.totalRevenue + metrics.totalExpenses)) * 100 : 0}%` }}
+                style={{ width: `${filteredMetrics.totalRevenue > 0 ? (filteredMetrics.totalRevenue / (filteredMetrics.totalRevenue + filteredMetrics.totalExpenses)) * 100 : 0}%` }}
               />
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Despesas</span>
               <span className="text-red-400 font-medium">
-                {formatCurrency(metrics.totalExpenses || 0)}
+                {formatCurrency(filteredMetrics.totalExpenses || 0)}
               </span>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
               <div 
                 className="bg-gradient-to-r from-red-400 to-red-600 h-2 rounded-full"
-                style={{ width: `${metrics.totalExpenses > 0 ? (metrics.totalExpenses / (metrics.totalRevenue + metrics.totalExpenses)) * 100 : 0}%` }}
+                style={{ width: `${filteredMetrics.totalExpenses > 0 ? (filteredMetrics.totalExpenses / (filteredMetrics.totalRevenue + filteredMetrics.totalExpenses)) * 100 : 0}%` }}
               />
             </div>
           </div>
