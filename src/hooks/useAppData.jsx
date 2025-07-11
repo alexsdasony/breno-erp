@@ -523,10 +523,46 @@ export const AppDataProvider = ({ children }) => {
         nfeList: [...(prev.nfeList || []), response.nfe]
       }));
       
-      toast({
-        title: "NF-e Criada!",
-        description: "A Nota Fiscal Eletrônica foi criada com sucesso."
-      });
+      // Criar cobrança automaticamente baseada na NF-e
+      try {
+        const nfeDate = new Date(nfe.date || new Date());
+        const dueDate = new Date(nfeDate);
+        dueDate.setDate(dueDate.getDate() + 30); // Vencimento em 30 dias
+        
+        const billingData = {
+          customer_id: nfe.customerId,
+          customer_name: nfe.customerName,
+          amount: parseFloat(nfe.total),
+          due_date: dueDate.toISOString().split('T')[0],
+          status: 'Pendente',
+          segment_id: activeSegmentId,
+          nfe_id: response.nfe.id, // Referência à NF-e
+          description: `Cobrança referente à NF-e ${nfe.number}`
+        };
+        
+        console.log('🔍 Debug addNFe - Criando cobrança automática:', billingData);
+        const billingResponse = await apiService.createBilling(billingData);
+        
+        // Update local state com a nova cobrança
+        setData(prev => ({
+          ...prev,
+          billings: [billingResponse.billing, ...(prev.billings || [])]
+        }));
+        
+        console.log('✅ Debug addNFe - Cobrança criada automaticamente:', billingResponse.billing);
+        
+        toast({
+          title: "NF-e Criada com Cobrança!",
+          description: `NF-e ${nfe.number} criada e cobrança gerada automaticamente com vencimento em ${dueDate.toLocaleDateString('pt-BR')}.`
+        });
+      } catch (billingError) {
+        console.error('❌ Debug addNFe - Erro ao criar cobrança automática:', billingError);
+        // Não falhar a criação da NF-e se a cobrança falhar
+        toast({
+          title: "NF-e Criada!",
+          description: "A Nota Fiscal Eletrônica foi criada com sucesso. (Cobrança automática falhou)"
+        });
+      }
       
       return response.nfe;
     } catch (error) {
