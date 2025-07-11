@@ -110,24 +110,14 @@ export const validateBilling = [
       throw new Error('Amount is required');
     }
     const num = parseFloat(value);
-    if (isNaN(num) || num < 0) {
-      throw new Error('Amount must be a positive number');
+    if (isNaN(num) || num <= 0) {
+      throw new Error('Valid amount required');
     }
     return true;
-  }).withMessage('Amount must be a positive number'),
-  body('due_date').isISO8601().withMessage('Valid due date required'),
-  body('status').isIn(['Pendente', 'Paga', 'Vencida', 'Cancelada']).withMessage('Invalid status'),
-  body('segment_id').custom((value) => {
-    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') {
-      throw new Error('Valid segment ID required');
-    }
-    const num = parseInt(value);
-    if (isNaN(num) || num < 1) {
-      throw new Error('Valid segment ID required');
-    }
-    return true;
-  }).withMessage('Valid segment ID required'),
-  handleValidationErrors
+  }).withMessage('Valid amount required'),
+  body('due_date').optional().isISO8601().withMessage('Valid due date required if provided'),
+  body('status').optional().isIn(['pending', 'paid', 'overdue']).withMessage('Valid status required if provided'),
+  body('description').optional().trim().isLength({ min: 1 }).withMessage('Description must be at least 1 character if provided')
 ];
 
 // Segment validations
@@ -182,25 +172,7 @@ export const validatePagination = [
       throw new Error('Valid segment ID required');
     }
     return true;
-  }).withMessage('Valid segment ID required'),
-  query('startDate').optional().isISO8601().withMessage('Valid start date required'),
-  query('endDate').optional().isISO8601().withMessage('Valid end date required'),
-  query('costCenterId').optional().custom((value) => {
-    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') return true;
-    return true;
-  }),
-  query('accountType').optional().custom((value) => {
-    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') return true;
-    return true;
-  }),
-  query('groupBy').optional().custom((value) => {
-    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') return true;
-    return true;
-  }),
-  query('segmentId').optional().custom((value) => {
-    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') return true;
-    return true;
-  })
+  }).withMessage('Valid segment ID required')
 ];
 
 // ID parameter validation

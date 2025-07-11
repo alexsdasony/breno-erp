@@ -1079,6 +1079,17 @@ export const AppDataProvider = ({ children }) => {
     }
   };
 
+  // Adicionar função para recarregar dados do dashboard
+  const reloadDashboardData = async (segmentId) => {
+    try {
+      const params = { segmentId: segmentId || activeSegmentId || '' };
+      const result = await apiService.get('/dashboard', params);
+      setData(prev => ({ ...prev, dashboard: result }));
+    } catch (error) {
+      // Pode adicionar tratamento de erro
+    }
+  };
+
   const value = {
     data: {
       ...data,
@@ -1157,7 +1168,8 @@ export const AppDataProvider = ({ children }) => {
     deleteNFe,
     
     // Toast function
-    toast
+    toast,
+    reloadDashboardData
   };
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

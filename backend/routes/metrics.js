@@ -309,4 +309,114 @@ router.get('/sales', authenticateToken, async (req, res) => {
   }
 });
 
+// Rota para dashboard consolidado
+router.get('/dashboard', authenticateToken, async (req, res) => {
+  try {
+    const { segmentId } = req.query;
+    const db = await getDatabase();
+    const segment_id = segmentId || '';
+
+    // Financial metrics
+    let whereClause = 'WHERE 1=1';
+    const params = [];
+    if (segment_id && segment_id !== 'null' && segment_id !== '') {
+      whereClause += ' AND segment_id = ?';
+      params.push(parseInt(segment_id));
+    }
+
+    // Receita, despesas, lucro
+    const [revenueData, expenseData] = await Promise.all([
+      db.get(`SELECT SUM(amount) as total FROM transactions ${whereClause} AND type = 'receita'`, params),
+      db.get(`SELECT SUM(amount) as total FROM transactions ${whereClause} AND type = 'despesa'`, params)
+    ]);
+    const totalRevenue = parseFloat(revenueData.total) || 0;
+    const totalExpenses = parseFloat(expenseData.total) || 0;
+    const profit = totalRevenue - totalExpenses;
+
+    // Produtos
+    let productWhereClause = '1=1';
+    const productParams = [];
+    if (segment_id && segment_id !== 'null' && segment_id !== '') {
+      productWhereClause += ' AND segment_id = ?';
+      productParams.push(parseInt(segment_id));
+    }
+    const [productsData, lowStockData] = await Promise.all([
+      db.get(`SELECT COUNT(*) as total FROM products WHERE ${productWhereClause}`, productParams),
+      db.get(`SELECT COUNT(*) as total FROM products WHERE ${productWhereClause} AND stock <= min_stock`, productParams)
+    ]);
+    const totalProducts = productsData.total;
+    const lowStockProducts = lowStockData.total;
+
+    // Vendas
+    const [salesData, completedSalesData] = await Promise.all([
+      db.get(`SELECT COUNT(*) as total FROM sales ${whereClause}`, params),
+      db.get(`SELECT COUNT(*) as total FROM sales ${whereClause} AND status = 'Concluída'`, params)
+    ]);
+    const totalSales = salesData.total;
+    const completedSales = completedSalesData.total;
+
+    // Clientes
+    let customerQuery = 'SELECT COUNT(DISTINCT id) as total FROM customers';
+    let customerParams = [];
+    if (segment_id && segment_id !== 'null' && segment_id !== '') {
+      customerQuery = 'SELECT COUNT(DISTINCT customer_id) as total FROM sales WHERE segment_id = ?';
+      customerParams = [parseInt(segment_id)];
+    }
+    const customersData = await db.get(customerQuery, customerParams);
+    const totalCustomers = customersData.total;
+
+    // NFe
+    const nfeData = await db.get(`SELECT COUNT(*) as total FROM nfe ${whereClause}`, params);
+    const totalNFe = nfeData.total;
+
+    // Billings
+    const [billingsData, overdueBillingsData, totalPendingData] = await Promise.all([
+      db.get(`SELECT COUNT(*) as total FROM billings ${whereClause}`, params),
+      db.get(`SELECT COUNT(*) as total FROM billings ${whereClause} AND status = 'Vencida'`, params),
+      db.get(`SELECT SUM(amount) as total FROM billings ${whereClause} AND status IN ('Pendente', 'Vencida')`, params)
+    ]);
+    const totalBillings = billingsData.total;
+    const overdueBillings = overdueBillingsData.total;
+    const totalPendingAmount = parseFloat(totalPendingData.total) || 0;
+    const defaultRate = totalBillings > 0 ? (overdueBillings / totalBillings) * 100 : 0;
+
+    res.json({
+      financial: {
+        totalRevenue,
+        totalExpenses,
+        profit,
+        profitMargin: totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0
+      },
+      products: {
+        totalProducts,
+        lowStockProducts,
+        lowStockPercentage: totalProducts > 0 ? (lowStockProducts / totalProducts) * 100 : 0
+      },
+      sales: {
+        totalSales,
+        completedSales,
+        conversionRate: totalSales > 0 ? (completedSales / totalSales) * 100 : 0
+      },
+      customers: {
+        totalCustomers
+      },
+      nfe: {
+        totalNFe
+      },
+      billing: {
+        totalBillings,
+        overdueBillings,
+        totalPendingAmount,
+        defaultRate
+      },
+      period: {
+        segment_id: segment_id || 'all'
+      }
+    });
+  } catch (error) {
+    console.error('Dashboard error:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard data' });
+  }
+});
+
 export default router; 

@@ -73,35 +73,25 @@ const corsOptions = {
     // Permitir requests sem origin (ex: Postman, curl)
     if (!origin) return callback(null, true);
     
-    // Debug: log da origem (reduzido para evitar quota excedida)
-    if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
+    // Debug: log da origem (reduzido drasticamente para evitar quota excedida)
+    if (process.env.NODE_ENV === 'development' && Math.random() < 0.001) {
       console.log(`🌐 CORS Request from origin: ${origin}`);
     }
     
     if (allowedOrigins.includes(origin)) {
-      if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
+      if (process.env.NODE_ENV === 'development' && Math.random() < 0.001) {
         console.log(`✅ CORS Allowed: ${origin}`);
       }
       callback(null, true);
     } else {
-      console.log(`❌ CORS Blocked: ${origin}`);
+      if (process.env.NODE_ENV === 'development' && Math.random() < 0.001) {
+        console.log(`❌ CORS Blocked: ${origin}`);
+      }
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Origin',
-    'X-Requested-With', 
-    'Content-Type',
-    'Accept',
-    'Authorization',
-    'sec-ch-ua',
-    'sec-ch-ua-mobile',
-    'sec-ch-ua-platform',
-    'User-Agent',
-    'Referer'
-  ]
+  optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));

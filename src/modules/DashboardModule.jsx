@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Calendar, 
@@ -22,9 +22,26 @@ import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency } from '@/lib/utils.js';
 import { formatDate } from '@/lib/utils.js';
 import { calculateMetrics } from '@/utils/metrics.js';
+import apiService from '@/services/api.js';
 
 const DashboardModule = ({ metrics, setActiveModule }) => {
-  const { data, activeSegmentId } = useAppData();
+  const { data, activeSegmentId, reloadDashboardData } = useAppData();
+  const [dashboardData, setDashboardData] = useState(null);
+  
+  useEffect(() => {
+    // Buscar dados do backend filtrando por segmento
+    const fetchDashboardData = async () => {
+      try {
+        const params = { segmentId: activeSegmentId || '' };
+        const result = await apiService.get('/dashboard', params);
+        setDashboardData(result);
+      } catch (error) {
+        setDashboardData(null);
+        // Pode adicionar um toast de erro se desejar
+      }
+    };
+    fetchDashboardData();
+  }, [activeSegmentId]);
 
   // Reactivated segment filtering - problem was data.segments access fixed
   const filteredProducts = (data.products || []).filter(p => !activeSegmentId || activeSegmentId === 0 || p.segmentId === activeSegmentId);
