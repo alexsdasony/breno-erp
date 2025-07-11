@@ -42,7 +42,8 @@ const UserManagement = () => {
     email: '',
     password: '',
     role: 'user',
-    segment_id: ''
+    segment_id: '',
+    status: 'ativo'
   });
 
   // Check if current user is admin
@@ -87,7 +88,8 @@ const UserManagement = () => {
       email: '',
       password: '',
       role: 'user',
-      segment_id: ''
+      segment_id: '',
+      status: 'ativo'
     });
     setEditingUser(null);
     setShowCreateForm(false);
@@ -151,6 +153,28 @@ const UserManagement = () => {
     }
   };
 
+  const handleToggleStatus = async (user) => {
+    const newStatus = user.status === 'ativo' ? 'bloqueado' : 'ativo';
+    const action = newStatus === 'ativo' ? 'ativar' : 'desativar';
+    
+    if (!confirm(`Tem certeza que deseja ${action} o usuário "${user.name}"?`)) {
+      return;
+    }
+
+    try {
+      await updateUser(user.id, { 
+        name: user.name, 
+        email: user.email, 
+        role: user.role, 
+        segment_id: user.segment_id,
+        status: newStatus 
+      });
+      loadUsersData();
+    } catch (error) {
+      // Error handling is done in the hook
+    }
+  };
+
   const startEditUser = (user) => {
     setEditingUser(user);
     setFormData({
@@ -158,7 +182,8 @@ const UserManagement = () => {
       email: user.email,
       password: '',
       role: user.role,
-      segment_id: user.segment_id || ''
+      segment_id: user.segment_id || '',
+      status: user.status
     });
     setShowCreateForm(true);
   };
@@ -307,6 +332,19 @@ const UserManagement = () => {
                   ))}
                 </select>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Status</label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleFormChange}
+                  className="w-full p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500 outline-none"
+                >
+                  <option value="ativo">Ativo</option>
+                  <option value="bloqueado">Bloqueado</option>
+                  <option value="inativo">Inativo</option>
+                </select>
+              </div>
             </div>
             <div className="flex space-x-3 pt-2">
               <Button type="submit" className="bg-gradient-to-r from-purple-500 to-pink-600">
@@ -337,6 +375,7 @@ const UserManagement = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Perfil</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Segmento</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Criado em</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Ações</th>
                 </tr>
               </thead>
@@ -379,6 +418,17 @@ const UserManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                       {new Date(user.created_at).toLocaleDateString('pt-BR')}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        user.status === 'ativo' 
+                          ? 'bg-green-100 text-green-800' 
+                          : user.status === 'bloqueado'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {user.status === 'ativo' ? 'Ativo' : user.status === 'bloqueado' ? 'Bloqueado' : 'Inativo'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         <Button
@@ -390,14 +440,28 @@ const UserManagement = () => {
                           <Edit3 className="w-4 h-4" />
                         </Button>
                         {user.id !== currentUser.id && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user.id, user.name)}
-                            className="text-red-400 hover:text-red-300"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleStatus(user)}
+                              className={`${
+                                user.status === 'ativo' 
+                                  ? 'text-yellow-400 hover:text-yellow-300' 
+                                  : 'text-green-400 hover:text-green-300'
+                              }`}
+                            >
+                              {user.status === 'ativo' ? 'Desativar' : 'Ativar'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteUser(user.id, user.name)}
+                              className="text-red-400 hover:text-red-300"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </td>

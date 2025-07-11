@@ -201,7 +201,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     // Insert user with default status 'bloqueado' and normalized role
     const result = await db.run(
       'INSERT INTO users (name, email, password, role, segment_id, status) VALUES (?, ?, ?, ?, ?, ?)',
-      [name, email, hashedPassword, normalizedRole, normalizedSegmentId, 'bloqueado']
+      [name, email, hashedPassword, normalizedRole, normalizedSegmentId, status || 'ativo']
     );
 
     // Get created user with segment info
