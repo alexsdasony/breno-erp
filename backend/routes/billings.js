@@ -61,7 +61,7 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
 // Create billing
 router.post('/', authenticateToken, validateBilling, async (req, res) => {
   try {
-    const { customer_id, customer_name, amount, due_date, status, segment_id } = req.body;
+    const { customer_id, customer_name, amount, due_date, status, segment_id, nfe_id, description } = req.body;
     const db = await getDatabase();
 
     const customer = await db.get('SELECT id FROM customers WHERE id = ?', [customer_id]);
@@ -75,8 +75,8 @@ router.post('/', authenticateToken, validateBilling, async (req, res) => {
     }
 
     const result = await db.run(
-      'INSERT INTO billings (customer_id, customer_name, amount, due_date, status, segment_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [customer_id, customer_name, amount, due_date, status, segment_id]
+      'INSERT INTO billings (customer_id, customer_name, amount, due_date, status, segment_id, nfe_id, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [customer_id, customer_name, amount, due_date, status, segment_id, nfe_id || null, description || null]
     );
 
     const billing = await db.get('SELECT * FROM billings WHERE id = ?', [result.lastID]);
@@ -96,7 +96,7 @@ router.post('/', authenticateToken, validateBilling, async (req, res) => {
 router.put('/:id', authenticateToken, validateId, validateBilling, async (req, res) => {
   try {
     const { id } = req.params;
-    const { customer_id, customer_name, amount, due_date, status, payment_date, segment_id } = req.body;
+    const { customer_id, customer_name, amount, due_date, status, payment_date, segment_id, nfe_id, description } = req.body;
     
     const db = await getDatabase();
 
@@ -115,8 +115,8 @@ router.put('/:id', authenticateToken, validateId, validateBilling, async (req, r
     }
 
     await db.run(
-      'UPDATE billings SET customer_id = ?, customer_name = ?, amount = ?, due_date = ?, status = ?, payment_date = ?, segment_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [customer_id, finalCustomerName, amount, due_date, status, payment_date || null, segment_id, id]
+      'UPDATE billings SET customer_id = ?, customer_name = ?, amount = ?, due_date = ?, status = ?, payment_date = ?, segment_id = ?, nfe_id = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [customer_id, finalCustomerName, amount, due_date, status, payment_date || null, segment_id, nfe_id || null, description || null, id]
     );
 
     const billing = await db.get('SELECT * FROM billings WHERE id = ?', [id]);
