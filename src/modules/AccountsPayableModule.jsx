@@ -11,6 +11,9 @@ const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, delete
   const { data, activeSegmentId, ensureAccountsPayableLoaded } = useAppData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [periodType, setPeriodType] = useState('all');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentAccount, setCurrentAccount] = useState(null);
   const [formData, setFormData] = useState({
@@ -86,6 +89,36 @@ const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, delete
     return account.status;
   }
 
+  // Filtro de período
+  function isWithinPeriod(account) {
+    const due = new Date(account.due_date || account.dueDate);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    if (periodType === 'day') {
+      return due.toDateString() === today.toDateString();
+    }
+    if (periodType === 'week') {
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - today.getDay());
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      return due >= weekStart && due <= weekEnd;
+    }
+    if (periodType === 'month') {
+      return due.getMonth() === today.getMonth() && due.getFullYear() === today.getFullYear();
+    }
+    if (periodType === 'custom') {
+      if (!customStart && !customEnd) return true;
+      const start = customStart ? new Date(customStart) : null;
+      const end = customEnd ? new Date(customEnd) : null;
+      if (start && end) return due >= start && due <= end;
+      if (start) return due >= start;
+      if (end) return due <= end;
+      return true;
+    }
+    return true;
+  }
+
   // Usar status calculado em toda a renderização e nos filtros
   const filteredAccounts = (data.accountsPayable || [])
     .map(account => ({ ...account, status: getStatusWithDueDate(account) }))
@@ -94,7 +127,8 @@ const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, delete
       account.supplier.toLowerCase().includes(searchTerm.toLowerCase()) ||
       account.description.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    .filter(account => filterStatus === 'all' || account.status === filterStatus);
+    .filter(account => filterStatus === 'all' || account.status === filterStatus)
+    .filter(isWithinPeriod);
 
   const handleImport = (parsedData) => {
     importData(parsedData, 'accountsPayable', activeSegmentId);
@@ -176,14 +210,32 @@ const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, delete
             className="w-full p-2 pl-10 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
           />
         </div>
-        <div className="relative">
-          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full p-2 pl-10 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
-            <option value="all">Todos os Status</option>
-            <option value="pending">Pendente</option>
-            <option value="paid">Paga</option>
-            <option value="overdue">Vencida</option>
-          </select>
+        <div className="flex flex-col gap-2">
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full p-2 pl-10 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
+              <option value="all">Todos os Status</option>
+              <option value="pending">Pendente</option>
+              <option value="paid">Paga</option>
+              <option value="overdue">Vencida</option>
+            </select>
+          </div>
+          <div className="relative mt-2">
+            <label className="block text-xs text-gray-400 mb-1">Período</label>
+            <select value={periodType} onChange={e => setPeriodType(e.target.value)} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
+              <option value="all">Todos</option>
+              <option value="day">Dia</option>
+              <option value="week">Semana</option>
+              <option value="month">Mês</option>
+              <option value="custom">Personalizado</option>
+            </select>
+          </div>
+          {periodType === 'custom' && (
+            <div className="flex gap-2 mt-2">
+              <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)} className="w-1/2 p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="De" />
+              <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)} className="w-1/2 p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Até" />
+            </div>
+          )}
         </div>
       </div>
 
