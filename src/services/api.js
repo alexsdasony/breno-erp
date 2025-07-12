@@ -1,5 +1,5 @@
 // API Service - Centralized HTTP client for backend communication
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://breno-erp-backend.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 class ApiService {
   constructor() {

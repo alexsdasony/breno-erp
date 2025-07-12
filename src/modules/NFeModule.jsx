@@ -28,7 +28,7 @@ const NFeModule = () => {
     customerId: '',
     customerName: '',
     total: '', 
-    status: 'Pendente',
+    status: 'Emitida',
     date: new Date().toISOString().split('T')[0] // Data atual como padrão
   });
 
@@ -43,7 +43,7 @@ const NFeModule = () => {
       customerId: '',
       customerName: '',
       total: '', 
-      status: 'Pendente',
+      status: 'Emitida',
       date: new Date().toISOString().split('T')[0] // Data atual como padrão
     });
     setIsEditing(false);
