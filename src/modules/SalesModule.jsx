@@ -123,7 +123,14 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
   };
 
   const saleHeaders = ['customerId', 'customerName', 'product', 'quantity', 'total', 'status', 'date', 'segmentId'];
-  const filteredSales = data.sales.filter(s => !activeSegmentId || activeSegmentId === 0 || s.segmentId === activeSegmentId);
+  const filteredSales = data.sales.filter(s => {
+    // Se activeSegmentId é 0 ou null (Todos os Segmentos), mostrar todas as vendas
+    if (!activeSegmentId || activeSegmentId === 0) {
+      return true;
+    }
+    // Se há um segmento específico selecionado, filtrar por esse segmento
+    return s.segmentId === activeSegmentId;
+  });
   const segments = data.segments || [];
   const productsForSegment = data.products.filter(p => !formData.segmentId || p.segmentId === parseInt(formData.segmentId));
 

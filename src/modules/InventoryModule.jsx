@@ -110,7 +110,14 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
   };
 
   const productHeaders = ['name', 'stock', 'minStock', 'price', 'category', 'segmentId'];
-  const filteredProducts = data.products.filter(p => !activeSegmentId || activeSegmentId === 0 || p.segmentId === activeSegmentId);
+  const filteredProducts = data.products.filter(p => {
+    // Se activeSegmentId é 0 ou null (Todos os Segmentos), mostrar todos os produtos
+    if (!activeSegmentId || activeSegmentId === 0) {
+      return true;
+    }
+    // Se há um segmento específico selecionado, filtrar por esse segmento
+    return p.segmentId === activeSegmentId;
+  });
   const segments = data.segments || [];
 
   return (

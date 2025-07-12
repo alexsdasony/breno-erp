@@ -9,16 +9,20 @@ import {
   Trash2, 
   Eye,
   Search,
-  Filter
+  Filter,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
-const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
+const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTransaction, toast, importData }) => {
   const { data, activeSegmentId } = useAppData();
   const [showForm, setShowForm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentTransaction, setCurrentTransaction] = useState(null);
+  const [viewingTransaction, setViewingTransaction] = useState(null);
   const [formData, setFormData] = useState({
     type: 'receita',
     description: '',
@@ -27,6 +31,20 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
     costCenter: '',
     segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
   });
+
+  const resetForm = () => {
+    setFormData({
+      type: 'receita',
+      description: '',
+      amount: '',
+      category: '',
+      costCenter: '',
+      segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+    });
+    setIsEditing(false);
+    setCurrentTransaction(null);
+    setShowForm(false);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -47,25 +65,68 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
       return;
     }
     
-    addTransaction({
+    const transactionData = {
       ...formData,
       amount: parseFloat(formData.amount),
       costCenter: formData.type === 'receita' ? null : formData.costCenter,
       segmentId: parseInt(formData.segmentId)
-    });
+    };
+
+    if (isEditing && currentTransaction) {
+      updateTransaction(currentTransaction.id, transactionData);
+    } else {
+      addTransaction(transactionData);
+    }
     
-    setFormData({ type: 'receita', description: '', amount: '', category: '', costCenter: '', segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '') });
-    setShowForm(false);
+    resetForm();
+  };
+
+  const handleEdit = (transaction) => {
+    setCurrentTransaction(transaction);
+    setFormData({
+      type: transaction.type,
+      description: transaction.description,
+      amount: transaction.amount.toString(),
+      category: transaction.category,
+      costCenter: transaction.costCenter || '',
+      segmentId: transaction.segmentId || activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : ''),
+      date: transaction.date || new Date().toISOString().split('T')[0] // Garantir que a data seja enviada
+    });
+    setIsEditing(true);
+    setShowForm(true);
+  };
+
+  const handleView = (transaction) => {
+    setViewingTransaction(transaction);
+  };
+
+  const handleDelete = async (transactionId) => {
+    if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
+      try {
+        await deleteTransaction(transactionId);
+        toast({
+          title: "Sucesso",
+          description: "Transação excluída com sucesso.",
+        });
+      } catch (error) {
+        console.error('Erro ao excluir transação:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao excluir transação.",
+          variant: "destructive"
+        });
+      }
+    }
   };
 
   const transactionHeaders = ['type', 'description', 'amount', 'category', 'costCenter', 'date', 'segmentId'];
   const filteredTransactions = data.transactions.filter(t => {
-    // Se não há segmento ativo ou é "Todos os Segmentos" (0), mostrar todas
+    // Se activeSegmentId é 0 ou null (Todos os Segmentos), mostrar todas as transações
     if (!activeSegmentId || activeSegmentId === 0) {
       return true;
     }
-    // Como todas as transações têm segmentId = null, sempre mostrar
-    return true;
+    // Se há um segmento específico selecionado, filtrar por esse segmento
+    return t.segmentId === activeSegmentId;
   });
   const segments = data.segments || [];
 
@@ -133,7 +194,12 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
             exit={{ opacity: 0, height: 0 }}
             className="glass-effect rounded-xl p-6 border"
           >
-            <h3 className="text-lg font-semibold mb-4">Nova Transação</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">{isEditing ? 'Editar Transação' : 'Nova Transação'}</h3>
+              <Button variant="ghost" size="sm" onClick={resetForm}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Segmento</label>
@@ -196,8 +262,10 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
                 </div>
               )}
               <div className="md:col-span-2 flex space-x-3">
-                <Button type="submit" className="bg-gradient-to-r from-green-500 to-blue-600">Salvar Transação</Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancelar</Button>
+                <Button type="submit" className="bg-gradient-to-r from-green-500 to-blue-600">
+                  {isEditing ? 'Atualizar Transação' : 'Salvar Transação'}
+                </Button>
+                <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
               </div>
             </form>
           </motion.div>
@@ -240,9 +308,31 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
                   </td>
                   <td className="p-3 text-center">
                     <div className="flex justify-center space-x-2">
-                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><Edit className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><Trash2 className="w-4 h-4" /></Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        title="Visualizar"
+                        onClick={() => handleView(transaction)}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        title="Editar"
+                        onClick={() => handleEdit(transaction)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        title="Excluir"
+                        onClick={() => handleDelete(transaction.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </td>
                 </motion.tr>
@@ -251,6 +341,85 @@ const FinancialModule = ({ metrics, addTransaction, toast, importData }) => {
           </table>
         </div>
       </motion.div>
+
+      {/* Modal de Visualização */}
+      <AnimatePresence>
+        {viewingTransaction && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={() => setViewingTransaction(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-background rounded-xl p-6 max-w-md w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Detalhes da Transação</h3>
+                <Button variant="ghost" size="sm" onClick={() => setViewingTransaction(null)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Descrição</label>
+                  <p className="text-lg font-medium">{viewingTransaction.description}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Tipo</label>
+                    <p className={`font-medium ${viewingTransaction.type === 'receita' ? 'text-green-400' : 'text-red-400'}`}>
+                      {viewingTransaction.type === 'receita' ? 'Receita' : 'Despesa'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Valor</label>
+                    <p className={`text-lg font-bold ${viewingTransaction.type === 'receita' ? 'text-green-400' : 'text-red-400'}`}>
+                      {viewingTransaction.type === 'receita' ? '+' : '-'}{formatCurrency(viewingTransaction.amount || 0)}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Categoria</label>
+                    <p className="font-medium">{viewingTransaction.category}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Data</label>
+                    <p className="font-medium">{formatDate(viewingTransaction.date)}</p>
+                  </div>
+                </div>
+                
+                {viewingTransaction.costCenter && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Centro de Custo</label>
+                    <p className="font-medium">{viewingTransaction.costCenter}</p>
+                  </div>
+                )}
+                
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Segmento</label>
+                  <p className="font-medium">{segments.find(s => s.id === viewingTransaction.segmentId)?.name || 'N/A'}</p>
+                </div>
+              </div>
+              
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setViewingTransaction(null)}>Fechar</Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

@@ -170,7 +170,14 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
     .map(billing => ({ ...billing, status: getStatusWithDueDate(billing) }));
 
   // Filtro por segmento
-  let filteredBillings = allBillings.filter(b => !activeSegmentId || activeSegmentId === 0 || (b.segmentId || b.segment_id) === activeSegmentId);
+  let filteredBillings = allBillings.filter(b => {
+    // Se activeSegmentId é 0 ou null (Todos os Segmentos), mostrar todas as cobranças
+    if (!activeSegmentId || activeSegmentId === 0) {
+      return true;
+    }
+    // Se há um segmento específico selecionado, filtrar por esse segmento
+    return (b.segmentId || b.segment_id) === activeSegmentId;
+  });
 
   // Filtro por busca
   filteredBillings = filteredBillings.filter(billing =>

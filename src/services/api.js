@@ -1,25 +1,32 @@
 // API Service - Centralized HTTP client for backend communication
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
+// Cache em memória para token - SEM localStorage
+let tokenCache = null;
+
 class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL;
-    this.token = localStorage.getItem('authToken');
+    this.token = this.getToken();
   }
 
-  // Set authentication token
+  // Set authentication token - SEM localStorage
   setToken(token) {
     this.token = token;
-    if (token) {
-      localStorage.setItem('authToken', token);
-    } else {
-      localStorage.removeItem('authToken');
-    }
+    tokenCache = token;
+    // NÃO usar localStorage
   }
 
-  // Get authentication token
+  // Get authentication token - SEM localStorage
   getToken() {
-    return this.token || localStorage.getItem('authToken');
+    return tokenCache;
+  }
+
+  // Clear token - SEM localStorage
+  clearToken() {
+    this.token = null;
+    tokenCache = null;
+    // NÃO usar localStorage
   }
 
   // Generic request method
@@ -45,7 +52,7 @@ class ApiService {
       
       // Handle token expiration
       if (response.status === 401) {
-        this.setToken(null);
+        this.clearToken();
         window.location.href = '/login';
         throw new Error('Authentication failed');
       }
@@ -105,7 +112,7 @@ class ApiService {
   }
 
   async logout() {
-    this.setToken(null);
+    this.clearToken();
     return Promise.resolve();
   }
 

@@ -122,7 +122,14 @@ const AccountsPayableModule = ({ addAccountPayable, updateAccountPayable, delete
   // Usar status calculado em toda a renderização e nos filtros
   const filteredAccounts = (data.accountsPayable || [])
     .map(account => ({ ...account, status: getStatusWithDueDate(account) }))
-    .filter(account => !activeSegmentId || (account.segment_id || account.segmentId) === activeSegmentId)
+    .filter(account => {
+      // Se activeSegmentId é 0 ou null (Todos os Segmentos), mostrar todas as contas
+      if (!activeSegmentId || activeSegmentId === 0) {
+        return true;
+      }
+      // Se há um segmento específico selecionado, filtrar por esse segmento
+      return (account.segment_id || account.segmentId) === activeSegmentId;
+    })
     .filter(account => 
       account.supplier.toLowerCase().includes(searchTerm.toLowerCase()) ||
       account.description.toLowerCase().includes(searchTerm.toLowerCase())

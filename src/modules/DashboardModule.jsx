@@ -27,25 +27,36 @@ import apiService from '@/services/api.js';
 const DashboardModule = ({ metrics, setActiveModule }) => {
   const { data, activeSegmentId, reloadDashboardData } = useAppData();
   const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(false);
   
   useEffect(() => {
     // Buscar dados do backend filtrando por segmento
     const fetchDashboardData = async () => {
       try {
-        const params = { segmentId: activeSegmentId || '' };
+        setLoading(true);
+        // Enviar segmentId apenas se for válido, senão enviar null para "todos os segmentos"
+        const segmentId = activeSegmentId && activeSegmentId !== 0 ? activeSegmentId : null;
+        const params = segmentId ? { segmentId } : {};
+        console.log('🔍 Dashboard - Buscando dados para segmento:', segmentId);
         const result = await apiService.get('/dashboard', params);
         setDashboardData(result);
+        console.log('✅ Dashboard - Dados recebidos:', result);
       } catch (error) {
+        console.error('❌ Dashboard - Erro ao buscar dados:', error);
         setDashboardData(null);
-        // Pode adicionar um toast de erro se desejar
+      } finally {
+        setLoading(false);
       }
     };
     fetchDashboardData();
   }, [activeSegmentId]);
 
-  // Reactivated segment filtering - problem was data.segments access fixed
-  const filteredProducts = (data.products || []).filter(p => !activeSegmentId || activeSegmentId === 0 || p.segmentId === activeSegmentId);
-  const filteredNFeList = (data.nfeList || []).filter(n => !activeSegmentId || activeSegmentId === 0 || n.segmentId === activeSegmentId);
+  // Usar dados do backend quando disponíveis, senão usar dados locais filtrados
+  const backendMetrics = dashboardData?.metrics;
+  const localMetrics = calculateMetrics(data, activeSegmentId);
+  
+  // Priorizar dados do backend, mas usar dados locais como fallback
+  const finalMetrics = backendMetrics || localMetrics;
 
   // Função para calcular status dinâmico baseado na data de vencimento (mesma lógica do BillingModule)
   function getStatusWithDueDate(billing) {
@@ -76,14 +87,12 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
     .filter(b => b.status === 'Pendente' || b.status === 'Vencida')
     .reduce((sum, b) => sum + Number(b.amount || 0), 0);
 
-  // Cálculos para NF-e
-  const totalNFe = filteredNFeList.length;
-  const nfeEmitidas = filteredNFeList.filter(nfe => nfe.status === 'Emitida').length;
-  const nfePendentes = filteredNFeList.filter(nfe => nfe.status === 'Pendente').length;
-
   // Calcular métricas gerais (sem filtro de segmento) para comparação
   const generalMetrics = calculateMetrics(data, 0);
   const filteredMetrics = calculateMetrics(data, activeSegmentId);
+
+  // Obter nome do segmento ativo
+  const activeSegment = (data.segments || []).find(s => s.id === activeSegmentId);
 
   return (
     <motion.div
@@ -97,8 +106,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             Dashboard Principal
           </h1>
           <p className="text-muted-foreground mt-2">
-            {/* Fixed segment access - now works correctly */}
-            {activeSegmentId && activeSegmentId !== 0 ? `Exibindo dados para o segmento: ${(data.segments || []).find(s => s.id === activeSegmentId)?.name}` : 'Visão geral consolidada do seu negócio'}
+            {activeSegmentId && activeSegmentId !== 0 ? `Exibindo dados para o segmento: ${activeSegment?.name || 'Segmento'}` : 'Visão geral consolidada do seu negócio'}
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -160,7 +168,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             <div>
               <p className="text-sm text-muted-foreground">Receita Total</p>
               <p className="text-2xl font-bold text-green-400">
-                {formatCurrency(filteredMetrics.totalRevenue || 0)}
+                {formatCurrency(finalMetrics.totalRevenue || 0)}
               </p>
             </div>
             <div className="p-3 bg-green-500/20 rounded-lg">
@@ -177,7 +185,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             <div>
               <p className="text-sm text-muted-foreground">Despesas</p>
               <p className="text-2xl font-bold text-red-400">
-                {formatCurrency(filteredMetrics.totalExpenses || 0)}
+                {formatCurrency(finalMetrics.totalExpenses || 0)}
               </p>
             </div>
             <div className="p-3 bg-red-500/20 rounded-lg">
@@ -193,7 +201,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Produtos</p>
-              <p className="text-2xl font-bold text-blue-400">{filteredMetrics.totalProducts}</p>
+              <p className="text-2xl font-bold text-blue-400">{finalMetrics.totalProducts || 0}</p>
             </div>
             <div className="p-3 bg-blue-500/20 rounded-lg">
               <Package className="w-6 h-6 text-blue-400" />
@@ -201,7 +209,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
           </div>
           <div className="mt-4 flex items-center text-sm">
             <AlertTriangle className="w-4 h-4 text-yellow-400 mr-1" />
-            <span className="text-yellow-400">{filteredMetrics.lowStockProducts}</span>
+            <span className="text-yellow-400">{finalMetrics.lowStockProducts || 0}</span>
             <span className="text-muted-foreground ml-2">estoque baixo</span>
           </div>
         </motion.div>
@@ -213,7 +221,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Vendas</p>
-              <p className="text-2xl font-bold text-purple-400">{filteredMetrics.totalSales}</p>
+              <p className="text-2xl font-bold text-purple-400">{finalMetrics.totalSales || 0}</p>
             </div>
             <div className="p-3 bg-purple-500/20 rounded-lg">
               <ShoppingCart className="w-6 h-6 text-purple-400" />
@@ -221,7 +229,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
           </div>
           <div className="mt-4 flex items-center text-sm">
             <Users className="w-4 h-4 text-blue-400 mr-1" />
-            <span className="text-blue-400">{filteredMetrics.totalCustomers}</span>
+            <span className="text-blue-400">{finalMetrics.totalCustomers || 0}</span>
             <span className="text-muted-foreground ml-2">clientes</span>
           </div>
         </motion.div>
@@ -236,7 +244,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total NF-es</p>
-              <p className="text-2xl font-bold text-indigo-400">{totalNFe}</p>
+              <p className="text-2xl font-bold text-indigo-400">{data.nfeList?.length || 0}</p>
             </div>
             <div className="p-3 bg-indigo-500/20 rounded-lg">
               <FileSpreadsheet className="w-6 h-6 text-indigo-400" />
@@ -245,12 +253,12 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
           <div className="mt-4 flex items-center justify-between text-sm">
             <div className="flex items-center">
               <Send className="w-4 h-4 text-green-400 mr-1" />
-              <span className="text-green-400">{nfeEmitidas}</span>
+              <span className="text-green-400">{data.nfeList?.filter(nfe => nfe.status === 'Emitida').length || 0}</span>
               <span className="text-muted-foreground ml-1">emitidas</span>
             </div>
             <div className="flex items-center">
               <FileText className="w-4 h-4 text-yellow-400 mr-1" />
-              <span className="text-yellow-400">{nfePendentes}</span>
+              <span className="text-yellow-400">{data.nfeList?.filter(nfe => nfe.status === 'Pendente').length || 0}</span>
               <span className="text-muted-foreground ml-1">pendentes</span>
             </div>
           </div>
@@ -318,25 +326,25 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Receitas</span>
               <span className="text-green-400 font-medium">
-                {formatCurrency(filteredMetrics.totalRevenue || 0)}
+                {formatCurrency(finalMetrics.totalRevenue || 0)}
               </span>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
               <div 
                 className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full"
-                style={{ width: `${filteredMetrics.totalRevenue > 0 ? (filteredMetrics.totalRevenue / (filteredMetrics.totalRevenue + filteredMetrics.totalExpenses)) * 100 : 0}%` }}
+                style={{ width: `${finalMetrics.totalRevenue > 0 ? (finalMetrics.totalRevenue / (finalMetrics.totalRevenue + finalMetrics.totalExpenses)) * 100 : 0}%` }}
               />
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Despesas</span>
               <span className="text-red-400 font-medium">
-                {formatCurrency(filteredMetrics.totalExpenses || 0)}
+                {formatCurrency(finalMetrics.totalExpenses || 0)}
               </span>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
               <div 
                 className="bg-gradient-to-r from-red-400 to-red-600 h-2 rounded-full"
-                style={{ width: `${filteredMetrics.totalExpenses > 0 ? (filteredMetrics.totalExpenses / (filteredMetrics.totalRevenue + filteredMetrics.totalExpenses)) * 100 : 0}%` }}
+                style={{ width: `${finalMetrics.totalExpenses > 0 ? (finalMetrics.totalExpenses / (finalMetrics.totalRevenue + finalMetrics.totalExpenses)) * 100 : 0}%` }}
               />
             </div>
           </div>
@@ -350,7 +358,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
         >
           <h3 className="text-lg font-semibold mb-4">Produtos com Estoque Baixo</h3>
           <div className="space-y-3 max-h-60 overflow-y-auto scrollbar-hide">
-            {filteredProducts
+            {data.products
               .filter(p => p.stock <= p.minStock)
               .slice(0, 3)
               .map(product => (
@@ -365,7 +373,7 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
                   </div>
                 </div>
               ))}
-            {filteredProducts.filter(p => p.stock <= p.minStock).length === 0 && (
+            {data.products.filter(p => p.stock <= p.minStock).length === 0 && (
               <p className="text-muted-foreground text-sm">Nenhum produto com estoque baixo.</p>
             )}
           </div>

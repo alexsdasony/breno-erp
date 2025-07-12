@@ -28,7 +28,7 @@ const NFeModule = () => {
     customerId: '',
     customerName: '',
     total: '', 
-    status: 'Emitida',
+    status: 'Emitida', // Apenas valores aceitos pela constraint: 'Emitida' ou 'Cancelada'
     date: new Date().toISOString().split('T')[0] // Data atual como padrão
   });
 
@@ -43,7 +43,7 @@ const NFeModule = () => {
       customerId: '',
       customerName: '',
       total: '', 
-      status: 'Emitida',
+      status: 'Emitida', // Apenas valores aceitos pela constraint: 'Emitida' ou 'Cancelada'
       date: new Date().toISOString().split('T')[0] // Data atual como padrão
     });
     setIsEditing(false);

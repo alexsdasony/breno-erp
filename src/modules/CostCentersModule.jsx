@@ -187,7 +187,14 @@ const CostCentersModule = ({ toast }) => {
   };
 
   const costCenterHeaders = ['name', 'segmentId'];
-  const filteredCostCenters = data.costCenters.filter(cc => !activeSegmentId || activeSegmentId === 0 || cc.segmentId === activeSegmentId);
+  const filteredCostCenters = data.costCenters.filter(cc => {
+    // Se activeSegmentId é 0 ou null (Todos os Segmentos), mostrar todos os centros de custo
+    if (!activeSegmentId || activeSegmentId === 0) {
+      return true;
+    }
+    // Se há um segmento específico selecionado, filtrar por esse segmento
+    return cc.segmentId === activeSegmentId;
+  });
 
   return (
     <motion.div

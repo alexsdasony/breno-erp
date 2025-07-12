@@ -29,10 +29,37 @@ export const validateLogin = [
 export const validateTransaction = [
   body('type').isIn(['receita', 'despesa']).withMessage('Type must be receita or despesa'),
   body('description').trim().isLength({ min: 1 }).withMessage('Description required'),
-  body('amount').isFloat({ min: 0 }).withMessage('Amount must be a positive number'),
-  body('date').isISO8601().withMessage('Valid date required'),
+  body('amount').custom((value) => {
+    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') {
+      throw new Error('Amount is required');
+    }
+    const num = parseFloat(value);
+    if (isNaN(num) || num <= 0) {
+      throw new Error('Amount must be a positive number');
+    }
+    return true;
+  }).withMessage('Amount must be a positive number'),
+  body('date').custom((value) => {
+    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') {
+      throw new Error('Date is required');
+    }
+    const date = new Date(value);
+    if (isNaN(date.getTime())) {
+      throw new Error('Valid date required');
+    }
+    return true;
+  }).withMessage('Valid date required'),
   body('category').trim().isLength({ min: 1 }).withMessage('Category required'),
-  body('segment_id').isInt({ min: 1 }).withMessage('Valid segment ID required'),
+  body('segment_id').optional().custom((value) => {
+    if (!value || value === 'null' || value === '' || value === undefined || value === 'undefined') {
+      return true; // segment_id is optional
+    }
+    const num = parseInt(value);
+    if (isNaN(num) || num < 1) {
+      throw new Error('Valid segment ID required');
+    }
+    return true;
+  }).withMessage('Valid segment ID required'),
   handleValidationErrors
 ];
 

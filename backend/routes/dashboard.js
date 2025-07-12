@@ -7,59 +7,120 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const db = await getDatabase();
-    const { segmentId } = req.query;
+    const { segmentId } = req.query; // Confirme se está pegando corretamente
 
-    // Buscar métricas do dashboard
-    const metrics = await db.get(`
-      SELECT 
-        COUNT(DISTINCT t.id) as total_transactions,
-        COUNT(DISTINCT s.id) as total_sales,
-        COUNT(DISTINCT b.id) as total_billings,
-        COUNT(DISTINCT n.id) as total_nfe,
-        COALESCE(SUM(s.total), 0) as total_revenue,
-        COALESCE(SUM(b.amount), 0) as total_receivables
-      FROM transactions t
-      LEFT JOIN sales s ON s.id = t.id
-      LEFT JOIN billings b ON b.id = t.id
-      LEFT JOIN nfe n ON n.id = t.id
-      ${segmentId ? 'WHERE t.segment_id = ?' : ''}
-    `, segmentId ? [segmentId] : []);
+    console.log('🔍 Dashboard - SegmentId recebido:', segmentId);
 
-    // Buscar dados para gráficos
-    const monthlyData = await db.all(`
-      SELECT 
-        DATE_TRUNC('month', created_at) as month,
-        COUNT(*) as count,
-        COALESCE(SUM(total), 0) as total
-      FROM (
-        SELECT created_at, total FROM sales
-        UNION ALL
-        SELECT created_at, amount as total FROM billings
-      ) combined
-      GROUP BY DATE_TRUNC('month', created_at)
-      ORDER BY month DESC
-      LIMIT 12
-    `);
+    // Validar segmentId - aceitar undefined/null para "todos os segmentos"
+    if (segmentId === undefined || segmentId === null || segmentId === '') {
+      console.log('🔍 Dashboard - SegmentId não fornecido, usando todos os segmentos');
+    }
 
-    const topCustomers = await db.all(`
-      SELECT 
-        customer_name,
-        COUNT(*) as count,
-        COALESCE(SUM(total), 0) as total
-      FROM sales
-      GROUP BY customer_name
-      ORDER BY total DESC
-      LIMIT 5
-    `);
+    // Construir filtro de segmento
+    let segmentFilter = '';
+    let segmentParams = [];
+    
+    // Se segmentId é válido e não é 0, aplicar filtro
+    if (segmentId && segmentId !== '0' && segmentId !== 0 && segmentId !== 'null' && segmentId !== '') {
+      segmentFilter = 'WHERE segment_id = ?';
+      segmentParams = [parseInt(segmentId)];
+      console.log('🔍 Dashboard - Aplicando filtro para segmento:', segmentId);
+    } else {
+      console.log('🔍 Dashboard - Sem filtro de segmento (todos os segmentos)');
+    }
 
-    res.json({
-      metrics,
-      monthlyData,
-      topCustomers
-    });
+    // Buscar métricas básicas com filtro de segmento
+    const [transactionsData, salesData, billingsData, nfeData, productsData, customersData] = await Promise.all([
+      // Transações do mês atual
+      db.all(`
+        SELECT COUNT(*) as count, COALESCE(SUM(CASE WHEN type = 'receita' THEN amount ELSE 0 END), 0) as revenue,
+               COALESCE(SUM(CASE WHEN type = 'despesa' THEN amount ELSE 0 END), 0) as expenses
+        FROM transactions 
+        ${segmentFilter ? segmentFilter + ' AND' : 'WHERE'} EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE) 
+        AND EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE)
+      `, segmentParams),
+      
+      // Vendas do mês atual
+      db.all(`
+        SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as total
+        FROM sales 
+        ${segmentFilter ? segmentFilter + ' AND' : 'WHERE'} EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE) 
+        AND EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE)
+      `, segmentParams),
+      
+      // Cobranças do mês atual
+      db.all(`
+        SELECT COUNT(*) as count, COALESCE(SUM(amount), 0) as total
+        FROM billings 
+        ${segmentFilter ? segmentFilter + ' AND' : 'WHERE'} EXTRACT(YEAR FROM due_date) = EXTRACT(YEAR FROM CURRENT_DATE) 
+        AND EXTRACT(MONTH FROM due_date) = EXTRACT(MONTH FROM CURRENT_DATE)
+      `, segmentParams),
+      
+      // NF-e do mês atual
+      db.all(`
+        SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as total
+        FROM nfe 
+        ${segmentFilter ? segmentFilter + ' AND' : 'WHERE'} EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE) 
+        AND EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE)
+      `, segmentParams),
+      
+      // Total de produtos
+      db.all(`
+        SELECT COUNT(*) as count
+        FROM products 
+        ${segmentFilter || ''}
+      `, segmentParams),
+      
+      // Total de clientes
+      db.all(`
+        SELECT COUNT(*) as count
+        FROM customers 
+        ${segmentFilter || ''}
+      `, segmentParams)
+    ]);
 
+    // Verificar se os dados foram carregados corretamente
+    if (!transactionsData && !salesData && !billingsData && !nfeData && !productsData && !customersData) {
+      console.log('❌ Dashboard - Nenhum dado encontrado');
+      return res.status(500).json({ error: 'Failed to load dashboard data' });
+    }
+
+    // Extrair valores das consultas
+    const transactions = transactionsData[0] || { count: 0, revenue: 0, expenses: 0 };
+    const sales = salesData[0] || { count: 0, total: 0 };
+    const billings = billingsData[0] || { count: 0, total: 0 };
+    const nfe = nfeData[0] || { count: 0, total: 0 };
+    const products = productsData[0] || { count: 0 };
+    const customers = customersData[0] || { count: 0 };
+
+    // Calcular lucro
+    const profit = parseFloat(transactions.revenue) - parseFloat(transactions.expenses);
+
+    const dashboardData = {
+      metrics: {
+        totalTransactions: parseInt(transactions.count),
+        totalRevenue: parseFloat(transactions.revenue),
+        totalExpenses: parseFloat(transactions.expenses),
+        profit: profit,
+        totalSales: parseInt(sales.count),
+        totalSalesAmount: parseFloat(sales.total),
+        totalBillings: parseInt(billings.count),
+        totalBillingsAmount: parseFloat(billings.total),
+        totalNFe: parseInt(nfe.count),
+        totalNFeAmount: parseFloat(nfe.total),
+        totalProducts: parseInt(products.count),
+        totalCustomers: parseInt(customers.count)
+      },
+      recentTransactions: [],
+      recentSales: [],
+      recentBillings: []
+    };
+
+    console.log('✅ Dashboard - Dados processados com sucesso:', dashboardData);
+
+    res.json(dashboardData);
   } catch (error) {
-    console.error('Dashboard error:', error);
+    console.error('❌ Dashboard error:', error);
     res.status(500).json({ error: 'Failed to load dashboard data' });
   }
 });

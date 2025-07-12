@@ -101,11 +101,16 @@ router.post('/', authenticateToken, validateTransaction, async (req, res) => {
     const { type, description, amount, date, category, cost_center, segment_id } = req.body;
     const db = await getDatabase();
 
+    console.log('🔍 Debug - Dados recebidos:', { type, description, amount, date, category, cost_center, segment_id });
+
     // Verify segment exists
     const segment = await db.get('SELECT id FROM segments WHERE id = ?', [segment_id]);
     if (!segment) {
+      console.log('❌ Debug - Segmento não encontrado:', segment_id);
       return res.status(400).json({ error: 'Invalid segment ID' });
     }
+
+    console.log('✅ Debug - Segmento encontrado:', segment);
 
     const result = await db.run(
       'INSERT INTO transactions (type, description, amount, date, category, cost_center, segment_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -113,6 +118,7 @@ router.post('/', authenticateToken, validateTransaction, async (req, res) => {
     );
 
     const transaction = await db.get('SELECT * FROM transactions WHERE id = ?', [result.lastID]);
+    console.log('✅ Debug - Transação criada:', transaction);
 
     res.status(201).json({
       message: 'Transaction created successfully',

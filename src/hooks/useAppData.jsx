@@ -5,16 +5,51 @@ import { calculateMetrics } from '@/utils/metrics';
 
 const AppDataContext = createContext();
 
+// Cache em memória GLOBAL - sem localStorage
+const globalMemoryCache = {
+  currentUser: null,
+  segments: [],
+  activeSegmentId: 0,
+  data: null,
+  authToken: null,
+  initialized: false
+};
+
+// Função para limpar localStorage completamente
+const forceClearStorage = () => {
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+    console.log('🧹 Storage forçadamente limpo');
+  } catch (error) {
+    console.error('Erro ao limpar storage:', error);
+  }
+};
+
+// Função para gerenciar token SEM localStorage
+const tokenManager = {
+  setToken: (token) => {
+    globalMemoryCache.authToken = token;
+    // NÃO usar localStorage
+  },
+  
+  getToken: () => {
+    return globalMemoryCache.authToken;
+  },
+  
+  clearToken: () => {
+    globalMemoryCache.authToken = null;
+    // NÃO usar localStorage
+  }
+};
+
 const defaultInitialData = {
-  // Essential data (loaded on login) - LIMITED SIZE
   transactions: [],
   products: [],
   sales: [],
   customers: [],
   nfeList: [],
   billings: [],
-  
-  // Optional data (lazy loaded)
   costCenters: [],
   accountsPayable: [],
   integrations: {
@@ -23,7 +58,6 @@ const defaultInitialData = {
   users: [], 
 };
 
-// Lazy loading state
 const defaultLazyState = {
   costCenters: { loaded: false, loading: false },
   accountsPayable: { loaded: false, loading: false },
@@ -31,10 +65,10 @@ const defaultLazyState = {
 
 export const AppDataProvider = ({ children }) => {
   const [data, setData] = useState(defaultInitialData);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(globalMemoryCache.currentUser);
   const [loading, setLoading] = useState(true);
-  const [segments, setSegments] = useState([]);
-  const [activeSegmentId, setActiveSegmentId] = useState(0);
+  const [segments, setSegments] = useState(globalMemoryCache.segments);
+  const [activeSegmentId, setActiveSegmentId] = useState(globalMemoryCache.activeSegmentId);
   const [lazyState, setLazyState] = useState(defaultLazyState);
 
   // Calculate metrics from local data
@@ -42,19 +76,40 @@ export const AppDataProvider = ({ children }) => {
     return calculateMetrics(data, activeSegmentId);
   }, [data, activeSegmentId]);
 
+  // Atualizar cache em memória quando dados mudarem
+  useEffect(() => {
+    globalMemoryCache.currentUser = currentUser;
+    globalMemoryCache.segments = segments;
+    globalMemoryCache.activeSegmentId = activeSegmentId;
+  }, [currentUser, segments, activeSegmentId]);
+
+  // Limpar storage na inicialização
+  useEffect(() => {
+    if (!globalMemoryCache.initialized) {
+      forceClearStorage();
+      globalMemoryCache.initialized = true;
+    }
+  }, []);
+
   // Initialize app data and check authentication
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        console.log('🚀 Iniciando aplicação...');
         setLoading(true);
         // Check if user is authenticated
         const token = apiService.getToken();
+        console.log('🔑 Token encontrado:', !!token);
+        
         if (token) {
           try {
+            console.log('👤 Verificando perfil do usuário...');
             const userProfile = await apiService.getProfile();
+            console.log('✅ Perfil carregado:', userProfile.user.name);
             setCurrentUser(userProfile.user);
             
             // Load segments for the user
+            console.log('📋 Carregando segmentos...');
             const segmentsResponse = await apiService.getSegments();
             setSegments(segmentsResponse.segments || []);
             
@@ -90,14 +145,17 @@ export const AppDataProvider = ({ children }) => {
             
             console.log('✅ Essential data loaded successfully');
           } catch (error) {
-            console.error('Authentication check failed:', error);
+            console.error('❌ Authentication check failed:', error);
             apiService.setToken(null);
             setCurrentUser(null);
           }
+        } else {
+          console.log('👤 Nenhum usuário logado');
         }
       } catch (error) {
-        console.error('App initialization error:', error);
+        console.error('❌ App initialization error:', error);
       } finally {
+        console.log('✅ Inicialização concluída');
         setLoading(false);
       }
     };
@@ -190,6 +248,16 @@ export const AppDataProvider = ({ children }) => {
       setSegments([]);
       setData(defaultInitialData);
       setLazyState(defaultLazyState); // Reset lazy state
+      
+      // Limpar cache em memória
+      globalMemoryCache.currentUser = null;
+      globalMemoryCache.segments = [];
+      globalMemoryCache.activeSegmentId = 0;
+      globalMemoryCache.data = null;
+      globalMemoryCache.authToken = null; // Clear token on logout
+      
+      // Limpar localStorage
+      forceClearStorage();
     } catch (error) {
       console.error('Logout error:', error);
       // Even if logout fails on server, clear local state
@@ -197,6 +265,16 @@ export const AppDataProvider = ({ children }) => {
       setSegments([]);
       setData(defaultInitialData);
       setLazyState(defaultLazyState);
+      
+      // Limpar cache em memória
+      globalMemoryCache.currentUser = null;
+      globalMemoryCache.segments = [];
+      globalMemoryCache.activeSegmentId = 0;
+      globalMemoryCache.data = null;
+      globalMemoryCache.authToken = null; // Clear token on logout
+      
+      // Limpar localStorage
+      forceClearStorage();
     }
   };
 
@@ -288,12 +366,34 @@ export const AppDataProvider = ({ children }) => {
     }
   };
 
-  // Data loading functions
+  // Data loading functions with memory cache
   const loadTransactions = async (params = {}) => {
     try {
+      // Verificar cache em memória primeiro
+      if (globalMemoryCache.data?.transactions && !params.segment_id) {
+        console.log('📊 Using cached transactions');
+        setData(prev => ({ ...prev, transactions: globalMemoryCache.data.transactions }));
+        return { transactions: globalMemoryCache.data.transactions };
+      }
+      
       const response = await apiService.getTransactions(params);
-      setData(prev => ({ ...prev, transactions: response.transactions || [] }));
-      return response;
+      const transactions = response.transactions || [];
+      
+      // Converter segment_id para segmentId (snake_case para camelCase)
+      const convertedTransactions = transactions.map(transaction => ({
+        ...transaction,
+        segmentId: transaction.segment_id || transaction.segmentId,
+        costCenter: transaction.cost_center || transaction.costCenter
+      }));
+      
+      console.log('🔍 Debug loadTransactions - Transações convertidas:', convertedTransactions.slice(0, 3));
+      
+      // Atualizar cache em memória
+      if (!globalMemoryCache.data) globalMemoryCache.data = {};
+      globalMemoryCache.data.transactions = convertedTransactions;
+      
+      setData(prev => ({ ...prev, transactions: convertedTransactions }));
+      return { transactions: convertedTransactions };
     } catch (error) {
       console.error('Load transactions error:', error);
       throw error;
@@ -302,8 +402,21 @@ export const AppDataProvider = ({ children }) => {
 
   const loadProducts = async (params = {}) => {
     try {
+      // Verificar cache em memória primeiro
+      if (globalMemoryCache.data?.products && !params.segment_id) {
+        console.log('📦 Using cached products');
+        setData(prev => ({ ...prev, products: globalMemoryCache.data.products }));
+        return { products: globalMemoryCache.data.products };
+      }
+      
       const response = await apiService.getProducts(params);
-      setData(prev => ({ ...prev, products: response.products || [] }));
+      const products = response.products || [];
+      
+      // Atualizar cache em memória
+      if (!globalMemoryCache.data) globalMemoryCache.data = {};
+      globalMemoryCache.data.products = products;
+      
+      setData(prev => ({ ...prev, products }));
       return response;
     } catch (error) {
       console.error('Load products error:', error);
@@ -313,8 +426,21 @@ export const AppDataProvider = ({ children }) => {
 
   const loadCustomers = async (params = {}) => {
     try {
+      // Verificar cache em memória primeiro
+      if (globalMemoryCache.data?.customers && !params.segment_id) {
+        console.log('👥 Using cached customers');
+        setData(prev => ({ ...prev, customers: globalMemoryCache.data.customers }));
+        return { customers: globalMemoryCache.data.customers };
+      }
+      
       const response = await apiService.getCustomers(params);
-      setData(prev => ({ ...prev, customers: response.customers || [] }));
+      const customers = response.customers || [];
+      
+      // Atualizar cache em memória
+      if (!globalMemoryCache.data) globalMemoryCache.data = {};
+      globalMemoryCache.data.customers = customers;
+      
+      setData(prev => ({ ...prev, customers }));
       return response;
     } catch (error) {
       console.error('Load customers error:', error);
@@ -324,8 +450,21 @@ export const AppDataProvider = ({ children }) => {
 
   const loadSales = async (params = {}) => {
     try {
+      // Verificar cache em memória primeiro
+      if (globalMemoryCache.data?.sales && !params.segment_id) {
+        console.log('💰 Using cached sales');
+        setData(prev => ({ ...prev, sales: globalMemoryCache.data.sales }));
+        return { sales: globalMemoryCache.data.sales };
+      }
+      
       const response = await apiService.getSales(params);
-      setData(prev => ({ ...prev, sales: response.sales || [] }));
+      const sales = response.sales || [];
+      
+      // Atualizar cache em memória
+      if (!globalMemoryCache.data) globalMemoryCache.data = {};
+      globalMemoryCache.data.sales = sales;
+      
+      setData(prev => ({ ...prev, sales }));
       return response;
     } catch (error) {
       console.error('Load sales error:', error);
@@ -335,8 +474,21 @@ export const AppDataProvider = ({ children }) => {
 
   const loadBillings = async (params = {}) => {
     try {
+      // Verificar cache em memória primeiro
+      if (globalMemoryCache.data?.billings && !params.segment_id) {
+        console.log('💳 Using cached billings');
+        setData(prev => ({ ...prev, billings: globalMemoryCache.data.billings }));
+        return { billings: globalMemoryCache.data.billings };
+      }
+      
       const response = await apiService.getBillings(params);
-      setData(prev => ({ ...prev, billings: response.billings || [] }));
+      const billings = response.billings || [];
+      
+      // Atualizar cache em memória
+      if (!globalMemoryCache.data) globalMemoryCache.data = {};
+      globalMemoryCache.data.billings = billings;
+      
+      setData(prev => ({ ...prev, billings }));
       return response;
     } catch (error) {
       console.error('Load billings error:', error);
@@ -346,8 +498,21 @@ export const AppDataProvider = ({ children }) => {
 
   const loadCostCenters = async (params = {}) => {
     try {
+      // Verificar cache em memória primeiro
+      if (globalMemoryCache.data?.costCenters && !params.segment_id) {
+        console.log('🏢 Using cached cost centers');
+        setData(prev => ({ ...prev, costCenters: globalMemoryCache.data.costCenters }));
+        return { costCenters: globalMemoryCache.data.costCenters };
+      }
+      
       const response = await apiService.getCostCenters(params);
-      setData(prev => ({ ...prev, costCenters: response.costCenters || [] }));
+      const costCenters = response.costCenters || [];
+      
+      // Atualizar cache em memória
+      if (!globalMemoryCache.data) globalMemoryCache.data = {};
+      globalMemoryCache.data.costCenters = costCenters;
+      
+      setData(prev => ({ ...prev, costCenters }));
       return response;
     } catch (error) {
       console.error('Load cost centers error:', error);
@@ -357,8 +522,21 @@ export const AppDataProvider = ({ children }) => {
 
   const loadNFe = async (params = {}) => {
     try {
+      // Verificar cache em memória primeiro
+      if (globalMemoryCache.data?.nfeList && !params.segment_id) {
+        console.log('📄 Using cached NFe');
+        setData(prev => ({ ...prev, nfeList: globalMemoryCache.data.nfeList }));
+        return { nfeList: globalMemoryCache.data.nfeList };
+      }
+      
       const response = await apiService.getNFes(params);
-      setData(prev => ({ ...prev, nfeList: response.nfeList || [] }));
+      const nfeList = response.nfeList || [];
+      
+      // Atualizar cache em memória
+      if (!globalMemoryCache.data) globalMemoryCache.data = {};
+      globalMemoryCache.data.nfeList = nfeList;
+      
+      setData(prev => ({ ...prev, nfeList }));
       return response;
     } catch (error) {
       console.error('Load NFe error:', error);
@@ -368,8 +546,21 @@ export const AppDataProvider = ({ children }) => {
 
   const loadAccountsPayable = async (params = {}) => {
     try {
+      // Verificar cache em memória primeiro
+      if (globalMemoryCache.data?.accountsPayable && !params.segment_id) {
+        console.log('💸 Using cached accounts payable');
+        setData(prev => ({ ...prev, accountsPayable: globalMemoryCache.data.accountsPayable }));
+        return { accountsPayable: globalMemoryCache.data.accountsPayable };
+      }
+      
       const response = await apiService.getAccountsPayable(params);
-      setData(prev => ({ ...prev, accountsPayable: response.accountsPayable || [] }));
+      const accountsPayable = response.accountsPayable || [];
+      
+      // Atualizar cache em memória
+      if (!globalMemoryCache.data) globalMemoryCache.data = {};
+      globalMemoryCache.data.accountsPayable = accountsPayable;
+      
+      setData(prev => ({ ...prev, accountsPayable }));
       return response;
     } catch (error) {
       console.error('Load accounts payable error:', error);
@@ -379,7 +570,20 @@ export const AppDataProvider = ({ children }) => {
 
   const addTransaction = async (transaction) => {
     try {
-      const response = await apiService.createTransaction(transaction);
+      console.log('🔍 Debug addTransaction - Dados recebidos:', transaction);
+      
+      // Garantir que os dados estejam no formato correto
+      const formattedTransaction = {
+        ...transaction,
+        amount: parseFloat(transaction.amount),
+        segment_id: transaction.segmentId ? parseInt(transaction.segmentId) : null,
+        date: transaction.date || new Date().toISOString().split('T')[0],
+        cost_center: transaction.type === 'receita' ? null : transaction.costCenter
+      };
+
+      console.log('🔍 Debug addTransaction - Dados formatados:', formattedTransaction);
+
+      const response = await apiService.createTransaction(formattedTransaction);
       
       // Update local state
       setData(prev => ({
@@ -398,6 +602,69 @@ export const AppDataProvider = ({ children }) => {
       toast({
         title: "Erro!",
         description: "Falha ao adicionar transação. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const updateTransaction = async (id, transactionData) => {
+    try {
+      // Garantir que os dados estejam no formato correto
+      const formattedData = {
+        ...transactionData,
+        amount: parseFloat(transactionData.amount),
+        segment_id: parseInt(transactionData.segmentId),
+        date: transactionData.date || new Date().toISOString().split('T')[0],
+        cost_center: transactionData.type === 'receita' ? null : transactionData.costCenter
+      };
+
+      const response = await apiService.updateTransaction(id, formattedData);
+      
+      // Update local state
+      setData(prev => ({
+        ...prev,
+        transactions: prev.transactions.map(transaction => 
+          transaction.id === id ? response.transaction : transaction
+        )
+      }));
+      
+      toast({
+        title: "Transação Atualizada!",
+        description: "A transação foi atualizada com sucesso."
+      });
+      
+      return response.transaction;
+    } catch (error) {
+      console.error('Update transaction error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao atualizar transação. Tente novamente.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const deleteTransaction = async (transactionId) => {
+    try {
+      await apiService.deleteTransaction(transactionId);
+      
+      // Update local state
+      setData(prev => ({
+        ...prev,
+        transactions: prev.transactions.filter(transaction => transaction.id !== transactionId)
+      }));
+      
+      toast({
+        title: "Transação Excluída!",
+        description: "A transação foi excluída com sucesso."
+      });
+    } catch (error) {
+      console.error('Delete transaction error:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao excluir transação. Tente novamente.",
         variant: "destructive"
       });
       throw error;
@@ -1118,11 +1385,48 @@ export const AppDataProvider = ({ children }) => {
   // Adicionar função para recarregar dados do dashboard
   const reloadDashboardData = async (segmentId) => {
     try {
-      const params = { segmentId: segmentId || activeSegmentId || '' };
-      const result = await apiService.get('/dashboard', params);
-      setData(prev => ({ ...prev, dashboard: result }));
+      console.log('🔄 Recarregando dados para segmento:', segmentId);
+      
+      // Definir o novo segmento ativo
+      const newSegmentId = segmentId || activeSegmentId || 0;
+      setActiveSegmentId(newSegmentId);
+      
+      // Recarregar todos os dados essenciais com o novo filtro de segmento
+      const segmentFilter = newSegmentId && newSegmentId !== 0 ? { segment_id: newSegmentId } : {};
+      
+      console.log('📊 Recarregando transactions...');
+      await loadTransactions(segmentFilter);
+      
+      console.log('📦 Recarregando products...');
+      await loadProducts(segmentFilter);
+      
+      console.log('👥 Recarregando customers...');
+      await loadCustomers(segmentFilter);
+      
+      console.log('💰 Recarregando sales...');
+      await loadSales(segmentFilter);
+      
+      console.log('💳 Recarregando billings...');
+      await loadBillings(segmentFilter);
+      
+      console.log('📄 Recarregando NFe...');
+      await loadNFe(segmentFilter);
+      
+      console.log('💸 Recarregando accounts payable...');
+      await loadAccountsPayable(segmentFilter);
+      
+      console.log('🏢 Recarregando cost centers...');
+      await loadCostCenters(segmentFilter);
+      
+      console.log('✅ Dados recarregados com sucesso para segmento:', newSegmentId);
+      
     } catch (error) {
-      // Pode adicionar tratamento de erro
+      console.error('Erro ao recarregar dados do dashboard:', error);
+      toast({
+        title: "Erro!",
+        description: "Falha ao recarregar dados. Tente novamente.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -1160,6 +1464,8 @@ export const AppDataProvider = ({ children }) => {
     
     // Data creation functions
     addTransaction,
+    updateTransaction,
+    deleteTransaction,
     addProduct,
     addSale,
     addCustomer,
