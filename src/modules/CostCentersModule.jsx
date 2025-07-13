@@ -186,6 +186,15 @@ const CostCentersModule = ({ toast }) => {
     }
   };
 
+  const handleSegmentChange = (e) => {
+    const newSegmentId = e.target.value;
+    setFormData({ ...formData, segmentId: newSegmentId });
+    if (isEditing && currentCostCenter) {
+      // Salvar automaticamente ao alterar o segmento
+      updateCostCenter(currentCostCenter.id, { name: formData.name, segmentId: parseInt(newSegmentId) });
+    }
+  };
+
   const costCenterHeaders = ['name', 'segmentId'];
   const filteredCostCenters = data.costCenters.filter(cc => {
     // Se activeSegmentId é 0 ou null (Todos os Segmentos), mostrar todos os centros de custo
@@ -236,7 +245,7 @@ const CostCentersModule = ({ toast }) => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="segmentId" className="block text-sm font-medium mb-1">Segmento</label>
-                <select id="segmentId" value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                <select id="segmentId" value={formData.segmentId} onChange={handleSegmentChange} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
                   <option value="">Selecione um segmento</option>
                   {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
