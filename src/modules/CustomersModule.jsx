@@ -1,836 +1,1159 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Plus, Edit, Trash2, Eye, Search, Filter, Mail, Phone, MapPin, CreditCard, X } from 'lucide-react';
+import { 
+  Users, 
+  User, 
+  FileText, 
+  DollarSign, 
+  MapPin, 
+  Phone, 
+  Home, 
+  CheckCircle, 
+  Plus, 
+  Edit, 
+  Save, 
+  X, 
+  Camera,
+  Upload,
+  Trash2,
+  Eye
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
-import { formatCurrency } from '@/lib/utils.js';
 
-const CustomersModule = ({ metrics, toast }) => {
-  const { data, addCustomer, importData } = useAppData();
+const TABS = [
+  { key: 'resumo', label: 'Resumo', icon: User },
+  { key: 'cadastro', label: 'Cadastro', icon: User },
+  { key: 'documento', label: 'Documento', icon: FileText },
+  { key: 'renda', label: 'Renda', icon: DollarSign },
+  { key: 'endereco', label: 'Endereço', icon: MapPin },
+  { key: 'contato', label: 'Contato', icon: Phone },
+  { key: 'patrimonio', label: 'Patrimônio', icon: Home },
+  { key: 'status', label: 'Status', icon: CheckCircle },
+];
+
+const CustomersModule = () => {
+  const { data } = useAppData();
+  const [activeTab, setActiveTab] = useState('resumo');
+  const [isEditing, setIsEditing] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  
   const [formData, setFormData] = useState({
-    name: '',
-    document: '',
+    // Dados Cadastrais
+    nome: '',
+    tipoPessoa: 'pf', // pf ou pj
+    cpf: '',
+    cnpj: '',
+    rg: '',
+    dataNascimento: '',
+    estadoCivil: '',
+    profissao: '',
+    empresa: '',
+    cargo: '',
+    dataAdmissao: '',
+    
+    // Documentos
+    tipoDocumento: '',
+    numeroDocumento: '',
+    dataEmissao: '',
+    dataValidade: '',
+    orgaoEmissor: '',
+    documentoImage: null,
+    documentos: [],
+    
+    // Renda
+    cnpjOrigemRenda: '',
+    dataAdmissaoRenda: '',
+    cargoRenda: '',
+    tipoRenda: '',
+    rendaBruta: '',
+    salarioLiquido: '',
+    valorImpostoRenda: '',
+    dataComprovacao: '',
+    documentoRendaImage: null,
+    rendaMensal: '',
+    rendaComplementar: '',
+    origemRenda: '',
+    comprovantesRenda: [],
+    
+    // Endereço
+    cep: '',
+    logradouro: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
+    tipoImovel: '',
+    dataReferencia: '',
+    
+    // Contato
+    telefone: '',
+    tipoTelefone: 'residencial',
+    celular: '',
     email: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: ''
+    telefoneComercial: '',
+    dataReferenciaContato: '',
+    
+    // Patrimônio
+    possuiPatrimonio: false,
+    valorPatrimonio: '',
+    descricaoPatrimonio: '',
+    
+    // Status
+    status: 'pendente',
+    observacoes: '',
+    responsavelCadastro: '',
+    dataCadastro: new Date().toISOString().split('T')[0]
   });
 
-  const formatDocument = (value) => {
-    const numbers = value.replace(/\D/g, '');
-    
-    // Se tem 11 dígitos, formata como CPF
-    if (numbers.length <= 11) {
-      return numbers
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-        .substring(0, 14);
-    }
-    
-    // Se tem mais de 11 dígitos, formata como CNPJ
-    return numbers
-      .replace(/(\d{2})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1/$2')
-      .replace(/(\d{4})(\d{1,2})$/, '$1-$2')
-      .substring(0, 18);
-  };
-
-  const validateDocument = (document) => {
-    const numbers = document.replace(/\D/g, '');
-    
-    if (numbers.length === 11) {
-      // Validação básica de CPF
-      if (numbers === '00000000000' || numbers === '11111111111' || 
-          numbers === '22222222222' || numbers === '33333333333' || 
-          numbers === '44444444444' || numbers === '55555555555' || 
-          numbers === '66666666666' || numbers === '77777777777' || 
-          numbers === '88888888888' || numbers === '99999999999') {
-        return false;
-      }
-      return true;
-    } else if (numbers.length === 14) {
-      // Validação básica de CNPJ
-      if (numbers === '00000000000000' || numbers === '11111111111111' || 
-          numbers === '22222222222222' || numbers === '33333333333333' || 
-          numbers === '44444444444444' || numbers === '55555555555555' || 
-          numbers === '66666666666666' || numbers === '77777777777777' || 
-          numbers === '88888888888888' || numbers === '99999999999999') {
-        return false;
-      }
-      return true;
-    }
-    
-    return false;
-  };
-
-  const handleDocumentChange = (e) => {
-    setFormData({ ...formData, document: formatDocument(e.target.value) });
+  const resetForm = () => {
+    setFormData({
+      nome: '',
+      tipoPessoa: 'pf',
+      cpf: '',
+      cnpj: '',
+      rg: '',
+      dataNascimento: '',
+      estadoCivil: '',
+      profissao: '',
+      empresa: '',
+      cargo: '',
+      dataAdmissao: '',
+      tipoDocumento: '',
+      numeroDocumento: '',
+      dataEmissao: '',
+      dataValidade: '',
+      orgaoEmissor: '',
+      documentoImage: null,
+      documentos: [],
+      cnpjOrigemRenda: '',
+      dataAdmissaoRenda: '',
+      cargoRenda: '',
+      tipoRenda: '',
+      rendaBruta: '',
+      salarioLiquido: '',
+      valorImpostoRenda: '',
+      dataComprovacao: '',
+      documentoRendaImage: null,
+      rendaMensal: '',
+      rendaComplementar: '',
+      origemRenda: '',
+      comprovantesRenda: [],
+      cep: '',
+      logradouro: '',
+      numero: '',
+      complemento: '',
+      bairro: '',
+      cidade: '',
+      estado: '',
+      tipoImovel: '',
+      dataReferencia: '',
+      telefone: '',
+      tipoTelefone: 'residencial',
+      celular: '',
+      email: '',
+      telefoneComercial: '',
+      dataReferenciaContato: '',
+      possuiPatrimonio: false,
+      valorPatrimonio: '',
+      descricaoPatrimonio: '',
+      status: 'pendente',
+      observacoes: '',
+      responsavelCadastro: '',
+      dataCadastro: new Date().toISOString().split('T')[0]
+    });
+    setPhotoPreview(null);
+    setIsEditing(false);
+    setSelectedCustomer(null);
+    setShowForm(false);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.document) {
-      toast({
-        title: "Erro",
-        description: "Nome, Email e Documento são obrigatórios.",
-        variant: "destructive"
-      });
-      return;
+    // Aqui você implementaria a lógica para salvar no backend
+    console.log('Dados do cliente:', formData);
+    resetForm();
+  };
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => setPhotoPreview(e.target.result);
+      reader.readAsDataURL(file);
     }
-    
-    if (!validateDocument(formData.document)) {
-      toast({
-        title: "Erro",
-        description: "Documento inválido. Digite um CPF ou CNPJ válido.",
-        variant: "destructive"
-      });
-      return;
+  };
+
+  const handleDocumentUpload = (e, type) => {
+    const files = Array.from(e.target.files);
+    setFormData(prev => ({
+      ...prev,
+      documentos: [...prev.documentos, ...files.map(file => ({ file, type }))]
+    }));
+  };
+
+  const handleCepSearch = async (cep) => {
+    if (cep.length === 8) {
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+        if (!data.erro) {
+          setFormData(prev => ({
+            ...prev,
+            logradouro: data.logradouro,
+            bairro: data.bairro,
+            cidade: data.localidade,
+            estado: data.uf
+          }));
+        }
+      } catch (error) {
+        console.error('Erro ao buscar CEP:', error);
+      }
     }
-    
-    if (data.customers.some(c => c.document === formData.document)) {
-      toast({
-        title: "Erro",
-        description: "Documento já cadastrado.",
-        variant: "destructive"
-      });
-      return;
+  };
+
+  const renderResumo = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-semibold">Resumo do Cliente</h3>
+        <Button 
+          onClick={() => {
+            setShowForm(true);
+            setActiveTab('cadastro');
+            resetForm();
+          }} 
+          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg transform hover:scale-105 transition-all duration-200"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Novo Cliente
+        </Button>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-xl p-6 border border-blue-100 shadow-sm">
+          <div className="text-center">
+            <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center border-2 border-blue-200">
+              {photoPreview ? (
+                <img src={photoPreview} alt="Foto" className="w-24 h-24 rounded-full object-cover" />
+              ) : (
+                <Camera className="w-8 h-8 text-blue-500" />
+              )}
+            </div>
+            <h4 className="font-semibold text-lg text-gray-800">{formData.nome || 'Nome do Cliente'}</h4>
+            <p className="text-sm text-gray-600">{formData.cpf || 'CPF não informado'}</p>
+          </div>
+        </div>
+        
+        <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 rounded-xl p-6 border border-green-100 shadow-sm">
+          <h4 className="font-semibold mb-3 text-gray-800">Informações Principais</h4>
+          <div className="space-y-2 text-sm">
+            <p><strong className="text-gray-700">Profissão:</strong> <span className="text-gray-600">{formData.profissao || 'Não informado'}</span></p>
+            <p><strong className="text-gray-700">Empresa:</strong> <span className="text-gray-600">{formData.empresa || 'Não informado'}</span></p>
+            <p><strong className="text-gray-700">Renda:</strong> <span className="text-gray-600">{formData.rendaMensal ? `R$ ${formData.rendaMensal}` : 'Não informado'}</span></p>
+            <p><strong className="text-gray-700">Status:</strong> <span className={`px-2 py-1 rounded-full text-xs font-medium ${formData.status === 'aprovado' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{formData.status}</span></p>
+          </div>
+        </div>
+        
+        <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 rounded-xl p-6 border border-purple-100 shadow-sm">
+          <h4 className="font-semibold mb-3 text-gray-800">Contato</h4>
+          <div className="space-y-2 text-sm">
+            <p><strong className="text-gray-700">Telefone:</strong> <span className="text-gray-600">{formData.telefone || 'Não informado'}</span></p>
+            <p><strong className="text-gray-700">Celular:</strong> <span className="text-gray-600">{formData.celular || 'Não informado'}</span></p>
+            <p><strong className="text-gray-700">E-mail:</strong> <span className="text-gray-600">{formData.email || 'Não informado'}</span></p>
+            <p><strong className="text-gray-700">Endereço:</strong> <span className="text-gray-600">{formData.logradouro ? `${formData.logradouro}, ${formData.numero}` : 'Não informado'}</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderCadastro = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-semibold text-gray-900">Dados Cadastrais</h3>
+        <div className="flex space-x-3">
+          <Button 
+            variant="outline" 
+            onClick={resetForm}
+            className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+          >
+            <X className="w-4 h-4 mr-2" />
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleSubmit} 
+            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg transform hover:scale-105 transition-all duration-200"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {isEditing ? 'Atualizar' : 'Salvar'}
+          </Button>
+        </div>
+      </div>
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Nome Completo *</label>
+            <input
+              type="text"
+              value={formData.nome}
+              onChange={(e) => setFormData({...formData, nome: e.target.value})}
+              className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+              placeholder="Digite o nome completo"
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Tipo de Pessoa *</label>
+            <select
+              value={formData.tipoPessoa}
+              onChange={(e) => setFormData({...formData, tipoPessoa: e.target.value, cpf: '', cnpj: ''})}
+              className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200"
+              required
+            >
+              <option value="pf">Pessoa Física (CPF)</option>
+              <option value="pj">Pessoa Jurídica (CNPJ)</option>
+            </select>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              {formData.tipoPessoa === 'pf' ? 'CPF *' : 'CNPJ *'}
+            </label>
+            <input
+              type="text"
+              value={formData.tipoPessoa === 'pf' ? formData.cpf : formData.cnpj}
+              onChange={(e) => {
+                if (formData.tipoPessoa === 'pf') {
+                  setFormData({...formData, cpf: e.target.value});
+                } else {
+                  setFormData({...formData, cnpj: e.target.value});
+                }
+              }}
+              className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+              placeholder={formData.tipoPessoa === 'pf' ? '000.000.000-00' : '00.000.000/0000-00'}
+              required
+            />
+          </div>
+          
+          {formData.tipoPessoa === 'pf' && (
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">RG</label>
+              <input
+                type="text"
+                value={formData.rg}
+                onChange={(e) => setFormData({...formData, rg: e.target.value})}
+                className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+                placeholder="Digite o RG"
+              />
+            </div>
+          )}
+          
+          {formData.tipoPessoa === 'pf' && (
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Data de Nascimento *</label>
+              <input
+                type="date"
+                value={formData.dataNascimento}
+                onChange={(e) => setFormData({...formData, dataNascimento: e.target.value})}
+                className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200"
+                required
+              />
+            </div>
+          )}
+          
+          {formData.tipoPessoa === 'pf' && (
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Estado Civil *</label>
+              <select
+                value={formData.estadoCivil}
+                onChange={(e) => setFormData({...formData, estadoCivil: e.target.value})}
+                className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200"
+                required
+              >
+                <option value="">Selecione...</option>
+                <option value="solteiro">Solteiro(a)</option>
+                <option value="casado">Casado(a)</option>
+                <option value="divorciado">Divorciado(a)</option>
+                <option value="viuvo">Viúvo(a)</option>
+                <option value="uniao">União Estável</option>
+                <option value="separado">Separado(a)</option>
+                <option value="outros">Outros</option>
+              </select>
+            </div>
+          )}
+          
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Profissão</label>
+            <input
+              type="text"
+              value={formData.profissao}
+              onChange={(e) => setFormData({...formData, profissao: e.target.value})}
+              className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+              placeholder="Digite a profissão"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Empresa</label>
+            <input
+              type="text"
+              value={formData.empresa}
+              onChange={(e) => setFormData({...formData, empresa: e.target.value})}
+              className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+              placeholder="Digite o nome da empresa"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Cargo</label>
+            <input
+              type="text"
+              value={formData.cargo}
+              onChange={(e) => setFormData({...formData, cargo: e.target.value})}
+              className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+              placeholder="Digite o cargo"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Data de Admissão</label>
+            <input
+              type="date"
+              value={formData.dataAdmissao}
+              onChange={(e) => setFormData({...formData, dataAdmissao: e.target.value})}
+              className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200"
+            />
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+
+  const renderDocumento = () => (
+    <div className="space-y-6">
+      <h3 className="text-xl font-semibold text-gray-900">Documentos</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Tipo de Documento *</label>
+          <select
+            value={formData.tipoDocumento}
+            onChange={(e) => setFormData({...formData, tipoDocumento: e.target.value})}
+            className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200"
+            required
+          >
+            <option value="">Selecione o tipo de documento...</option>
+            <option value="rg">RG (Registro Geral)</option>
+            <option value="cpf">CPF (Cadastro de Pessoa Física)</option>
+            <option value="cnpj">CNPJ (Cadastro Nacional da Pessoa Jurídica)</option>
+            <option value="passaporte">Passaporte</option>
+            <option value="carteira_trabalho">Carteira de Trabalho</option>
+            <option value="certidao_nascimento">Certidão de Nascimento</option>
+            <option value="certidao_casamento">Certidão de Casamento</option>
+            <option value="certidao_divorcio">Certidão de Divórcio</option>
+            <option value="titulo_eleitor">Título de Eleitor</option>
+            <option value="carteira_motorista">Carteira de Motorista</option>
+            <option value="carteira_identidade">Carteira de Identidade</option>
+            <option value="certificado_reservista">Certificado de Reservista</option>
+            <option value="contrato_social">Contrato Social (PJ)</option>
+            <option value="inscricao_estadual">Inscrição Estadual (PJ)</option>
+            <option value="inscricao_municipal">Inscrição Municipal (PJ)</option>
+            <option value="outros">Outros</option>
+          </select>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Número do Documento *</label>
+          <input
+            type="text"
+            value={formData.numeroDocumento}
+            onChange={(e) => setFormData({...formData, numeroDocumento: e.target.value})}
+            className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+            placeholder="Digite o número do documento"
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Data de Emissão</label>
+          <input
+            type="date"
+            value={formData.dataEmissao}
+            onChange={(e) => setFormData({...formData, dataEmissao: e.target.value})}
+            className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Data de Validade</label>
+          <input
+            type="date"
+            value={formData.dataValidade}
+            onChange={(e) => setFormData({...formData, dataValidade: e.target.value})}
+            className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Órgão Emissor</label>
+          <input
+            type="text"
+            value={formData.orgaoEmissor}
+            onChange={(e) => setFormData({...formData, orgaoEmissor: e.target.value})}
+            className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+            placeholder="Digite o órgão emissor"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Upload do Documento</label>
+          <div className="border-2 border-dashed border-gray-400 rounded-lg p-6 text-center hover:border-indigo-400 transition-colors">
+            <input
+              type="file"
+              accept="image/*,.pdf"
+              onChange={(e) => handleDocumentUpload(e, 'documento')}
+              className="hidden"
+              id="documentoUpload"
+            />
+            <label htmlFor="documentoUpload" className="cursor-pointer">
+              <Upload className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+              <p className="text-gray-700 font-medium">Clique para fazer upload</p>
+              <p className="text-sm text-gray-500">PNG, JPG, PDF até 5MB</p>
+            </label>
+          </div>
+        </div>
+      </div>
+      
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <h4 className="font-semibold text-blue-900 mb-3">Documentos Obrigatórios</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="flex items-center space-x-3">
+            <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+            <span className="text-sm text-blue-800">RG ou CNH</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+            <span className="text-sm text-blue-800">CPF</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+            <span className="text-sm text-blue-800">Comprovante de Residência</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+            <span className="text-sm text-blue-800">Comprovante de Renda</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderRenda = () => (
+    <div className="space-y-6">
+      <h3 className="text-xl font-semibold text-gray-800">Informações de Renda</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">CNPJ da Origem da Renda</label>
+          <input
+            type="text"
+            value={formData.cnpjOrigemRenda}
+            onChange={(e) => setFormData({...formData, cnpjOrigemRenda: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200"
+            placeholder="00.000.000/0000-00"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Data de Admissão</label>
+          <input
+            type="date"
+            value={formData.dataAdmissaoRenda}
+            onChange={(e) => setFormData({...formData, dataAdmissaoRenda: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Cargo</label>
+          <input
+            type="text"
+            value={formData.cargoRenda}
+            onChange={(e) => setFormData({...formData, cargoRenda: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200"
+            placeholder="Ex: Analista, Gerente, Diretor"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Renda *</label>
+          <select
+            value={formData.tipoRenda}
+            onChange={(e) => setFormData({...formData, tipoRenda: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200"
+            required
+          >
+            <option value="">Selecione o tipo de renda...</option>
+            <option value="salario">Salário</option>
+            <option value="holerite">Holerite</option>
+            <option value="extrato_bancario">Extrato Bancário</option>
+            <option value="declaracao_imposto">Declaração de Imposto de Renda</option>
+            <option value="comprovante_renda">Comprovante de Renda</option>
+            <option value="proventos">Proventos</option>
+            <option value="renda_autonomo">Renda de Autônomo</option>
+            <option value="renda_empresario">Renda de Empresário</option>
+            <option value="aposentadoria">Aposentadoria</option>
+            <option value="pensao">Pensão</option>
+            <option value="aluguel">Renda de Aluguel</option>
+            <option value="dividendos">Dividendos</option>
+            <option value="investimentos">Renda de Investimentos</option>
+            <option value="freelance">Freelance</option>
+            <option value="consultoria">Consultoria</option>
+            <option value="outros">Outros</option>
+          </select>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Renda Salarial Bruto *</label>
+          <input
+            type="number"
+            value={formData.rendaBruta}
+            onChange={(e) => setFormData({...formData, rendaBruta: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200"
+            placeholder="0,00"
+            step="0.01"
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Salário Líquido *</label>
+          <input
+            type="number"
+            value={formData.salarioLiquido}
+            onChange={(e) => setFormData({...formData, salarioLiquido: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200"
+            placeholder="0,00"
+            step="0.01"
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Valor Imposto de Renda</label>
+          <input
+            type="number"
+            value={formData.valorImpostoRenda}
+            onChange={(e) => setFormData({...formData, valorImpostoRenda: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200"
+            placeholder="0,00"
+            step="0.01"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Data de Comprovação</label>
+          <input
+            type="date"
+            value={formData.dataComprovacao}
+            onChange={(e) => setFormData({...formData, dataComprovacao: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200"
+          />
+        </div>
+        
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Anexar Documento de Renda *</label>
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 border border-green-100">
+            <div className="flex items-center space-x-4">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-100 to-emerald-100 rounded-lg flex items-center justify-center border-2 border-green-200 shadow-sm">
+                {formData.documentoRendaImage ? (
+                  <img src={formData.documentoRendaImage} alt="Preview" className="w-20 h-20 rounded-lg object-cover" />
+                ) : (
+                  <FileText className="w-8 h-8 text-green-500" />
+                )}
+              </div>
+              <div className="flex-1">
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => setFormData({...formData, documentoRendaImage: e.target.result});
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="hidden"
+                  id="documento-renda-upload"
+                  required
+                />
+                <label htmlFor="documento-renda-upload" className="cursor-pointer bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-emerald-700 shadow-lg transform hover:scale-105 transition-all duration-200 inline-flex items-center">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Documento de Renda
+                </label>
+                <p className="text-sm text-gray-600 mt-2">Formatos aceitos: JPG, PNG, PDF</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
+        <h4 className="font-medium mb-4 text-gray-800">📊 Resumo da Renda</h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-lg p-4 border border-blue-200">
+            <p className="text-sm text-gray-600">Renda Bruta</p>
+            <p className="text-lg font-semibold text-gray-800">
+              {formData.rendaBruta ? `R$ ${parseFloat(formData.rendaBruta).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : 'Não informado'}
+            </p>
+          </div>
+          <div className="bg-white rounded-lg p-4 border border-blue-200">
+            <p className="text-sm text-gray-600">Salário Líquido</p>
+            <p className="text-lg font-semibold text-gray-800">
+              {formData.salarioLiquido ? `R$ ${parseFloat(formData.salarioLiquido).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : 'Não informado'}
+            </p>
+          </div>
+          <div className="bg-white rounded-lg p-4 border border-blue-200">
+            <p className="text-sm text-gray-600">Tipo de Renda</p>
+            <p className="text-lg font-semibold text-gray-800">
+              {formData.tipoRenda || 'Não informado'}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderEndereco = () => (
+    <div className="space-y-6">
+      <h3 className="text-xl font-semibold">Endereço</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium mb-2">CEP *</label>
+          <input
+            type="text"
+            value={formData.cep}
+            onChange={(e) => {
+              setFormData({...formData, cep: e.target.value});
+              if (e.target.value.length === 8) {
+                handleCepSearch(e.target.value);
+              }
+            }}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            placeholder="00000-000"
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-2">Logradouro *</label>
+          <input
+            type="text"
+            value={formData.logradouro}
+            onChange={(e) => setFormData({...formData, logradouro: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-2">Número *</label>
+          <input
+            type="text"
+            value={formData.numero}
+            onChange={(e) => setFormData({...formData, numero: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-2">Complemento</label>
+          <input
+            type="text"
+            value={formData.complemento}
+            onChange={(e) => setFormData({...formData, complemento: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            placeholder="Apto, Casa, etc."
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-2">Bairro *</label>
+          <input
+            type="text"
+            value={formData.bairro}
+            onChange={(e) => setFormData({...formData, bairro: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-2">Cidade *</label>
+          <input
+            type="text"
+            value={formData.cidade}
+            onChange={(e) => setFormData({...formData, cidade: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-2">Estado *</label>
+          <select
+            value={formData.estado}
+            onChange={(e) => setFormData({...formData, estado: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            required
+          >
+            <option value="">Selecione...</option>
+            <option value="AC">Acre</option>
+            <option value="AL">Alagoas</option>
+            <option value="AP">Amapá</option>
+            <option value="AM">Amazonas</option>
+            <option value="BA">Bahia</option>
+            <option value="CE">Ceará</option>
+            <option value="DF">Distrito Federal</option>
+            <option value="ES">Espírito Santo</option>
+            <option value="GO">Goiás</option>
+            <option value="MA">Maranhão</option>
+            <option value="MT">Mato Grosso</option>
+            <option value="MS">Mato Grosso do Sul</option>
+            <option value="MG">Minas Gerais</option>
+            <option value="PA">Pará</option>
+            <option value="PB">Paraíba</option>
+            <option value="PR">Paraná</option>
+            <option value="PE">Pernambuco</option>
+            <option value="PI">Piauí</option>
+            <option value="RJ">Rio de Janeiro</option>
+            <option value="RN">Rio Grande do Norte</option>
+            <option value="RS">Rio Grande do Sul</option>
+            <option value="RO">Rondônia</option>
+            <option value="RR">Roraima</option>
+            <option value="SC">Santa Catarina</option>
+            <option value="SP">São Paulo</option>
+            <option value="SE">Sergipe</option>
+            <option value="TO">Tocantins</option>
+          </select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-2">Tipo de Imóvel</label>
+          <select
+            value={formData.tipoImovel}
+            onChange={(e) => setFormData({...formData, tipoImovel: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Selecione...</option>
+            <option value="proprio">Próprio</option>
+            <option value="alugado">Alugado</option>
+            <option value="financiado">Financiado</option>
+            <option value="cedido">Cedido</option>
+          </select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Data de Referência</label>
+          <input
+            type="date"
+            value={formData.dataReferencia}
+            onChange={(e) => setFormData({...formData, dataReferencia: e.target.value})}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200"
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderContato = () => (
+    <div className="space-y-6">
+      <h3 className="text-xl font-semibold text-gray-900">Informações de Contato</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Tipo de Telefone</label>
+          <select
+            value={formData.tipoTelefone}
+            onChange={(e) => setFormData({...formData, tipoTelefone: e.target.value})}
+            className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200"
+          >
+            <option value="residencial">Residencial</option>
+            <option value="celular">Celular</option>
+            <option value="comercial">Comercial</option>
+          </select>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Telefone Principal *</label>
+          <input
+            type="tel"
+            value={formData.telefone}
+            onChange={(e) => setFormData({...formData, telefone: e.target.value})}
+            className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+            placeholder={formData.tipoTelefone === 'celular' ? "(11) 98765-4321" : "(11) 1234-5678"}
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Telefone Secundário</label>
+          <input
+            type="tel"
+            value={formData.celular}
+            onChange={(e) => setFormData({...formData, celular: e.target.value})}
+            className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+            placeholder="(11) 98765-4321"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">E-mail</label>
+          <input
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({...formData, email: e.target.value})}
+            className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+            placeholder="cliente@email.com"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Telefone Comercial</label>
+          <input
+            type="tel"
+            value={formData.telefoneComercial}
+            onChange={(e) => setFormData({...formData, telefoneComercial: e.target.value})}
+            className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+            placeholder="(11) 1234-5678"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Data de Referência</label>
+          <input
+            type="date"
+            value={formData.dataReferenciaContato}
+            onChange={(e) => setFormData({...formData, dataReferenciaContato: e.target.value})}
+            className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200"
+          />
+        </div>
+      </div>
+      
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <h4 className="font-semibold text-blue-900 mb-2">Informações do Telefone Principal</h4>
+        <div className="text-sm text-blue-800">
+          <p><strong>Tipo:</strong> {formData.tipoTelefone === 'residencial' ? 'Residencial' : formData.tipoTelefone === 'celular' ? 'Celular' : 'Comercial'}</p>
+          <p><strong>Número:</strong> {formData.telefone || 'Não informado'}</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPatrimonio = () => (
+    <div className="space-y-6">
+      <h3 className="text-xl font-semibold text-gray-900">Patrimônio</h3>
+      
+      <div className="space-y-6">
+        <div className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            id="possuiPatrimonio"
+            checked={formData.possuiPatrimonio}
+            onChange={(e) => setFormData({...formData, possuiPatrimonio: e.target.checked})}
+            className="w-4 h-4 text-blue-600 border-gray-400 rounded focus:ring-blue-500"
+          />
+          <label htmlFor="possuiPatrimonio" className="text-sm font-semibold text-gray-900">
+            Possui patrimônio
+          </label>
+        </div>
+        
+        {formData.possuiPatrimonio && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Valor do Patrimônio</label>
+              <input
+                type="number"
+                value={formData.valorPatrimonio}
+                onChange={(e) => setFormData({...formData, valorPatrimonio: e.target.value})}
+                className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+                placeholder="0,00"
+              />
+            </div>
+            
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Descrição do Patrimônio</label>
+              <textarea
+                value={formData.descricaoPatrimonio}
+                onChange={(e) => setFormData({...formData, descricaoPatrimonio: e.target.value})}
+                className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+                rows="4"
+                placeholder="Descreva os bens que compõem o patrimônio..."
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderStatus = () => (
+    <div className="space-y-6">
+      <h3 className="text-xl font-semibold text-gray-900">Status do Cadastro</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Status *</label>
+          <select
+            value={formData.status}
+            onChange={(e) => setFormData({...formData, status: e.target.value})}
+            className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 shadow-sm transition-all duration-200"
+            required
+          >
+            <option value="pendente">Pendente</option>
+            <option value="em_analise">Em Análise</option>
+            <option value="aprovado">Aprovado</option>
+            <option value="reprovado">Reprovado</option>
+            <option value="suspenso">Suspenso</option>
+          </select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Responsável pelo Cadastro</label>
+          <input
+            type="text"
+            value={formData.responsavelCadastro}
+            onChange={(e) => setFormData({...formData, responsavelCadastro: e.target.value})}
+            className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+            placeholder="Nome do responsável"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Data do Cadastro</label>
+          <input
+            type="date"
+            value={formData.dataCadastro}
+            onChange={(e) => setFormData({...formData, dataCadastro: e.target.value})}
+            className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 shadow-sm transition-all duration-200"
+          />
+        </div>
+        
+        <div className="md:col-span-2">
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Observações</label>
+          <textarea
+            value={formData.observacoes}
+            onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
+            className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+            rows="4"
+            placeholder="Observações sobre o cadastro..."
+          />
+        </div>
+      </div>
+      
+      <div className="bg-gray-50 rounded-lg p-6">
+        <h4 className="font-semibold text-gray-900 mb-4">Checklist de Requisitos</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-center space-x-3">
+            <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-400 rounded focus:ring-blue-500" />
+            <span className="text-sm text-gray-700">Documentos pessoais anexados</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-400 rounded focus:ring-blue-500" />
+            <span className="text-sm text-gray-700">Comprovante de residência</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-400 rounded focus:ring-blue-500" />
+            <span className="text-sm text-gray-700">Comprovante de renda</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-400 rounded focus:ring-blue-500" />
+            <span className="text-sm text-gray-700">Foto do cliente</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-400 rounded focus:ring-blue-500" />
+            <span className="text-sm text-gray-700">Endereço completo</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-400 rounded focus:ring-blue-500" />
+            <span className="text-sm text-gray-700">Contatos validados</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'resumo':
+        return renderResumo();
+      case 'cadastro':
+        return renderCadastro();
+      case 'documento':
+        return renderDocumento();
+      case 'renda':
+        return renderRenda();
+      case 'endereco':
+        return renderEndereco();
+      case 'contato':
+        return renderContato();
+      case 'patrimonio':
+        return renderPatrimonio();
+      case 'status':
+        return renderStatus();
+      default:
+        return renderResumo();
     }
-    
-    addCustomer(formData);
-    
-    setFormData({ name: '', document: '', email: '', phone: '', address: '', city: '', state: '' });
-    setShowForm(false);
-  };
-
-  const handleViewCustomer = (customer) => {
-    setSelectedCustomer(customer);
-    setShowViewModal(true);
-  };
-
-  const handleEditCustomer = (customer) => {
-    setSelectedCustomer(customer);
-    setFormData({
-      name: customer.name || '',
-      document: customer.document || '',
-      email: customer.email || '',
-      phone: customer.phone || '',
-      address: customer.address || '',
-      city: customer.city || '',
-      state: customer.state || ''
-    });
-    setShowEditModal(true);
-  };
-
-  const handleDeleteCustomer = (customer) => {
-    setSelectedCustomer(customer);
-    setShowDeleteConfirm(true);
-  };
-
-  const confirmDelete = () => {
-    // Aqui você implementaria a chamada para deletar o cliente
-    // Por enquanto, vamos apenas mostrar uma mensagem
-    toast({
-      title: "Cliente Excluído",
-      description: `${selectedCustomer.name} foi excluído com sucesso.`,
-    });
-    setShowDeleteConfirm(false);
-    setSelectedCustomer(null);
-  };
-
-  const handleEditSubmit = (e) => {
-    e.preventDefault();
-    if (!formData.name || !formData.email || !formData.document) {
-      toast({
-        title: "Erro",
-        description: "Nome, Email e Documento são obrigatórios.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!validateDocument(formData.document)) {
-      toast({
-        title: "Erro",
-        description: "Documento inválido. Digite um CPF ou CNPJ válido.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Verificar se o documento já existe em outro cliente
-    const otherCustomers = data.customers.filter(c => c.id !== selectedCustomer.id);
-    if (otherCustomers.some(c => c.document === formData.document)) {
-      toast({
-        title: "Erro",
-        description: "Documento já cadastrado para outro cliente.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Aqui você implementaria a chamada para atualizar o cliente
-    toast({
-      title: "Cliente Atualizado",
-      description: `${formData.name} foi atualizado com sucesso.`,
-    });
-    
-    setShowEditModal(false);
-    setSelectedCustomer(null);
-    setFormData({ name: '', document: '', email: '', phone: '', address: '', city: '', state: '' });
-  };
-
-  const customerHeaders = ['name', 'document', 'email', 'phone', 'address', 'city', 'state', 'totalPurchases', 'lastPurchaseDate'];
-
-  // Calcular total de compras por cliente baseado nas vendas
-  const getCustomerTotalPurchases = (customerId) => {
-    return data.sales
-      .filter(sale => sale.customerId === customerId && sale.status === 'Concluída')
-      .reduce((total, sale) => total + Number(sale.total || 0), 0);
-  };
-
-  // Função para detectar se é PF ou PJ baseado no documento
-  const getCustomerType = (document) => {
-    if (!document) return 'N/A';
-    const numbers = document.replace(/\D/g, '');
-    if (numbers.length === 11) return 'PF';
-    if (numbers.length === 14) return 'PJ';
-    return 'N/A';
-  };
-
-  // Função para obter o tipo de documento
-  const getDocumentType = (document) => {
-    if (!document) return 'N/A';
-    const numbers = document.replace(/\D/g, '');
-    if (numbers.length === 11) return 'CPF';
-    if (numbers.length === 14) return 'CNPJ';
-    return 'N/A';
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="max-w-6xl mx-auto mt-8 bg-white rounded-xl shadow-lg p-6"
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-400 to-sky-500 bg-clip-text text-transparent">
-            Gestão de Clientes
-          </h1>
-          <p className="text-muted-foreground mt-2">Cadastre e gerencie seus clientes</p>
-        </div>
-        <div className="flex space-x-2">
-          <ImportDataButton 
-            onImport={(parsedData) => importData(parsedData, 'customers')}
-            moduleName="Clientes"
-            expectedHeaders={customerHeaders}
-          />
-          <Button onClick={() => setShowForm(!showForm)} className="bg-gradient-to-r from-teal-500 to-sky-600 hover:from-teal-600 hover:to-sky-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Cliente
-          </Button>
-        </div>
+      <div className="flex items-center mb-6">
+        <Users className="w-8 h-8 text-primary mr-3" />
+        <h2 className="text-2xl font-bold">Cadastro de Clientes</h2>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="glass-effect rounded-xl p-6 gradient-card border"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Total de Clientes</p>
-              <p className="text-2xl font-bold text-sky-400">{metrics.totalCustomers}</p>
-            </div>
-            <Users className="w-8 h-8 text-sky-400" />
-          </div>
-        </motion.div>
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="glass-effect rounded-xl p-6 gradient-card border"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Novos Clientes (Mês)</p>
-              <p className="text-2xl font-bold text-teal-400">
-                {data.customers.filter(c => {
-                  const customerDate = c.lastPurchaseDate || c.id; 
-                  return new Date(customerDate).getMonth() === new Date().getMonth() && new Date(customerDate).getFullYear() === new Date().getFullYear();
-                }).length}
-              </p>
-            </div>
-            <Users className="w-8 h-8 text-teal-400" />
-          </div>
-        </motion.div>
+      
+      <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
+        {TABS.map(tab => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.key}
+              className={`flex items-center px-4 py-2 text-sm font-medium focus:outline-none transition-colors border-b-2 ${activeTab === tab.key ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-primary'}`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              <Icon className="w-4 h-4 mr-2" />
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
-
-      <AnimatePresence>
-        {showForm && (
+      
+      <div className="min-h-[400px]">
+        <AnimatePresence mode="wait">
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="glass-effect rounded-xl p-6 border"
+            key={activeTab}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
           >
-            <h3 className="text-lg font-semibold mb-4">Novo Cliente</h3>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="customerName" className="block text-sm font-medium mb-2">Nome Completo</label>
-                <input
-                  id="customerName"
-                  name="customerName"
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  placeholder="Nome do cliente"
-                />
-              </div>
-              <div>
-                <label htmlFor="customerDocument" className="block text-sm font-medium mb-2">Documento</label>
-                <input
-                  id="customerDocument"
-                  name="customerDocument"
-                  type="text"
-                  value={formData.document}
-                  onChange={handleDocumentChange}
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  placeholder="000.000.000-00 ou 00.000.000/0000-00"
-                />
-              </div>
-              <div>
-                <label htmlFor="customerEmail" className="block text-sm font-medium mb-2">Email</label>
-                <input
-                  id="customerEmail"
-                  name="customerEmail"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  placeholder="email@exemplo.com"
-                />
-              </div>
-              <div>
-                <label htmlFor="customerPhone" className="block text-sm font-medium mb-2">Telefone</label>
-                <input
-                  id="customerPhone"
-                  name="customerPhone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  placeholder="(XX) XXXXX-XXXX"
-                />
-              </div>
-              <div>
-                <label htmlFor="customerAddress" className="block text-sm font-medium mb-2">Endereço</label>
-                <input
-                  id="customerAddress"
-                  name="customerAddress"
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  placeholder="Rua, Número, Bairro"
-                />
-              </div>
-              <div>
-                <label htmlFor="customerCity" className="block text-sm font-medium mb-2">Cidade</label>
-                <input
-                  id="customerCity"
-                  name="customerCity"
-                  type="text"
-                  value={formData.city}
-                  onChange={(e) => setFormData({...formData, city: e.target.value})}
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  placeholder="Cidade"
-                />
-              </div>
-              <div>
-                <label htmlFor="customerState" className="block text-sm font-medium mb-2">Estado</label>
-                <select
-                  id="customerState"
-                  name="customerState"
-                  value={formData.state}
-                  onChange={(e) => setFormData({...formData, state: e.target.value})}
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                >
-                  <option value="">Selecione o Estado</option>
-                  <option value="AC">Acre</option>
-                  <option value="AL">Alagoas</option>
-                  <option value="AP">Amapá</option>
-                  <option value="AM">Amazonas</option>
-                  <option value="BA">Bahia</option>
-                  <option value="CE">Ceará</option>
-                  <option value="DF">Distrito Federal</option>
-                  <option value="ES">Espírito Santo</option>
-                  <option value="GO">Goiás</option>
-                  <option value="MA">Maranhão</option>
-                  <option value="MT">Mato Grosso</option>
-                  <option value="MS">Mato Grosso do Sul</option>
-                  <option value="MG">Minas Gerais</option>
-                  <option value="PA">Pará</option>
-                  <option value="PB">Paraíba</option>
-                  <option value="PR">Paraná</option>
-                  <option value="PE">Pernambuco</option>
-                  <option value="PI">Piauí</option>
-                  <option value="RJ">Rio de Janeiro</option>
-                  <option value="RN">Rio Grande do Norte</option>
-                  <option value="RS">Rio Grande do Sul</option>
-                  <option value="RO">Rondônia</option>
-                  <option value="RR">Roraima</option>
-                  <option value="SC">Santa Catarina</option>
-                  <option value="SP">São Paulo</option>
-                  <option value="SE">Sergipe</option>
-                  <option value="TO">Tocantins</option>
-                </select>
-              </div>
-              <div className="md:col-span-2 flex space-x-3">
-                <Button type="submit" className="bg-gradient-to-r from-teal-500 to-sky-600">
-                  Salvar Cliente
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                  Cancelar
-                </Button>
-              </div>
-            </form>
+            {renderTabContent()}
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="glass-effect rounded-xl p-6 border"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Lista de Clientes</h3>
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm">
-              <Search className="w-4 h-4 mr-2" />
-              Buscar
-            </Button>
-            <Button variant="outline" size="sm">
-              <Filter className="w-4 h-4 mr-2" />
-              Filtrar
-            </Button>
-          </div>
-        </div>
-        <div className="overflow-x-auto max-h-96 scrollbar-hide">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left p-3">Nome</th>
-                <th className="text-left p-3">Tipo</th>
-                <th className="text-left p-3">Documento</th>
-                <th className="text-left p-3">Email</th>
-                <th className="text-left p-3">Telefone</th>
-                <th className="text-left p-3">Cidade/UF</th>
-                <th className="text-right p-3">Compras</th>
-                <th className="text-center p-3">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(data.customers || []).map(customer => (
-                <motion.tr
-                  key={customer.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="border-b border-border hover:bg-muted/50 transition-colors"
-                >
-                  <td className="p-3 font-medium">{customer.name || 'Nome não informado'}</td>
-                  <td className="p-3">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      getCustomerType(customer.document) === 'PF' 
-                        ? 'bg-blue-100 text-blue-800' 
-                        : getCustomerType(customer.document) === 'PJ' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {getCustomerType(customer.document)}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <div className="flex flex-col">
-                      <span className="text-xs text-muted-foreground">{getDocumentType(customer.document)}</span>
-                      <span className="flex items-center">
-                        <CreditCard className="w-4 h-4 mr-2" /> {customer.document || 'N/A'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <a href={`mailto:${customer.email || ''}`} className="flex items-center hover:text-sky-400">
-                      <Mail className="w-4 h-4 mr-2" /> {customer.email || 'N/A'}
-                    </a>
-                  </td>
-                  <td className="p-3">
-                    <span className="flex items-center">
-                      <Phone className="w-4 h-4 mr-2" /> {customer.phone || 'N/A'}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <span className="flex items-center">
-                      <MapPin className="w-4 h-4 mr-2" /> {customer.city || 'N/A'}/{customer.state || 'N/A'}
-                    </span>
-                  </td>
-                  <td className="p-3 text-right font-medium text-green-400">
-                    {formatCurrency(customer.totalPurchases || 0)}
-                  </td>
-                  <td className="p-3 text-center">
-                    <div className="flex justify-center space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleViewCustomer(customer)}
-                        title="Visualizar cliente"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleEditCustomer(customer)}
-                        title="Editar cliente"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleDeleteCustomer(customer)}
-                        title="Excluir cliente"
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </motion.div>
-
-      {/* Modal de Visualização */}
-      <AnimatePresence>
-        {showViewModal && selectedCustomer && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={() => setShowViewModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-effect rounded-xl p-6 border max-w-md w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Detalhes do Cliente</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowViewModal(false)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">Nome</label>
-                  <p className="text-lg font-medium">{selectedCustomer.name}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">Tipo</label>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      getCustomerType(selectedCustomer.document) === 'PF' 
-                        ? 'bg-blue-100 text-blue-800' 
-                        : getCustomerType(selectedCustomer.document) === 'PJ' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {getCustomerType(selectedCustomer.document)}
-                    </span>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">Tipo de Documento</label>
-                    <p className="text-sm">{getDocumentType(selectedCustomer.document)}</p>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">Documento</label>
-                  <p className="flex items-center">
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    {selectedCustomer.document}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">Email</label>
-                  <p className="flex items-center">
-                    <Mail className="w-4 h-4 mr-2" />
-                    <a href={`mailto:${selectedCustomer.email}`} className="hover:text-sky-400">
-                      {selectedCustomer.email}
-                    </a>
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">Telefone</label>
-                  <p className="flex items-center">
-                    <Phone className="w-4 h-4 mr-2" />
-                    {selectedCustomer.phone || 'Não informado'}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">Endereço</label>
-                  <p className="flex items-center">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    {selectedCustomer.address || 'Não informado'}
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">Cidade</label>
-                    <p>{selectedCustomer.city || 'Não informado'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">Estado</label>
-                    <p>{selectedCustomer.state || 'Não informado'}</p>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">Total de Compras</label>
-                  <p className="text-lg font-medium text-green-400">
-                    {formatCurrency(selectedCustomer.totalPurchases || 0)}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex justify-end mt-6">
-                <Button onClick={() => setShowViewModal(false)}>
-                  Fechar
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal de Edição */}
-      <AnimatePresence>
-        {showEditModal && selectedCustomer && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={() => setShowEditModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-effect rounded-xl p-6 border max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Editar Cliente</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowEditModal(false)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-              
-              <form onSubmit={handleEditSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="editCustomerName" className="block text-sm font-medium mb-2">Nome Completo</label>
-                  <input
-                    id="editCustomerName"
-                    name="editCustomerName"
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                    placeholder="Nome do cliente"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="editCustomerDocument" className="block text-sm font-medium mb-2">Documento</label>
-                  <input
-                    id="editCustomerDocument"
-                    name="editCustomerDocument"
-                    type="text"
-                    value={formData.document}
-                    onChange={handleDocumentChange}
-                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                    placeholder="000.000.000-00 ou 00.000.000/0000-00"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="editCustomerEmail" className="block text-sm font-medium mb-2">Email</label>
-                  <input
-                    id="editCustomerEmail"
-                    name="editCustomerEmail"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                    placeholder="email@exemplo.com"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="editCustomerPhone" className="block text-sm font-medium mb-2">Telefone</label>
-                  <input
-                    id="editCustomerPhone"
-                    name="editCustomerPhone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                    placeholder="(XX) XXXXX-XXXX"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="editCustomerAddress" className="block text-sm font-medium mb-2">Endereço</label>
-                  <input
-                    id="editCustomerAddress"
-                    name="editCustomerAddress"
-                    type="text"
-                    value={formData.address}
-                    onChange={(e) => setFormData({...formData, address: e.target.value})}
-                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                    placeholder="Rua, Número, Bairro"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="editCustomerCity" className="block text-sm font-medium mb-2">Cidade</label>
-                  <input
-                    id="editCustomerCity"
-                    name="editCustomerCity"
-                    type="text"
-                    value={formData.city}
-                    onChange={(e) => setFormData({...formData, city: e.target.value})}
-                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                    placeholder="Cidade"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="editCustomerState" className="block text-sm font-medium mb-2">Estado</label>
-                  <select
-                    id="editCustomerState"
-                    name="editCustomerState"
-                    value={formData.state}
-                    onChange={(e) => setFormData({...formData, state: e.target.value})}
-                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  >
-                    <option value="">Selecione o Estado</option>
-                    <option value="AC">Acre</option>
-                    <option value="AL">Alagoas</option>
-                    <option value="AP">Amapá</option>
-                    <option value="AM">Amazonas</option>
-                    <option value="BA">Bahia</option>
-                    <option value="CE">Ceará</option>
-                    <option value="DF">Distrito Federal</option>
-                    <option value="ES">Espírito Santo</option>
-                    <option value="GO">Goiás</option>
-                    <option value="MA">Maranhão</option>
-                    <option value="MT">Mato Grosso</option>
-                    <option value="MS">Mato Grosso do Sul</option>
-                    <option value="MG">Minas Gerais</option>
-                    <option value="PA">Pará</option>
-                    <option value="PB">Paraíba</option>
-                    <option value="PR">Paraná</option>
-                    <option value="PE">Pernambuco</option>
-                    <option value="PI">Piauí</option>
-                    <option value="RJ">Rio de Janeiro</option>
-                    <option value="RN">Rio Grande do Norte</option>
-                    <option value="RS">Rio Grande do Sul</option>
-                    <option value="RO">Rondônia</option>
-                    <option value="RR">Roraima</option>
-                    <option value="SC">Santa Catarina</option>
-                    <option value="SP">São Paulo</option>
-                    <option value="SE">Sergipe</option>
-                    <option value="TO">Tocantins</option>
-                  </select>
-                </div>
-                <div className="md:col-span-2 flex space-x-3">
-                  <Button type="submit" className="bg-gradient-to-r from-teal-500 to-sky-600">
-                    Atualizar Cliente
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>
-                    Cancelar
-                  </Button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal de Confirmação de Exclusão */}
-      <AnimatePresence>
-        {showDeleteConfirm && selectedCustomer && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={() => setShowDeleteConfirm(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-effect rounded-xl p-6 border max-w-md w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="text-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                  <Trash2 className="h-6 w-6 text-red-600" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Confirmar Exclusão</h3>
-                <p className="text-muted-foreground mb-6">
-                  Tem certeza que deseja excluir o cliente <strong>{selectedCustomer.name}</strong>? 
-                  Esta ação não pode ser desfeita.
-                </p>
-                
-                <div className="flex space-x-3 justify-center">
-                  <Button
-                    variant="destructive"
-                    onClick={confirmDelete}
-                  >
-                    Sim, Excluir
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowDeleteConfirm(false)}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 };

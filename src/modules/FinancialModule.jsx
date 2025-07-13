@@ -90,7 +90,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
       category: transaction.category,
       costCenter: transaction.costCenter || '',
       segmentId: transaction.segmentId || activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : ''),
-      date: transaction.date || new Date().toISOString().split('T')[0] // Garantir que a data seja enviada
+      date: transaction.date || new Date().toISOString().split('T')[0]
     });
     setIsEditing(true);
     setShowForm(true);
@@ -121,11 +121,9 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
 
   const transactionHeaders = ['type', 'description', 'amount', 'category', 'costCenter', 'date', 'segmentId'];
   const filteredTransactions = data.transactions.filter(t => {
-    // Se activeSegmentId é 0 ou null (Todos os Segmentos), mostrar todas as transações
     if (!activeSegmentId || activeSegmentId === 0) {
       return true;
     }
-    // Se há um segmento específico selecionado, filtrar por esse segmento
     return t.segmentId === activeSegmentId;
   });
   const segments = data.segments || [];
@@ -342,7 +340,6 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
         </div>
       </motion.div>
 
-      {/* Modal de Visualização */}
       <AnimatePresence>
         {viewingTransaction && (
           <motion.div

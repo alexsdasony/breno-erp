@@ -87,7 +87,29 @@ router.get('/:id', authenticateToken, validateId, async (req, res) => {
 // Create new customer
 router.post('/', authenticateToken, validateCustomer, async (req, res) => {
   try {
-    const { name, document, email, phone, address, city, state } = req.body;
+    const { 
+      name, document, email, phone, address, city, state,
+      // Campos do cadastro
+      profissao, pais, estado, cidade, grau_instrucao, estado_civil, 
+      data_nascimento, sexo,
+      // Campos de documento
+      tipo_documento, data_emissao, numero_documento, data_validade, 
+      orgao_emissor, documento_image,
+      // Campos de renda
+      cnpj_origem_renda, data_admissao, cargo, renda_bruta, 
+      salario_liquido, valor_imposto_renda, data_comprovacao, 
+      documento_renda_image,
+      // Campos de endereço
+      cep, rua, bairro, numero_casa, tipo_imovel, data_atualizacao_endereco,
+      endereco_declarado, endereco_comprovado,
+      // Campos de contato
+      telefone_fixo, celular,
+      // Campos de patrimônio
+      valor_patrimonio, nao_possui_patrimonio,
+      // Status do cadastro
+      status_cadastro, responsavel_cadastro
+    } = req.body;
+    
     const db = await getDatabase();
 
     // Check if document already exists (if provided)
@@ -106,10 +128,37 @@ router.post('/', authenticateToken, validateCustomer, async (req, res) => {
       }
     }
 
-    const result = await db.run(
-      'INSERT INTO customers (name, document, email, phone, address, city, state) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, document || null, email || null, phone || null, address || null, city || null, state || null]
-    );
+    const result = await db.run(`
+      INSERT INTO customers (
+        name, document, email, phone, address, city, state,
+        profissao, pais, estado, cidade, grau_instrucao, estado_civil, 
+        data_nascimento, sexo,
+        tipo_documento, data_emissao, numero_documento, data_validade, 
+        orgao_emissor, documento_image,
+        cnpj_origem_renda, data_admissao, cargo, renda_bruta, 
+        salario_liquido, valor_imposto_renda, data_comprovacao, 
+        documento_renda_image,
+        cep, rua, bairro, numero_casa, tipo_imovel, data_atualizacao_endereco,
+        endereco_declarado, endereco_comprovado,
+        telefone_fixo, celular,
+        valor_patrimonio, nao_possui_patrimonio,
+        status_cadastro, responsavel_cadastro
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      name, document || null, email || null, phone || null, address || null, city || null, state || null,
+      profissao || null, pais || null, estado || null, cidade || null, grau_instrucao || null, estado_civil || null,
+      data_nascimento || null, sexo || null,
+      tipo_documento || null, data_emissao || null, numero_documento || null, data_validade || null,
+      orgao_emissor || null, documento_image || null,
+      cnpj_origem_renda || null, data_admissao || null, cargo || null, renda_bruta || null,
+      salario_liquido || null, valor_imposto_renda || null, data_comprovacao || null,
+      documento_renda_image || null,
+      cep || null, rua || null, bairro || null, numero_casa || null, tipo_imovel || null, data_atualizacao_endereco || null,
+      endereco_declarado || false, endereco_comprovado || false,
+      telefone_fixo || null, celular || null,
+      valor_patrimonio || null, nao_possui_patrimonio || false,
+      status_cadastro || 'Pendente', responsavel_cadastro || null
+    ]);
 
     const customer = await db.get('SELECT * FROM customers WHERE id = ?', [result.lastID]);
 
@@ -128,7 +177,29 @@ router.post('/', authenticateToken, validateCustomer, async (req, res) => {
 router.put('/:id', authenticateToken, validateId, validateCustomer, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, document, email, phone, address, city, state } = req.body;
+    const { 
+      name, document, email, phone, address, city, state,
+      // Campos do cadastro
+      profissao, pais, estado, cidade, grau_instrucao, estado_civil, 
+      data_nascimento, sexo,
+      // Campos de documento
+      tipo_documento, data_emissao, numero_documento, data_validade, 
+      orgao_emissor, documento_image,
+      // Campos de renda
+      cnpj_origem_renda, data_admissao, cargo, renda_bruta, 
+      salario_liquido, valor_imposto_renda, data_comprovacao, 
+      documento_renda_image,
+      // Campos de endereço
+      cep, rua, bairro, numero_casa, tipo_imovel, data_atualizacao_endereco,
+      endereco_declarado, endereco_comprovado,
+      // Campos de contato
+      telefone_fixo, celular,
+      // Campos de patrimônio
+      valor_patrimonio, nao_possui_patrimonio,
+      // Status do cadastro
+      status_cadastro, responsavel_cadastro
+    } = req.body;
+    
     const db = await getDatabase();
 
     // Check if customer exists
@@ -159,10 +230,39 @@ router.put('/:id', authenticateToken, validateId, validateCustomer, async (req, 
       }
     }
 
-    await db.run(
-      'UPDATE customers SET name = ?, document = ?, email = ?, phone = ?, address = ?, city = ?, state = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [name, document || null, email || null, phone || null, address || null, city || null, state || null, id]
-    );
+    await db.run(`
+      UPDATE customers SET 
+        name = ?, document = ?, email = ?, phone = ?, address = ?, city = ?, state = ?,
+        profissao = ?, pais = ?, estado = ?, cidade = ?, grau_instrucao = ?, estado_civil = ?, 
+        data_nascimento = ?, sexo = ?,
+        tipo_documento = ?, data_emissao = ?, numero_documento = ?, data_validade = ?, 
+        orgao_emissor = ?, documento_image = ?,
+        cnpj_origem_renda = ?, data_admissao = ?, cargo = ?, renda_bruta = ?, 
+        salario_liquido = ?, valor_imposto_renda = ?, data_comprovacao = ?, 
+        documento_renda_image = ?,
+        cep = ?, rua = ?, bairro = ?, numero_casa = ?, tipo_imovel = ?, data_atualizacao_endereco = ?,
+        endereco_declarado = ?, endereco_comprovado = ?,
+        telefone_fixo = ?, celular = ?,
+        valor_patrimonio = ?, nao_possui_patrimonio = ?,
+        status_cadastro = ?, responsavel_cadastro = ?,
+        updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `, [
+      name, document || null, email || null, phone || null, address || null, city || null, state || null,
+      profissao || null, pais || null, estado || null, cidade || null, grau_instrucao || null, estado_civil || null,
+      data_nascimento || null, sexo || null,
+      tipo_documento || null, data_emissao || null, numero_documento || null, data_validade || null,
+      orgao_emissor || null, documento_image || null,
+      cnpj_origem_renda || null, data_admissao || null, cargo || null, renda_bruta || null,
+      salario_liquido || null, valor_imposto_renda || null, data_comprovacao || null,
+      documento_renda_image || null,
+      cep || null, rua || null, bairro || null, numero_casa || null, tipo_imovel || null, data_atualizacao_endereco || null,
+      endereco_declarado || false, endereco_comprovado || false,
+      telefone_fixo || null, celular || null,
+      valor_patrimonio || null, nao_possui_patrimonio || false,
+      status_cadastro || 'Pendente', responsavel_cadastro || null,
+      id
+    ]);
 
     const customer = await db.get('SELECT * FROM customers WHERE id = ?', [id]);
 

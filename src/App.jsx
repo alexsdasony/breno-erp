@@ -9,24 +9,6 @@ import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import ErpLayout from '@/components/layouts/ErpLayout'; 
 
-// Componente de teste para debug
-const DebugComponent = () => {
-  console.log('🔧 DebugComponent renderizado');
-  return (
-    <div style={{ 
-      position: 'fixed', 
-      top: '10px', 
-      right: '10px', 
-      background: 'red', 
-      color: 'white', 
-      padding: '10px',
-      zIndex: 9999
-    }}>
-      React funcionando!
-    </div>
-  );
-};
-
 // Componente de teste simples
 const TestPage = () => {
   console.log('🧪 TestPage renderizada');
@@ -66,7 +48,6 @@ const App = () => {
 
     return (
       <>
-        <DebugComponent />
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/test" element={<TestPage />} />
