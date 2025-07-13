@@ -506,14 +506,16 @@ export const AppDataProvider = ({ children }) => {
       }
       
       const response = await apiService.getCostCenters(params);
-      const costCenters = response.costCenters || [];
-      
+      // Converter segment_id para segmentId
+      const costCenters = (response.costCenters || []).map(cc => ({
+        ...cc,
+        segmentId: cc.segment_id,
+      }));
       // Atualizar cache em memória
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
       globalMemoryCache.data.costCenters = costCenters;
-      
       setData(prev => ({ ...prev, costCenters }));
-      return response;
+      return { costCenters };
     } catch (error) {
       console.error('Load cost centers error:', error);
       throw error;
@@ -988,7 +990,13 @@ export const AppDataProvider = ({ children }) => {
 
   const addCostCenter = async (costCenter) => {
     try {
-      const response = await apiService.createCostCenter(costCenter);
+      // Garantir que segmentId seja enviado como segment_id
+      const formattedCostCenter = {
+        ...costCenter,
+        segment_id: costCenter.segmentId ? parseInt(costCenter.segmentId) : null
+      };
+      delete formattedCostCenter.segmentId;
+      const response = await apiService.createCostCenter(formattedCostCenter);
       
       // Update local state
       setData(prev => ({
@@ -1015,7 +1023,13 @@ export const AppDataProvider = ({ children }) => {
 
   const updateCostCenter = async (id, updatedCostCenter) => {
     try {
-      const response = await apiService.updateCostCenter(id, updatedCostCenter);
+      // Garantir que segmentId seja enviado como segment_id
+      const formattedCostCenter = {
+        ...updatedCostCenter,
+        segment_id: updatedCostCenter.segmentId ? parseInt(updatedCostCenter.segmentId) : null
+      };
+      delete formattedCostCenter.segmentId;
+      const response = await apiService.updateCostCenter(id, formattedCostCenter);
       
       // Update local state
       setData(prev => ({

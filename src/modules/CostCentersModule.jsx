@@ -288,7 +288,7 @@ const CostCentersModule = ({ toast }) => {
                 {filteredCostCenters.map(cc => (
                   <motion.tr key={cc.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
                     <td className="p-3 font-medium">{cc.name}</td>
-                    <td className="p-3">{segments.find(s => s.id === cc.segmentId)?.name || 'N/A'}</td>
+                    <td className="p-3">{segments.find(s => String(s.id) === String(cc.segmentId))?.name || 'N/A'}</td>
                     <td className="p-3 text-center">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         <CreditCard className="w-3 h-3 mr-1" />
