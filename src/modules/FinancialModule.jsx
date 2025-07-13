@@ -176,7 +176,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
         <motion.div whileHover={{ scale: 1.02 }} className="glass-effect rounded-xl p-6 gradient-card border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Lucro Líquido</p>
+              <p className="text-sm text-muted-foreground">Lucro Bruto</p>
               <p className={`text-2xl font-bold ${(metrics.profit || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>{formatCurrency(metrics.profit || 0)}</p>
             </div>
             <DollarSign className={`w-8 h-8 ${metrics.profit >= 0 ? 'text-green-400' : 'text-red-400'}`} />
