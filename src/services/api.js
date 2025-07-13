@@ -3,6 +3,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
 
 // Cache em memória para token - SEM localStorage
 let tokenCache = null;
+let isRedirectingToLogin = false;
 
 class ApiService {
   constructor() {
@@ -53,7 +54,10 @@ class ApiService {
       // Handle token expiration
       if (response.status === 401) {
         this.clearToken();
-        window.location.href = '/login';
+        if (!isRedirectingToLogin) {
+          isRedirectingToLogin = true;
+          window.location.href = '/login';
+        }
         throw new Error('Authentication failed');
       }
 
@@ -67,6 +71,10 @@ class ApiService {
     } catch (error) {
       console.error(`API Error (${endpoint}):`, error);
       throw error;
+    } finally {
+      if (isRedirectingToLogin) {
+        setTimeout(() => { isRedirectingToLogin = false; }, 2000);
+      }
     }
   }
 
