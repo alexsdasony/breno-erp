@@ -28,9 +28,14 @@ const DashboardModule = ({ metrics, setActiveModule }) => {
   const { data, activeSegmentId, reloadDashboardData } = useAppData();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false); // Novo estado para controlar inicialização
   
   useEffect(() => {
     // Buscar dados do backend filtrando por segmento
+    if (!initialized) {
+      setInitialized(true);
+      return; // Evita buscar dados na primeira renderização automática
+    }
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
