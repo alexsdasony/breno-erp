@@ -16,10 +16,13 @@ import {
   Camera,
   Upload,
   Trash2,
-  Eye
+  Eye,
+  Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData.jsx';
+import { toast } from '@/components/ui/use-toast';
+import apiService from '@/services/api';
 
 const TABS = [
   { key: 'resumo', label: 'Resumo', icon: User },
@@ -33,7 +36,7 @@ const TABS = [
 ];
 
 const CustomersModule = () => {
-  const { data } = useAppData();
+  const { data, loadCustomers, currentUser } = useAppData();
   const [activeTab, setActiveTab] = useState('resumo');
   const [isEditing, setIsEditing] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -171,11 +174,28 @@ const CustomersModule = () => {
     setShowForm(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Aqui você implementaria a lógica para salvar no backend
-    console.log('Dados do cliente:', formData);
-    resetForm();
+    try {
+      const response = await fetch('/api/customers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiService.getToken()}`
+        },
+        body: JSON.stringify(formData)
+      });
+      if (response.ok) {
+        toast({ title: 'Sucesso', description: 'Cliente cadastrado com sucesso!' });
+        await loadCustomers();
+        resetForm();
+      } else {
+        const error = await response.json();
+        toast({ title: 'Erro', description: error.error || 'Erro ao cadastrar cliente.', variant: 'destructive' });
+      }
+    } catch (error) {
+      toast({ title: 'Erro', description: 'Erro ao cadastrar cliente.', variant: 'destructive' });
+    }
   };
 
   const handlePhotoUpload = (e) => {
@@ -212,6 +232,60 @@ const CustomersModule = () => {
       } catch (error) {
         console.error('Erro ao buscar CEP:', error);
       }
+    }
+  };
+
+  // Função para consultar Receita Federal
+  const handleConsultaReceita = async () => {
+    if (!currentUser) {
+      toast({ title: 'Erro', description: 'Você precisa estar logado para consultar a Receita Federal.', variant: 'destructive' });
+      return;
+    }
+    // Sanitizar documento
+    const doc = formData.tipoPessoa === 'pf' ? formData.cpf.replace(/\D/g, '') : formData.cnpj.replace(/\D/g, '');
+    if (!doc || (formData.tipoPessoa === 'pf' && doc.length !== 11) || (formData.tipoPessoa === 'pj' && doc.length !== 14)) {
+      toast({ title: 'Erro', description: 'Preencha um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const url = formData.tipoPessoa === 'pf'
+        ? `/api/receita/consulta/${doc}`
+        : `/api/receita/consulta-cnpj/${doc}`;
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${apiService.getToken()}` }
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        if (formData.tipoPessoa === 'pf') {
+          setFormData(prev => ({
+            ...prev,
+            nome: result.data.nome,
+            dataNascimento: result.data.dataNascimento,
+            situacaoCadastral: result.data.situacaoCadastral,
+            logradouro: result.data.endereco?.logradouro,
+            bairro: result.data.endereco?.bairro,
+            cidade: result.data.endereco?.cidade,
+            estado: result.data.endereco?.uf,
+            cep: result.data.endereco?.cep
+          }));
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            nome: result.data.razaoSocial,
+            situacaoCadastral: result.data.situacaoCadastral,
+            logradouro: result.data.endereco?.logradouro,
+            bairro: result.data.endereco?.bairro,
+            cidade: result.data.endereco?.cidade,
+            estado: result.data.endereco?.uf,
+            cep: result.data.endereco?.cep
+          }));
+        }
+        toast({ title: 'Consulta Receita Federal', description: 'Dados preenchidos automaticamente!' });
+      } else {
+        toast({ title: 'Erro', description: `Status: ${response.status}\n${result.error || 'Não foi possível consultar.'}`, variant: 'destructive' });
+      }
+    } catch (error) {
+      toast({ title: 'Erro', description: `Falha na consulta Receita Federal.\n${error && error.message ? error.message : error}`, variant: 'destructive' });
     }
   };
 
@@ -324,20 +398,25 @@ const CustomersModule = () => {
             <label className="block text-sm font-semibold text-gray-900 mb-2">
               {formData.tipoPessoa === 'pf' ? 'CPF *' : 'CNPJ *'}
             </label>
-            <input
-              type="text"
-              value={formData.tipoPessoa === 'pf' ? formData.cpf : formData.cnpj}
-              onChange={(e) => {
-                if (formData.tipoPessoa === 'pf') {
-                  setFormData({...formData, cpf: e.target.value});
-                } else {
-                  setFormData({...formData, cnpj: e.target.value});
-                }
-              }}
-              className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
-              placeholder={formData.tipoPessoa === 'pf' ? '000.000.000-00' : '00.000.000/0000-00'}
-              required
-            />
+            <div className="flex items-center space-x-2">
+              <input
+                type="text"
+                value={formData.tipoPessoa === 'pf' ? formData.cpf : formData.cnpj}
+                onChange={(e) => {
+                  if (formData.tipoPessoa === 'pf') {
+                    setFormData({...formData, cpf: e.target.value});
+                  } else {
+                    setFormData({...formData, cnpj: e.target.value});
+                  }
+                }}
+                className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
+                placeholder={formData.tipoPessoa === 'pf' ? '000.000.000-00' : '00.000.000/0000-00'}
+                required
+              />
+              <Button type="button" variant="outline" onClick={handleConsultaReceita} title="Consultar Receita Federal">
+                <Search className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
           
           {formData.tipoPessoa === 'pf' && (

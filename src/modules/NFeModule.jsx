@@ -19,7 +19,7 @@ import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const NFeModule = () => {
-  const { data, metrics, addNFe, updateNFe, deleteNFe, importData, toast } = useAppData();
+  const { data, metrics, addNFe, updateNFe, deleteNFe, importData, toast, loadCustomers } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentNFe, setCurrentNFe] = useState(null);
@@ -407,6 +407,7 @@ Sistema ERP
         console.log('🔍 Debug NFe - Criando nova NF-e');
         const result = await addNFe(formData);
         console.log('🔍 Debug NFe - Resultado:', result);
+        if (typeof loadCustomers === 'function') await loadCustomers();
       }
       console.log('✅ Debug NFe - Operação concluída com sucesso');
       resetForm();

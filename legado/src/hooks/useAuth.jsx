@@ -2,15 +2,12 @@ import { useState, useEffect } from 'react';
 
 export const useAuth = (data, setData) => {
   const [currentUser, setCurrentUser] = useState(() => {
-    const savedUser = localStorage.getItem('erpCurrentUser');
-    return savedUser ? JSON.parse(savedUser) : null;
+    return null;
   });
 
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem('erpCurrentUser', JSON.stringify(currentUser));
     } else {
-      localStorage.removeItem('erpCurrentUser');
     }
   }, [currentUser]);
 

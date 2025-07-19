@@ -44,7 +44,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.customerId || !formData.product || !formData.quantity || !formData.total || !formData.segmentId) {
       toast({
@@ -55,13 +55,13 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
       return;
     }
     
-    addSale({
+    await addSale({
       ...formData,
       quantity: parseInt(formData.quantity),
       total: parseFloat(formData.total),
       segmentId: parseInt(formData.segmentId)
     });
-    
+    if (typeof loadCustomers === 'function') await loadCustomers();
     setFormData({ customerId: '', customerName: '', product: '', quantity: '', total: '', status: 'Pendente', segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '') });
     setShowForm(false);
   };

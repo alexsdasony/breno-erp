@@ -4,6 +4,7 @@ import { Building, Plus, Edit, Trash2, Save, XCircle, CreditCard, Settings, User
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
+import apiService from '@/services/api';
 
 const CostCentersModule = ({ toast }) => {
   const { data, activeSegmentId, ensureCostCentersLoaded, addCostCenter, updateCostCenter, deleteCostCenter, importData } = useAppData();
@@ -38,7 +39,7 @@ const CostCentersModule = ({ toast }) => {
     try {
       const response = await fetch('/api/chart-of-accounts', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${apiService.getToken()}`
         }
       });
       if (response.ok) {
@@ -56,7 +57,7 @@ const CostCentersModule = ({ toast }) => {
     try {
       const response = await fetch(`/api/cost-center-accounts/cost-center/${currentCostCenter.id}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${apiService.getToken()}`
         }
       });
       if (response.ok) {
@@ -120,7 +121,7 @@ const CostCentersModule = ({ toast }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${apiService.getToken()}`
         },
         body: JSON.stringify({
           cost_center_id: currentCostCenter.id,
@@ -159,7 +160,7 @@ const CostCentersModule = ({ toast }) => {
       const response = await fetch(`/api/cost-center-accounts/${relationshipId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${apiService.getToken()}`
         }
       });
 

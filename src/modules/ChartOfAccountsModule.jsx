@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CreditCard, Plus, Edit, Trash2, Save, XCircle, Search, Filter, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData.jsx';
+import apiService from '@/services/api';
 
 const ChartOfAccountsModule = ({ toast }) => {
   const { data, activeSegmentId } = useAppData();
@@ -31,7 +32,7 @@ const ChartOfAccountsModule = ({ toast }) => {
     try {
       const response = await fetch('/api/chart-of-accounts', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${apiService.getToken()}`
         }
       });
       if (response.ok) {
@@ -78,7 +79,7 @@ const ChartOfAccountsModule = ({ toast }) => {
       const response = await fetch(`/api/chart-of-accounts/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${apiService.getToken()}`
         }
       });
 
@@ -126,7 +127,7 @@ const ChartOfAccountsModule = ({ toast }) => {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${apiService.getToken()}`
         },
         body: JSON.stringify({
           account_code: formData.account_code,

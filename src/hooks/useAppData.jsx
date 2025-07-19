@@ -18,7 +18,6 @@ const globalMemoryCache = {
 // Função para limpar localStorage completamente
 const forceClearStorage = () => {
   try {
-    localStorage.clear();
     sessionStorage.clear();
     console.log('🧹 Storage forçadamente limpo');
   } catch (error) {

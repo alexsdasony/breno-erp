@@ -59,7 +59,7 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.customerId || !formData.amount || !formData.dueDate || !formData.segmentId) {
       toast({
@@ -85,7 +85,8 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
       setEditingBilling(null);
     } else {
       // Create new billing
-      addBilling(billingData);
+      await addBilling(billingData);
+      if (typeof loadCustomers === 'function') await loadCustomers();
     }
     
     setFormData({ customerId: '', customerName: '', amount: '', dueDate: '', status: 'Pendente', segmentId: '' });

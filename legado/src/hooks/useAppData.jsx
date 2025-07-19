@@ -8,46 +8,42 @@ const AppDataContext = createContext();
 
 export const AppDataProvider = ({ children }) => {
   const [data, setData] = useState(() => {
-    const savedData = localStorage.getItem('erpData');
-    if (savedData) {
-      try {
-        const parsedData = JSON.parse(savedData);
-        
-        const finalData = { ...initialData };
+    try {
+      const parsedData = JSON.parse(initialData);
+      
+      const finalData = { ...initialData };
 
-        Object.keys(initialData).forEach(key => {
-            if(parsedData[key]) {
-                finalData[key] = parsedData[key];
-            }
-        });
+      Object.keys(initialData).forEach(key => {
+          if(parsedData[key]) {
+              finalData[key] = parsedData[key];
+          }
+      });
 
-        if (!finalData.users || !finalData.users.some(u => u.email === 'admin@erppro.com')) {
-          finalData.users = [...(finalData.users || []), ...initialData.users.filter(iu => !(finalData.users || []).some(fu => fu.email === iu.email))];
-        }
-        
-        const hasInitialMockData = parsedData.customers && parsedData.customers.length > 10;
-        if (!hasInitialMockData) {
-           return initialData;
-        }
-
-        if (!parsedData.segments) {
-          finalData.segments = initialData.segments;
-        }
-
-        return finalData;
-
-      } catch (error) {
-        console.error("Failed to parse erpData from localStorage", error);
-        return initialData;
+      if (!finalData.users || !finalData.users.some(u => u.email === 'admin@erppro.com')) {
+        finalData.users = [...(finalData.users || []), ...initialData.users.filter(iu => !(finalData.users || []).some(fu => fu.email === iu.email))];
       }
+      
+      const hasInitialMockData = parsedData.customers && parsedData.customers.length > 10;
+      if (!hasInitialMockData) {
+         return initialData;
+      }
+
+      if (!parsedData.segments) {
+        finalData.segments = initialData.segments;
+      }
+
+      return finalData;
+
+    } catch (error) {
+      console.error("Failed to parse erpData from localStorage", error);
+      return initialData;
     }
-    return initialData;
   });
 
   const [activeSegmentId, setActiveSegmentId] = useState(null);
 
   useEffect(() => {
-    localStorage.setItem('erpData', JSON.stringify(data));
+    // localStorage.setItem('erpData', JSON.stringify(data));
   }, [data]);
 
   const auth = useAuth(data, setData);
