@@ -56,7 +56,7 @@ class ApiService {
         this.clearToken();
         if (!isRedirectingToLogin) {
           isRedirectingToLogin = true;
-          window.location.href = '/login';
+        window.location.href = '/login';
         }
         throw new Error('Authentication failed');
       }
@@ -354,6 +354,15 @@ class ApiService {
 
   async deleteUser(id) {
     return this.delete(`/users/${id}`);
+  }
+
+  // Receita Federal
+  async consultarReceita(cpf) {
+    return this.request(`/receita/consulta/${cpf}`);
+  }
+
+  async consultarReceitaCNPJ(cnpj) {
+    return this.request(`/receita/consulta-cnpj/${cnpj}`);
   }
 }
 

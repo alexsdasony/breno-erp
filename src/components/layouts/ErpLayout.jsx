@@ -25,6 +25,7 @@ import SchemaViewerModule from '@/modules/SchemaViewerModule';
 import ProfileModule from '@/modules/ProfileModule';
 import AccountsPayableModule from '@/modules/AccountsPayableModule';
 import SegmentsModule from '@/modules/SegmentsModule';
+import ReceitaModule from '@/modules/ReceitaModule';
 
 const ErpLayout = () => {
   const location = useLocation();
@@ -110,6 +111,7 @@ const ErpLayout = () => {
     }
 
     switch (moduleName) {
+      case 'receita': return <ReceitaModule {...moduleProps} />;
       case 'dashboard': return <DashboardModule {...moduleProps} />;
       case 'financial': return <FinancialModule {...moduleProps} />;
       case 'accountsPayable': return <AccountsPayableModule {...moduleProps} />;

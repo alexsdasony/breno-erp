@@ -90,7 +90,8 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
       category: transaction.category,
       costCenter: transaction.costCenter || '',
       segmentId: transaction.segmentId || activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : ''),
-      date: transaction.date || new Date().toISOString().split('T')[0]
+      // Corrigir formato da data para yyyy-MM-dd
+      date: transaction.date ? transaction.date.split('T')[0] : new Date().toISOString().split('T')[0]
     });
     setIsEditing(true);
     setShowForm(true);
@@ -113,6 +114,30 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
         toast({
           title: "Erro",
           description: "Erro ao excluir transação.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  // Adicionar função para auto-save ao alterar segmento
+  const handleSegmentChange = async (e) => {
+    const newSegmentId = e.target.value;
+    setFormData({ ...formData, segmentId: newSegmentId });
+    if (isEditing && currentTransaction) {
+      // Salvar automaticamente ao alterar o segmento
+      try {
+        const updated = await updateTransaction(currentTransaction.id, { ...formData, segmentId: parseInt(newSegmentId) });
+        setCurrentTransaction(updated);
+        setFormData(f => ({ ...f, segmentId: updated.segmentId }));
+        toast({
+          title: "Segmento atualizado!",
+          description: "A transação foi atualizada com sucesso.",
+        });
+      } catch (error) {
+        toast({
+          title: "Erro ao atualizar segmento",
+          description: "Não foi possível atualizar o segmento da transação.",
           variant: "destructive"
         });
       }
@@ -201,7 +226,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Segmento</label>
-                <select value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                <select value={formData.segmentId} onChange={handleSegmentChange} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
                   <option value="">Selecione um segmento</option>
                   {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
@@ -259,6 +284,18 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
                   </select>
                 </div>
               )}
+              <div>
+                <label htmlFor="transactionDate" className="block text-sm font-medium mb-2">Data</label>
+                <input
+                  id="transactionDate"
+                  name="date"
+                  type="date"
+                  value={formData.date ? formData.date.split('T')[0] : ''}
+                  onChange={(e) => setFormData({...formData, date: e.target.value})}
+                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                  required
+                />
+              </div>
               <div className="md:col-span-2 flex space-x-3">
                 <Button type="submit" className="bg-gradient-to-r from-green-500 to-blue-600">
                   {isEditing ? 'Atualizar Transação' : 'Salvar Transação'}

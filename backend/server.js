@@ -27,6 +27,7 @@ import costCenterAccountsRoutes from './routes/costCenterAccounts.js';
 import reportsRoutes from './routes/reports.js';
 import dashboardRoutes from './routes/dashboard.js';
 import debugRoutes from './routes/debug.js'; // TEMPORÁRIO
+import receitaRoutes from './routes/receita.js';
 
 // Import database
 import { initProductionDatabase } from './database/prodConfig.js';
@@ -118,6 +119,7 @@ app.use('/api/cost-center-accounts', costCenterAccountsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/debug', debugRoutes); // TEMPORÁRIO
+app.use('/api/receita', receitaRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
