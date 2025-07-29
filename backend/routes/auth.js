@@ -63,6 +63,61 @@ router.post('/login', validateLogin, async (req, res) => {
 
     // Find user
     const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+    
+    // Se não encontrar usuário e for admin@erppro.com, criar automaticamente
+    if (!user && email === 'admin@erppro.com' && password === 'admin123') {
+      console.log('🔧 Criando usuário admin automaticamente...');
+      
+      try {
+        // Verificar se segmento padrão existe
+        let segmentId = null;
+        const defaultSegment = await db.get('SELECT id FROM segments WHERE name = ?', ['Segmento Padrão']);
+        
+        if (!defaultSegment) {
+          console.log('🏢 Criando segmento padrão...');
+          const segmentResult = await db.run(
+            'INSERT INTO segments (name, description, created_at, updated_at) VALUES (?, ?, NOW(), NOW())',
+            ['Segmento Padrão', 'Segmento padrão do sistema']
+          );
+          segmentId = segmentResult.lastID;
+        } else {
+          segmentId = defaultSegment.id;
+        }
+        
+        // Criar usuário admin
+        const hashedPassword = await bcrypt.hash('admin123', 12);
+        const result = await db.run(
+          'INSERT INTO users (name, email, password, role, segment_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())',
+          ['Admin', 'admin@erppro.com', hashedPassword, 'admin', segmentId, 'ativo']
+        );
+        
+        console.log('✅ Usuário admin criado com sucesso');
+        
+        // Buscar usuário criado
+        const newUser = await db.get('SELECT * FROM users WHERE id = ?', [result.lastID]);
+        
+        // Generate JWT token
+        const token = jwt.sign(
+          { userId: newUser.id },
+          process.env.JWT_SECRET,
+          { expiresIn: '7d' }
+        );
+
+        // Remove password from response
+        const { password: _, ...userWithoutPassword } = newUser;
+
+        return res.json({
+          message: 'Admin user created and logged in successfully',
+          token,
+          user: userWithoutPassword
+        });
+        
+      } catch (createError) {
+        console.error('❌ Erro ao criar usuário admin:', createError);
+        return res.status(500).json({ error: 'Failed to create admin user' });
+      }
+    }
+    
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
