@@ -1,60 +1,57 @@
 import pkg from 'pg';
 const { Pool } = pkg;
+import sqlite3 from 'sqlite3';
 
 let pool = null;
+let sqliteDb = null;
 
 export async function getDatabase() {
-  // SEMPRE PostgreSQL (local E produção)
-  const connectionString = process.env.DATABASE_URL || 'postgresql://breno_erp_user:aHQO5rzBcecx5bRm2Xt53UQPxS49OXLj@dpg-d1fs2rali9vc739tpac0-a.oregon-postgres.render.com/breno_erp';
-  
-  if (!pool) {
-    pool = new Pool({
-      connectionString,
-      ssl: {
-        rejectUnauthorized: false
-      }
-    });
+  // TEMPORARIAMENTE usando SQLite local devido a problemas com PostgreSQL remoto
+  if (!sqliteDb) {
+    sqliteDb = new sqlite3.Database('./database.sqlite');
   }
   
   // Interface compatível com sintaxe SQLite
   return {
     async get(sql, params = []) {
-      // Converter ? para $1, $2, etc
-      let paramCount = 0;
-      const pgSql = sql.replace(/\?/g, () => `$${++paramCount}`);
-      const result = await pool.query(pgSql, params);
-      return result.rows[0] || null;
+      return new Promise((resolve, reject) => {
+        sqliteDb.get(sql, params, (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
+      });
     },
     
     async all(sql, params = []) {
-      let paramCount = 0;
-      const pgSql = sql.replace(/\?/g, () => `$${++paramCount}`);
-      const result = await pool.query(pgSql, params);
-      return result.rows;
+      return new Promise((resolve, reject) => {
+        sqliteDb.all(sql, params, (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        });
+      });
     },
     
     async run(sql, params = []) {
-      let paramCount = 0;
-      const pgSql = sql.replace(/\?/g, () => `$${++paramCount}`);
-      
-      // Para INSERT, adicionar RETURNING id
-      if (sql.toUpperCase().includes('INSERT')) {
-        const returningSQL = pgSql + ' RETURNING id';
-        const result = await pool.query(returningSQL, params);
-        return {
-          lastID: result.rows[0]?.id,
-          changes: result.rowCount
-        };
-      } else {
-        const result = await pool.query(pgSql, params);
-        return {
-          changes: result.rowCount
-        };
-      }
+      return new Promise((resolve, reject) => {
+        sqliteDb.run(sql, params, function(err) {
+          if (err) reject(err);
+          else {
+            resolve({
+              lastID: this.lastID,
+              changes: this.changes
+            });
+          }
+        });
+      });
     },
     
     async query(sql, params = []) {
-      return pool.query(sql, params);
+      return new Promise((resolve, reject) => {
+        sqliteDb.all(sql, params, (err, rows) => {
+          if (err) reject(err);
+          else resolve({ rows });
+        });
+      });
     }
   };
 }
@@ -62,45 +59,46 @@ export async function getDatabase() {
 export async function initProductionDatabase() {
   const db = await getDatabase();
   
-  // Criar tabelas PostgreSQL
-  await db.query(`
+  // Criar tabelas SQLite
+  await db.run(`
     CREATE TABLE IF NOT EXISTS segments (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       description TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  await db.query(`
+  await db.run(`
     CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       email TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       role TEXT DEFAULT 'user' CHECK(role IN ('user', 'admin')),
       segment_id INTEGER,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      status TEXT DEFAULT 'ativo' CHECK(status IN ('ativo', 'inativo', 'bloqueado')),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (segment_id) REFERENCES segments(id)
     )
   `);
 
-  await db.query(`
+  await db.run(`
     CREATE TABLE IF NOT EXISTS cost_centers (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       segment_id INTEGER,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (segment_id) REFERENCES segments(id)
     )
   `);
 
-  await db.query(`
+  await db.run(`
     CREATE TABLE IF NOT EXISTS customers (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       cpf TEXT,
       email TEXT,
@@ -110,29 +108,29 @@ export async function initProductionDatabase() {
       state TEXT,
       total_purchases DECIMAL(10,2) DEFAULT 0,
       last_purchase_date DATE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  await db.query(`
+  await db.run(`
     CREATE TABLE IF NOT EXISTS products (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       stock INTEGER DEFAULT 0,
       min_stock INTEGER DEFAULT 0,
       price DECIMAL(10,2) NOT NULL,
       category TEXT,
       segment_id INTEGER,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (segment_id) REFERENCES segments(id)
     )
   `);
 
-  await db.query(`
+  await db.run(`
     CREATE TABLE IF NOT EXISTS transactions (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       type TEXT NOT NULL CHECK(type IN ('receita', 'despesa')),
       description TEXT NOT NULL,
       amount DECIMAL(10,2) NOT NULL,
@@ -140,15 +138,15 @@ export async function initProductionDatabase() {
       category TEXT,
       cost_center TEXT,
       segment_id INTEGER,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (segment_id) REFERENCES segments(id)
     )
   `);
 
-  await db.query(`
+  await db.run(`
     CREATE TABLE IF NOT EXISTS sales (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       customer_id INTEGER NOT NULL,
       customer_name TEXT NOT NULL,
       product TEXT NOT NULL,
@@ -157,16 +155,16 @@ export async function initProductionDatabase() {
       date DATE NOT NULL,
       status TEXT DEFAULT 'Pendente' CHECK(status IN ('Pendente', 'Concluída', 'Cancelada')),
       segment_id INTEGER,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (customer_id) REFERENCES customers(id),
       FOREIGN KEY (segment_id) REFERENCES segments(id)
     )
   `);
 
-  await db.query(`
+  await db.run(`
     CREATE TABLE IF NOT EXISTS billings (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       customer_id INTEGER NOT NULL,
       customer_name TEXT NOT NULL,
       amount DECIMAL(10,2) NOT NULL,
@@ -174,54 +172,60 @@ export async function initProductionDatabase() {
       status TEXT DEFAULT 'Pendente' CHECK(status IN ('Pendente', 'Paga', 'Vencida', 'Cancelada')),
       payment_date DATE,
       segment_id INTEGER,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (customer_id) REFERENCES customers(id),
       FOREIGN KEY (segment_id) REFERENCES segments(id)
     )
   `);
 
-  await db.query(`
+  await db.run(`
     CREATE TABLE IF NOT EXISTS accounts_payable (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       supplier TEXT NOT NULL,
       description TEXT NOT NULL,
       amount DECIMAL(10,2) NOT NULL,
       due_date DATE NOT NULL,
       status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'paid', 'overdue')),
       segment_id INTEGER,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (segment_id) REFERENCES segments(id)
     )
   `);
 
-  await db.query(`
+  await db.run(`
     CREATE TABLE IF NOT EXISTS nfe (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       number TEXT NOT NULL,
       customer_name TEXT NOT NULL,
       date DATE NOT NULL,
       total DECIMAL(10,2) NOT NULL,
       status TEXT DEFAULT 'Emitida' CHECK(status IN ('Emitida', 'Cancelada')),
       segment_id INTEGER,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (segment_id) REFERENCES segments(id)
     )
   `);
 
-  await db.query(`
+  await db.run(`
     CREATE TABLE IF NOT EXISTS integrations (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
       api_key TEXT,
-      enabled BOOLEAN DEFAULT false,
-      config JSON,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      enabled BOOLEAN DEFAULT 0,
+      config TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  console.log('✅ PostgreSQL database initialized');
+  console.log('✅ SQLite database initialized');
+} 
+
+// Função utilitária para executar SQL arbitrário
+export async function runArbitrarySQL(sql) {
+  const db = await getDatabase();
+  return db.query(sql);
 } 

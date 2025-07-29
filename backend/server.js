@@ -148,12 +148,12 @@ app.use('*', (req, res) => {
 async function startServer() {
   try {
     await initProductionDatabase();
-    console.log('🔥 PostgreSQL database initialized');
+    console.log('✅ SQLite database initialized');
     
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`📊 Database: PostgreSQL`);
+      console.log(`📊 Database: SQLite (Local)`);
       console.log(`🔗 CORS Origin: ${process.env.CORS_ORIGIN || 'http://localhost:5173'}`);
     });
   } catch (error) {

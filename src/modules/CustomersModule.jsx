@@ -43,9 +43,9 @@ const CustomersModule = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   
+  // Estado inicial do formulário
   const [formData, setFormData] = useState({
-    // Dados Cadastrais
-    nome: '',
+    name: '',
     tipoPessoa: 'pf', // pf ou pj
     cpf: '',
     cnpj: '',
@@ -112,9 +112,16 @@ const CustomersModule = () => {
     dataCadastro: new Date().toISOString().split('T')[0]
   });
 
+  // Função para lidar com mudanças nos campos do formulário
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Reset do formulário
   const resetForm = () => {
     setFormData({
-      nome: '',
+      name: '',
       tipoPessoa: 'pf',
       cpf: '',
       cnpj: '',
@@ -174,8 +181,21 @@ const CustomersModule = () => {
     setShowForm(false);
   };
 
+  const validateForm = () => {
+    if (!formData.name || formData.name.length < 2) {
+      toast({ title: 'Erro', description: 'O nome deve ter pelo menos 2 caracteres.', variant: 'destructive' });
+      return false;
+    }
+    if (!formData.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(formData.email)) {
+      toast({ title: 'Erro', description: 'Informe um e-mail válido.', variant: 'destructive' });
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
     try {
       const response = await fetch('/api/customers', {
         method: 'POST',
@@ -191,10 +211,16 @@ const CustomersModule = () => {
         resetForm();
       } else {
         const error = await response.json();
-        toast({ title: 'Erro', description: error.error || 'Erro ao cadastrar cliente.', variant: 'destructive' });
+        if (error.details && Array.isArray(error.details)) {
+          error.details.forEach((err) => {
+            toast({ title: 'Erro', description: err.msg, variant: 'destructive' });
+          });
+        } else {
+          toast({ title: 'Erro', description: error.error || 'Erro ao cadastrar cliente.', variant: 'destructive' });
+        }
       }
-    } catch (error) {
-      toast({ title: 'Erro', description: 'Erro ao cadastrar cliente.', variant: 'destructive' });
+    } catch (err) {
+      toast({ title: 'Erro', description: 'Erro de rede ao cadastrar cliente.', variant: 'destructive' });
     }
   };
 
@@ -259,7 +285,7 @@ const CustomersModule = () => {
         if (formData.tipoPessoa === 'pf') {
           setFormData(prev => ({
             ...prev,
-            nome: result.data.nome,
+            name: result.data.nome,
             dataNascimento: result.data.dataNascimento,
             situacaoCadastral: result.data.situacaoCadastral,
             logradouro: result.data.endereco?.logradouro,
@@ -271,7 +297,7 @@ const CustomersModule = () => {
         } else {
           setFormData(prev => ({
             ...prev,
-            nome: result.data.razaoSocial,
+            name: result.data.razaoSocial,
             situacaoCadastral: result.data.situacaoCadastral,
             logradouro: result.data.endereco?.logradouro,
             bairro: result.data.endereco?.bairro,
@@ -316,7 +342,7 @@ const CustomersModule = () => {
                 <Camera className="w-8 h-8 text-blue-500" />
               )}
             </div>
-            <h4 className="font-semibold text-lg text-gray-800">{formData.nome || 'Nome do Cliente'}</h4>
+            <h4 className="font-semibold text-lg text-gray-800">{formData.name || 'Nome do Cliente'}</h4>
             <p className="text-sm text-gray-600">{formData.cpf || 'CPF não informado'}</p>
           </div>
         </div>
@@ -373,11 +399,13 @@ const CustomersModule = () => {
             <label className="block text-sm font-semibold text-gray-900 mb-2">Nome Completo *</label>
             <input
               type="text"
-              value={formData.nome}
-              onChange={(e) => setFormData({...formData, nome: e.target.value})}
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
               className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
-              placeholder="Digite o nome completo"
+              placeholder="Nome completo"
               required
+              minLength={2}
             />
           </div>
           
