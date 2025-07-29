@@ -129,44 +129,53 @@ app.get('/api/health', async (req, res) => {
     if (runScript === 'create-admin') {
       console.log('🚀 Executando script de criação de usuário admin...');
       
-      const db = await getDatabase();
-      
-      // Verificar se usuário admin existe
-      const userCheck = await db.query(
-        'SELECT id, email FROM users WHERE email = $1',
-        ['admin@erppro.com']
-      );
-      
-      if (userCheck.rows && userCheck.rows.length > 0) {
-        console.log('👤 Usuário admin já existe');
+      try {
+        const db = await getDatabase();
+        
+        // Verificar se usuário admin existe
+        const userCheck = await db.query(
+          'SELECT id, email FROM users WHERE email = $1',
+          ['admin@erppro.com']
+        );
+        
+        if (userCheck.rows && userCheck.rows.length > 0) {
+          console.log('👤 Usuário admin já existe');
+          return res.json({
+            status: 'OK',
+            message: 'Usuário admin já existe',
+            user: userCheck.rows[0],
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime()
+          });
+        }
+        
+        // Criar usuário admin
+        const bcrypt = await import('bcryptjs');
+        const hashedPassword = await bcrypt.hash('admin123', 10);
+        
+        const result = await db.query(`
+          INSERT INTO users (name, email, password, role, status, created_at, updated_at)
+          VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+          RETURNING id, email, role
+        `, ['Admin', 'admin@erppro.com', hashedPassword, 'admin', 'active']);
+        
+        console.log('✅ Usuário admin criado:', result.rows[0]);
+        
         return res.json({
           status: 'OK',
-          message: 'Usuário admin já existe',
-          user: userCheck.rows[0],
+          message: 'Usuário admin criado com sucesso',
+          user: result.rows[0],
           timestamp: new Date().toISOString(),
           uptime: process.uptime()
         });
+      } catch (dbError) {
+        console.error('❌ Erro no banco:', dbError);
+        return res.status(500).json({
+          status: 'ERROR',
+          error: dbError.message,
+          timestamp: new Date().toISOString()
+        });
       }
-      
-      // Criar usuário admin
-      const bcrypt = await import('bcryptjs');
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      
-      const result = await db.query(`
-        INSERT INTO users (name, email, password, role, status, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-        RETURNING id, email, role
-      `, ['Admin', 'admin@erppro.com', hashedPassword, 'admin', 'active']);
-      
-      console.log('✅ Usuário admin criado:', result.rows[0]);
-      
-      return res.json({
-        status: 'OK',
-        message: 'Usuário admin criado com sucesso',
-        user: result.rows[0],
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-      });
     }
     
     res.json({ 
