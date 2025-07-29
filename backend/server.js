@@ -174,18 +174,23 @@ app.post('/api/create-admin', async (req, res) => {
 app.get('/api/health', async (req, res) => {
   try {
     const { runScript } = req.query;
+    console.log('🔍 Health check chamado com query:', req.query);
     
     if (runScript === 'create-admin') {
       console.log('🚀 Executando script de criação de usuário admin...');
       
       try {
         const db = await getDatabase();
+        console.log('📊 Conexão com banco estabelecida');
         
         // Verificar se usuário admin existe
+        console.log('🔍 Verificando se usuário admin existe...');
         const userCheck = await db.query(
           'SELECT id, email FROM users WHERE email = $1',
           ['admin@erppro.com']
         );
+        
+        console.log('📋 Resultado da verificação:', userCheck);
         
         if (userCheck.rows && userCheck.rows.length > 0) {
           console.log('👤 Usuário admin já existe');
@@ -198,9 +203,11 @@ app.get('/api/health', async (req, res) => {
           });
         }
         
+        console.log('🔧 Criando usuário admin...');
         // Criar usuário admin
         const bcrypt = await import('bcryptjs');
         const hashedPassword = await bcrypt.hash('admin123', 10);
+        console.log('🔐 Senha hash criada');
         
         const result = await db.query(`
           INSERT INTO users (name, email, password, role, status, created_at, updated_at)
@@ -227,6 +234,7 @@ app.get('/api/health', async (req, res) => {
       }
     }
     
+    console.log('📊 Health check normal');
     res.json({ 
       status: 'OK', 
       timestamp: new Date().toISOString(),

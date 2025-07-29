@@ -60,6 +60,7 @@
             <button onclick="runCreateAdmin()" id="createAdminBtn">🔧 Criar Usuário Admin</button>
             <button onclick="testLogin()" id="testLoginBtn">🔑 Testar Login</button>
             <button onclick="checkDatabase()" id="checkDbBtn">📊 Verificar Banco</button>
+            <button onclick="testHealth()" id="testHealthBtn">🏥 Testar Health</button>
             <button onclick="clearLog()" id="clearLogBtn">🧹 Limpar Log</button>
         </div>
         
@@ -92,17 +93,18 @@
                 
                 // Tentar diferentes endpoints
                 const endpoints = [
-                    '/debug/run-remote-script',
-                    '/debug/create-admin',
-                    '/health?runScript=create-admin'
+                    { url: '/create-admin', method: 'POST' },
+                    { url: '/debug/run-remote-script', method: 'POST' },
+                    { url: '/debug/create-admin', method: 'POST' },
+                    { url: '/health?runScript=create-admin', method: 'GET' }
                 ];
                 
                 for (const endpoint of endpoints) {
                     try {
-                        log(`🔍 Tentando endpoint: ${endpoint}`, 'info');
+                        log(`🔍 Tentando endpoint: ${endpoint.url} (${endpoint.method})`, 'info');
                         
-                        const response = await fetch(`${API_BASE}${endpoint}`, {
-                            method: endpoint.includes('health') ? 'GET' : 'POST',
+                        const response = await fetch(`${API_BASE}${endpoint.url}`, {
+                            method: endpoint.method,
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Origin': 'https://breno-erp.vercel.app'
@@ -111,14 +113,14 @@
                         
                         if (response.ok) {
                             const data = await response.json();
-                            log(`✅ Sucesso no endpoint ${endpoint}:`, 'success');
+                            log(`✅ Sucesso no endpoint ${endpoint.url}:`, 'success');
                             log(JSON.stringify(data, null, 2), 'success');
                             break;
                         } else {
-                            log(`❌ Falha no endpoint ${endpoint}: ${response.status}`, 'error');
+                            log(`❌ Falha no endpoint ${endpoint.url}: ${response.status}`, 'error');
                         }
                     } catch (error) {
-                        log(`❌ Erro no endpoint ${endpoint}: ${error.message}`, 'error');
+                        log(`❌ Erro no endpoint ${endpoint.url}: ${error.message}`, 'error');
                     }
                 }
                 
@@ -196,6 +198,38 @@
             } finally {
                 btn.disabled = false;
                 btn.textContent = '📊 Verificar Banco';
+            }
+        }
+        
+        async function testHealth() {
+            const btn = document.getElementById('testHealthBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Testando...';
+            
+            try {
+                log('🏥 Testando health check...', 'info');
+                
+                const response = await fetch(`${API_BASE}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Origin': 'https://breno-erp.vercel.app'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log('✅ Health check OK!', 'success');
+                    log(JSON.stringify(data, null, 2), 'success');
+                } else {
+                    log(`❌ Falha no health check: ${data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro no health check: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🏥 Testar Health';
             }
         }
         
