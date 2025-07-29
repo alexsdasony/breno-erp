@@ -184,13 +184,13 @@ const CustomersModule = () => {
   const validateForm = () => {
     if (!formData.name || formData.name.length < 2) {
       toast({ title: 'Erro', description: 'O nome deve ter pelo menos 2 caracteres.', variant: 'destructive' });
-      return false;
-    }
+        return false;
+      }
     if (!formData.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(formData.email)) {
       toast({ title: 'Erro', description: 'Informe um e-mail válido.', variant: 'destructive' });
-      return false;
-    }
-    return true;
+        return false;
+      }
+      return true;
   };
 
   const handleSubmit = async (e) => {
@@ -327,9 +327,9 @@ const CustomersModule = () => {
           }} 
           className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg transform hover:scale-105 transition-all duration-200"
         >
-          <Plus className="w-4 h-4 mr-2" />
-          Novo Cliente
-        </Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Cliente
+          </Button>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -344,9 +344,9 @@ const CustomersModule = () => {
             </div>
             <h4 className="font-semibold text-lg text-gray-800">{formData.name || 'Nome do Cliente'}</h4>
             <p className="text-sm text-gray-600">{formData.cpf || 'CPF não informado'}</p>
-          </div>
         </div>
-        
+      </div>
+
         <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 rounded-xl p-6 border border-green-100 shadow-sm">
           <h4 className="font-semibold mb-3 text-gray-800">Informações Principais</h4>
           <div className="space-y-2 text-sm">
@@ -354,8 +354,8 @@ const CustomersModule = () => {
             <p><strong className="text-gray-700">Empresa:</strong> <span className="text-gray-600">{formData.empresa || 'Não informado'}</span></p>
             <p><strong className="text-gray-700">Renda:</strong> <span className="text-gray-600">{formData.rendaMensal ? `R$ ${formData.rendaMensal}` : 'Não informado'}</span></p>
             <p><strong className="text-gray-700">Status:</strong> <span className={`px-2 py-1 rounded-full text-xs font-medium ${formData.status === 'aprovado' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{formData.status}</span></p>
+            </div>
           </div>
-        </div>
         
         <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 rounded-xl p-6 border border-purple-100 shadow-sm">
           <h4 className="font-semibold mb-3 text-gray-800">Contato</h4>
@@ -364,8 +364,8 @@ const CustomersModule = () => {
             <p><strong className="text-gray-700">Celular:</strong> <span className="text-gray-600">{formData.celular || 'Não informado'}</span></p>
             <p><strong className="text-gray-700">E-mail:</strong> <span className="text-gray-600">{formData.email || 'Não informado'}</span></p>
             <p><strong className="text-gray-700">Endereço:</strong> <span className="text-gray-600">{formData.logradouro ? `${formData.logradouro}, ${formData.numero}` : 'Não informado'}</span></p>
+            </div>
           </div>
-        </div>
       </div>
     </div>
   );
@@ -397,17 +397,17 @@ const CustomersModule = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-900 mb-2">Nome Completo *</label>
-            <input
-              type="text"
+                <input
+                  type="text"
               name="name"
-              value={formData.name}
+                  value={formData.name}
               onChange={handleChange}
               className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
               placeholder="Nome completo"
               required
               minLength={2}
-            />
-          </div>
+                />
+              </div>
           
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-900 mb-2">Tipo de Pessoa *</label>
@@ -427,8 +427,8 @@ const CustomersModule = () => {
               {formData.tipoPessoa === 'pf' ? 'CPF *' : 'CNPJ *'}
             </label>
             <div className="flex items-center space-x-2">
-              <input
-                type="text"
+                <input
+                  type="text"
                 value={formData.tipoPessoa === 'pf' ? formData.cpf : formData.cnpj}
                 onChange={(e) => {
                   if (formData.tipoPessoa === 'pf') {
@@ -444,33 +444,33 @@ const CustomersModule = () => {
               <Button type="button" variant="outline" onClick={handleConsultaReceita} title="Consultar Receita Federal">
                 <Search className="w-4 h-4" />
               </Button>
-            </div>
+              </div>
           </div>
           
           {formData.tipoPessoa === 'pf' && (
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-gray-900 mb-2">RG</label>
-              <input
+                <input
                 type="text"
                 value={formData.rg}
                 onChange={(e) => setFormData({...formData, rg: e.target.value})}
                 className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
                 placeholder="Digite o RG"
-              />
-            </div>
+                />
+              </div>
           )}
           
           {formData.tipoPessoa === 'pf' && (
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-gray-900 mb-2">Data de Nascimento *</label>
-              <input
+                <input
                 type="date"
                 value={formData.dataNascimento}
                 onChange={(e) => setFormData({...formData, dataNascimento: e.target.value})}
                 className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200"
                 required
-              />
-            </div>
+                />
+              </div>
           )}
           
           {formData.tipoPessoa === 'pf' && (
@@ -496,25 +496,25 @@ const CustomersModule = () => {
           
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-900 mb-2">Profissão</label>
-            <input
-              type="text"
+                <input
+                  type="text"
               value={formData.profissao}
               onChange={(e) => setFormData({...formData, profissao: e.target.value})}
               className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
               placeholder="Digite a profissão"
-            />
-          </div>
+                />
+              </div>
           
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-900 mb-2">Empresa</label>
-            <input
-              type="text"
+                <input
+                  type="text"
               value={formData.empresa}
               onChange={(e) => setFormData({...formData, empresa: e.target.value})}
               className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
               placeholder="Digite o nome da empresa"
-            />
-          </div>
+                />
+              </div>
           
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-900 mb-2">Cargo</label>
@@ -525,7 +525,7 @@ const CustomersModule = () => {
               className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200 placeholder-gray-500"
               placeholder="Digite o cargo"
             />
-          </div>
+              </div>
           
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-900 mb-2">Data de Admissão</label>
@@ -536,8 +536,8 @@ const CustomersModule = () => {
               className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200"
             />
           </div>
-        </div>
-      </form>
+              </div>
+            </form>
     </div>
   );
 
@@ -572,7 +572,7 @@ const CustomersModule = () => {
             <option value="inscricao_municipal">Inscrição Municipal (PJ)</option>
             <option value="outros">Outros</option>
           </select>
-        </div>
+          </div>
         
         <div className="space-y-2">
           <label className="block text-sm font-semibold text-gray-900 mb-2">Número do Documento *</label>
@@ -594,7 +594,7 @@ const CustomersModule = () => {
             onChange={(e) => setFormData({...formData, dataEmissao: e.target.value})}
             className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200"
           />
-        </div>
+                    </div>
         
         <div className="space-y-2">
           <label className="block text-sm font-semibold text-gray-900 mb-2">Data de Validade</label>
@@ -604,7 +604,7 @@ const CustomersModule = () => {
             onChange={(e) => setFormData({...formData, dataValidade: e.target.value})}
             className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 shadow-sm transition-all duration-200"
           />
-        </div>
+                    </div>
         
         <div className="space-y-2">
           <label className="block text-sm font-semibold text-gray-900 mb-2">Órgão Emissor</label>
@@ -634,30 +634,30 @@ const CustomersModule = () => {
             </label>
           </div>
         </div>
-      </div>
-      
+              </div>
+              
       <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
         <h4 className="font-semibold text-blue-900 mb-3">Documentos Obrigatórios</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="flex items-center space-x-3">
             <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
             <span className="text-sm text-blue-800">RG ou CNH</span>
-          </div>
+                </div>
           <div className="flex items-center space-x-3">
             <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
             <span className="text-sm text-blue-800">CPF</span>
-          </div>
+                  </div>
           <div className="flex items-center space-x-3">
             <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
             <span className="text-sm text-blue-800">Comprovante de Residência</span>
-          </div>
+                  </div>
           <div className="flex items-center space-x-3">
             <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
             <span className="text-sm text-blue-800">Comprovante de Renda</span>
-          </div>
-        </div>
-      </div>
-    </div>
+                </div>
+                </div>
+                </div>
+                </div>
   );
 
   const renderRenda = () => (
@@ -674,7 +674,7 @@ const CustomersModule = () => {
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200"
             placeholder="00.000.000/0000-00"
           />
-        </div>
+                </div>
         
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">Data de Admissão</label>
@@ -684,7 +684,7 @@ const CustomersModule = () => {
             onChange={(e) => setFormData({...formData, dataAdmissaoRenda: e.target.value})}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200"
           />
-        </div>
+                  </div>
         
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">Cargo</label>
@@ -695,7 +695,7 @@ const CustomersModule = () => {
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200"
             placeholder="Ex: Analista, Gerente, Diretor"
           />
-        </div>
+                  </div>
         
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Renda *</label>
@@ -723,7 +723,7 @@ const CustomersModule = () => {
             <option value="consultoria">Consultoria</option>
             <option value="outros">Outros</option>
           </select>
-        </div>
+                </div>
         
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">Renda Salarial Bruto *</label>
@@ -736,7 +736,7 @@ const CustomersModule = () => {
             step="0.01"
             required
           />
-        </div>
+                </div>
         
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">Salário Líquido *</label>
@@ -749,8 +749,8 @@ const CustomersModule = () => {
             step="0.01"
             required
           />
-        </div>
-        
+              </div>
+              
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">Valor Imposto de Renda</label>
           <input
@@ -761,7 +761,7 @@ const CustomersModule = () => {
             placeholder="0,00"
             step="0.01"
           />
-        </div>
+              </div>
         
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">Data de Comprovação</label>
@@ -819,7 +819,7 @@ const CustomersModule = () => {
             <p className="text-lg font-semibold text-gray-800">
               {formData.rendaBruta ? `R$ ${parseFloat(formData.rendaBruta).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : 'Não informado'}
             </p>
-          </div>
+              </div>
           <div className="bg-white rounded-lg p-4 border border-blue-200">
             <p className="text-sm text-gray-600">Salário Líquido</p>
             <p className="text-lg font-semibold text-gray-800">
@@ -842,10 +842,10 @@ const CustomersModule = () => {
       <h3 className="text-xl font-semibold">Endereço</h3>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
+                <div>
           <label className="block text-sm font-medium mb-2">CEP *</label>
-          <input
-            type="text"
+                  <input
+                    type="text"
             value={formData.cep}
             onChange={(e) => {
               setFormData({...formData, cep: e.target.value});
@@ -856,102 +856,102 @@ const CustomersModule = () => {
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             placeholder="00000-000"
             required
-          />
-        </div>
+                  />
+                </div>
         
-        <div>
+                <div>
           <label className="block text-sm font-medium mb-2">Logradouro *</label>
-          <input
-            type="text"
+                  <input
+                    type="text"
             value={formData.logradouro}
             onChange={(e) => setFormData({...formData, logradouro: e.target.value})}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             required
-          />
-        </div>
+                  />
+                </div>
         
-        <div>
+                <div>
           <label className="block text-sm font-medium mb-2">Número *</label>
-          <input
+                  <input
             type="text"
             value={formData.numero}
             onChange={(e) => setFormData({...formData, numero: e.target.value})}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             required
-          />
-        </div>
+                  />
+                </div>
         
-        <div>
+                <div>
           <label className="block text-sm font-medium mb-2">Complemento</label>
-          <input
+                  <input
             type="text"
             value={formData.complemento}
             onChange={(e) => setFormData({...formData, complemento: e.target.value})}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             placeholder="Apto, Casa, etc."
-          />
-        </div>
+                  />
+                </div>
         
-        <div>
+                <div>
           <label className="block text-sm font-medium mb-2">Bairro *</label>
-          <input
-            type="text"
+                  <input
+                    type="text"
             value={formData.bairro}
             onChange={(e) => setFormData({...formData, bairro: e.target.value})}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             required
-          />
-        </div>
+                  />
+                </div>
         
-        <div>
+                <div>
           <label className="block text-sm font-medium mb-2">Cidade *</label>
-          <input
-            type="text"
+                  <input
+                    type="text"
             value={formData.cidade}
             onChange={(e) => setFormData({...formData, cidade: e.target.value})}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             required
-          />
-        </div>
+                  />
+                </div>
         
-        <div>
+                <div>
           <label className="block text-sm font-medium mb-2">Estado *</label>
-          <select
+                  <select
             value={formData.estado}
             onChange={(e) => setFormData({...formData, estado: e.target.value})}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             required
           >
             <option value="">Selecione...</option>
-            <option value="AC">Acre</option>
-            <option value="AL">Alagoas</option>
-            <option value="AP">Amapá</option>
-            <option value="AM">Amazonas</option>
-            <option value="BA">Bahia</option>
-            <option value="CE">Ceará</option>
-            <option value="DF">Distrito Federal</option>
-            <option value="ES">Espírito Santo</option>
-            <option value="GO">Goiás</option>
-            <option value="MA">Maranhão</option>
-            <option value="MT">Mato Grosso</option>
-            <option value="MS">Mato Grosso do Sul</option>
-            <option value="MG">Minas Gerais</option>
-            <option value="PA">Pará</option>
-            <option value="PB">Paraíba</option>
-            <option value="PR">Paraná</option>
-            <option value="PE">Pernambuco</option>
-            <option value="PI">Piauí</option>
-            <option value="RJ">Rio de Janeiro</option>
-            <option value="RN">Rio Grande do Norte</option>
-            <option value="RS">Rio Grande do Sul</option>
-            <option value="RO">Rondônia</option>
-            <option value="RR">Roraima</option>
-            <option value="SC">Santa Catarina</option>
-            <option value="SP">São Paulo</option>
-            <option value="SE">Sergipe</option>
-            <option value="TO">Tocantins</option>
-          </select>
-        </div>
+                    <option value="AC">Acre</option>
+                    <option value="AL">Alagoas</option>
+                    <option value="AP">Amapá</option>
+                    <option value="AM">Amazonas</option>
+                    <option value="BA">Bahia</option>
+                    <option value="CE">Ceará</option>
+                    <option value="DF">Distrito Federal</option>
+                    <option value="ES">Espírito Santo</option>
+                    <option value="GO">Goiás</option>
+                    <option value="MA">Maranhão</option>
+                    <option value="MT">Mato Grosso</option>
+                    <option value="MS">Mato Grosso do Sul</option>
+                    <option value="MG">Minas Gerais</option>
+                    <option value="PA">Pará</option>
+                    <option value="PB">Paraíba</option>
+                    <option value="PR">Paraná</option>
+                    <option value="PE">Pernambuco</option>
+                    <option value="PI">Piauí</option>
+                    <option value="RJ">Rio de Janeiro</option>
+                    <option value="RN">Rio Grande do Norte</option>
+                    <option value="RS">Rio Grande do Sul</option>
+                    <option value="RO">Rondônia</option>
+                    <option value="RR">Roraima</option>
+                    <option value="SC">Santa Catarina</option>
+                    <option value="SP">São Paulo</option>
+                    <option value="SE">Sergipe</option>
+                    <option value="TO">Tocantins</option>
+                  </select>
+                </div>
         
         <div>
           <label className="block text-sm font-medium mb-2">Tipo de Imóvel</label>
@@ -966,7 +966,7 @@ const CustomersModule = () => {
             <option value="financiado">Financiado</option>
             <option value="cedido">Cedido</option>
           </select>
-        </div>
+                </div>
         
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Data de Referência</label>
@@ -1222,7 +1222,7 @@ const CustomersModule = () => {
   };
 
   return (
-    <motion.div
+            <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="max-w-6xl mx-auto mt-8 bg-white rounded-xl shadow-lg p-6"
@@ -1230,7 +1230,7 @@ const CustomersModule = () => {
       <div className="flex items-center mb-6">
         <Users className="w-8 h-8 text-primary mr-3" />
         <h2 className="text-2xl font-bold">Cadastro de Clientes</h2>
-      </div>
+                </div>
       
       <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
         {TABS.map(tab => {
@@ -1246,7 +1246,7 @@ const CustomersModule = () => {
             </button>
           );
         })}
-      </div>
+                </div>
       
       <div className="min-h-[400px]">
         <AnimatePresence mode="wait">
@@ -1258,8 +1258,8 @@ const CustomersModule = () => {
             transition={{ duration: 0.2 }}
           >
             {renderTabContent()}
-          </motion.div>
-        </AnimatePresence>
+            </motion.div>
+      </AnimatePresence>
       </div>
     </motion.div>
   );

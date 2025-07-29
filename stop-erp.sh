@@ -32,6 +32,6 @@ if lsof -i :5173 >/dev/null 2>&1; then
     lsof -ti :5173 | xargs kill -9 2>/dev/null
 else
     echo "✅ Porta 5173 livre"
-fi
+fi 
 
 echo "✅ Todos os serviços do ERP foram parados!" 
