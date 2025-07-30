@@ -17,12 +17,12 @@ backend/.env
 backend/.env.local
 
 # Database files
-backend/database/*.db
-backend/database/*.sqlite
-backend/database/*.sqlite3
-*.db
-*.sqlite
-*.sqlite3
+#backend/database/*.db
+#backend/database/*.sqlite
+#backend/database/*.sqlite3
+#*.db
+#*.sqlite
+#*.sqlite3
 
 # Logs
 logs/
