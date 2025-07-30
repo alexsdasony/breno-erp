@@ -49,6 +49,14 @@
         .success { color: #28a745; }
         .error { color: #dc3545; }
         .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
+        .status {
+            background: #e9ecef;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
@@ -56,11 +64,17 @@
         <h1>🚀 Script Remoto - Breno ERP</h1>
         <p>Esta página executa scripts no ambiente remoto para configurar o sistema.</p>
         
+        <div class="status">
+            <h3>📋 Status do Deploy</h3>
+            <p><strong>⚠️ IMPORTANTE:</strong> O deploy está demorando para ser aplicado no Render.</p>
+            <p><strong>🎯 Solução:</strong> Foi implementada criação automática de usuário admin no login.</p>
+            <p><strong>📝 Como usar:</strong> Tente fazer login com <code>admin@erppro.com</code> e <code>admin123</code></p>
+        </div>
+        
         <div>
-            <button onclick="runCreateAdmin()" id="createAdminBtn">🔧 Criar Usuário Admin</button>
-            <button onclick="testLogin()" id="testLoginBtn">🔑 Testar Login</button>
-            <button onclick="checkDatabase()" id="checkDbBtn">📊 Verificar Banco</button>
+            <button onclick="testLogin()" id="testLoginBtn">🔑 Testar Login Admin</button>
             <button onclick="testHealth()" id="testHealthBtn">🏥 Testar Health</button>
+            <button onclick="runCreateAdmin()" id="createAdminBtn">🔧 Tentar Criar Admin</button>
             <button onclick="clearLog()" id="clearLogBtn">🧹 Limpar Log</button>
         </div>
         
@@ -73,7 +87,7 @@
         
         function log(message, type = 'info') {
             const timestamp = new Date().toLocaleTimeString();
-            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
             logElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
             logElement.scrollTop = logElement.scrollHeight;
         }
@@ -83,19 +97,59 @@
             log('Log limpo', 'info');
         }
         
+        async function testLogin() {
+            const btn = document.getElementById('testLoginBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Testando...';
+            
+            try {
+                log('🔑 Testando login com usuário admin...', 'info');
+                log('📝 Credenciais: admin@erppro.com / admin123', 'info');
+                
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': 'https://breno-erp.vercel.app'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@erppro.com',
+                        password: 'admin123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log('✅ Login bem-sucedido!', 'success');
+                    log('🎉 Usuário admin criado automaticamente!', 'success');
+                    log(JSON.stringify(data, null, 2), 'success');
+                } else {
+                    log(`❌ Falha no login: ${data.error}`, 'error');
+                    if (data.error === 'Invalid credentials') {
+                        log('⚠️ Deploy ainda não foi aplicado. Aguarde alguns minutos e tente novamente.', 'warning');
+                    }
+                }
+                
+            } catch (error) {
+                log(`❌ Erro no teste de login: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔑 Testar Login Admin';
+            }
+        }
+        
         async function runCreateAdmin() {
             const btn = document.getElementById('createAdminBtn');
             btn.disabled = true;
             btn.textContent = '⏳ Executando...';
             
             try {
-                log('🚀 Iniciando criação do usuário admin...', 'info');
+                log('🚀 Tentando criar usuário admin...', 'info');
                 
                 // Tentar diferentes endpoints
                 const endpoints = [
                     { url: '/create-admin', method: 'POST' },
-                    { url: '/debug/run-remote-script', method: 'POST' },
-                    { url: '/debug/create-admin', method: 'POST' },
                     { url: '/health?runScript=create-admin', method: 'GET' }
                 ];
                 
@@ -128,76 +182,7 @@
                 log(`❌ Erro geral: ${error.message}`, 'error');
             } finally {
                 btn.disabled = false;
-                btn.textContent = '🔧 Criar Usuário Admin';
-            }
-        }
-        
-        async function testLogin() {
-            const btn = document.getElementById('testLoginBtn');
-            btn.disabled = true;
-            btn.textContent = '⏳ Testando...';
-            
-            try {
-                log('🔑 Testando login com usuário admin...', 'info');
-                
-                const response = await fetch(`${API_BASE}/auth/login`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Origin': 'https://breno-erp.vercel.app'
-                    },
-                    body: JSON.stringify({
-                        email: 'admin@erppro.com',
-                        password: 'admin123'
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    log('✅ Login bem-sucedido!', 'success');
-                    log(JSON.stringify(data, null, 2), 'success');
-                } else {
-                    log(`❌ Falha no login: ${data.error}`, 'error');
-                }
-                
-            } catch (error) {
-                log(`❌ Erro no teste de login: ${error.message}`, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '🔑 Testar Login';
-            }
-        }
-        
-        async function checkDatabase() {
-            const btn = document.getElementById('checkDbBtn');
-            btn.disabled = true;
-            btn.textContent = '⏳ Verificando...';
-            
-            try {
-                log('📊 Verificando banco de dados...', 'info');
-                
-                const response = await fetch(`${API_BASE}/debug/check-db`, {
-                    method: 'GET',
-                    headers: {
-                        'Origin': 'https://breno-erp.vercel.app'
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    log('✅ Banco de dados OK!', 'success');
-                    log(JSON.stringify(data, null, 2), 'success');
-                } else {
-                    log(`❌ Falha na verificação: ${data.error}`, 'error');
-                }
-                
-            } catch (error) {
-                log(`❌ Erro na verificação: ${error.message}`, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '📊 Verificar Banco';
+                btn.textContent = '🔧 Tentar Criar Admin';
             }
         }
         
@@ -235,7 +220,8 @@
         
         // Log inicial
         log('🚀 Script Remoto carregado', 'info');
-        log('Clique nos botões para executar as ações', 'info');
+        log('📋 Status: Aguardando deploy do Render', 'warning');
+        log('💡 Dica: Teste o login primeiro, pois pode criar o usuário automaticamente', 'info');
     </script>
 </body>
 </html> 
