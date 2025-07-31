@@ -400,6 +400,67 @@ app.get('/api/health', async (req, res) => {
         const db = await getDatabase();
         console.log('📊 Conexão com banco estabelecida');
         
+        // Verificar se tabela users existe
+        console.log('🔍 Verificando se tabela users existe...');
+        const tableCheck = await db.query(`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'users'
+          ) as table_exists
+        `);
+        
+        if (!tableCheck.rows[0].table_exists) {
+          console.log('❌ Tabela users não existe - Inicializando banco...');
+          
+          try {
+            // Criar tabela segments
+            await db.query(`
+              CREATE TABLE IF NOT EXISTS segments (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+              )
+            `);
+            console.log('✅ Tabela segments criada');
+            
+            // Criar tabela users
+            await db.query(`
+              CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                role VARCHAR(50) DEFAULT 'user' CHECK(role IN ('user', 'admin')),
+                segment_id INTEGER REFERENCES segments(id),
+                status VARCHAR(50) DEFAULT 'ativo' CHECK(status IN ('ativo', 'inativo', 'bloqueado')),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+              )
+            `);
+            console.log('✅ Tabela users criada');
+            
+            // Criar segmento padrão
+            await db.query(`
+              INSERT INTO segments (name, description)
+              VALUES ('Geral', 'Segmento geral do sistema')
+              ON CONFLICT DO NOTHING
+            `);
+            console.log('✅ Segmento padrão criado');
+            
+            console.log('✅ Banco inicializado com sucesso!');
+          } catch (initError) {
+            console.error('❌ Erro ao inicializar banco:', initError);
+            return res.status(500).json({
+              status: 'ERROR',
+              error: `Erro ao inicializar banco: ${initError.message}`,
+              timestamp: new Date().toISOString()
+            });
+          }
+        }
+        
         // Verificar se usuário admin existe
         console.log('🔍 Verificando se usuário admin existe...');
         const userCheck = await db.query(
