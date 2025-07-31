@@ -28,6 +28,7 @@ import reportsRoutes from './routes/reports.js';
 import dashboardRoutes from './routes/dashboard.js';
 import debugRoutes from './routes/debug.js'; // TEMPORÁRIO
 import receitaRoutes from './routes/receita.js';
+import setupRoutes from './setup-endpoint.js';
 
 // Import database
 import { initProductionDatabase, getDatabase } from './database/prodConfig.js';
@@ -120,6 +121,7 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/debug', debugRoutes); // TEMPORÁRIO
 app.use('/api/receita', receitaRoutes);
+app.use('/api', setupRoutes);
 
 // Initialize database endpoint
 app.post('/api/init-database', async (req, res) => {
@@ -652,7 +654,7 @@ app.get('/api/health', async (req, res) => {
         console.log('🔧 Criando usuário admin...');
         // Criar usuário admin
         const bcrypt = await import('bcryptjs');
-        const hashedPassword = await bcrypt.hash('admin123', 10);
+        const hashedPassword = await bcrypt.default.hash('admin123', 10);
         console.log('🔐 Senha hash criada');
         
         const result = await db.query(`
