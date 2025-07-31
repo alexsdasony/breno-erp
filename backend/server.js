@@ -387,6 +387,174 @@ app.post('/api/init-db', async (req, res) => {
   }
 });
 
+// Simple endpoint to initialize database
+app.get('/api/setup', async (req, res) => {
+  try {
+    console.log('🚀 Setup endpoint chamado...');
+    
+    const db = await getDatabase();
+    
+    // Criar tabela segments
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS segments (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Tabela segments criada');
+    
+    // Criar tabela users
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'user' CHECK(role IN ('user', 'admin')),
+        segment_id INTEGER REFERENCES segments(id),
+        status VARCHAR(50) DEFAULT 'ativo' CHECK(status IN ('ativo', 'inativo', 'bloqueado')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Tabela users criada');
+    
+    // Criar segmento padrão
+    await db.query(`
+      INSERT INTO segments (name, description)
+      VALUES ('Geral', 'Segmento geral do sistema')
+      ON CONFLICT DO NOTHING
+    `);
+    console.log('✅ Segmento padrão criado');
+    
+    // Criar usuário admin
+    const bcrypt = await import('bcryptjs');
+    const hashedPassword = await bcrypt.hash('admin123', 12);
+    
+    await db.query(`
+      INSERT INTO users (name, email, password, role, status)
+      VALUES ('Admin ERP Pro', 'admin@erppro.com', $1, 'admin', 'ativo')
+      ON CONFLICT (email) DO UPDATE SET
+        password = EXCLUDED.password,
+        role = EXCLUDED.role,
+        status = EXCLUDED.status,
+        updated_at = CURRENT_TIMESTAMP
+    `, [hashedPassword]);
+    
+    console.log('✅ Usuário admin criado/atualizado');
+    
+    res.json({
+      success: true,
+      message: 'Banco inicializado com sucesso!',
+      login: {
+        email: 'admin@erppro.com',
+        password: 'admin123'
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Simple fix endpoint
+app.post('/api/fix-db', async (req, res) => {
+  try {
+    console.log('🔧 Corrigindo banco de dados...');
+    
+    const db = await getDatabase();
+    
+    // Verificar se tabela users existe
+    const tableCheck = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'users'
+      ) as table_exists
+    `);
+    
+    if (!tableCheck.rows[0].table_exists) {
+      console.log('❌ Tabela users não existe - Inicializando...');
+      
+      // Criar tabela segments
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS segments (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          description TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      console.log('✅ Tabela segments criada');
+      
+      // Criar tabela users
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password VARCHAR(255) NOT NULL,
+          role VARCHAR(50) DEFAULT 'user' CHECK(role IN ('user', 'admin')),
+          segment_id INTEGER REFERENCES segments(id),
+          status VARCHAR(50) DEFAULT 'ativo' CHECK(status IN ('ativo', 'inativo', 'bloqueado')),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      console.log('✅ Tabela users criada');
+      
+      // Criar segmento padrão
+      await db.query(`
+        INSERT INTO segments (name, description)
+        VALUES ('Geral', 'Segmento geral do sistema')
+        ON CONFLICT DO NOTHING
+      `);
+      console.log('✅ Segmento padrão criado');
+      
+      console.log('✅ Banco inicializado com sucesso!');
+    }
+    
+    // Criar usuário admin
+    console.log('🔧 Criando usuário admin...');
+    const bcrypt = await import('bcryptjs');
+    const hashedPassword = await bcrypt.hash('admin123', 12);
+    
+    const adminResult = await db.query(`
+      INSERT INTO users (name, email, password, role, status)
+      VALUES ('Admin ERP Pro', 'admin@erppro.com', $1, 'admin', 'ativo')
+      ON CONFLICT (email) DO UPDATE SET
+        password = EXCLUDED.password,
+        role = EXCLUDED.role,
+        status = EXCLUDED.status,
+        updated_at = CURRENT_TIMESTAMP
+      RETURNING id, email, role
+    `, [hashedPassword]);
+    
+    console.log('✅ Usuário admin criado/atualizado');
+    
+    res.json({
+      success: true,
+      message: 'Banco corrigido com sucesso',
+      admin: adminResult.rows[0]
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao corrigir banco:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Health check
 app.get('/api/health', async (req, res) => {
   try {
