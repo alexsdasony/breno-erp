@@ -29,6 +29,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import debugRoutes from './routes/debug.js'; // TEMPORÁRIO
 import receitaRoutes from './routes/receita.js';
 import setupRoutes from './setup-endpoint.js';
+import fixAdminRoutes from './fix-admin.js';
 
 // Import database
 import { initProductionDatabase, getDatabase } from './database/prodConfig.js';
@@ -122,6 +123,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/debug', debugRoutes); // TEMPORÁRIO
 app.use('/api/receita', receitaRoutes);
 app.use('/api', setupRoutes);
+app.use('/api', fixAdminRoutes);
 
 // Initialize database endpoint
 app.post('/api/init-database', async (req, res) => {
