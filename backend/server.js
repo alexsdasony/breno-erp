@@ -310,6 +310,83 @@ app.post('/api/create-admin', async (req, res) => {
   }
 });
 
+// Simple database initialization endpoint
+app.post('/api/init-db', async (req, res) => {
+  try {
+    console.log('🚀 Inicializando banco de dados...');
+    
+    const db = await getDatabase();
+    
+    // Criar tabela segments
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS segments (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Tabela segments criada');
+    
+    // Criar tabela users
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'user' CHECK(role IN ('user', 'admin')),
+        segment_id INTEGER REFERENCES segments(id),
+        status VARCHAR(50) DEFAULT 'ativo' CHECK(status IN ('ativo', 'inativo', 'bloqueado')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Tabela users criada');
+    
+    // Criar segmento padrão
+    const segmentResult = await db.query(`
+      INSERT INTO segments (name, description)
+      VALUES ('Geral', 'Segmento geral do sistema')
+      ON CONFLICT DO NOTHING
+      RETURNING id
+    `);
+    console.log('✅ Segmento padrão criado');
+    
+    // Criar usuário admin
+    const bcrypt = await import('bcryptjs');
+    const hashedPassword = await bcrypt.hash('admin123', 12);
+    
+    const adminResult = await db.query(`
+      INSERT INTO users (name, email, password, role, status)
+      VALUES ('Admin ERP Pro', 'admin@erppro.com', $1, 'admin', 'ativo')
+      ON CONFLICT (email) DO UPDATE SET
+        password = EXCLUDED.password,
+        role = EXCLUDED.role,
+        status = EXCLUDED.status,
+        updated_at = CURRENT_TIMESTAMP
+      RETURNING id, email, role
+    `, [hashedPassword]);
+    
+    console.log('✅ Usuário admin criado/atualizado');
+    
+    res.json({
+      success: true,
+      message: 'Banco de dados inicializado com sucesso',
+      admin: adminResult.rows[0],
+      segment: segmentResult.rows[0]
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao inicializar banco:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Health check
 app.get('/api/health', async (req, res) => {
   try {
