@@ -121,6 +121,146 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/debug', debugRoutes); // TEMPORÁRIO
 app.use('/api/receita', receitaRoutes);
 
+// Initialize database endpoint
+app.post('/api/init-database', async (req, res) => {
+  try {
+    console.log('🚀 Inicializando banco de dados PostgreSQL...');
+    
+    const db = await getDatabase();
+    
+    // Criar tabela segments
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS segments (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Tabela segments criada');
+    
+    // Criar tabela users
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'user' CHECK(role IN ('user', 'admin')),
+        segment_id INTEGER REFERENCES segments(id),
+        status VARCHAR(50) DEFAULT 'ativo' CHECK(status IN ('ativo', 'inativo', 'bloqueado')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Tabela users criada');
+    
+    // Criar tabela cost_centers
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS cost_centers (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        segment_id INTEGER REFERENCES segments(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Tabela cost_centers criada');
+    
+    // Criar tabela customers
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS customers (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        cpf VARCHAR(20),
+        email VARCHAR(255),
+        phone VARCHAR(20),
+        address TEXT,
+        city VARCHAR(100),
+        state VARCHAR(50),
+        total_purchases DECIMAL(10,2) DEFAULT 0,
+        last_purchase_date DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Tabela customers criada');
+    
+    // Criar tabela products
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS products (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        stock INTEGER DEFAULT 0,
+        min_stock INTEGER DEFAULT 0,
+        price DECIMAL(10,2) NOT NULL,
+        category VARCHAR(100),
+        segment_id INTEGER REFERENCES segments(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Tabela products criada');
+    
+    // Criar tabela transactions
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS transactions (
+        id SERIAL PRIMARY KEY,
+        type VARCHAR(50) NOT NULL CHECK(type IN ('receita', 'despesa')),
+        amount DECIMAL(10,2) NOT NULL,
+        description TEXT,
+        date DATE NOT NULL,
+        segment_id INTEGER REFERENCES segments(id),
+        cost_center_id INTEGER REFERENCES cost_centers(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Tabela transactions criada');
+    
+    // Criar segmento padrão
+    const segmentResult = await db.query(`
+      INSERT INTO segments (name, description)
+      VALUES ('Geral', 'Segmento geral do sistema')
+      ON CONFLICT DO NOTHING
+      RETURNING id
+    `);
+    console.log('✅ Segmento padrão criado');
+    
+    // Criar usuário admin
+    const bcrypt = await import('bcryptjs');
+    const hashedPassword = await bcrypt.hash('admin123', 12);
+    
+    const adminResult = await db.query(`
+      INSERT INTO users (name, email, password, role, status)
+      VALUES ('Admin ERP Pro', 'admin@erppro.com', $1, 'admin', 'ativo')
+      ON CONFLICT (email) DO UPDATE SET
+        password = EXCLUDED.password,
+        role = EXCLUDED.role,
+        status = EXCLUDED.status,
+        updated_at = CURRENT_TIMESTAMP
+      RETURNING id, email, role
+    `, [hashedPassword]);
+    
+    console.log('✅ Usuário admin criado/atualizado');
+    
+    res.json({
+      success: true,
+      message: 'Banco de dados inicializado com sucesso',
+      admin: adminResult.rows[0],
+      segment: segmentResult.rows[0]
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao inicializar banco:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Simple admin creation endpoint
 app.post('/api/create-admin', async (req, res) => {
   try {
