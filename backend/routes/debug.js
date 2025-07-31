@@ -256,7 +256,7 @@ router.post('/run-remote-script', async (req, res) => {
       INSERT INTO users (name, email, password, role, status, created_at, updated_at)
       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
       RETURNING id, email, role
-    `, ['Admin', 'admin@erppro.com', hashedPassword, 'admin', 'active']);
+    `, ['Admin', 'admin@erppro.com', hashedPassword, 'admin', 'ativo']);
     
     console.log('✅ Usuário admin criado:', createResult.rows[0]);
     
