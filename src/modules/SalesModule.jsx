@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShoppingCart, 
@@ -10,7 +10,15 @@ import {
   Eye,
   Search,
   Filter,
-  X
+  X,
+  Package,
+  Calculator,
+  Receipt,
+  CreditCard,
+  Truck,
+  CheckCircle,
+  AlertCircle,
+  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
@@ -24,15 +32,29 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
+  const [saleItems, setSaleItems] = useState([]);
   const [formData, setFormData] = useState({
     customerId: '',
     customerName: '',
-    product: '',
-    quantity: '',
-    total: '',
+    saleDate: new Date().toISOString().split('T')[0],
+    paymentMethod: 'dinheiro',
     status: 'Pendente',
+    notes: '',
     segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
   });
+
+  const [newItem, setNewItem] = useState({
+    productId: '',
+    productName: '',
+    quantity: 1,
+    unitPrice: 0,
+    totalPrice: 0
+  });
+
+  // Calcular totais
+  const subtotal = saleItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+  const discount = 0; // Pode ser implementado depois
+  const total = subtotal - discount;
 
   const handleCustomerSelect = (e) => {
     const customerId = e.target.value;
@@ -44,26 +66,96 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.customerId || !formData.product || !formData.quantity || !formData.total || !formData.segmentId) {
+  const handleProductSelect = (e) => {
+    const productId = e.target.value;
+    const selectedProduct = data.products.find(p => p.id === productId);
+    if (selectedProduct) {
+      setNewItem({
+        ...newItem,
+        productId: selectedProduct.id,
+        productName: selectedProduct.name,
+        unitPrice: selectedProduct.price || 0,
+        totalPrice: (selectedProduct.price || 0) * newItem.quantity
+      });
+    }
+  };
+
+  const handleQuantityChange = (e) => {
+    const quantity = parseInt(e.target.value) || 0;
+    setNewItem({
+      ...newItem,
+      quantity,
+      totalPrice: newItem.unitPrice * quantity
+    });
+  };
+
+  const addItemToSale = () => {
+    if (!newItem.productId || newItem.quantity <= 0) {
       toast({
         title: "Erro",
-        description: "Preencha todos os campos obrigatórios.",
+        description: "Selecione um produto e informe a quantidade.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSaleItems([...saleItems, { ...newItem, id: Date.now() }]);
+    setNewItem({
+      productId: '',
+      productName: '',
+      quantity: 1,
+      unitPrice: 0,
+      totalPrice: 0
+    });
+  };
+
+  const removeItemFromSale = (itemId) => {
+    setSaleItems(saleItems.filter(item => item.id !== itemId));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.customerId || saleItems.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Selecione um cliente e adicione pelo menos um produto.",
         variant: "destructive"
       });
       return;
     }
     
-    await addSale({
+    const saleData = {
       ...formData,
-      quantity: parseInt(formData.quantity),
-      total: parseFloat(formData.total),
+      totalAmount: subtotal,
+      discount,
+      finalAmount: total,
+      items: saleItems,
       segmentId: parseInt(formData.segmentId)
-    });
-    if (typeof loadCustomers === 'function') await loadCustomers();
-    setFormData({ customerId: '', customerName: '', product: '', quantity: '', total: '', status: 'Pendente', segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '') });
+    };
+
+    await addSale(saleData);
+    resetForm();
     setShowForm(false);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      customerId: '',
+      customerName: '',
+      saleDate: new Date().toISOString().split('T')[0],
+      paymentMethod: 'dinheiro',
+      status: 'Pendente',
+      notes: '',
+      segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+    });
+    setSaleItems([]);
+    setNewItem({
+      productId: '',
+      productName: '',
+      quantity: 1,
+      unitPrice: 0,
+      totalPrice: 0
+    });
   };
 
   const handleViewSale = (sale) => {
@@ -76,12 +168,13 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
     setFormData({
       customerId: sale.customerId || '',
       customerName: sale.customerName || '',
-      product: sale.product || '',
-      quantity: sale.quantity || '',
-      total: sale.total || '',
+      saleDate: sale.saleDate || sale.date || new Date().toISOString().split('T')[0],
+      paymentMethod: sale.paymentMethod || 'dinheiro',
       status: sale.status || 'Pendente',
+      notes: sale.notes || '',
       segmentId: sale.segmentId || activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
     });
+    setSaleItems(sale.items || []);
     setShowEditModal(true);
   };
 
@@ -91,7 +184,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
   };
 
   const confirmDelete = () => {
-    // Aqui você implementaria a chamada para deletar a venda
+    // Implementar exclusão
     toast({
       title: "Venda Excluída",
       description: `Venda de ${selectedSale.customerName} foi excluída com sucesso.`,
@@ -102,16 +195,16 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
-    if (!formData.customerId || !formData.product || !formData.quantity || !formData.total || !formData.segmentId) {
+    if (!formData.customerId || saleItems.length === 0) {
       toast({
         title: "Erro",
-        description: "Preencha todos os campos obrigatórios.",
+        description: "Selecione um cliente e adicione pelo menos um produto.",
         variant: "destructive"
       });
       return;
     }
     
-    // Aqui você implementaria a chamada para atualizar a venda
+    // Implementar atualização
     toast({
       title: "Venda Atualizada",
       description: `Venda de ${formData.customerName} foi atualizada com sucesso.`,
@@ -119,20 +212,35 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
     
     setShowEditModal(false);
     setSelectedSale(null);
-    setFormData({ customerId: '', customerName: '', product: '', quantity: '', total: '', status: 'Pendente', segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '') });
+    resetForm();
   };
 
-  const saleHeaders = ['customerId', 'customerName', 'product', 'quantity', 'total', 'status', 'date', 'segmentId'];
+  const saleHeaders = ['customerId', 'customerName', 'saleDate', 'totalAmount', 'status', 'segmentId'];
   const filteredSales = data.sales.filter(s => {
-    // Se activeSegmentId é 0 ou null (Todos os Segmentos), mostrar todas as vendas
-    if (!activeSegmentId || activeSegmentId === 0) {
-      return true;
-    }
-    // Se há um segmento específico selecionado, filtrar por esse segmento
+    if (!activeSegmentId || activeSegmentId === 0) return true;
     return s.segmentId === activeSegmentId;
   });
   const segments = data.segments || [];
   const productsForSegment = data.products.filter(p => !formData.segmentId || p.segmentId === parseInt(formData.segmentId));
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'Concluída': return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'Pendente': return <Clock className="w-4 h-4 text-yellow-500" />;
+      case 'Cancelada': return <AlertCircle className="w-4 h-4 text-red-500" />;
+      default: return <Clock className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
+  const getPaymentMethodIcon = (method) => {
+    switch (method) {
+      case 'dinheiro': return <DollarSign className="w-4 h-4" />;
+      case 'cartão': return <CreditCard className="w-4 h-4" />;
+      case 'pix': return <Receipt className="w-4 h-4" />;
+      case 'boleto': return <Truck className="w-4 h-4" />;
+      default: return <DollarSign className="w-4 h-4" />;
+    }
+  };
 
   return (
     <motion.div
@@ -145,7 +253,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
             Módulo de Vendas
           </h1>
-          <p className="text-muted-foreground mt-2">Registre e acompanhe suas vendas</p>
+          <p className="text-muted-foreground mt-2">Gerencie vendas com múltiplos produtos</p>
         </div>
         <div className="flex space-x-2">
           <ImportDataButton 
@@ -160,7 +268,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <motion.div whileHover={{ scale: 1.02 }} className="glass-effect rounded-xl p-6 gradient-card border">
           <div className="flex items-center justify-between">
             <div>
@@ -184,10 +292,24 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
             <div>
               <p className="text-sm text-muted-foreground">Faturamento Total</p>
               <p className="text-2xl font-bold text-green-400">
-                R$ {(filteredSales.reduce((sum, s) => sum + Number(s.total || 0), 0) || 0).toLocaleString('pt-BR')}
+                {formatCurrency(filteredSales.reduce((sum, s) => sum + Number(s.totalAmount || s.total || 0), 0))}
               </p>
             </div>
             <DollarSign className="w-8 h-8 text-green-400" />
+          </div>
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.02 }} className="glass-effect rounded-xl p-6 gradient-card border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Ticket Médio</p>
+              <p className="text-2xl font-bold text-purple-400">
+                {filteredSales.length > 0 
+                  ? formatCurrency(filteredSales.reduce((sum, s) => sum + Number(s.totalAmount || s.total || 0), 0) / filteredSales.length)
+                  : formatCurrency(0)
+                }
+              </p>
+            </div>
+            <Calculator className="w-8 h-8 text-purple-400" />
           </div>
         </motion.div>
       </div>
@@ -201,66 +323,153 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
             className="glass-effect rounded-xl p-6 border"
           >
             <h3 className="text-lg font-semibold mb-4">Nova Venda</h3>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Segmento</label>
-                <select value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value, product: ''})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
-                  <option value="">Selecione um segmento</option>
-                  {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-              </div>
+            
+            {/* Informações da Venda */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium mb-2">Cliente</label>
-                <select value={formData.customerId} onChange={handleCustomerSelect} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                <select value={formData.customerId} onChange={handleCustomerSelect} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
                   <option value="">Selecione um cliente</option>
                   {data.customers.map(customer => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Produto</label>
-                 <select value={formData.product} onChange={(e) => setFormData({...formData, product: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" disabled={!formData.segmentId}>
-                  <option value="">Selecione um produto</option>
-                  {productsForSegment.map(product => <option key={product.id} value={product.name}>{product.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="salesQuantity" className="block text-sm font-medium mb-2">Quantidade</label>
+                <label className="block text-sm font-medium mb-2">Data da Venda</label>
                 <input 
-                  id="salesQuantity"
-                  name="quantity"
-                  type="number" 
-                  value={formData.quantity} 
-                  onChange={(e) => setFormData({...formData, quantity: e.target.value})} 
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-                  placeholder="Quantidade" 
+                  type="date" 
+                  value={formData.saleDate} 
+                  onChange={(e) => setFormData({...formData, saleDate: e.target.value})} 
+                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div>
-                <label htmlFor="salesTotal" className="block text-sm font-medium mb-2">Total</label>
-                <input 
-                  id="salesTotal"
-                  name="total"
-                  type="number" 
-                  step="0.01" 
-                  value={formData.total} 
-                  onChange={(e) => setFormData({...formData, total: e.target.value})} 
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-                  placeholder="Valor total" 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Status</label>
-                <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
-                  <option value="Pendente">Pendente</option>
-                  <option value="Concluída">Concluída</option>
-                  <option value="Cancelada">Cancelada</option>
+                <label className="block text-sm font-medium mb-2">Forma de Pagamento</label>
+                <select value={formData.paymentMethod} onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                  <option value="dinheiro">Dinheiro</option>
+                  <option value="cartão">Cartão</option>
+                  <option value="pix">PIX</option>
+                  <option value="boleto">Boleto</option>
                 </select>
               </div>
-              <div className="md:col-span-2 flex space-x-3">
-                <Button type="submit" className="bg-gradient-to-r from-orange-500 to-red-600">Registrar Venda</Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancelar</Button>
+            </div>
+
+            {/* Adicionar Produtos */}
+            <div className="mb-6">
+              <h4 className="text-md font-semibold mb-4 flex items-center">
+                <Package className="w-4 h-4 mr-2" />
+                Produtos da Venda
+              </h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Produto</label>
+                  <select value={newItem.productId} onChange={handleProductSelect} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                    <option value="">Selecione um produto</option>
+                    {productsForSegment.map(product => <option key={product.id} value={product.id}>{product.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Quantidade</label>
+                  <input 
+                    type="number" 
+                    value={newItem.quantity} 
+                    onChange={handleQuantityChange}
+                    min="1"
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Preço Unitário</label>
+                  <input 
+                    type="number" 
+                    value={newItem.unitPrice} 
+                    readOnly
+                    step="0.01"
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={addItemToSale} className="w-full bg-green-600 hover:bg-green-700">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar
+                  </Button>
+                </div>
               </div>
-            </form>
+
+              {/* Lista de Produtos */}
+              {saleItems.length > 0 && (
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h5 className="font-medium mb-3">Produtos Adicionados</h5>
+                  <div className="space-y-2">
+                    {saleItems.map((item, index) => (
+                      <div key={item.id} className="flex items-center justify-between bg-background p-3 rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium">{item.productName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {item.quantity} x {formatCurrency(item.unitPrice)} = {formatCurrency(item.totalPrice)}
+                          </p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => removeItemFromSale(item.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Resumo da Venda */}
+            {saleItems.length > 0 && (
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 mb-6">
+                <h4 className="font-semibold mb-3 flex items-center">
+                  <Calculator className="w-4 h-4 mr-2" />
+                  Resumo da Venda
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Subtotal</p>
+                    <p className="text-lg font-semibold">{formatCurrency(subtotal)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Desconto</p>
+                    <p className="text-lg font-semibold text-red-600">{formatCurrency(discount)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total</p>
+                    <p className="text-xl font-bold text-green-600">{formatCurrency(total)}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Observações */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">Observações</label>
+              <textarea 
+                value={formData.notes} 
+                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                rows="3"
+                className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                placeholder="Observações sobre a venda..."
+              />
+            </div>
+
+            {/* Botões */}
+            <div className="flex space-x-3">
+              <Button type="button" onClick={handleSubmit} className="bg-gradient-to-r from-orange-500 to-red-600" disabled={saleItems.length === 0}>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Finalizar Venda
+              </Button>
+              <Button type="button" variant="outline" onClick={() => {setShowForm(false); resetForm();}}>
+                Cancelar
+              </Button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -279,8 +488,9 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
               <tr className="border-b border-border">
                 <th className="text-left p-3">Data</th>
                 <th className="text-left p-3">Cliente</th>
-                <th className="text-left p-3">Segmento</th>
+                <th className="text-left p-3">Produtos</th>
                 <th className="text-right p-3">Total</th>
+                <th className="text-center p-3">Pagamento</th>
                 <th className="text-center p-3">Status</th>
                 <th className="text-center p-3">Ações</th>
               </tr>
@@ -288,14 +498,38 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
             <tbody>
               {filteredSales.map(sale => (
                 <motion.tr key={sale.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
-                  <td className="p-3">{formatDate(sale.date)}</td>
+                  <td className="p-3">{formatDate(sale.saleDate || sale.date)}</td>
                   <td className="p-3 font-medium">{sale.customerName}</td>
-                  <td className="p-3">{segments.find(s => s.id === sale.segmentId)?.name || 'N/A'}</td>
-                  <td className="p-3 text-right font-medium text-green-400">{formatCurrency(sale.total || 0)}</td>
+                  <td className="p-3">
+                    <div className="flex items-center">
+                      <Package className="w-4 h-4 mr-2 text-muted-foreground" />
+                      <span className="text-sm">
+                        {sale.items ? `${sale.items.length} produtos` : '1 produto'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-3 text-right font-medium text-green-400">
+                    {formatCurrency(sale.totalAmount || sale.total || 0)}
+                  </td>
                   <td className="p-3 text-center">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${sale.status === 'Concluída' ? 'bg-green-500/20 text-green-400' : sale.status === 'Pendente' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
-                      {sale.status}
-                    </span>
+                    <div className="flex items-center justify-center">
+                      {getPaymentMethodIcon(sale.paymentMethod || 'dinheiro')}
+                      <span className="ml-1 text-xs capitalize">
+                        {sale.paymentMethod || 'dinheiro'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-3 text-center">
+                    <div className="flex items-center justify-center">
+                      {getStatusIcon(sale.status)}
+                      <span className={`ml-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        sale.status === 'Concluída' ? 'bg-green-500/20 text-green-400' : 
+                        sale.status === 'Pendente' ? 'bg-yellow-500/20 text-yellow-400' : 
+                        'bg-red-500/20 text-red-400'
+                      }`}>
+                        {sale.status}
+                      </span>
+                    </div>
                   </td>
                   <td className="p-3 text-center">
                     <div className="flex justify-center space-x-2">
@@ -347,7 +581,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-effect rounded-xl p-6 border max-w-md w-full"
+              className="glass-effect rounded-xl p-6 border max-w-2xl w-full max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
@@ -361,41 +595,103 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
                 </Button>
               </div>
               
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">Cliente</label>
-                  <p className="text-lg font-medium">{selectedSale.customerName}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">Produto</label>
-                  <p>{selectedSale.product}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-6">
+                {/* Informações da Venda */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-muted-foreground">Quantidade</label>
-                    <p>{selectedSale.quantity}</p>
+                    <label className="block text-sm font-medium text-muted-foreground">Cliente</label>
+                    <p className="text-lg font-medium">{selectedSale.customerName}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-muted-foreground">Total</label>
-                    <p className="text-lg font-medium text-green-400">
-                      R$ {(selectedSale.total || 0).toLocaleString('pt-BR')}
-                    </p>
+                    <label className="block text-sm font-medium text-muted-foreground">Data</label>
+                    <p>{formatDate(selectedSale.saleDate || selectedSale.date)}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground">Forma de Pagamento</label>
+                    <div className="flex items-center">
+                      {getPaymentMethodIcon(selectedSale.paymentMethod || 'dinheiro')}
+                      <span className="ml-1 capitalize">{selectedSale.paymentMethod || 'dinheiro'}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground">Status</label>
+                    <div className="flex items-center">
+                      {getStatusIcon(selectedSale.status)}
+                      <span className={`ml-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        selectedSale.status === 'Concluída' ? 'bg-green-500/20 text-green-400' : 
+                        selectedSale.status === 'Pendente' ? 'bg-yellow-500/20 text-yellow-400' : 
+                        'bg-red-500/20 text-red-400'
+                      }`}>
+                        {selectedSale.status}
+                      </span>
+                    </div>
                   </div>
                 </div>
+
+                {/* Produtos */}
                 <div>
-                  <label className="block text-sm font-medium text-muted-foreground">Status</label>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${selectedSale.status === 'Concluída' ? 'bg-green-500/20 text-green-400' : selectedSale.status === 'Pendente' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
-                    {selectedSale.status}
-                  </span>
+                  <h4 className="font-medium mb-3 flex items-center">
+                    <Package className="w-4 h-4 mr-2" />
+                    Produtos
+                  </h4>
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    {selectedSale.items ? (
+                      <div className="space-y-3">
+                        {selectedSale.items.map((item, index) => (
+                          <div key={index} className="flex justify-between items-center bg-background p-3 rounded-lg">
+                            <div>
+                              <p className="font-medium">{item.productName}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {item.quantity} x {formatCurrency(item.unitPrice)}
+                              </p>
+                            </div>
+                            <p className="font-semibold">{formatCurrency(item.totalPrice)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex justify-between items-center bg-background p-3 rounded-lg">
+                        <div>
+                          <p className="font-medium">{selectedSale.product}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {selectedSale.quantity} x {formatCurrency(selectedSale.total / selectedSale.quantity)}
+                          </p>
+                        </div>
+                        <p className="font-semibold">{formatCurrency(selectedSale.total)}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">Data</label>
-                  <p>{selectedSale.date}</p>
+
+                {/* Resumo Financeiro */}
+                <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4">
+                  <h4 className="font-medium mb-3 flex items-center">
+                    <Calculator className="w-4 h-4 mr-2" />
+                    Resumo Financeiro
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Subtotal</p>
+                      <p className="text-lg font-semibold">{formatCurrency(selectedSale.totalAmount || selectedSale.total)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Desconto</p>
+                      <p className="text-lg font-semibold text-red-600">{formatCurrency(selectedSale.discount || 0)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total</p>
+                      <p className="text-xl font-bold text-green-600">{formatCurrency(selectedSale.finalAmount || selectedSale.total)}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">Segmento</label>
-                  <p>{segments.find(s => s.id === selectedSale.segmentId)?.name || 'N/A'}</p>
-                </div>
+
+                {/* Observações */}
+                {selectedSale.notes && (
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">Observações</label>
+                    <p className="bg-muted/50 rounded-lg p-3">{selectedSale.notes}</p>
+                  </div>
+                )}
               </div>
               
               <div className="flex justify-end mt-6">
@@ -408,7 +704,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
         )}
       </AnimatePresence>
 
-      {/* Modal de Edição */}
+      {/* Modal de Edição - Similar ao formulário de criação */}
       <AnimatePresence>
         {showEditModal && selectedSale && (
           <motion.div
@@ -422,7 +718,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-effect rounded-xl p-6 border max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              className="glass-effect rounded-xl p-6 border max-w-4xl w-full max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
@@ -436,70 +732,155 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
                 </Button>
               </div>
               
-              <form onSubmit={handleEditSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Segmento</label>
-                  <select value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value, product: ''})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
-                    <option value="">Selecione um segmento</option>
-                    {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
+              {/* Conteúdo similar ao formulário de criação */}
+              <div className="space-y-6">
+                {/* Informações da Venda */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Cliente</label>
+                    <select value={formData.customerId} onChange={handleCustomerSelect} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                      <option value="">Selecione um cliente</option>
+                      {data.customers.map(customer => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Data da Venda</label>
+                    <input 
+                      type="date" 
+                      value={formData.saleDate} 
+                      onChange={(e) => setFormData({...formData, saleDate: e.target.value})} 
+                      className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Forma de Pagamento</label>
+                    <select value={formData.paymentMethod} onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                      <option value="dinheiro">Dinheiro</option>
+                      <option value="cartão">Cartão</option>
+                      <option value="pix">PIX</option>
+                      <option value="boleto">Boleto</option>
+                    </select>
+                  </div>
                 </div>
+
+                {/* Produtos da Venda */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Cliente</label>
-                  <select value={formData.customerId} onChange={handleCustomerSelect} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
-                    <option value="">Selecione um cliente</option>
-                    {data.customers.map(customer => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
-                  </select>
+                  <h4 className="text-md font-semibold mb-4 flex items-center">
+                    <Package className="w-4 h-4 mr-2" />
+                    Produtos da Venda
+                  </h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Produto</label>
+                      <select value={newItem.productId} onChange={handleProductSelect} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                        <option value="">Selecione um produto</option>
+                        {productsForSegment.map(product => <option key={product.id} value={product.id}>{product.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Quantidade</label>
+                      <input 
+                        type="number" 
+                        value={newItem.quantity} 
+                        onChange={handleQuantityChange}
+                        min="1"
+                        className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Preço Unitário</label>
+                      <input 
+                        type="number" 
+                        value={newItem.unitPrice} 
+                        readOnly
+                        step="0.01"
+                        className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button onClick={addItemToSale} className="w-full bg-green-600 hover:bg-green-700">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Adicionar
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Lista de Produtos */}
+                  {saleItems.length > 0 && (
+                    <div className="bg-muted/50 rounded-lg p-4">
+                      <h5 className="font-medium mb-3">Produtos Adicionados</h5>
+                      <div className="space-y-2">
+                        {saleItems.map((item, index) => (
+                          <div key={item.id} className="flex items-center justify-between bg-background p-3 rounded-lg">
+                            <div className="flex-1">
+                              <p className="font-medium">{item.productName}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {item.quantity} x {formatCurrency(item.unitPrice)} = {formatCurrency(item.totalPrice)}
+                              </p>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => removeItemFromSale(item.id)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                {/* Resumo da Venda */}
+                {saleItems.length > 0 && (
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4">
+                    <h4 className="font-semibold mb-3 flex items-center">
+                      <Calculator className="w-4 h-4 mr-2" />
+                      Resumo da Venda
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Subtotal</p>
+                        <p className="text-lg font-semibold">{formatCurrency(subtotal)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Desconto</p>
+                        <p className="text-lg font-semibold text-red-600">{formatCurrency(discount)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total</p>
+                        <p className="text-xl font-bold text-green-600">{formatCurrency(total)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Observações */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Produto</label>
-                   <select value={formData.product} onChange={(e) => setFormData({...formData, product: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" disabled={!formData.segmentId}>
-                    <option value="">Selecione um produto</option>
-                    {productsForSegment.map(product => <option key={product.id} value={product.name}>{product.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="editSalesQuantity" className="block text-sm font-medium mb-2">Quantidade</label>
-                  <input 
-                    id="editSalesQuantity"
-                    name="quantity"
-                    type="number" 
-                    value={formData.quantity} 
-                    onChange={(e) => setFormData({...formData, quantity: e.target.value})} 
-                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-                    placeholder="Quantidade" 
+                  <label className="block text-sm font-medium mb-2">Observações</label>
+                  <textarea 
+                    value={formData.notes} 
+                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    rows="3"
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    placeholder="Observações sobre a venda..."
                   />
                 </div>
-                <div>
-                  <label htmlFor="editSalesTotal" className="block text-sm font-medium mb-2">Total</label>
-                  <input 
-                    id="editSalesTotal"
-                    name="total"
-                    type="number" 
-                    step="0.01" 
-                    value={formData.total} 
-                    onChange={(e) => setFormData({...formData, total: e.target.value})} 
-                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-                    placeholder="Valor total" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Status</label>
-                  <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
-                    <option value="Pendente">Pendente</option>
-                    <option value="Concluída">Concluída</option>
-                    <option value="Cancelada">Cancelada</option>
-                  </select>
-                </div>
-                <div className="md:col-span-2 flex space-x-3">
-                  <Button type="submit" className="bg-gradient-to-r from-orange-500 to-red-600">
+
+                {/* Botões */}
+                <div className="flex space-x-3">
+                  <Button type="button" onClick={handleEditSubmit} className="bg-gradient-to-r from-orange-500 to-red-600" disabled={saleItems.length === 0}>
+                    <CheckCircle className="w-4 h-4 mr-2" />
                     Atualizar Venda
                   </Button>
                   <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>
                     Cancelar
                   </Button>
                 </div>
-              </form>
+              </div>
             </motion.div>
           </motion.div>
         )}
