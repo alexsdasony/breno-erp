@@ -1,0 +1,13 @@
+{
+  "name": "breno-erp-supabase-seed",
+  "version": "1.0.0",
+  "description": "Script de seed para o banco de dados Breno ERP",
+  "type": "module",
+  "scripts": {
+    "seed": "node run-seed.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "uuid": "^9.0.1"
+  }
+} 
