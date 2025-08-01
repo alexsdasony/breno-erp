@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
+import Autocomplete from '@/components/ui/autocomplete';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
@@ -48,8 +49,16 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
     paymentMethod: 'dinheiro',
     status: 'Pendente',
     notes: '',
-    segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+    segmentId: ''
   });
+
+  // Atualizar segmentId quando activeSegmentId ou segments mudarem
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+    }));
+  }, [activeSegmentId, data.segments]);
 
   const [newItem, setNewItem] = useState({
     productId: '',
@@ -64,9 +73,8 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
   const discount = 0; // Pode ser implementado depois
   const total = subtotal - discount;
 
-  const handleCustomerSelect = (e) => {
-    const customerId = e.target.value;
-    const selectedCustomer = data.customers.find(c => c.id === parseInt(customerId));
+  const handleCustomerSelect = (customerId) => {
+    const selectedCustomer = data.customers.find(c => c.id === customerId);
     if (selectedCustomer) {
       setFormData({ ...formData, customerId: selectedCustomer.id, customerName: selectedCustomer.name });
     } else {
@@ -74,8 +82,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
     }
   };
 
-  const handleProductSelect = (e) => {
-    const productId = e.target.value;
+  const handleProductSelect = (productId) => {
     const selectedProduct = data.products.find(p => p.id === productId);
     if (selectedProduct) {
       setNewItem({
@@ -354,11 +361,17 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
             {/* Informações da Venda */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
-                <label className="block text-sm font-medium mb-2">Cliente</label>
-                <select value={formData.customerId} onChange={handleCustomerSelect} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
-                  <option value="">Selecione um cliente</option>
-                  {data.customers.map(customer => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
-                </select>
+                <Autocomplete
+                  label="Cliente"
+                  options={data.customers.map(c => ({ ...c, description: c.email || c.phone || '' }))}
+                  value={formData.customerId}
+                  onChange={handleCustomerSelect}
+                  placeholder="Digite para buscar um cliente..."
+                  searchKey="name"
+                  displayKey="name"
+                  valueKey="id"
+                  required
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Data da Venda</label>
@@ -389,11 +402,19 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
               
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Produto</label>
-                  <select value={newItem.productId} onChange={handleProductSelect} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
-                    <option value="">Selecione um produto</option>
-                    {productsForSegment.map(product => <option key={product.id} value={product.id}>{product.name}</option>)}
-                  </select>
+                  <Autocomplete
+                    label="Produto"
+                    options={productsForSegment.map(p => ({ 
+                      ...p, 
+                      description: `${formatCurrency(p.price)} - Estoque: ${p.stock || p.stock_quantity || 0}` 
+                    }))}
+                    value={newItem.productId}
+                    onChange={handleProductSelect}
+                    placeholder="Digite para buscar um produto..."
+                    searchKey="name"
+                    displayKey="name"
+                    valueKey="id"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Quantidade</label>
@@ -764,11 +785,17 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
                 {/* Informações da Venda */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Cliente</label>
-                    <select value={formData.customerId} onChange={handleCustomerSelect} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
-                      <option value="">Selecione um cliente</option>
-                      {data.customers.map(customer => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
-                    </select>
+                    <Autocomplete
+                      label="Cliente"
+                      options={data.customers.map(c => ({ ...c, description: c.email || c.phone || '' }))}
+                      value={formData.customerId}
+                      onChange={handleCustomerSelect}
+                      placeholder="Digite para buscar um cliente..."
+                      searchKey="name"
+                      displayKey="name"
+                      valueKey="id"
+                      required
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Data da Venda</label>
@@ -799,11 +826,19 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2">Produto</label>
-                      <select value={newItem.productId} onChange={handleProductSelect} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
-                        <option value="">Selecione um produto</option>
-                        {productsForSegment.map(product => <option key={product.id} value={product.id}>{product.name}</option>)}
-                      </select>
+                      <Autocomplete
+                        label="Produto"
+                        options={productsForSegment.map(p => ({ 
+                          ...p, 
+                          description: `${formatCurrency(p.price)} - Estoque: ${p.stock || p.stock_quantity || 0}` 
+                        }))}
+                        value={newItem.productId}
+                        onChange={handleProductSelect}
+                        placeholder="Digite para buscar um produto..."
+                        searchKey="name"
+                        displayKey="name"
+                        valueKey="id"
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">Quantidade</label>
