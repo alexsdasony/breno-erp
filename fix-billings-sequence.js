@@ -1,4 +1,4 @@
-import { getDatabase } from './backend/database/prodConfig.js';
+import { getDatabase } from './supabase/backend/database/prodConfig.js';
 
 async function fixBillingsSequence() {
   try {

@@ -15,9 +15,9 @@ if [ ! -f "package.json" ] || [ ! -d "backend" ]; then
 fi
 
 # Criar arquivos de configuração se não existirem
-if [ ! -f "backend/.env" ]; then
-    echo "Criando backend/.env..."
-    cat > backend/.env << 'EOF'
+if [ ! -f "supabase/backend/.env" ]; then
+  echo "Criando supabase/backend/.env..."
+  cat > supabase/backend/.env << 'EOF'
 PORT=3001
 NODE_ENV=development
 DB_PATH=./database/horizons.db
@@ -38,7 +38,7 @@ lsof -ti :3001 | xargs kill -9 2>/dev/null || true
 lsof -ti :5173 | xargs kill -9 2>/dev/null || true
 
 echo "🔧 Iniciando backend..."
-cd backend && npm start &
+cd supabase/backend && npm start &
 BACKEND_PID=$!
 cd ..
 

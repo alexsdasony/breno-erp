@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { runArbitrarySQL } from '../backend/database/prodConfig.js';
+import { runArbitrarySQL } from '../supabase/backend/database/prodConfig.js';
 
 const columns = [
   { name: 'data_atualizacao_endereco', type: 'DATE' },

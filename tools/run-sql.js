@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { runArbitrarySQL } from '../backend/database/prodConfig.js';
+import { runArbitrarySQL } from '../supabase/backend/database/prodConfig.js';
 
 const sql = process.argv.slice(2).join(' ');
 if (!sql) {

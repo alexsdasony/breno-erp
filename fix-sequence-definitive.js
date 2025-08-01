@@ -1,4 +1,5 @@
-import { getDatabase } from './backend/database/prodConfig.js';
+import { getDatabase } from './supabase/backend/database/prodConfig.js';
+import { SECURITY_CONFIG } from './src/config/constants.js';
 
 async function fixSequenceDefinitive() {
   try {

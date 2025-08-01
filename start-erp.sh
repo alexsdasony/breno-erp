@@ -14,7 +14,7 @@ kill_existing_processes() {
 # Função para iniciar o backend
 start_backend() {
     echo "🔧 Iniciando backend..."
-    cd backend
+    cd supabase/backend
     node server.js &
     BACKEND_PID=$!
     echo "✅ Backend iniciado (PID: $BACKEND_PID)"

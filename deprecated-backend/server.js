@@ -32,7 +32,7 @@ import setupRoutes from './setup-endpoint.js';
 import fixAdminRoutes from './fix-admin.js';
 
 // Import database
-import { initProductionDatabase, getDatabase } from './database/prodConfig.js';
+import { initProductionDatabase, getDatabase } from './database/supabaseConfig.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

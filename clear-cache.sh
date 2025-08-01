@@ -25,7 +25,7 @@ npm install
 
 # Iniciar backend
 echo "🚀 Iniciando backend..."
-cd backend && npm start &
+cd supabase/backend && npm start &
 BACKEND_PID=$!
 
 # Aguardar backend inicializar

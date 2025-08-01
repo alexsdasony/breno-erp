@@ -26,7 +26,7 @@ sleep 2
 
 # Iniciar backend
 echo "🚀 Iniciando backend..."
-cd backend
+cd supabase/backend
 npm start > ../backend.log 2>&1 &
 BACKEND_PID=$!
 cd ..

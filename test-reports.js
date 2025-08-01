@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateToken as auth } from './backend/middleware/auth.js';
+import { authenticateToken as auth } from './supabase/backend/middleware/auth.js';
 import pkg from 'pg';
 const { Pool } = pkg;
 
@@ -7,7 +7,9 @@ const app = express();
 const PORT = 3003;
 
 // Configuração do banco PostgreSQL
-const connectionString = process.env.DATABASE_URL || 'postgresql://breno_erp_user:aHQO5rzBcecx5bRm2Xt53UQPxS49OXLj@dpg-d1fs2rali9vc739tpac0-a.oregon-postgres.render.com/breno_erp';
+import { DATABASE_CONFIG } from './src/config/constants.js';
+
+const connectionString = DATABASE_CONFIG.URL;
 const pool = new Pool({
   connectionString,
   ssl: {

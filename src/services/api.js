@@ -1,5 +1,6 @@
 // API Service - Centralized HTTP client for backend communication
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// Usando APENAS o novo backend Supabase local
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Cache em memória para token - SEM localStorage
 let tokenCache = null;
@@ -56,7 +57,7 @@ class ApiService {
         this.clearToken();
         if (!isRedirectingToLogin) {
           isRedirectingToLogin = true;
-        window.location.href = '/login';
+          window.location.href = '/login';
         }
         throw new Error('Authentication failed');
       }
@@ -106,22 +107,30 @@ class ApiService {
     return this.request(endpoint, { method: 'DELETE' });
   }
 
-  // Auth endpoints
+  // Auth endpoints - Usando APENAS o backend
   async register(userData) {
     return this.post('/auth/register', userData);
   }
 
   async login(credentials) {
     const response = await this.post('/auth/login', credentials);
+    
     if (response.token) {
       this.setToken(response.token);
     }
+    
     return response;
   }
 
   async logout() {
-    this.clearToken();
-    return Promise.resolve();
+    try {
+      await this.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      this.clearToken();
+    }
+    return { success: true };
   }
 
   async getProfile() {
@@ -144,7 +153,7 @@ class ApiService {
     return this.post('/auth/reset-password', data);
   }
 
-  // Segments endpoints
+  // Segments endpoints - Usando APENAS o backend
   async getSegments(params = {}) {
     return this.get('/segments', params);
   }
@@ -161,7 +170,7 @@ class ApiService {
     return this.delete(`/segments/${id}`);
   }
 
-  // Transactions endpoints
+  // Transactions endpoints - Usando APENAS o backend
   async getTransactions(params = {}) {
     return this.get('/transactions', params);
   }
@@ -182,7 +191,7 @@ class ApiService {
     return this.post('/transactions/import', { transactions });
   }
 
-  // Customers endpoints
+  // Customers endpoints - Usando APENAS o backend
   async getCustomers(params = {}) {
     return this.get('/customers', params);
   }
@@ -203,7 +212,7 @@ class ApiService {
     return this.get(`/customers/${id}`);
   }
 
-  // Products endpoints
+  // Products endpoints - Usando APENAS o backend
   async getProducts(params = {}) {
     return this.get('/products', params);
   }
@@ -224,7 +233,7 @@ class ApiService {
     return this.get('/products', { ...params, low_stock: 'true' });
   }
 
-  // Sales endpoints
+  // Sales endpoints - Usando APENAS o backend
   async getSales(params = {}) {
     return this.get('/sales', params);
   }
@@ -241,7 +250,7 @@ class ApiService {
     return this.delete(`/sales/${id}`);
   }
 
-  // Billings endpoints
+  // Billings endpoints - Usando APENAS o backend
   async getBillings(params = {}) {
     return this.get('/billings', params);
   }
@@ -258,7 +267,7 @@ class ApiService {
     return this.delete(`/billings/${id}`);
   }
 
-  // Cost Centers endpoints
+  // Cost Centers endpoints - Usando APENAS o backend
   async getCostCenters(params = {}) {
     return this.get('/cost-centers', params);
   }
@@ -275,7 +284,7 @@ class ApiService {
     return this.delete(`/cost-centers/${id}`);
   }
 
-  // Accounts Payable endpoints
+  // Accounts Payable endpoints - Usando APENAS o backend
   async getAccountsPayable(params = {}) {
     return this.get('/accounts-payable', params);
   }
@@ -292,7 +301,7 @@ class ApiService {
     return this.delete(`/accounts-payable/${id}`);
   }
 
-  // NFe endpoints
+  // NFe endpoints - Usando APENAS o backend
   async getNFes(params = {}) {
     return this.get('/nfe', params);
   }
@@ -309,7 +318,7 @@ class ApiService {
     return this.delete(`/nfe/${id}`);
   }
 
-  // Integrations endpoints
+  // Integrations endpoints - Usando APENAS o backend
   async getIntegrations() {
     return this.get('/integrations');
   }
@@ -322,7 +331,7 @@ class ApiService {
     return this.post(`/integrations/${name}/test`);
   }
 
-  // Metrics endpoints
+  // Metrics endpoints - Usando APENAS o backend
   async getDashboardMetrics(params = {}) {
     return this.get('/metrics', params);
   }
@@ -335,7 +344,7 @@ class ApiService {
     return this.get('/metrics/sales', params);
   }
 
-  // Users endpoints (admin only)
+  // Users endpoints (admin only) - Usando APENAS o backend
   async getUsers(params = {}) {
     return this.get('/users', params);
   }
@@ -356,13 +365,13 @@ class ApiService {
     return this.delete(`/users/${id}`);
   }
 
-  // Receita Federal
+  // Receita Federal - Usando APENAS o backend
   async consultarReceita(cpf) {
-    return this.request(`/receita/consulta/${cpf}`);
+    return this.get(`/receita/consulta/${cpf}`);
   }
 
   async consultarReceitaCNPJ(cnpj) {
-    return this.request(`/receita/consulta-cnpj/${cnpj}`);
+    return this.get(`/receita/consulta-cnpj/${cnpj}`);
   }
 }
 
