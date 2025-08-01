@@ -221,7 +221,26 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
     return s.segmentId === activeSegmentId;
   });
   const segments = data.segments || [];
-  const productsForSegment = data.products.filter(p => !formData.segmentId || p.segmentId === parseInt(formData.segmentId));
+  
+  // Filtrar produtos por segmento - se não há segmento selecionado, mostrar todos os produtos
+  const productsForSegment = data.products.filter(p => {
+    // Se não há segmento selecionado, mostrar todos os produtos
+    if (!formData.segmentId) return true;
+    
+    // Se o produto não tem segment_id (null), mostrar para todos os segmentos
+    if (!p.segment_id) return true;
+    
+    // Comparar segment_id diretamente (ambos são strings UUID)
+    return p.segment_id === formData.segmentId;
+  });
+
+  // Debug: Log para verificar dados
+  console.log('🔍 Debug SalesModule:', {
+    totalProducts: data.products?.length || 0,
+    segmentId: formData.segmentId,
+    productsForSegment: productsForSegment.length,
+    firstProduct: data.products?.[0]
+  });
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -936,4 +955,4 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
   );
 };
 
-export default SalesModule;
+export default SalesModule; 
