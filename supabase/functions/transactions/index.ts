@@ -19,10 +19,12 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     const url = new URL(req.url)
-    const path = url.pathname.split('/').pop()
+    const pathSegments = url.pathname.split('/')
+    const lastSegment = pathSegments[pathSegments.length - 1]
+    const isSpecificId = lastSegment && lastSegment !== 'transactions' && lastSegment.length > 10
 
     // GET - Listar todos
-    if (req.method === 'GET' && !path) {
+    if (req.method === 'GET' && !isSpecificId) {
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
@@ -30,7 +32,7 @@ serve(async (req) => {
 
       if (error) {
         return new Response(
-          JSON.stringify({ error: 'Erro ao buscar transaçãos' }),
+          JSON.stringify({ error: 'Erro ao buscar transações' }),
           { 
             status: 500, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -52,16 +54,16 @@ serve(async (req) => {
     }
 
     // GET - Buscar por ID
-    if (req.method === 'GET' && path) {
+    if (req.method === 'GET' && isSpecificId) {
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
-        .eq('id', path)
+        .eq('id', lastSegment)
         .single()
 
       if (error || !data) {
         return new Response(
-          JSON.stringify({ error: 'Transação não encontrado' }),
+          JSON.stringify({ error: 'Transação não encontrada' }),
           { 
             status: 404, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -72,7 +74,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          tranactions: data
+          transactions: data
         }),
         { 
           status: 200, 
@@ -104,8 +106,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          tranactions: data,
-          message: 'Transação criado com sucesso'
+          transactions: data,
+          message: 'Transação criada com sucesso'
         }),
         { 
           status: 201, 
@@ -115,19 +117,19 @@ serve(async (req) => {
     }
 
     // PUT - Atualizar
-    if (req.method === 'PUT' && path) {
+    if (req.method === 'PUT' && isSpecificId) {
       const body = await req.json()
       
       const { data, error } = await supabase
         .from('transactions')
         .update(body)
-        .eq('id', path)
+        .eq('id', lastSegment)
         .select()
         .single()
 
       if (error || !data) {
         return new Response(
-          JSON.stringify({ error: 'Transação não encontrado' }),
+          JSON.stringify({ error: 'Transação não encontrada' }),
           { 
             status: 404, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -138,7 +140,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          tranactions: data,
+          transactions: data,
           message: 'Transação atualizado com sucesso'
         }),
         { 
@@ -149,15 +151,15 @@ serve(async (req) => {
     }
 
     // DELETE - Deletar
-    if (req.method === 'DELETE' && path) {
+    if (req.method === 'DELETE' && isSpecificId) {
       const { error } = await supabase
         .from('transactions')
         .delete()
-        .eq('id', path)
+        .eq('id', lastSegment)
 
       if (error) {
         return new Response(
-          JSON.stringify({ error: 'Transação não encontrado' }),
+          JSON.stringify({ error: 'Transação não encontrada' }),
           { 
             status: 404, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
