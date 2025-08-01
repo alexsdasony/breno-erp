@@ -26,7 +26,15 @@ import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const SalesModule = ({ metrics, addSale, toast, importData }) => {
-  const { data, activeSegmentId } = useAppData();
+  const { data, activeSegmentId, loadProducts } = useAppData();
+  
+  // Carregar produtos quando o componente for montado
+  useEffect(() => {
+    if (!data.products || data.products.length === 0) {
+      console.log('🔄 Carregando produtos...');
+      loadProducts();
+    }
+  }, [loadProducts, data.products]);
   const [showForm, setShowForm] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
