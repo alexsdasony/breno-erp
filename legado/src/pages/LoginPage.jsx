@@ -52,7 +52,7 @@ const LoginPage = () => {
             <Briefcase className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white">ERP PRO</h1>
-          <p className="text-gray-400">Faça login para continuar</p>
+          <p className="text-gray-400">Faça Login</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
