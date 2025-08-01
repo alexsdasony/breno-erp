@@ -7,8 +7,8 @@ let pool = null;
 let sqliteDb = null;
 
 export async function getDatabase() {
-  // Detectar se está em produção (Render) ou desenvolvimento
-  const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
+  // Sempre usar PostgreSQL (Supabase)
+  const isProduction = true;
   
   if (isProduction) {
     // Usar PostgreSQL em produção

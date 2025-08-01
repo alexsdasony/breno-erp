@@ -4,7 +4,7 @@ import { getDatabase } from '../database/prodConfig.js';
 
 const router = express.Router();
 
-// GET /api/customers - Listar clientes
+// GET /api/nfe - Listar Nfe
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
@@ -23,21 +23,17 @@ router.get('/', authenticateToken, async (req, res) => {
     const query = `
       SELECT 
         id,
-        name,
-        cpf,
-        email,
-        phone,
-        address,
-        city,
-        state,
-        total_purchases,
-        last_purchase_date,
+        number,
+        customer_name,
+        date,
+        total,
+        status,
         segment_id,
         created_at,
         updated_at
-      FROM customers 
+      FROM nfe 
       ${whereClause}
-      ORDER BY name ASC
+      ORDER BY date DESC
       LIMIT $${paramIndex++} OFFSET $${paramIndex++}
     `;
     
@@ -47,12 +43,12 @@ router.get('/', authenticateToken, async (req, res) => {
     
     res.json({
       success: true,
-      customers: result.rows || [],
+      nfe: result.rows || [],
       total: result.rows?.length || 0
     });
     
   } catch (error) {
-    console.error('Erro ao buscar clientes:', error);
+    console.error(`Erro ao buscar Nfe:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -61,7 +57,7 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/customers/:id - Buscar cliente por ID
+// GET /api/nfe/:id - Buscar Nfe por ID
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
@@ -70,19 +66,15 @@ router.get('/:id', authenticateToken, async (req, res) => {
     const query = `
       SELECT 
         id,
-        name,
-        cpf,
-        email,
-        phone,
-        address,
-        city,
-        state,
-        total_purchases,
-        last_purchase_date,
+        number,
+        customer_name,
+        date,
+        total,
+        status,
         segment_id,
         created_at,
         updated_at
-      FROM customers 
+      FROM nfe 
       WHERE id = $1
     `;
     
@@ -91,17 +83,17 @@ router.get('/:id', authenticateToken, async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Cliente não encontrado'
+        error: 'Nfe não encontrado'
       });
     }
     
     res.json({
       success: true,
-      customer: result.rows[0]
+      nfe: result.rows[0]
     });
     
   } catch (error) {
-    console.error('Erro ao buscar cliente:', error);
+    console.error(`Erro ao buscar Nfe:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -110,34 +102,32 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/customers - Criar cliente
+// POST /api/nfe - Criar Nfe
 router.post('/', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
-    const { name, cpf, email, phone, address, city, state, segment_id } = req.body;
+    const { number, customer_name, date, total, status, segment_id } = req.body;
     
     // Validar campos obrigatórios
-    if (!name) {
+    if (!number || !customer_name || !date || !total) {
       return res.status(400).json({
         success: false,
-        error: 'Nome é obrigatório'
+        error: 'number, customer_name, date e total são obrigatórios'
       });
     }
     
     const query = `
-      INSERT INTO customers (name, cpf, email, phone, address, city, state, segment_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO nfe (number, customer_name, date, total, status, segment_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
     
     const params = [
-      name,
-      cpf || null,
-      email || null,
-      phone || null,
-      address || null,
-      city || null,
-      state || null,
+      number,
+      customer_name,
+      date,
+      total,
+      status || 'Emitida',
       segment_id || req.user.segment_id
     ];
     
@@ -145,12 +135,12 @@ router.post('/', authenticateToken, async (req, res) => {
     
     res.status(201).json({
       success: true,
-      customer: result.rows[0],
-      message: 'Cliente criado com sucesso'
+      nfe: result.rows[0],
+      message: 'Nfe criado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao criar cliente:', error);
+    console.error(`Erro ao criar Nfe:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -159,47 +149,45 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-// PUT /api/customers/:id - Atualizar cliente
+// PUT /api/nfe/:id - Atualizar Nfe
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
     const { id } = req.params;
-    const { name, cpf, email, phone, address, city, state, segment_id } = req.body;
+    const { number, customer_name, date, total, status, segment_id } = req.body;
     
     const query = `
-      UPDATE customers SET
-        name = COALESCE($1, name),
-        cpf = COALESCE($2, cpf),
-        email = COALESCE($3, email),
-        phone = COALESCE($4, phone),
-        address = COALESCE($5, address),
-        city = COALESCE($6, city),
-        state = COALESCE($7, state),
-        segment_id = COALESCE($8, segment_id),
+      UPDATE nfe SET
+        number = COALESCE($1, number),
+        customer_name = COALESCE($2, customer_name),
+        date = COALESCE($3, date),
+        total = COALESCE($4, total),
+        status = COALESCE($5, status),
+        segment_id = COALESCE($6, segment_id),
         updated_at = NOW()
-      WHERE id = $9
+      WHERE id = $7
       RETURNING *
     `;
     
-    const params = [name, cpf, email, phone, address, city, state, segment_id, id];
+    const params = [number, customer_name, date, total, status, segment_id, id];
     
     const result = await db.query(query, params);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Cliente não encontrado'
+        error: 'Nfe não encontrado'
       });
     }
     
     res.json({
       success: true,
-      customer: result.rows[0],
-      message: 'Cliente atualizado com sucesso'
+      nfe: result.rows[0],
+      message: 'Nfe atualizado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao atualizar cliente:', error);
+    console.error(`Erro ao atualizar Nfe:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -208,29 +196,29 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// DELETE /api/customers/:id - Deletar cliente
+// DELETE /api/nfe/:id - Deletar Nfe
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
     const { id } = req.params;
     
-    const query = 'DELETE FROM customers WHERE id = $1 RETURNING *';
+    const query = `DELETE FROM nfe WHERE id = $1 RETURNING *`;
     const result = await db.query(query, [id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Cliente não encontrado'
+        error: 'Nfe não encontrado'
       });
     }
     
     res.json({
       success: true,
-      message: 'Cliente deletado com sucesso'
+      message: 'Nfe deletado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao deletar cliente:', error);
+    console.error(`Erro ao deletar Nfe:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -239,4 +227,4 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-export default router; 
+export default router;

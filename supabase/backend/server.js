@@ -17,6 +17,16 @@ import authRoutes from './routes/auth.js';
 import transactionsRoutes from './routes/transactions.js';
 import customersRoutes from './routes/customers.js';
 import segmentsRoutes from './routes/segments.js';
+import productsRoutes from './routes/products.js';
+import salesRoutes from './routes/sales.js';
+import billingsRoutes from './routes/billings.js';
+import costCentersRoutes from './routes/cost-centers.js';
+import accountsPayableRoutes from './routes/accounts-payable.js';
+import nfeRoutes from './routes/nfe.js';
+import integrationsRoutes from './routes/integrations.js';
+import metricsRoutes from './routes/metrics.js';
+import usersRoutes from './routes/users.js';
+import receitaRoutes from './routes/receita.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -92,6 +102,16 @@ app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionsRoutes);
 app.use('/api/customers', customersRoutes);
 app.use('/api/segments', segmentsRoutes);
+app.use('/api/products', productsRoutes);
+app.use('/api/sales', salesRoutes);
+app.use('/api/billings', billingsRoutes);
+app.use('/api/cost-centers', costCentersRoutes);
+app.use('/api/accounts-payable', accountsPayableRoutes);
+app.use('/api/nfe', nfeRoutes);
+app.use('/api/integrations', integrationsRoutes);
+app.use('/api/metrics', metricsRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/receita', receitaRoutes);
 
 // Rota de fallback para API não encontrada
 app.use('/api/*', (req, res) => {

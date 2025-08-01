@@ -4,7 +4,7 @@ import { getDatabase } from '../database/prodConfig.js';
 
 const router = express.Router();
 
-// GET /api/customers - Listar clientes
+// GET /api/integrations - Listar Integrations
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
@@ -23,21 +23,16 @@ router.get('/', authenticateToken, async (req, res) => {
     const query = `
       SELECT 
         id,
-        name,
-        cpf,
-        email,
-        phone,
-        address,
-        city,
-        state,
-        total_purchases,
-        last_purchase_date,
+        service_name,
+        api_key,
+        enabled,
+        config,
         segment_id,
         created_at,
         updated_at
-      FROM customers 
+      FROM integrations 
       ${whereClause}
-      ORDER BY name ASC
+      ORDER BY service_name ASC
       LIMIT $${paramIndex++} OFFSET $${paramIndex++}
     `;
     
@@ -47,12 +42,12 @@ router.get('/', authenticateToken, async (req, res) => {
     
     res.json({
       success: true,
-      customers: result.rows || [],
+      integrations: result.rows || [],
       total: result.rows?.length || 0
     });
     
   } catch (error) {
-    console.error('Erro ao buscar clientes:', error);
+    console.error(`Erro ao buscar Integrations:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -61,7 +56,7 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/customers/:id - Buscar cliente por ID
+// GET /api/integrations/:id - Buscar Integrations por ID
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
@@ -70,19 +65,14 @@ router.get('/:id', authenticateToken, async (req, res) => {
     const query = `
       SELECT 
         id,
-        name,
-        cpf,
-        email,
-        phone,
-        address,
-        city,
-        state,
-        total_purchases,
-        last_purchase_date,
+        service_name,
+        api_key,
+        enabled,
+        config,
         segment_id,
         created_at,
         updated_at
-      FROM customers 
+      FROM integrations 
       WHERE id = $1
     `;
     
@@ -91,17 +81,17 @@ router.get('/:id', authenticateToken, async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Cliente não encontrado'
+        error: 'Integrations não encontrado'
       });
     }
     
     res.json({
       success: true,
-      customer: result.rows[0]
+      integrations: result.rows[0]
     });
     
   } catch (error) {
-    console.error('Erro ao buscar cliente:', error);
+    console.error(`Erro ao buscar Integrations:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -110,34 +100,31 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/customers - Criar cliente
+// POST /api/integrations - Criar Integrations
 router.post('/', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
-    const { name, cpf, email, phone, address, city, state, segment_id } = req.body;
+    const { service_name, api_key, enabled, config, segment_id } = req.body;
     
     // Validar campos obrigatórios
-    if (!name) {
+    if (!service_name) {
       return res.status(400).json({
         success: false,
-        error: 'Nome é obrigatório'
+        error: 'service_name é obrigatório'
       });
     }
     
     const query = `
-      INSERT INTO customers (name, cpf, email, phone, address, city, state, segment_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO integrations (service_name, api_key, enabled, config, segment_id)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *
     `;
     
     const params = [
-      name,
-      cpf || null,
-      email || null,
-      phone || null,
-      address || null,
-      city || null,
-      state || null,
+      service_name,
+      api_key || null,
+      enabled || false,
+      config || null,
       segment_id || req.user.segment_id
     ];
     
@@ -145,12 +132,12 @@ router.post('/', authenticateToken, async (req, res) => {
     
     res.status(201).json({
       success: true,
-      customer: result.rows[0],
-      message: 'Cliente criado com sucesso'
+      integrations: result.rows[0],
+      message: 'Integrations criado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao criar cliente:', error);
+    console.error(`Erro ao criar Integrations:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -159,47 +146,44 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-// PUT /api/customers/:id - Atualizar cliente
+// PUT /api/integrations/:id - Atualizar Integrations
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
     const { id } = req.params;
-    const { name, cpf, email, phone, address, city, state, segment_id } = req.body;
+    const { service_name, api_key, enabled, config, segment_id } = req.body;
     
     const query = `
-      UPDATE customers SET
-        name = COALESCE($1, name),
-        cpf = COALESCE($2, cpf),
-        email = COALESCE($3, email),
-        phone = COALESCE($4, phone),
-        address = COALESCE($5, address),
-        city = COALESCE($6, city),
-        state = COALESCE($7, state),
-        segment_id = COALESCE($8, segment_id),
+      UPDATE integrations SET
+        service_name = COALESCE($1, service_name),
+        api_key = COALESCE($2, api_key),
+        enabled = COALESCE($3, enabled),
+        config = COALESCE($4, config),
+        segment_id = COALESCE($5, segment_id),
         updated_at = NOW()
-      WHERE id = $9
+      WHERE id = $6
       RETURNING *
     `;
     
-    const params = [name, cpf, email, phone, address, city, state, segment_id, id];
+    const params = [service_name, api_key, enabled, config, segment_id, id];
     
     const result = await db.query(query, params);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Cliente não encontrado'
+        error: 'Integrations não encontrado'
       });
     }
     
     res.json({
       success: true,
-      customer: result.rows[0],
-      message: 'Cliente atualizado com sucesso'
+      integrations: result.rows[0],
+      message: 'Integrations atualizado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao atualizar cliente:', error);
+    console.error(`Erro ao atualizar Integrations:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -208,29 +192,29 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// DELETE /api/customers/:id - Deletar cliente
+// DELETE /api/integrations/:id - Deletar Integrations
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
     const { id } = req.params;
     
-    const query = 'DELETE FROM customers WHERE id = $1 RETURNING *';
+    const query = `DELETE FROM integrations WHERE id = $1 RETURNING *`;
     const result = await db.query(query, [id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Cliente não encontrado'
+        error: 'Integrations não encontrado'
       });
     }
     
     res.json({
       success: true,
-      message: 'Cliente deletado com sucesso'
+      message: 'Integrations deletado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao deletar cliente:', error);
+    console.error(`Erro ao deletar Integrations:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -239,4 +223,4 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-export default router; 
+export default router;

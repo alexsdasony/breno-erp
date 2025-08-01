@@ -1,34 +1,50 @@
 import express from 'express';
-import { authenticateToken, requireRole } from '../middleware/auth.js';
+import { authenticateToken } from '../middleware/auth.js';
 import { getDatabase } from '../database/prodConfig.js';
 
 const router = express.Router();
 
-// GET /api/segments - Listar segmentos
+// GET /api/receita - Listar Receita
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
+    const { segment_id, limit = 100, offset = 0 } = req.query;
+    
+    let whereClause = 'WHERE 1=1';
+    const params = [];
+    let paramIndex = 1;
+    
+    // Filtrar por segmento se fornecido
+    if (segment_id) {
+      whereClause += ` AND segment_id = $${paramIndex++}`;
+      params.push(segment_id);
+    }
     
     const query = `
       SELECT 
         id,
         name,
-        description,
+        segment_id,
         created_at,
         updated_at
-      FROM segments 
+      FROM receita 
+      ${whereClause}
       ORDER BY name ASC
+      LIMIT $${paramIndex++} OFFSET $${paramIndex++}
     `;
     
-    const result = await db.query(query);
+    params.push(parseInt(limit), parseInt(offset));
+    
+    const result = await db.query(query, params);
     
     res.json({
       success: true,
-      segments: result.rows || []
+      receita: result.rows || [],
+      total: result.rows?.length || 0
     });
     
   } catch (error) {
-    console.error('Erro ao buscar segmentos:', error);
+    console.error(`Erro ao buscar Receita:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -37,7 +53,7 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/segments/:id - Buscar segmento por ID
+// GET /api/receita/:id - Buscar Receita por ID
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
@@ -47,10 +63,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
       SELECT 
         id,
         name,
-        description,
+        segment_id,
         created_at,
         updated_at
-      FROM segments 
+      FROM receita 
       WHERE id = $1
     `;
     
@@ -59,17 +75,17 @@ router.get('/:id', authenticateToken, async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Segmento não encontrado'
+        error: 'Receita não encontrado'
       });
     }
     
     res.json({
       success: true,
-      segment: result.rows[0]
+      receita: result.rows[0]
     });
     
   } catch (error) {
-    console.error('Erro ao buscar segmento:', error);
+    console.error(`Erro ao buscar Receita:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -78,11 +94,11 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/segments - Criar segmento
-router.post('/', authenticateToken, requireRole(['admin']), async (req, res) => {
+// POST /api/receita - Criar Receita
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
-    const { name, description } = req.body;
+    const { name, segment_id } = req.body;
     
     // Validar campos obrigatórios
     if (!name) {
@@ -93,23 +109,26 @@ router.post('/', authenticateToken, requireRole(['admin']), async (req, res) => 
     }
     
     const query = `
-      INSERT INTO segments (name, description)
+      INSERT INTO receita (name, segment_id)
       VALUES ($1, $2)
       RETURNING *
     `;
     
-    const params = [name, description || null];
+    const params = [
+      name,
+      segment_id || req.user.segment_id
+    ];
     
     const result = await db.query(query, params);
     
     res.status(201).json({
       success: true,
-      segment: result.rows[0],
-      message: 'Segmento criado com sucesso'
+      receita: result.rows[0],
+      message: 'Receita criado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao criar segmento:', error);
+    console.error(`Erro ao criar Receita:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -118,41 +137,41 @@ router.post('/', authenticateToken, requireRole(['admin']), async (req, res) => 
   }
 });
 
-// PUT /api/segments/:id - Atualizar segmento
-router.put('/:id', authenticateToken, requireRole(['admin']), async (req, res) => {
+// PUT /api/receita/:id - Atualizar Receita
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
     const { id } = req.params;
-    const { name, description } = req.body;
+    const { name, segment_id } = req.body;
     
     const query = `
-      UPDATE segments SET
+      UPDATE receita SET
         name = COALESCE($1, name),
-        description = COALESCE($2, description),
+        segment_id = COALESCE($2, segment_id),
         updated_at = NOW()
       WHERE id = $3
       RETURNING *
     `;
     
-    const params = [name, description, id];
+    const params = [name, segment_id, id];
     
     const result = await db.query(query, params);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Segmento não encontrado'
+        error: 'Receita não encontrado'
       });
     }
     
     res.json({
       success: true,
-      segment: result.rows[0],
-      message: 'Segmento atualizado com sucesso'
+      receita: result.rows[0],
+      message: 'Receita atualizado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao atualizar segmento:', error);
+    console.error(`Erro ao atualizar Receita:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -161,40 +180,29 @@ router.put('/:id', authenticateToken, requireRole(['admin']), async (req, res) =
   }
 });
 
-// DELETE /api/segments/:id - Deletar segmento
-router.delete('/:id', authenticateToken, requireRole(['admin']), async (req, res) => {
+// DELETE /api/receita/:id - Deletar Receita
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
     const { id } = req.params;
     
-    // Verificar se há usuários associados ao segmento
-    const usersQuery = 'SELECT id FROM users WHERE segment_id = $1 LIMIT 1';
-    const usersResult = await db.query(usersQuery, [id]);
-    
-    if (usersResult.rows.length > 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Não é possível deletar segmento com usuários associados'
-      });
-    }
-    
-    const query = 'DELETE FROM segments WHERE id = $1 RETURNING *';
+    const query = `DELETE FROM receita WHERE id = $1 RETURNING *`;
     const result = await db.query(query, [id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Segmento não encontrado'
+        error: 'Receita não encontrado'
       });
     }
     
     res.json({
       success: true,
-      message: 'Segmento deletado com sucesso'
+      message: 'Receita deletado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao deletar segmento:', error);
+    console.error(`Erro ao deletar Receita:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -203,4 +211,4 @@ router.delete('/:id', authenticateToken, requireRole(['admin']), async (req, res
   }
 });
 
-export default router; 
+export default router;

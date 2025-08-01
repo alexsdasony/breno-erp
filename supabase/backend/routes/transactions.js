@@ -1,310 +1,307 @@
 import express from 'express';
-import { supabase } from '../config/supabase.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { getDatabase } from '../database/prodConfig.js';
 
 const router = express.Router();
 
-// Buscar todas as transações
+// GET /api/transactions - Listar transações
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const { segment_id, start_date, end_date, type } = req.query;
-
-    let query = supabase
-      .from('transactions')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    // Filtrar por segmento se especificado
+    const db = await getDatabase();
+    const { segment_id, start_date, end_date, type, limit = 100, offset = 0 } = req.query;
+    
+    let whereClause = 'WHERE 1=1';
+    const params = [];
+    let paramIndex = 1;
+    
+    // Filtrar por segmento se fornecido
     if (segment_id) {
-      query = query.eq('segment_id', segment_id);
+      whereClause += ` AND segment_id = $${paramIndex++}`;
+      params.push(segment_id);
     }
-
+    
     // Filtrar por data se especificado
     if (start_date) {
-      query = query.gte('created_at', start_date);
+      whereClause += ` AND date >= $${paramIndex++}`;
+      params.push(start_date);
     }
-
+    
     if (end_date) {
-      query = query.lte('created_at', end_date);
+      whereClause += ` AND date <= $${paramIndex++}`;
+      params.push(end_date);
     }
-
+    
     // Filtrar por tipo se especificado
     if (type) {
-      query = query.eq('type', type);
+      whereClause += ` AND type = $${paramIndex++}`;
+      params.push(type);
     }
-
-    const { data: transactions, error } = await query;
-
-    if (error) {
-      console.error('Erro ao buscar transações:', error);
-      return res.status(500).json({
-        error: 'Erro interno do servidor',
-        code: 'DATABASE_ERROR'
-      });
-    }
-
+    
+    const query = `
+      SELECT 
+        id,
+        type,
+        description,
+        amount,
+        date,
+        category,
+        cost_center,
+        segment_id,
+        created_at,
+        updated_at
+      FROM transactions 
+      ${whereClause}
+      ORDER BY date DESC
+      LIMIT $${paramIndex++} OFFSET $${paramIndex++}
+    `;
+    
+    params.push(parseInt(limit), parseInt(offset));
+    
+    const result = await db.query(query, params);
+    
     res.json({
       success: true,
-      transactions: transactions || []
+      transactions: result.rows || [],
+      total: result.rows?.length || 0
     });
-
+    
   } catch (error) {
     console.error('Erro ao buscar transações:', error);
     res.status(500).json({
+      success: false,
       error: 'Erro interno do servidor',
-      code: 'INTERNAL_ERROR'
+      details: error.message
     });
   }
 });
 
-// Buscar transação por ID
+// GET /api/transactions/:id - Buscar transação por ID
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
+    const db = await getDatabase();
     const { id } = req.params;
-
-    const { data: transaction, error } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      console.error('Erro ao buscar transação:', error);
-      return res.status(500).json({
-        error: 'Erro interno do servidor',
-        code: 'DATABASE_ERROR'
-      });
-    }
-
-    if (!transaction) {
+    
+    const query = `
+      SELECT 
+        id,
+        type,
+        description,
+        amount,
+        date,
+        category,
+        cost_center,
+        segment_id,
+        created_at,
+        updated_at
+      FROM transactions 
+      WHERE id = $1
+    `;
+    
+    const result = await db.query(query, [id]);
+    
+    if (result.rows.length === 0) {
       return res.status(404).json({
-        error: 'Transação não encontrada',
-        code: 'TRANSACTION_NOT_FOUND'
+        success: false,
+        error: 'Transação não encontrada'
       });
     }
-
+    
     res.json({
       success: true,
-      transaction
+      transaction: result.rows[0]
     });
-
+    
   } catch (error) {
     console.error('Erro ao buscar transação:', error);
     res.status(500).json({
+      success: false,
       error: 'Erro interno do servidor',
-      code: 'INTERNAL_ERROR'
+      details: error.message
     });
   }
 });
 
-// Criar nova transação
+// POST /api/transactions - Criar transação
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { 
-      description, 
-      amount, 
-      type, 
-      category, 
-      customer_id, 
-      cost_center_id,
-      segment_id,
-      date 
-    } = req.body;
-
-    if (!description || !amount || !type) {
+    const db = await getDatabase();
+    const { type, description, amount, date, category, cost_center, segment_id } = req.body;
+    
+    // Validar campos obrigatórios
+    if (!type || !description || !amount || !date) {
       return res.status(400).json({
-        error: 'Descrição, valor e tipo são obrigatórios',
-        code: 'MISSING_FIELDS'
+        success: false,
+        error: 'type, description, amount e date são obrigatórios'
       });
     }
-
-    const { data: newTransaction, error } = await supabase
-      .from('transactions')
-      .insert({
-        description,
-        amount: parseFloat(amount),
-        type,
-        category: category || null,
-        customer_id: customer_id || null,
-        cost_center_id: cost_center_id || null,
-        segment_id: segment_id || req.user.segment_id,
-        date: date || new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Erro ao criar transação:', error);
-      return res.status(500).json({
-        error: 'Erro interno do servidor',
-        code: 'DATABASE_ERROR'
-      });
-    }
-
+    
+    const query = `
+      INSERT INTO transactions (type, description, amount, date, category, cost_center, segment_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+    `;
+    
+    const params = [
+      type,
+      description,
+      amount,
+      date,
+      category || null,
+      cost_center || null,
+      segment_id || req.user.segment_id
+    ];
+    
+    const result = await db.query(query, params);
+    
     res.status(201).json({
       success: true,
-      transaction: newTransaction,
+      transaction: result.rows[0],
       message: 'Transação criada com sucesso'
     });
-
+    
   } catch (error) {
     console.error('Erro ao criar transação:', error);
     res.status(500).json({
+      success: false,
       error: 'Erro interno do servidor',
-      code: 'INTERNAL_ERROR'
+      details: error.message
     });
   }
 });
 
-// Atualizar transação
+// PUT /api/transactions/:id - Atualizar transação
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
+    const db = await getDatabase();
     const { id } = req.params;
-    const { 
-      description, 
-      amount, 
-      type, 
-      category, 
-      customer_id, 
-      cost_center_id,
-      segment_id,
-      date 
-    } = req.body;
-
-    if (!description || !amount || !type) {
-      return res.status(400).json({
-        error: 'Descrição, valor e tipo são obrigatórios',
-        code: 'MISSING_FIELDS'
-      });
-    }
-
-    const { data: updatedTransaction, error } = await supabase
-      .from('transactions')
-      .update({
-        description,
-        amount: parseFloat(amount),
-        type,
-        category: category || null,
-        customer_id: customer_id || null,
-        cost_center_id: cost_center_id || null,
-        segment_id: segment_id || req.user.segment_id,
-        date: date || new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Erro ao atualizar transação:', error);
-      return res.status(500).json({
-        error: 'Erro interno do servidor',
-        code: 'DATABASE_ERROR'
-      });
-    }
-
-    if (!updatedTransaction) {
+    const { type, description, amount, date, category, cost_center, segment_id } = req.body;
+    
+    const query = `
+      UPDATE transactions SET
+        type = COALESCE($1, type),
+        description = COALESCE($2, description),
+        amount = COALESCE($3, amount),
+        date = COALESCE($4, date),
+        category = COALESCE($5, category),
+        cost_center = COALESCE($6, cost_center),
+        segment_id = COALESCE($7, segment_id),
+        updated_at = NOW()
+      WHERE id = $8
+      RETURNING *
+    `;
+    
+    const params = [type, description, amount, date, category, cost_center, segment_id, id];
+    
+    const result = await db.query(query, params);
+    
+    if (result.rows.length === 0) {
       return res.status(404).json({
-        error: 'Transação não encontrada',
-        code: 'TRANSACTION_NOT_FOUND'
+        success: false,
+        error: 'Transação não encontrada'
       });
     }
-
+    
     res.json({
       success: true,
-      transaction: updatedTransaction,
+      transaction: result.rows[0],
       message: 'Transação atualizada com sucesso'
     });
-
+    
   } catch (error) {
     console.error('Erro ao atualizar transação:', error);
     res.status(500).json({
+      success: false,
       error: 'Erro interno do servidor',
-      code: 'INTERNAL_ERROR'
+      details: error.message
     });
   }
 });
 
-// Deletar transação
+// DELETE /api/transactions/:id - Deletar transação
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
+    const db = await getDatabase();
     const { id } = req.params;
-
-    const { error } = await supabase
-      .from('transactions')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Erro ao deletar transação:', error);
-      return res.status(500).json({
-        error: 'Erro interno do servidor',
-        code: 'DATABASE_ERROR'
+    
+    const query = 'DELETE FROM transactions WHERE id = $1 RETURNING *';
+    const result = await db.query(query, [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Transação não encontrada'
       });
     }
-
+    
     res.json({
       success: true,
       message: 'Transação deletada com sucesso'
     });
-
+    
   } catch (error) {
     console.error('Erro ao deletar transação:', error);
     res.status(500).json({
+      success: false,
       error: 'Erro interno do servidor',
-      code: 'INTERNAL_ERROR'
+      details: error.message
     });
   }
 });
 
-// Importar transações em lote
+// POST /api/transactions/import - Importar transações em lote
 router.post('/import', authenticateToken, async (req, res) => {
   try {
+    const db = await getDatabase();
     const { transactions } = req.body;
-
+    
     if (!transactions || !Array.isArray(transactions)) {
       return res.status(400).json({
-        error: 'Lista de transações é obrigatória',
-        code: 'MISSING_TRANSACTIONS'
+        success: false,
+        error: 'Lista de transações é obrigatória'
       });
     }
-
-    // Preparar dados para inserção
-    const transactionsToInsert = transactions.map(transaction => ({
-      description: transaction.description,
-      amount: parseFloat(transaction.amount),
-      type: transaction.type,
-      category: transaction.category || null,
-      customer_id: transaction.customer_id || null,
-      cost_center_id: transaction.cost_center_id || null,
-      segment_id: transaction.segment_id || req.user.segment_id,
-      date: transaction.date || new Date().toISOString()
-    }));
-
-    const { data: newTransactions, error } = await supabase
-      .from('transactions')
-      .insert(transactionsToInsert)
-      .select();
-
-    if (error) {
-      console.error('Erro ao importar transações:', error);
-      return res.status(500).json({
-        error: 'Erro interno do servidor',
-        code: 'DATABASE_ERROR'
-      });
+    
+    const insertedTransactions = [];
+    
+    for (const transaction of transactions) {
+      const { type, description, amount, date, category, cost_center, segment_id } = transaction;
+      
+      if (!type || !description || !amount || !date) {
+        continue; // Pular transações inválidas
+      }
+      
+      const query = `
+        INSERT INTO transactions (type, description, amount, date, category, cost_center, segment_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+      `;
+      
+      const params = [
+        type,
+        description,
+        amount,
+        date,
+        category || null,
+        cost_center || null,
+        segment_id || req.user.segment_id
+      ];
+      
+      const result = await db.query(query, params);
+      insertedTransactions.push(result.rows[0]);
     }
-
+    
     res.status(201).json({
       success: true,
-      transactions: newTransactions,
-      message: `${newTransactions.length} transações importadas com sucesso`
+      transactions: insertedTransactions,
+      message: `${insertedTransactions.length} transações importadas com sucesso`
     });
-
+    
   } catch (error) {
     console.error('Erro ao importar transações:', error);
     res.status(500).json({
+      success: false,
       error: 'Erro interno do servidor',
-      code: 'INTERNAL_ERROR'
+      details: error.message
     });
   }
 });

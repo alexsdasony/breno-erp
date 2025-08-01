@@ -22,10 +22,10 @@ export const SUPABASE_CONFIG = {
 // ============================================================================
 export const DATABASE_CONFIG = {
   // Conexão direta com PostgreSQL
-  URL: 'postgresql://postgres:C0ntr0l3t0t@l#@db.qerubjitetqwfqqydhzv.supabase.co:5432/postgres',
+  URL: 'postgresql://postgres:C0ntr0l3t0t%40l%23@db.qerubjitetqwfqqydhzv.supabase.co:5432/postgres',
   
   // Conexão com pooler (para serverless)
-  URL_POOLER: 'postgresql://postgres.qerubjitetqwfqqydhzv:C0ntr0l3t0t@l#@aws-0-sa-east-1.pooler.supabase.com:6543/postgres',
+  URL_POOLER: 'postgresql://postgres.qerubjitetqwfqqydhzv:C0ntr0l3t0t%40l%23@aws-0-sa-east-1.pooler.supabase.com:6543/postgres',
   
   // Conexão legacy (Render - para compatibilidade)
   URL_LEGACY: 'postgresql://breno_erp_user:aHQO5rzBcecx5bRm2Xt53UQPxS49OXLj@dpg-d1fs2rali9vc739tpac0-a.oregon-postgres.render.com/breno_erp'

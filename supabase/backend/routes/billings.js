@@ -4,7 +4,7 @@ import { getDatabase } from '../database/prodConfig.js';
 
 const router = express.Router();
 
-// GET /api/customers - Listar clientes
+// GET /api/billings - Listar Billings
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
@@ -23,21 +23,18 @@ router.get('/', authenticateToken, async (req, res) => {
     const query = `
       SELECT 
         id,
-        name,
-        cpf,
-        email,
-        phone,
-        address,
-        city,
-        state,
-        total_purchases,
-        last_purchase_date,
+        customer_id,
+        customer_name,
+        amount,
+        due_date,
+        status,
+        payment_date,
         segment_id,
         created_at,
         updated_at
-      FROM customers 
+      FROM billings 
       ${whereClause}
-      ORDER BY name ASC
+      ORDER BY due_date ASC
       LIMIT $${paramIndex++} OFFSET $${paramIndex++}
     `;
     
@@ -47,12 +44,12 @@ router.get('/', authenticateToken, async (req, res) => {
     
     res.json({
       success: true,
-      customers: result.rows || [],
+      billings: result.rows || [],
       total: result.rows?.length || 0
     });
     
   } catch (error) {
-    console.error('Erro ao buscar clientes:', error);
+    console.error(`Erro ao buscar Billings:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -61,7 +58,7 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/customers/:id - Buscar cliente por ID
+// GET /api/billings/:id - Buscar Billings por ID
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
@@ -70,19 +67,16 @@ router.get('/:id', authenticateToken, async (req, res) => {
     const query = `
       SELECT 
         id,
-        name,
-        cpf,
-        email,
-        phone,
-        address,
-        city,
-        state,
-        total_purchases,
-        last_purchase_date,
+        customer_id,
+        customer_name,
+        amount,
+        due_date,
+        status,
+        payment_date,
         segment_id,
         created_at,
         updated_at
-      FROM customers 
+      FROM billings 
       WHERE id = $1
     `;
     
@@ -91,17 +85,17 @@ router.get('/:id', authenticateToken, async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Cliente não encontrado'
+        error: 'Billings não encontrado'
       });
     }
     
     res.json({
       success: true,
-      customer: result.rows[0]
+      billings: result.rows[0]
     });
     
   } catch (error) {
-    console.error('Erro ao buscar cliente:', error);
+    console.error(`Erro ao buscar Billings:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -110,34 +104,33 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/customers - Criar cliente
+// POST /api/billings - Criar Billings
 router.post('/', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
-    const { name, cpf, email, phone, address, city, state, segment_id } = req.body;
+    const { customer_id, customer_name, amount, due_date, status, payment_date, segment_id } = req.body;
     
     // Validar campos obrigatórios
-    if (!name) {
+    if (!customer_name || !amount || !due_date) {
       return res.status(400).json({
         success: false,
-        error: 'Nome é obrigatório'
+        error: 'customer_name, amount e due_date são obrigatórios'
       });
     }
     
     const query = `
-      INSERT INTO customers (name, cpf, email, phone, address, city, state, segment_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO billings (customer_id, customer_name, amount, due_date, status, payment_date, segment_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
     
     const params = [
-      name,
-      cpf || null,
-      email || null,
-      phone || null,
-      address || null,
-      city || null,
-      state || null,
+      customer_id,
+      customer_name,
+      amount,
+      due_date,
+      status || 'Pendente',
+      payment_date,
       segment_id || req.user.segment_id
     ];
     
@@ -145,12 +138,12 @@ router.post('/', authenticateToken, async (req, res) => {
     
     res.status(201).json({
       success: true,
-      customer: result.rows[0],
-      message: 'Cliente criado com sucesso'
+      billings: result.rows[0],
+      message: 'Billings criado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao criar cliente:', error);
+    console.error(`Erro ao criar Billings:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -159,47 +152,46 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-// PUT /api/customers/:id - Atualizar cliente
+// PUT /api/billings/:id - Atualizar Billings
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
     const { id } = req.params;
-    const { name, cpf, email, phone, address, city, state, segment_id } = req.body;
+    const { customer_id, customer_name, amount, due_date, status, payment_date, segment_id } = req.body;
     
     const query = `
-      UPDATE customers SET
-        name = COALESCE($1, name),
-        cpf = COALESCE($2, cpf),
-        email = COALESCE($3, email),
-        phone = COALESCE($4, phone),
-        address = COALESCE($5, address),
-        city = COALESCE($6, city),
-        state = COALESCE($7, state),
-        segment_id = COALESCE($8, segment_id),
+      UPDATE billings SET
+        customer_id = COALESCE($1, customer_id),
+        customer_name = COALESCE($2, customer_name),
+        amount = COALESCE($3, amount),
+        due_date = COALESCE($4, due_date),
+        status = COALESCE($5, status),
+        payment_date = COALESCE($6, payment_date),
+        segment_id = COALESCE($7, segment_id),
         updated_at = NOW()
-      WHERE id = $9
+      WHERE id = $8
       RETURNING *
     `;
     
-    const params = [name, cpf, email, phone, address, city, state, segment_id, id];
+    const params = [customer_id, customer_name, amount, due_date, status, payment_date, segment_id, id];
     
     const result = await db.query(query, params);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Cliente não encontrado'
+        error: 'Billings não encontrado'
       });
     }
     
     res.json({
       success: true,
-      customer: result.rows[0],
-      message: 'Cliente atualizado com sucesso'
+      billings: result.rows[0],
+      message: 'Billings atualizado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao atualizar cliente:', error);
+    console.error(`Erro ao atualizar Billings:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -208,29 +200,29 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// DELETE /api/customers/:id - Deletar cliente
+// DELETE /api/billings/:id - Deletar Billings
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
     const { id } = req.params;
     
-    const query = 'DELETE FROM customers WHERE id = $1 RETURNING *';
+    const query = `DELETE FROM billings WHERE id = $1 RETURNING *`;
     const result = await db.query(query, [id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Cliente não encontrado'
+        error: 'Billings não encontrado'
       });
     }
     
     res.json({
       success: true,
-      message: 'Cliente deletado com sucesso'
+      message: 'Billings deletado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao deletar cliente:', error);
+    console.error(`Erro ao deletar Billings:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -239,4 +231,4 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-export default router; 
+export default router;

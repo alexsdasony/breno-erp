@@ -1,10 +1,28 @@
-import express from 'express';
+#!/usr/bin/env node
+
+import fs from 'fs';
+import path from 'path';
+
+// Lista de endpoints que estão faltando baseado no frontend
+const missingEndpoints = [
+  'billings',
+  'cost-centers', 
+  'accounts-payable',
+  'nfe',
+  'integrations',
+  'metrics',
+  'users',
+  'receita'
+];
+
+// Template base para cada endpoint
+const endpointTemplate = (name, displayName) => `import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import { getDatabase } from '../database/prodConfig.js';
 
 const router = express.Router();
 
-// GET /api/customers - Listar clientes
+// GET /api/${name} - Listar ${displayName}
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
@@ -16,30 +34,22 @@ router.get('/', authenticateToken, async (req, res) => {
     
     // Filtrar por segmento se fornecido
     if (segment_id) {
-      whereClause += ` AND segment_id = $${paramIndex++}`;
+      whereClause += \` AND segment_id = \$\${paramIndex++}\`;
       params.push(segment_id);
     }
     
-    const query = `
+    const query = \`
       SELECT 
         id,
         name,
-        cpf,
-        email,
-        phone,
-        address,
-        city,
-        state,
-        total_purchases,
-        last_purchase_date,
         segment_id,
         created_at,
         updated_at
-      FROM customers 
-      ${whereClause}
+      FROM ${name.replace('-', '_')} 
+      \${whereClause}
       ORDER BY name ASC
-      LIMIT $${paramIndex++} OFFSET $${paramIndex++}
-    `;
+      LIMIT \$\${paramIndex++} OFFSET \$\${paramIndex++}
+    \`;
     
     params.push(parseInt(limit), parseInt(offset));
     
@@ -47,12 +57,12 @@ router.get('/', authenticateToken, async (req, res) => {
     
     res.json({
       success: true,
-      customers: result.rows || [],
+      ${name.replace('-', '')}: result.rows || [],
       total: result.rows?.length || 0
     });
     
   } catch (error) {
-    console.error('Erro ao buscar clientes:', error);
+    console.error(\`Erro ao buscar ${displayName}:\`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -61,47 +71,39 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/customers/:id - Buscar cliente por ID
+// GET /api/${name}/:id - Buscar ${displayName} por ID
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
     const { id } = req.params;
     
-    const query = `
+    const query = \`
       SELECT 
         id,
         name,
-        cpf,
-        email,
-        phone,
-        address,
-        city,
-        state,
-        total_purchases,
-        last_purchase_date,
         segment_id,
         created_at,
         updated_at
-      FROM customers 
-      WHERE id = $1
-    `;
+      FROM ${name.replace('-', '_')} 
+      WHERE id = \$1
+    \`;
     
     const result = await db.query(query, [id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Cliente não encontrado'
+        error: '${displayName} não encontrado'
       });
     }
     
     res.json({
       success: true,
-      customer: result.rows[0]
+      ${name.replace('-', '')}: result.rows[0]
     });
     
   } catch (error) {
-    console.error('Erro ao buscar cliente:', error);
+    console.error(\`Erro ao buscar ${displayName}:\`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -110,11 +112,11 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/customers - Criar cliente
+// POST /api/${name} - Criar ${displayName}
 router.post('/', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
-    const { name, cpf, email, phone, address, city, state, segment_id } = req.body;
+    const { name, segment_id } = req.body;
     
     // Validar campos obrigatórios
     if (!name) {
@@ -124,20 +126,14 @@ router.post('/', authenticateToken, async (req, res) => {
       });
     }
     
-    const query = `
-      INSERT INTO customers (name, cpf, email, phone, address, city, state, segment_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    const query = \`
+      INSERT INTO ${name.replace('-', '_')} (name, segment_id)
+      VALUES (\$1, \$2)
       RETURNING *
-    `;
+    \`;
     
     const params = [
       name,
-      cpf || null,
-      email || null,
-      phone || null,
-      address || null,
-      city || null,
-      state || null,
       segment_id || req.user.segment_id
     ];
     
@@ -145,12 +141,12 @@ router.post('/', authenticateToken, async (req, res) => {
     
     res.status(201).json({
       success: true,
-      customer: result.rows[0],
-      message: 'Cliente criado com sucesso'
+      ${name.replace('-', '')}: result.rows[0],
+      message: '${displayName} criado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao criar cliente:', error);
+    console.error(\`Erro ao criar ${displayName}:\`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -159,47 +155,41 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-// PUT /api/customers/:id - Atualizar cliente
+// PUT /api/${name}/:id - Atualizar ${displayName}
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
     const { id } = req.params;
-    const { name, cpf, email, phone, address, city, state, segment_id } = req.body;
+    const { name, segment_id } = req.body;
     
-    const query = `
-      UPDATE customers SET
-        name = COALESCE($1, name),
-        cpf = COALESCE($2, cpf),
-        email = COALESCE($3, email),
-        phone = COALESCE($4, phone),
-        address = COALESCE($5, address),
-        city = COALESCE($6, city),
-        state = COALESCE($7, state),
-        segment_id = COALESCE($8, segment_id),
+    const query = \`
+      UPDATE ${name.replace('-', '_')} SET
+        name = COALESCE(\$1, name),
+        segment_id = COALESCE(\$2, segment_id),
         updated_at = NOW()
-      WHERE id = $9
+      WHERE id = \$3
       RETURNING *
-    `;
+    \`;
     
-    const params = [name, cpf, email, phone, address, city, state, segment_id, id];
+    const params = [name, segment_id, id];
     
     const result = await db.query(query, params);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Cliente não encontrado'
+        error: '${displayName} não encontrado'
       });
     }
     
     res.json({
       success: true,
-      customer: result.rows[0],
-      message: 'Cliente atualizado com sucesso'
+      ${name.replace('-', '')}: result.rows[0],
+      message: '${displayName} atualizado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao atualizar cliente:', error);
+    console.error(\`Erro ao atualizar ${displayName}:\`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -208,29 +198,29 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// DELETE /api/customers/:id - Deletar cliente
+// DELETE /api/${name}/:id - Deletar ${displayName}
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
     const { id } = req.params;
     
-    const query = 'DELETE FROM customers WHERE id = $1 RETURNING *';
+    const query = \`DELETE FROM ${name.replace('-', '_')} WHERE id = \$1 RETURNING *\`;
     const result = await db.query(query, [id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Cliente não encontrado'
+        error: '${displayName} não encontrado'
       });
     }
     
     res.json({
       success: true,
-      message: 'Cliente deletado com sucesso'
+      message: '${displayName} deletado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao deletar cliente:', error);
+    console.error(\`Erro ao deletar ${displayName}:\`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -239,4 +229,21 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-export default router; 
+export default router;
+`;
+
+// Criar os endpoints
+missingEndpoints.forEach(endpoint => {
+  const displayName = endpoint.split('-').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
+  
+  const filePath = path.join('supabase/backend/routes', `${endpoint}.js`);
+  const content = endpointTemplate(endpoint, displayName);
+  
+  fs.writeFileSync(filePath, content);
+  console.log(`✅ Criado: ${filePath}`);
+});
+
+console.log('\n🎉 Todos os endpoints foram criados!');
+console.log('📝 Agora você precisa adicionar as rotas ao server.js'); 

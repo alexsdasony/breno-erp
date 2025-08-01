@@ -1,34 +1,53 @@
 import express from 'express';
-import { authenticateToken, requireRole } from '../middleware/auth.js';
+import { authenticateToken } from '../middleware/auth.js';
 import { getDatabase } from '../database/prodConfig.js';
 
 const router = express.Router();
 
-// GET /api/segments - Listar segmentos
+// GET /api/users - Listar Users
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
+    const { segment_id, limit = 100, offset = 0 } = req.query;
+    
+    let whereClause = 'WHERE 1=1';
+    const params = [];
+    let paramIndex = 1;
+    
+    // Filtrar por segmento se fornecido
+    if (segment_id) {
+      whereClause += ` AND segment_id = $${paramIndex++}`;
+      params.push(segment_id);
+    }
     
     const query = `
       SELECT 
         id,
         name,
-        description,
+        email,
+        role,
+        status,
+        segment_id,
         created_at,
         updated_at
-      FROM segments 
+      FROM users 
+      ${whereClause}
       ORDER BY name ASC
+      LIMIT $${paramIndex++} OFFSET $${paramIndex++}
     `;
     
-    const result = await db.query(query);
+    params.push(parseInt(limit), parseInt(offset));
+    
+    const result = await db.query(query, params);
     
     res.json({
       success: true,
-      segments: result.rows || []
+      users: result.rows || [],
+      total: result.rows?.length || 0
     });
     
   } catch (error) {
-    console.error('Erro ao buscar segmentos:', error);
+    console.error(`Erro ao buscar Users:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -37,7 +56,7 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/segments/:id - Buscar segmento por ID
+// GET /api/users/:id - Buscar Users por ID
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
@@ -47,10 +66,13 @@ router.get('/:id', authenticateToken, async (req, res) => {
       SELECT 
         id,
         name,
-        description,
+        email,
+        role,
+        status,
+        segment_id,
         created_at,
         updated_at
-      FROM segments 
+      FROM users 
       WHERE id = $1
     `;
     
@@ -59,17 +81,17 @@ router.get('/:id', authenticateToken, async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Segmento não encontrado'
+        error: 'Users não encontrado'
       });
     }
     
     res.json({
       success: true,
-      segment: result.rows[0]
+      users: result.rows[0]
     });
     
   } catch (error) {
-    console.error('Erro ao buscar segmento:', error);
+    console.error(`Erro ao buscar Users:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -78,38 +100,45 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/segments - Criar segmento
-router.post('/', authenticateToken, requireRole(['admin']), async (req, res) => {
+// POST /api/users - Criar Users
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
-    const { name, description } = req.body;
+    const { name, email, password, role, status, segment_id } = req.body;
     
     // Validar campos obrigatórios
-    if (!name) {
+    if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
-        error: 'Nome é obrigatório'
+        error: 'name, email e password são obrigatórios'
       });
     }
     
     const query = `
-      INSERT INTO segments (name, description)
-      VALUES ($1, $2)
+      INSERT INTO users (name, email, password, role, status, segment_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
     
-    const params = [name, description || null];
+    const params = [
+      name,
+      email,
+      password,
+      role || 'user',
+      status || 'ativo',
+      segment_id || req.user.segment_id
+    ];
     
     const result = await db.query(query, params);
     
     res.status(201).json({
       success: true,
-      segment: result.rows[0],
-      message: 'Segmento criado com sucesso'
+      users: result.rows[0],
+      message: 'Users criado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao criar segmento:', error);
+    console.error(`Erro ao criar Users:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -118,41 +147,45 @@ router.post('/', authenticateToken, requireRole(['admin']), async (req, res) => 
   }
 });
 
-// PUT /api/segments/:id - Atualizar segmento
-router.put('/:id', authenticateToken, requireRole(['admin']), async (req, res) => {
+// PUT /api/users/:id - Atualizar Users
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
     const { id } = req.params;
-    const { name, description } = req.body;
+    const { name, email, password, role, status, segment_id } = req.body;
     
     const query = `
-      UPDATE segments SET
+      UPDATE users SET
         name = COALESCE($1, name),
-        description = COALESCE($2, description),
+        email = COALESCE($2, email),
+        password = COALESCE($3, password),
+        role = COALESCE($4, role),
+        status = COALESCE($5, status),
+        segment_id = COALESCE($6, segment_id),
         updated_at = NOW()
-      WHERE id = $3
+      WHERE id = $7
       RETURNING *
     `;
     
-    const params = [name, description, id];
+    const params = [name, email, password, role, status, segment_id, id];
     
     const result = await db.query(query, params);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Segmento não encontrado'
+        error: 'Users não encontrado'
       });
     }
     
     res.json({
       success: true,
-      segment: result.rows[0],
-      message: 'Segmento atualizado com sucesso'
+      users: result.rows[0],
+      message: 'Users atualizado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao atualizar segmento:', error);
+    console.error(`Erro ao atualizar Users:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -161,40 +194,29 @@ router.put('/:id', authenticateToken, requireRole(['admin']), async (req, res) =
   }
 });
 
-// DELETE /api/segments/:id - Deletar segmento
-router.delete('/:id', authenticateToken, requireRole(['admin']), async (req, res) => {
+// DELETE /api/users/:id - Deletar Users
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
     const { id } = req.params;
     
-    // Verificar se há usuários associados ao segmento
-    const usersQuery = 'SELECT id FROM users WHERE segment_id = $1 LIMIT 1';
-    const usersResult = await db.query(usersQuery, [id]);
-    
-    if (usersResult.rows.length > 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Não é possível deletar segmento com usuários associados'
-      });
-    }
-    
-    const query = 'DELETE FROM segments WHERE id = $1 RETURNING *';
+    const query = `DELETE FROM users WHERE id = $1 RETURNING *`;
     const result = await db.query(query, [id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Segmento não encontrado'
+        error: 'Users não encontrado'
       });
     }
     
     res.json({
       success: true,
-      message: 'Segmento deletado com sucesso'
+      message: 'Users deletado com sucesso'
     });
     
   } catch (error) {
-    console.error('Erro ao deletar segmento:', error);
+    console.error(`Erro ao deletar Users:`, error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',
@@ -203,4 +225,4 @@ router.delete('/:id', authenticateToken, requireRole(['admin']), async (req, res
   }
 });
 
-export default router; 
+export default router;
