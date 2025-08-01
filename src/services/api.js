@@ -10,6 +10,7 @@ class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL;
     this.token = this.getToken();
+    this.supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   }
 
   // Set authentication token - SEM localStorage
@@ -39,7 +40,9 @@ class ApiService {
     const config = {
       headers: {
         'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
+        // Sempre incluir a chave anônima do Supabase para Edge Functions
+        ...(this.supabaseAnonKey && { 'Authorization': `Bearer ${this.supabaseAnonKey}` }),
+        ...(token && { 'X-User-Token': token }),
         ...options.headers,
       },
       ...options,
