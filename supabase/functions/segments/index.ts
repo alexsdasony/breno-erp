@@ -19,10 +19,12 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     const url = new URL(req.url)
-    const path = url.pathname.split('/').pop()
+    const pathSegments = url.pathname.split('/')
+    const lastSegment = pathSegments[pathSegments.length - 1]
+    const isSpecificId = lastSegment && lastSegment !== 'segments' && lastSegment.length > 10
 
     // GET - Listar todos os segmentos
-    if (req.method === 'GET' && !path) {
+    if (req.method === 'GET' && !isSpecificId) {
       const { data, error } = await supabase
         .from('segments')
         .select('*')
@@ -52,11 +54,11 @@ serve(async (req) => {
     }
 
     // GET - Buscar segmento por ID
-    if (req.method === 'GET' && path) {
+    if (req.method === 'GET' && isSpecificId) {
       const { data, error } = await supabase
         .from('segments')
         .select('*')
-        .eq('id', path)
+        .eq('id', lastSegment)
         .single()
 
       if (error || !data) {
@@ -125,13 +127,13 @@ serve(async (req) => {
     }
 
     // PUT - Atualizar segmento
-    if (req.method === 'PUT' && path) {
+    if (req.method === 'PUT' && isSpecificId) {
       const body = await req.json()
       
       const { data, error } = await supabase
         .from('segments')
         .update(body)
-        .eq('id', path)
+        .eq('id', lastSegment)
         .select()
         .single()
 
@@ -159,11 +161,11 @@ serve(async (req) => {
     }
 
     // DELETE - Deletar segmento
-    if (req.method === 'DELETE' && path) {
+    if (req.method === 'DELETE' && isSpecificId) {
       const { error } = await supabase
         .from('segments')
         .delete()
-        .eq('id', path)
+        .eq('id', lastSegment)
 
       if (error) {
         return new Response(
