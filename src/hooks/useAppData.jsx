@@ -30,10 +30,12 @@ const defaultInitialData = {
   products: [],
   sales: [],
   customers: [],
+  partners: [],
   nfeList: [],
   billings: [],
   costCenters: [],
   accountsPayable: [],
+  financialDocuments: [],
   integrations: {
     imobzi: { apiKey: '', enabled: false }
   },
@@ -107,6 +109,9 @@ export const AppDataProvider = ({ children }) => {
             console.log('👥 Loading customers...');
             await loadCustomers(segmentFilter);
             
+            console.log('🤝 Loading partners...');
+            await loadPartners(segmentFilter);
+            
             console.log('💰 Loading sales...');
             await loadSales(segmentFilter);
             
@@ -118,6 +123,9 @@ export const AppDataProvider = ({ children }) => {
             
             console.log('💸 Loading accounts payable...');
             await loadAccountsPayable(segmentFilter);
+            
+            console.log('📑 Loading financial documents...');
+            await loadFinancialDocuments(segmentFilter);
             
             console.log('🏢 Loading cost centers...');
             await loadCostCenters(segmentFilter);
@@ -225,6 +233,25 @@ export const AppDataProvider = ({ children }) => {
       return response;
     } catch (error) {
       console.error('Load customers error:', error);
+      throw error;
+    }
+  };
+
+  const loadPartners = async (params = {}) => {
+    try {
+      if (globalMemoryCache.data?.partners && !params.segment_id) {
+        console.log('🤝 Using cached partners');
+        setData(prev => ({ ...prev, partners: globalMemoryCache.data.partners }));
+        return { partners: globalMemoryCache.data.partners };
+      }
+      const response = await apiService.getPartners(params);
+      const partners = response.partners || response.data || [];
+      if (!globalMemoryCache.data) globalMemoryCache.data = {};
+      globalMemoryCache.data.partners = partners;
+      setData(prev => ({ ...prev, partners }));
+      return { partners };
+    } catch (error) {
+      console.error('Load partners error:', error);
       throw error;
     }
   };
@@ -347,6 +374,25 @@ export const AppDataProvider = ({ children }) => {
       return response;
     } catch (error) {
       console.error('Load accounts payable error:', error);
+      throw error;
+    }
+  };
+
+  const loadFinancialDocuments = async (params = {}) => {
+    try {
+      if (globalMemoryCache.data?.financialDocuments && !params.segment_id) {
+        console.log('📑 Using cached financial documents');
+        setData(prev => ({ ...prev, financialDocuments: globalMemoryCache.data.financialDocuments }));
+        return { financialDocuments: globalMemoryCache.data.financialDocuments };
+      }
+      const response = await apiService.getFinancialDocuments(params);
+      const financialDocuments = response.financialDocuments || response.data || [];
+      if (!globalMemoryCache.data) globalMemoryCache.data = {};
+      globalMemoryCache.data.financialDocuments = financialDocuments;
+      setData(prev => ({ ...prev, financialDocuments }));
+      return { financialDocuments };
+    } catch (error) {
+      console.error('Load financial documents error:', error);
       throw error;
     }
   };
@@ -487,11 +533,13 @@ export const AppDataProvider = ({ children }) => {
     loadTransactions,
     loadProducts,
     loadCustomers,
+    loadPartners,
     loadSales,
     loadBillings,
     loadCostCenters,
     loadNFe,
     loadAccountsPayable,
+    loadFinancialDocuments,
     
     // Lazy loading functions
     ensureCostCentersLoaded,

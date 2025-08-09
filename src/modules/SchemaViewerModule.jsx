@@ -3,8 +3,29 @@ import { motion } from 'framer-motion';
 import { Database, Table, Type, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import apiService from '@/services/api';
 
 const SchemaViewerModule = ({ data }) => {
+  const [remoteData, setRemoteData] = React.useState(null);
+  const effectiveData = remoteData || data || {};
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        // Tenta buscar schema consolidado do backend
+        // Esperado: JSON com chaves equivalentes às usadas no viewer (transactions, products, etc.)
+        const resp = await apiService.getDatabaseSchema();
+        if (mounted && resp && typeof resp === 'object') {
+          setRemoteData(resp);
+        }
+      } catch (err) {
+        // Fallback silencioso: mantém "data" recebido por props
+        console.warn('SchemaViewer: fallback para data de props. Motivo:', err?.message || err);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const getFieldType = (value) => {
     if (typeof value === 'string') return 'TEXTO';
@@ -17,37 +38,37 @@ const SchemaViewerModule = ({ data }) => {
 
   const generateSchema = () => {
     const schema = {};
-    Object.keys(data).forEach(key => {
-      if (Array.isArray(data[key]) && data[key].length > 0) {
-        const sampleItem = data[key][0];
+    Object.keys(effectiveData).forEach(key => {
+      if (Array.isArray(effectiveData[key]) && effectiveData[key].length > 0) {
+        const sampleItem = effectiveData[key][0];
         schema[key] = {
           type: 'LISTA',
           itemSchema: Object.fromEntries(
             Object.entries(sampleItem).map(([field, value]) => [field, getFieldType(value)])
           )
         };
-      } else if (typeof data[key] === 'object' && data[key] !== null) {
+      } else if (typeof effectiveData[key] === 'object' && effectiveData[key] !== null) {
         schema[key] = {
           type: 'OBJETO',
           properties: Object.fromEntries(
-            Object.entries(data[key]).map(([field, value]) => [field, getFieldType(value)])
+            Object.entries(effectiveData[key]).map(([field, value]) => [field, getFieldType(value)])
           )
         };
          // Handle nested objects within integrations for example
         if (key === 'integrations') {
-          Object.keys(data[key]).forEach(subKey => {
-            if (typeof data[key][subKey] === 'object' && data[key][subKey] !== null) {
+          Object.keys(effectiveData[key]).forEach(subKey => {
+            if (typeof effectiveData[key][subKey] === 'object' && effectiveData[key][subKey] !== null) {
               schema[key].properties[subKey] = {
                 type: 'OBJETO',
                 properties: Object.fromEntries(
-                  Object.entries(data[key][subKey]).map(([field, value]) => [field, getFieldType(value)])
+                  Object.entries(effectiveData[key][subKey]).map(([field, value]) => [field, getFieldType(value)])
                 )
               }
             }
           });
         }
       } else {
-         schema[key] = getFieldType(data[key]);
+         schema[key] = getFieldType(effectiveData[key]);
       }
     });
     return schema;
@@ -185,14 +206,14 @@ const SchemaViewerModule = ({ data }) => {
         </div>
       </div>
 
-      {renderSchemaForEntity("transactions", data.transactions)}
-      {renderSchemaForEntity("products", data.products)}
-      {renderSchemaForEntity("sales", data.sales)}
-      {renderSchemaForEntity("customers", data.customers)}
-      {renderSchemaForEntity("costCenters", data.costCenters)}
-      {renderSchemaForEntity("nfeList", data.nfeList)}
-      {renderSchemaForEntity("billings", data.billings)}
-      {renderSchemaForObject("integrations", data.integrations)}
+      {renderSchemaForEntity("transactions", effectiveData.transactions)}
+      {renderSchemaForEntity("products", effectiveData.products)}
+      {renderSchemaForEntity("sales", effectiveData.sales)}
+      {renderSchemaForEntity("customers", effectiveData.customers)}
+      {renderSchemaForEntity("costCenters", effectiveData.costCenters)}
+      {renderSchemaForEntity("nfeList", effectiveData.nfeList)}
+      {renderSchemaForEntity("billings", effectiveData.billings)}
+      {renderSchemaForObject("integrations", effectiveData.integrations)}
 
     </motion.div>
   );

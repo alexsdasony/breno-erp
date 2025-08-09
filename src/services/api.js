@@ -1,5 +1,5 @@
 // API Service - Centralized HTTP client for backend communication
-// Usando APENAS o novo backend Supabase local
+// Usa VITE_API_URL quando definido (Edge Functions em prod). Caso contrário, usa backend local via '/api'.
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Cache em memória para token - SEM localStorage
@@ -11,6 +11,44 @@ class ApiService {
     this.baseURL = API_BASE_URL;
     this.token = this.getToken();
     this.supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  }
+
+  // Helpers: map customers <-> partners
+  partnerToCustomer(partner) {
+    if (!partner) return null;
+    const taxId = partner.tax_id || '';
+    const isCpf = taxId && taxId.replace(/\D/g, '').length <= 11;
+    return {
+      id: partner.id,
+      name: partner.name,
+      email: partner.email || '',
+      phone: partner.phone || '',
+      address: partner.address || '',
+      city: partner.city || '',
+      state: partner.state || '',
+      cep: partner.zip_code || '',
+      cpf: isCpf ? taxId : '',
+      cnpj: !isCpf ? taxId : '',
+      status: partner.status || 'pendente',
+      segment_id: partner.segment_id || partner.segmentId || null,
+    };
+  }
+
+  customerToPartnerPayload(customerData, role = 'customer') {
+    const tax_id = customerData?.cpf?.trim() || customerData?.cnpj?.trim() || customerData?.tax_id || '';
+    return {
+      name: customerData.name,
+      tax_id,
+      email: customerData.email || '',
+      phone: customerData.phone || '',
+      address: customerData.address || '',
+      city: customerData.city || '',
+      state: customerData.state || '',
+      zip_code: customerData.cep || customerData.zip_code || '',
+      status: customerData.status || 'active',
+      segment_id: customerData.segment_id || customerData.segmentId || null,
+      role,
+    };
   }
 
   // Set authentication token - SEM localStorage
@@ -196,23 +234,34 @@ class ApiService {
 
   // Customers endpoints - Usando APENAS o backend
   async getCustomers(params = {}) {
-    return this.get('/customers', params);
+    const response = await this.get('/partners', { ...params, role: 'customer' });
+    const partners = response.partners || response.data || [];
+    const customers = partners.map((p) => this.partnerToCustomer(p));
+    return { customers };
   }
 
   async createCustomer(customerData) {
-    return this.post('/customers', customerData);
+    const payload = this.customerToPartnerPayload(customerData, 'customer');
+    const created = await this.post('/partners', payload);
+    const partner = created.partner || created.data || created;
+    return { customer: this.partnerToCustomer(partner) };
   }
 
   async updateCustomer(id, customerData) {
-    return this.put(`/customers/${id}`, customerData);
+    const payload = this.customerToPartnerPayload(customerData, 'customer');
+    const updated = await this.put(`/partners/${id}`, payload);
+    const partner = updated.partner || updated.data || updated;
+    return { customer: this.partnerToCustomer(partner) };
   }
 
   async deleteCustomer(id) {
-    return this.delete(`/customers/${id}`);
+    return this.delete(`/partners/${id}`);
   }
 
   async getCustomerById(id) {
-    return this.get(`/customers/${id}`);
+    const response = await this.get(`/partners/${id}`);
+    const partner = response.partner || response.data || response;
+    return { customer: this.partnerToCustomer(partner) };
   }
 
   // Products endpoints - Usando APENAS o backend
@@ -345,6 +394,40 @@ class ApiService {
 
   async getSalesMetrics(params = {}) {
     return this.get('/metrics/sales', params);
+  }
+
+  // Schema endpoint - Usando APENAS o backend
+  async getDatabaseSchema(params = {}) {
+    // Endpoint convencional: /schema (aceita retornar JSON ou SQL)
+    return this.get('/schema', params);
+  }
+
+  // Partners endpoints - Usando APENAS o backend
+  async getPartners(params = {}) {
+    return this.get('/partners', params);
+  }
+  async createPartner(partnerData) {
+    return this.post('/partners', partnerData);
+  }
+  async updatePartner(id, partnerData) {
+    return this.put(`/partners/${id}`, partnerData);
+  }
+  async deletePartner(id) {
+    return this.delete(`/partners/${id}`);
+  }
+
+  // Financial Documents endpoints - Usando APENAS o backend
+  async getFinancialDocuments(params = {}) {
+    return this.get('/financial-documents', params);
+  }
+  async createFinancialDocument(docData) {
+    return this.post('/financial-documents', docData);
+  }
+  async updateFinancialDocument(id, docData) {
+    return this.put(`/financial-documents/${id}`, docData);
+  }
+  async deleteFinancialDocument(id) {
+    return this.delete(`/financial-documents/${id}`);
   }
 
   // Users endpoints (admin only) - Usando APENAS o backend

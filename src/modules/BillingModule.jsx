@@ -21,8 +21,8 @@ import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
-const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toast, importData }) => {
-  const { data, activeSegmentId } = useAppData();
+const BillingModule = ({ metrics, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, toast, importData }) => {
+  const { data, activeSegmentId, loadFinancialDocuments, loadPartners } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [editingBilling, setEditingBilling] = useState(null);
   const [viewingBilling, setViewingBilling] = useState(null);
@@ -49,9 +49,17 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
     }
   }, [data.segments, activeSegmentId, formData.segmentId]);
 
+  // Carregar documentos financeiros (recebíveis) e parceiros (clientes)
+  useEffect(() => {
+    loadFinancialDocuments();
+    loadPartners();
+  }, [loadFinancialDocuments, loadPartners]);
+
+  const customers = (data.partners || []).filter(p => (p.roles || p.partner_roles || []).some(r => r.role === 'customer'));
+
   const handleCustomerSelect = (e) => {
     const customerId = e.target.value;
-    const selectedCustomer = data.customers.find(c => c.id === parseInt(customerId));
+    const selectedCustomer = customers.find(c => c.id === parseInt(customerId));
     if (selectedCustomer) {
       setFormData({ ...formData, customerId: selectedCustomer.id, customerName: selectedCustomer.name });
     } else {
@@ -70,25 +78,24 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
       return;
     }
     
-    const billingData = {
-      customer_id: parseInt(formData.customerId),
-      customer_name: formData.customerName,
+    const docPayload = {
+      partner_id: parseInt(formData.customerId),
+      direction: 'receivable',
+      description: formData.description || '',
       amount: parseFloat(formData.amount),
       due_date: formData.dueDate,
-      status: formData.status,
+      status: (formData.status || 'Pendente').toLowerCase(),
       segment_id: parseInt(formData.segmentId)
     };
     
     if (editingBilling) {
-      // Update existing billing
-      updateBilling(editingBilling.id, billingData);
+      await updateFinancialDocument(editingBilling.id, docPayload);
       setEditingBilling(null);
     } else {
-      // Create new billing
-      await addBilling(billingData);
-      if (typeof loadCustomers === 'function') await loadCustomers();
+      await addFinancialDocument(docPayload);
     }
     
+    await loadFinancialDocuments();
     setFormData({ customerId: '', customerName: '', amount: '', dueDate: '', status: 'Pendente', segmentId: '' });
     setShowForm(false);
   };
@@ -98,20 +105,20 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
     
     // Buscar o nome do cliente se não estiver disponível
     let customerName = billing.customerName || billing.customer_name || '';
-    if (!customerName && billing.customerId) {
-      const customer = data.customers.find(c => c.id === billing.customerId);
+    if (!customerName && billing.partner_id) {
+      const customer = customers.find(c => c.id === billing.partner_id);
       if (customer) {
         customerName = customer.name;
       }
     }
     
     setFormData({
-      customerId: billing.customerId || billing.customer_id || '',
+      customerId: billing.partner_id || '',
       customerName: customerName,
       amount: billing.amount || '',
-      dueDate: billing.dueDate || billing.due_date || '',
-      status: billing.status || 'Pendente',
-      segmentId: billing.segmentId || billing.segment_id || activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+      dueDate: billing.due_date || billing.dueDate || '',
+      status: (billing.status || 'pendente').charAt(0).toUpperCase() + (billing.status || 'pendente').slice(1),
+      segmentId: billing.segment_id || activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
     });
     setShowForm(true);
   };
@@ -123,7 +130,8 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
   const handleDelete = async (billingId) => {
     if (window.confirm('Tem certeza que deseja excluir esta cobrança?')) {
       try {
-        await deleteBilling(billingId);
+        await deleteFinancialDocument(billingId);
+        await loadFinancialDocuments();
       } catch (error) {
         console.error('Delete billing error:', error);
       }
@@ -152,8 +160,9 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
 
   // Função para atualizar status pendente para vencido se necessário
   function getStatusWithDueDate(billing) {
-    if (billing.status === 'Pendente') {
-      const dueStr = billing.dueDate || billing.due_date;
+    const statusUpper = (billing.status || '').toLowerCase();
+    if (statusUpper === 'pendente') {
+      const dueStr = billing.due_date || billing.dueDate;
       if (!dueStr) return billing.status;
       const due = new Date(dueStr);
       if (isNaN(due.getTime())) return billing.status;
@@ -167,7 +176,8 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
   }
 
   // Usar status calculado em toda a renderização e nos filtros
-  let allBillings = (data.billings || [])
+  let allBillings = (data.financialDocuments || [])
+    .filter(doc => doc.direction === 'receivable')
     .map(billing => ({ ...billing, status: getStatusWithDueDate(billing) }));
 
   // Filtro por segmento
@@ -181,10 +191,11 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
   });
 
   // Filtro por busca
-  filteredBillings = filteredBillings.filter(billing =>
-    (billing.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (billing.status || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  filteredBillings = filteredBillings.filter(billing => {
+    const customerName = customers.find(c => c.id === (billing.partner_id || billing.customer_id))?.name || billing.customerName || '';
+    return customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (billing.status || '').toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   // Filtro por status
   filteredBillings = filteredBillings.filter(billing =>
@@ -302,7 +313,7 @@ const BillingModule = ({ metrics, addBilling, updateBilling, deleteBilling, toas
                 <label className="block text-sm font-medium mb-2">Cliente</label>
                 <select value={formData.customerId} onChange={handleCustomerSelect} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
                   <option value="">Selecione um cliente</option>
-                  {data.customers.map(customer => <option key={customer.id} value={customer.id}>{customer.name} ({customer.cpf})</option>)}
+                  {customers.map(customer => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
                 </select>
               </div>
               <div>

@@ -98,6 +98,78 @@ export const useCrud = () => {
     }
   };
 
+  // Partners (suppliers/customers unified)
+  const addPartner = async (partner) => {
+    try {
+      const response = await apiService.createPartner(partner);
+      toast({ title: 'Parceiro adicionado!' });
+      return response.partner || response.data;
+    } catch (error) {
+      console.error('Add partner error:', error);
+      toast({ title: 'Erro!', description: 'Falha ao adicionar parceiro.', variant: 'destructive' });
+      throw error;
+    }
+  };
+
+  const updatePartner = async (id, partnerData) => {
+    try {
+      const response = await apiService.updatePartner(id, partnerData);
+      toast({ title: 'Parceiro atualizado!' });
+      return response.partner || response.data;
+    } catch (error) {
+      console.error('Update partner error:', error);
+      toast({ title: 'Erro!', description: 'Falha ao atualizar parceiro.', variant: 'destructive' });
+      throw error;
+    }
+  };
+
+  const deletePartner = async (id) => {
+    try {
+      await apiService.deletePartner(id);
+      toast({ title: 'Parceiro excluído!', variant: 'destructive' });
+    } catch (error) {
+      console.error('Delete partner error:', error);
+      toast({ title: 'Erro!', description: 'Falha ao excluir parceiro.', variant: 'destructive' });
+      throw error;
+    }
+  };
+
+  // Financial Documents
+  const addFinancialDocument = async (doc) => {
+    try {
+      const response = await apiService.createFinancialDocument(doc);
+      toast({ title: 'Documento financeiro criado!' });
+      return response.document || response.data;
+    } catch (error) {
+      console.error('Add financial document error:', error);
+      toast({ title: 'Erro!', description: 'Falha ao criar documento financeiro.', variant: 'destructive' });
+      throw error;
+    }
+  };
+
+  const updateFinancialDocument = async (id, docData) => {
+    try {
+      const response = await apiService.updateFinancialDocument(id, docData);
+      toast({ title: 'Documento financeiro atualizado!' });
+      return response.document || response.data;
+    } catch (error) {
+      console.error('Update financial document error:', error);
+      toast({ title: 'Erro!', description: 'Falha ao atualizar documento financeiro.', variant: 'destructive' });
+      throw error;
+    }
+  };
+
+  const deleteFinancialDocument = async (id) => {
+    try {
+      await apiService.deleteFinancialDocument(id);
+      toast({ title: 'Documento financeiro excluído!', variant: 'destructive' });
+    } catch (error) {
+      console.error('Delete financial document error:', error);
+      toast({ title: 'Erro!', description: 'Falha ao excluir documento financeiro.', variant: 'destructive' });
+      throw error;
+    }
+  };
+
   // Sales
   const addSale = async (sale) => {
     try {
@@ -146,58 +218,63 @@ export const useCrud = () => {
     }
   };
 
-  // Customers
+  // Customers -> redirecionado para Partners (role=customer)
   const addCustomer = async (customer) => {
     try {
-      const response = await apiService.createCustomer(customer);
+      const partnerPayload = {
+        name: customer.name,
+        tax_id: customer.cnpj || customer.cpf || customer.tax_id || '',
+        email: customer.email,
+        phone: customer.phone || customer.celular || '',
+        address: customer.address,
+        city: customer.city,
+        state: customer.state,
+        zip_code: customer.cep || customer.zip_code,
+        status: customer.status || 'active',
+        segment_id: customer.segmentId || customer.segment_id,
+        role: 'customer'
+      };
+      const response = await apiService.createPartner(partnerPayload);
       toast({ title: "Cliente adicionado!", description: "Novo cliente foi cadastrado com sucesso." });
-      return response.customer;
+      return response.partner || response.data;
     } catch (error) {
       console.error('Add customer error:', error);
-      let errorMessage = "Falha ao adicionar cliente. Tente novamente.";
-      
-      if (error.message.includes('email already exists') || error.message.includes('Customer with this email already exists')) {
-        errorMessage = "Cliente com este email já existe.";
-      } else if (error.message.includes('document already exists') || error.message.includes('Customer with this document already exists')) {
-        errorMessage = "Cliente com este documento já existe.";
-      }
-      
-      toast({ 
-        title: "Erro!", 
-        description: errorMessage, 
-        variant: 'destructive' 
-      });
+      toast({ title: "Erro!", description: "Falha ao adicionar cliente.", variant: 'destructive' });
       throw error;
     }
   };
 
   const updateCustomer = async (id, customerData) => {
     try {
-      const response = await apiService.updateCustomer(id, customerData);
+      const partnerPayload = {
+        name: customerData.name,
+        tax_id: customerData.cnpj || customerData.cpf || customerData.tax_id || '',
+        email: customerData.email,
+        phone: customerData.phone || customerData.celular || '',
+        address: customerData.address,
+        city: customerData.city,
+        state: customerData.state,
+        zip_code: customerData.cep || customerData.zip_code,
+        status: customerData.status || 'active',
+        segment_id: customerData.segmentId || customerData.segment_id
+      };
+      const response = await apiService.updatePartner(id, partnerPayload);
       toast({ title: "Cliente atualizado!" });
-      return response.customer;
+      return response.partner || response.data;
     } catch (error) {
       console.error('Update customer error:', error);
-      toast({ 
-        title: "Erro!", 
-        description: "Falha ao atualizar cliente. Tente novamente.", 
-        variant: 'destructive' 
-      });
+      toast({ title: "Erro!", description: "Falha ao atualizar cliente.", variant: 'destructive' });
       throw error;
     }
   };
 
   const deleteCustomer = async (id) => {
     try {
-      await apiService.deleteCustomer(id);
+      await apiService.deletePartner(id);
       toast({ title: "Cliente excluído!", variant: 'destructive' });
     } catch (error) {
       console.error('Delete customer error:', error);
-      toast({ 
-        title: "Erro!", 
-        description: "Falha ao excluir cliente. Tente novamente.", 
-        variant: 'destructive' 
-      });
+      toast({ title: "Erro!", description: "Falha ao excluir cliente.", variant: 'destructive' });
       throw error;
     }
   };
@@ -499,6 +576,9 @@ export const useCrud = () => {
     
     // Products
     addProduct, updateProduct, deleteProduct,
+
+    // Partners
+    addPartner, updatePartner, deletePartner,
     
     // Sales
     addSale, updateSale, deleteSale,
@@ -517,6 +597,9 @@ export const useCrud = () => {
     
     // Accounts Payable
     addAccountPayable, updateAccountPayable, deleteAccountPayable,
+
+    // Financial Documents
+    addFinancialDocument, updateFinancialDocument, deleteFinancialDocument,
     
     // Segments
     addSegment, updateSegment, deleteSegment,

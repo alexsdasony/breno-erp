@@ -14,13 +14,16 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
+import Modal from '@/components/ui/modal';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTransaction, toast, importData }) => {
   const { data, activeSegmentId } = useAppData();
-  const [showForm, setShowForm] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [currentTransaction, setCurrentTransaction] = useState(null);
   const [viewingTransaction, setViewingTransaction] = useState(null);
   const [formData, setFormData] = useState({
@@ -41,9 +44,9 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
       costCenter: '',
       segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
     });
-    setIsEditing(false);
     setCurrentTransaction(null);
-    setShowForm(false);
+    setShowCreateModal(false);
+    setShowEditModal(false);
   };
 
   const handleSubmit = (e) => {
@@ -72,10 +75,12 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
       segmentId: parseInt(formData.segmentId)
     };
 
-    if (isEditing && currentTransaction) {
+    if (currentTransaction) {
       updateTransaction(currentTransaction.id, transactionData);
+      setShowEditModal(false);
     } else {
       addTransaction(transactionData);
+      setShowCreateModal(false);
     }
     
     resetForm();
@@ -93,22 +98,28 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
       // Corrigir formato da data para yyyy-MM-dd
       date: transaction.date ? transaction.date.split('T')[0] : new Date().toISOString().split('T')[0]
     });
-    setIsEditing(true);
-    setShowForm(true);
+    setShowEditModal(true);
   };
 
   const handleView = (transaction) => {
     setViewingTransaction(transaction);
+    setShowViewModal(true);
   };
 
-  const handleDelete = async (transactionId) => {
-    if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
-      try {
-        await deleteTransaction(transactionId);
+  const handleDelete = (transaction) => {
+    setCurrentTransaction(transaction);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteTransaction(currentTransaction.id);
         toast({
           title: "Sucesso",
           description: "Transação excluída com sucesso.",
         });
+      setShowDeleteConfirm(false);
+      setCurrentTransaction(null);
       } catch (error) {
         console.error('Erro ao excluir transação:', error);
         toast({
@@ -116,7 +127,6 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
           description: "Erro ao excluir transação.",
           variant: "destructive"
         });
-      }
     }
   };
 
@@ -124,7 +134,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
   const handleSegmentChange = async (e) => {
     const newSegmentId = e.target.value;
     setFormData({ ...formData, segmentId: newSegmentId });
-    if (isEditing && currentTransaction) {
+    if (currentTransaction) {
       // Salvar automaticamente ao alterar o segmento
       try {
         const updated = await updateTransaction(currentTransaction.id, { ...formData, segmentId: parseInt(newSegmentId) });
@@ -172,7 +182,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
             moduleName="Transações"
             expectedHeaders={transactionHeaders}
           />
-          <Button onClick={() => setShowForm(!showForm)} className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700">
+          <Button onClick={() => setShowCreateModal(true)} className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700">
             <Plus className="w-4 h-4 mr-2" />
             Nova Transação
           </Button>
@@ -209,103 +219,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
         </motion.div>
       </div>
 
-      <AnimatePresence>
-        {showForm && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="glass-effect rounded-xl p-6 border"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">{isEditing ? 'Editar Transação' : 'Nova Transação'}</h3>
-              <Button variant="ghost" size="sm" onClick={resetForm}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Segmento</label>
-                <select value={formData.segmentId} onChange={handleSegmentChange} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
-                  <option value="">Selecione um segmento</option>
-                  {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Tipo</label>
-                <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value, costCenter: ''})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
-                  <option value="receita">Receita</option>
-                  <option value="despesa">Despesa</option>
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label htmlFor="transactionDescription" className="block text-sm font-medium mb-2">Descrição</label>
-                <input 
-                  id="transactionDescription"
-                  name="description"
-                  type="text" 
-                  value={formData.description} 
-                  onChange={(e) => setFormData({...formData, description: e.target.value})} 
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-                  placeholder="Descrição da transação" 
-                />
-              </div>
-              <div>
-                <label htmlFor="transactionCategory" className="block text-sm font-medium mb-2">Categoria</label>
-                <input 
-                  id="transactionCategory"
-                  name="category"
-                  type="text" 
-                  value={formData.category} 
-                  onChange={(e) => setFormData({...formData, category: e.target.value})} 
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-                  placeholder="Ex: Vendas, Compras, Serviços" 
-                />
-              </div>
-              <div>
-                <label htmlFor="transactionAmount" className="block text-sm font-medium mb-2">Valor</label>
-                <input 
-                  id="transactionAmount"
-                  name="amount"
-                  type="number" 
-                  step="0.01" 
-                  value={formData.amount} 
-                  onChange={(e) => setFormData({...formData, amount: e.target.value})} 
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-                  placeholder="0,00" 
-                />
-              </div>
-              {formData.type === 'despesa' && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">Centro de Custo</label>
-                  <select value={formData.costCenter} onChange={(e) => setFormData({...formData, costCenter: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
-                    <option value="">Selecione...</option>
-                    {data.costCenters.filter(cc => !activeSegmentId || activeSegmentId === 0 || cc.segmentId === activeSegmentId).map(cc => <option key={cc.id} value={cc.name}>{cc.name}</option>)}
-                  </select>
-                </div>
-              )}
-              <div>
-                <label htmlFor="transactionDate" className="block text-sm font-medium mb-2">Data</label>
-                <input
-                  id="transactionDate"
-                  name="date"
-                  type="date"
-                  value={formData.date ? formData.date.split('T')[0] : ''}
-                  onChange={(e) => setFormData({...formData, date: e.target.value})}
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  required
-                />
-              </div>
-              <div className="md:col-span-2 flex space-x-3">
-                <Button type="submit" className="bg-gradient-to-r from-green-500 to-blue-600">
-                  {isEditing ? 'Atualizar Transação' : 'Salvar Transação'}
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
-              </div>
-            </form>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-effect rounded-xl p-6 border">
         <div className="flex items-center justify-between mb-4">
@@ -363,7 +277,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
                         variant="ghost" 
                         size="sm" 
                         title="Excluir"
-                        onClick={() => handleDelete(transaction.id)}
+                        onClick={() => handleDelete(transaction)}
                         className="text-red-500 hover:text-red-700"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -377,29 +291,186 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
         </div>
       </motion.div>
 
-      <AnimatePresence>
-        {viewingTransaction && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-            onClick={() => setViewingTransaction(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-background rounded-xl p-6 max-w-md w-full mx-4"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Detalhes da Transação</h3>
-                <Button variant="ghost" size="sm" onClick={() => setViewingTransaction(null)}>
-                  <X className="w-4 h-4" />
+      {/* Modal de Criação */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Nova Transação"
+        size="md"
+      >
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Segmento *</label>
+            <select value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+              <option value="">Selecione um segmento</option>
+              {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Tipo *</label>
+            <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value, costCenter: ''})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+              <option value="receita">Receita</option>
+              <option value="despesa">Despesa</option>
+            </select>
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium mb-2">Descrição *</label>
+            <input 
+              type="text" 
+              value={formData.description} 
+              onChange={(e) => setFormData({...formData, description: e.target.value})} 
+              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
+              placeholder="Descrição da transação" 
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Categoria *</label>
+            <input 
+              type="text" 
+              value={formData.category} 
+              onChange={(e) => setFormData({...formData, category: e.target.value})} 
+              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
+              placeholder="Ex: Vendas, Compras, Serviços" 
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Valor *</label>
+            <input 
+              type="number" 
+              step="0.01" 
+              value={formData.amount} 
+              onChange={(e) => setFormData({...formData, amount: e.target.value})} 
+              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
+              placeholder="0,00" 
+              required
+            />
+          </div>
+          {formData.type === 'despesa' && (
+            <div>
+              <label className="block text-sm font-medium mb-2">Centro de Custo *</label>
+              <select value={formData.costCenter} onChange={(e) => setFormData({...formData, costCenter: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" required>
+                <option value="">Selecione...</option>
+                {data.costCenters.filter(cc => !activeSegmentId || activeSegmentId === 0 || cc.segmentId === activeSegmentId).map(cc => <option key={cc.id} value={cc.name}>{cc.name}</option>)}
+              </select>
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium mb-2">Data *</label>
+            <input
+              type="date"
+              value={formData.date ? formData.date.split('T')[0] : ''}
+              onChange={(e) => setFormData({...formData, date: e.target.value})}
+              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+              required
+            />
+          </div>
+          <div className="md:col-span-2 flex space-x-3">
+            <Button type="submit" className="bg-gradient-to-r from-green-500 to-blue-600">
+              Salvar Transação
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal de Edição */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Editar Transação"
+        size="md"
+      >
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Segmento *</label>
+            <select value={formData.segmentId} onChange={handleSegmentChange} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+              <option value="">Selecione um segmento</option>
+              {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Tipo *</label>
+            <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value, costCenter: ''})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+              <option value="receita">Receita</option>
+              <option value="despesa">Despesa</option>
+            </select>
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium mb-2">Descrição *</label>
+            <input 
+              type="text" 
+              value={formData.description} 
+              onChange={(e) => setFormData({...formData, description: e.target.value})} 
+              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
+              placeholder="Descrição da transação" 
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Categoria *</label>
+            <input 
+              type="text" 
+              value={formData.category} 
+              onChange={(e) => setFormData({...formData, category: e.target.value})} 
+              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
+              placeholder="Ex: Vendas, Compras, Serviços" 
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Valor *</label>
+            <input 
+              type="number" 
+              step="0.01" 
+              value={formData.amount} 
+              onChange={(e) => setFormData({...formData, amount: e.target.value})} 
+              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
+              placeholder="0,00" 
+              required
+            />
+          </div>
+          {formData.type === 'despesa' && (
+            <div>
+              <label className="block text-sm font-medium mb-2">Centro de Custo *</label>
+              <select value={formData.costCenter} onChange={(e) => setFormData({...formData, costCenter: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" required>
+                <option value="">Selecione...</option>
+                {data.costCenters.filter(cc => !activeSegmentId || activeSegmentId === 0 || cc.segmentId === activeSegmentId).map(cc => <option key={cc.id} value={cc.name}>{cc.name}</option>)}
+              </select>
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium mb-2">Data *</label>
+            <input
+              type="date"
+              value={formData.date ? formData.date.split('T')[0] : ''}
+              onChange={(e) => setFormData({...formData, date: e.target.value})}
+              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+              required
+            />
+          </div>
+          <div className="md:col-span-2 flex space-x-3">
+            <Button type="submit" className="bg-gradient-to-r from-green-500 to-blue-600">
+              Atualizar Transação
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>
+              Cancelar
                 </Button>
               </div>
-              
+        </form>
+      </Modal>
+
+      {/* Modal de Visualização */}
+      <Modal
+        isOpen={showViewModal}
+        onClose={() => setShowViewModal(false)}
+        title="Detalhes da Transação"
+        size="md"
+      >
+        {viewingTransaction && (
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Descrição</label>
@@ -446,14 +517,42 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
                   <p className="font-medium">{segments.find(s => s.id === viewingTransaction.segmentId)?.name || 'N/A'}</p>
                 </div>
               </div>
-              
-              <div className="flex justify-end mt-6">
-                <Button onClick={() => setViewingTransaction(null)}>Fechar</Button>
-              </div>
-            </motion.div>
-          </motion.div>
         )}
-      </AnimatePresence>
+      </Modal>
+
+      {/* Modal de Confirmação de Exclusão */}
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Confirmar Exclusão"
+        size="sm"
+        showCloseButton={false}
+      >
+        <div className="text-center">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+            <Trash2 className="h-6 w-6 text-red-600" />
+          </div>
+          <p className="text-muted-foreground mb-6">
+            Tem certeza que deseja excluir a transação <strong>{currentTransaction?.description}</strong>? 
+            Esta ação não pode ser desfeita.
+          </p>
+          
+          <div className="flex space-x-3 justify-center">
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+            >
+              Sim, Excluir
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </motion.div>
   );
 };

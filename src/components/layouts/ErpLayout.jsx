@@ -16,6 +16,7 @@ import InventoryModule from '@/modules/InventoryModule';
 import SalesModule from '@/modules/SalesModule';
 import ReportsModule from '@/modules/ReportsModule';
 import CustomersModule from '@/modules/CustomersModule';
+import SuppliersModule from '@/modules/SuppliersModule';
 import NFeModule from '@/modules/NFeModule'; 
 import IntegrationsModule from '@/modules/IntegrationsModule';
 import BillingModule from '@/modules/BillingModule';
@@ -119,6 +120,7 @@ const ErpLayout = () => {
       case 'inventory': return <InventoryModule {...moduleProps} />;
       case 'sales': return <SalesModule {...moduleProps} />;
       case 'customers': return <CustomersModule {...moduleProps} />;
+      case 'suppliers': return <SuppliersModule {...moduleProps} />;
       case 'costCenters': return <CostCentersModule {...moduleProps} />;
       case 'chartOfAccounts': return <ChartOfAccountsModule {...moduleProps} />;
       case 'segments': return <SegmentsModule {...moduleProps} />;
