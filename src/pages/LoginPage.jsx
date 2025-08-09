@@ -1,5 +1,8 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
@@ -9,7 +12,7 @@ import { LogIn, UserPlus, Briefcase, KeyRound } from 'lucide-react';
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate();
+  const router = useRouter();
   const { loginUser } = useAppData();
 
   const handleSubmit = async (e) => {
@@ -30,7 +33,7 @@ const LoginPage = () => {
           title: "Login Bem-sucedido!",
           description: "Redirecionando para o painel...",
         });
-        navigate('/');
+        router.push('/dashboard');
       } else {
         toast({
           title: "Falha no Login",
@@ -78,7 +81,7 @@ const LoginPage = () => {
           <div>
             <div className="flex justify-between items-center mb-1">
               <label className="block text-sm font-medium text-gray-300">Senha</label>
-              <Link to="/forgot-password" className="text-xs text-blue-400 hover:text-blue-300">
+              <Link href="/forgot-password" className="text-xs text-blue-400 hover:text-blue-300">
                 Esqueceu a senha?
               </Link>
             </div>
@@ -103,11 +106,10 @@ const LoginPage = () => {
           transition={{ delay: 0.3 }}
           className="mt-6 text-center"
         >
-          <p className="text-sm text-gray-400">
+          <p className="text-gray-400 text-sm">
             Não tem uma conta?{' '}
-            <Link to="/register" className="font-medium text-blue-400 hover:text-blue-300">
-              Cadastre-se aqui
-              <UserPlus className="inline w-4 h-4 ml-1" />
+            <Link href="/register" className="text-blue-400 hover:text-blue-300 font-medium">
+              Registre-se
             </Link>
           </p>
         </motion.div>

@@ -1,22 +1,35 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { useAppData } from '@/hooks/useAppData.jsx';
-import { UserPlus, LogIn, Briefcase } from 'lucide-react';
+import { UserPlus, Briefcase, LogIn } from 'lucide-react';
 
 const RegisterPage = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const router = useRouter();
   const { registerUser } = useAppData();
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password || !confirmPassword) {
+    
+    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
       toast({
         title: "Campos Vazios",
         description: "Por favor, preencha todos os campos.",
@@ -24,7 +37,8 @@ const RegisterPage = () => {
       });
       return;
     }
-    if (password !== confirmPassword) {
+
+    if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Senhas Diferentes",
         description: "As senhas não coincidem.",
@@ -33,24 +47,33 @@ const RegisterPage = () => {
       return;
     }
 
+    if (formData.password.length < 6) {
+      toast({
+        title: "Senha Muito Curta",
+        description: "A senha deve ter pelo menos 6 caracteres.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      const success = await registerUser(name, email, password);
+      const success = await registerUser(formData.email, formData.password, { name: formData.name });
       if (success) {
         toast({
-          title: "Cadastro Realizado!",
-          description: "Seu usuário foi criado. Faça login para continuar.",
+          title: "Registro Bem-sucedido!",
+          description: "Conta criada com sucesso. Faça login para continuar.",
         });
-        navigate('/login');
+        router.push('/login');
       } else {
         toast({
-          title: "Falha no Cadastro",
-          description: "Este email já está em uso. Tente outro.",
+          title: "Falha no Registro",
+          description: "Erro ao criar conta. Tente novamente.",
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
-        title: "Erro no Cadastro",
+        title: "Erro no Registro",
         description: "Falha na conexão. Tente novamente.",
         variant: "destructive",
       });
@@ -69,17 +92,18 @@ const RegisterPage = () => {
           <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mb-4">
             <Briefcase className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white">Crie sua Conta no ERP Pro</h1>
-          <p className="text-gray-400">Rápido e fácil</p>
+          <h1 className="text-3xl font-bold text-white">ERP PRO</h1>
+          <p className="text-gray-400">Criar Conta</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Nome Completo</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Nome</label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
               className="w-full p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder="Seu nome completo"
             />
@@ -88,8 +112,9 @@ const RegisterPage = () => {
             <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
               className="w-full p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder="seu@email.com"
             />
@@ -98,25 +123,27 @@ const RegisterPage = () => {
             <label className="block text-sm font-medium text-gray-300 mb-1">Senha</label>
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
               className="w-full p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="Crie uma senha forte"
+              placeholder="Mínimo 6 caracteres"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Confirmar Senha</label>
             <input
               type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
               className="w-full p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder="Confirme sua senha"
             />
           </div>
           <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3">
             <UserPlus className="w-5 h-5 mr-2" />
-            Cadastrar
+            Criar Conta
           </Button>
         </form>
 
@@ -126,11 +153,10 @@ const RegisterPage = () => {
           transition={{ delay: 0.3 }}
           className="mt-6 text-center"
         >
-          <p className="text-sm text-gray-400">
+          <p className="text-gray-400 text-sm">
             Já tem uma conta?{' '}
-            <Link to="/login" className="font-medium text-blue-400 hover:text-blue-300">
-              Faça login aqui
-              <LogIn className="inline w-4 h-4 ml-1" />
+            <Link href="/login" className="text-blue-400 hover:text-blue-300 font-medium">
+              Faça login
             </Link>
           </p>
         </motion.div>
