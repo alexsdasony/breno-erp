@@ -9,9 +9,9 @@
 // ============================================================================
 export const SUPABASE_CONFIG = {
   // Supabase URL e chaves
-  URL: 'https://qerubjitetqwfqqydhzv.supabase.co',
-  ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlcnViaml0ZXRxd2ZxcXlkaHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwMDU5NDUsImV4cCI6MjA2OTU4MTk0NX0.eP6QxQI1oerd5HxPxYpHF8mhKLK6bwnuIyw_aKFjuwU',
-  SERVICE_ROLE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlcnViaml0ZXRxd2ZxcXlkaHp2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDAwNTk0NSwiZXhwIjoyMDY5NTgxOTQ1fQ.hBfdao-iJX4KvjMQ7LzcmBf4PXtbcMrat9IGr2asfDc',
+  URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qerubjitetqwfqqydhzv.supabase.co',
+  ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlcnViaml0ZXRxd2ZxcXlkaHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwMDU5NDUsImV4cCI6MjA2OTU4MTk0NX0.eP6QxQI1oerd5HxPxYpHF8mhKLK6bwnuIyw_aKFjuwU',
+  SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlcnViaml0ZXRxd2ZxcXlkaHp2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDAwNTk0NSwiZXhwIjoyMDY5NTgxOTQ1fQ.hBfdao-iJX4KvjMQ7LzcmBf4PXtbcMrat9IGr2asfDc',
   
   // Senha do usuário Supabase
   USER_PASSWORD: 'C0ntr0l3t0t@l#'
@@ -42,7 +42,7 @@ export const API_CONFIG = {
   LOCAL_URL: 'http://localhost:3001/api',
   
   // URL da API de produção
-  PRODUCTION_URL: 'https://breno-erp.vercel.app/api'
+  PRODUCTION_URL: process.env.NEXT_PUBLIC_API_URL || 'https://breno-erp.vercel.app/api'
 };
 
 // ============================================================================
@@ -50,7 +50,7 @@ export const API_CONFIG = {
 // ============================================================================
 export const SECURITY_CONFIG = {
   // JWT Secret para autenticação
-  JWT_SECRET: 'f3696dd52f7674b95e4606c46a6e69065b65600544b4129ba7b09538476f06fa600fcc77ebe4c610026a24bfc95c4ce4cad1e353a4a9246562c1d90e35f01a1d'
+  JWT_SECRET: process.env.JWT_SECRET || 'f3696dd52f7674b95e4606c46a6e69065b65600544b4129ba7b09538476f06fa600fcc77ebe4c610026a24bfc95c4ce4cad1e353a4a9246562c1d90e35f01a1d'
 };
 
 // ============================================================================
@@ -58,13 +58,13 @@ export const SECURITY_CONFIG = {
 // ============================================================================
 export const CORS_CONFIG = {
   // Origem permitida para CORS
-  ORIGIN: 'https://breno-erp.vercel.app',
+  ORIGIN: process.env.CORS_ORIGIN || 'https://breno-erp.vercel.app',
   
   // Origens locais para desenvolvimento
   LOCAL_ORIGINS: [
-    'http://localhost:5173',
     'http://localhost:3000',
-    'http://localhost:3001'
+    'http://localhost:3001',
+    'http://localhost:5173'
   ]
 };
 
@@ -73,13 +73,13 @@ export const CORS_CONFIG = {
 // ============================================================================
 export const ENV_CONFIG = {
   // Ambiente atual
-  NODE_ENV: 'development',
+  NODE_ENV: process.env.NODE_ENV || 'development',
   
   // Porta do servidor
-  PORT: 3001,
+  PORT: process.env.PORT || 3001,
   
   // Porta do frontend
-  FRONTEND_PORT: 5173
+  FRONTEND_PORT: process.env.NEXT_PUBLIC_PORT || 3000
 };
 
 // ============================================================================

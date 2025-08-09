@@ -1,6 +1,6 @@
 // API Service - Centralized HTTP client for backend communication
 // Usa VITE_API_URL quando definido (Edge Functions em prod). Caso contrário, usa backend local via '/api'.
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 // Cache em memória para token - SEM localStorage
 let tokenCache = null;
@@ -10,7 +10,7 @@ class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL;
     this.token = this.getToken();
-    this.supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    this.supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   }
 
   // Helpers: map customers <-> partners
@@ -99,7 +99,7 @@ class ApiService {
       // Handle token expiration
       if (response.status === 401) {
         this.clearToken();
-        if (!isRedirectingToLogin) {
+        if (!isRedirectingToLogin && typeof window !== 'undefined') {
           isRedirectingToLogin = true;
           window.location.href = '/login';
         }
