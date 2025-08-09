@@ -1,34 +1,24 @@
-import {
-	Toast,
-	ToastClose,
-	ToastDescription,
-	ToastProvider,
-	ToastTitle,
-	ToastViewport,
-} from '@/components/ui/toast';
-import { useToast } from '@/components/ui/use-toast';
-import React from 'react';
+import * as React from "react"
+import { Toast, ToastViewport, ToastTitle, ToastDescription, ToastProvider, ToastClose } from "./toast"
+import { useToast } from "./use-toast"
 
 export function Toaster() {
-	const { toasts } = useToast();
+  const { toasts } = useToast()
 
-	return (
-		<ToastProvider>
-			{toasts.map(({ id, title, description, action, dismiss, ...props }) => {
-				return (
-					<Toast key={id} {...props}>
-						<div className="grid gap-1">
-							{title && <ToastTitle>{title}</ToastTitle>}
-							{description && (
-								<ToastDescription>{description}</ToastDescription>
-							)}
-						</div>
-						{action}
-						<ToastClose />
-					</Toast>
-				);
-			})}
-			<ToastViewport />
-		</ToastProvider>
-	);
+  return (
+    <ToastProvider>
+      {toasts.map(({ id, title, description, variant, dismiss }) => (
+        <Toast key={id} variant={variant} id={`toast-${variant || 'default'}-${id}`}>
+          <div className="grid gap-1">
+            {title && <ToastTitle id={`toast-title-${id}`}>{title}</ToastTitle>}
+            {description && (
+              <ToastDescription id={`toast-description-${id}`}>{description}</ToastDescription>
+            )}
+          </div>
+          <ToastClose onClick={dismiss} id={`toast-close-${id}`} />
+        </Toast>
+      ))}
+      <ToastViewport />
+    </ToastProvider>
+  )
 }

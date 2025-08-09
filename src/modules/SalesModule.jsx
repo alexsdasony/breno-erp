@@ -295,7 +295,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
             moduleName="Vendas"
             expectedHeaders={saleHeaders}
           />
-          <Button onClick={() => setShowForm(!showForm)} className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700">
+          <Button id="sales-new-button" onClick={() => setShowForm(!showForm)} className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700">
             <Plus className="w-4 h-4 mr-2" />
             Nova Venda
           </Button>
@@ -384,7 +384,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Forma de Pagamento</label>
-                <select value={formData.paymentMethod} onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                <select id="sales-paymentMethod-select" value={formData.paymentMethod} onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
                   <option value="dinheiro">Dinheiro</option>
                   <option value="cartão">Cartão</option>
                   <option value="pix">PIX</option>
@@ -419,6 +419,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
                 <div>
                   <label className="block text-sm font-medium mb-2">Quantidade</label>
                   <input 
+                    id="sales-item-qty-input"
                     type="number" 
                     value={newItem.quantity} 
                     onChange={handleQuantityChange}
@@ -437,7 +438,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
                   />
                 </div>
                 <div className="flex items-end">
-                  <Button onClick={addItemToSale} className="w-full bg-green-600 hover:bg-green-700">
+                  <Button id="sales-add-item-button" onClick={addItemToSale} className="w-full bg-green-600 hover:bg-green-700">
                     <Plus className="w-4 h-4 mr-2" />
                     Adicionar
                   </Button>
@@ -509,12 +510,12 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
             </div>
 
             {/* Botões */}
-            <div className="flex space-x-3">
-              <Button type="button" onClick={handleSubmit} className="bg-gradient-to-r from-orange-500 to-red-600" disabled={saleItems.length === 0}>
+                <div className="flex space-x-3">
+              <Button id="sales-submit-button" type="button" onClick={handleSubmit} className="bg-gradient-to-r from-orange-500 to-red-600" disabled={saleItems.length === 0}>
                 <CheckCircle className="w-4 h-4 mr-2" />
                 Finalizar Venda
               </Button>
-              <Button type="button" variant="outline" onClick={() => {setShowForm(false); resetForm();}}>
+              <Button id="sales-cancel-button" type="button" variant="outline" onClick={() => {setShowForm(false); resetForm();}}>
                 Cancelar
               </Button>
             </div>
@@ -531,7 +532,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
           </div>
         </div>
         <div className="overflow-x-auto max-h-96 scrollbar-hide">
-          <table className="w-full">
+          <table id="sales-table" className="w-full">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left p-3">Data</th>
@@ -545,7 +546,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
             </thead>
             <tbody>
               {filteredSales.map(sale => (
-                <motion.tr key={sale.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
+                <motion.tr key={sale.id} id={`sales-row-${sale.id}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
                   <td className="p-3">{formatDate(sale.saleDate || sale.date)}</td>
                   <td className="p-3 font-medium">{sale.customerName}</td>
                   <td className="p-3">

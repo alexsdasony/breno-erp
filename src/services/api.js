@@ -75,12 +75,15 @@ class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     const token = this.getToken();
     
+    const isEdgeFunctions = typeof this.baseURL === 'string' && this.baseURL.includes('supabase.co/functions');
     const config = {
       headers: {
         'Content-Type': 'application/json',
-        // Sempre incluir a chave anônima do Supabase para Edge Functions
+        // Para Edge Functions do Supabase use as chaves de projeto.
         ...(this.supabaseAnonKey && { 'Authorization': `Bearer ${this.supabaseAnonKey}` }),
-        ...(token && { 'X-User-Token': token }),
+        ...(this.supabaseAnonKey && { 'apikey': this.supabaseAnonKey }),
+        // O header X-User-Token é apenas para nosso backend local. Evita CORS nos Edge Functions.
+        ...(!isEdgeFunctions && token ? { 'X-User-Token': token } : {}),
         ...options.headers,
       },
       ...options,
@@ -217,7 +220,17 @@ class ApiService {
   }
 
   async createTransaction(transactionData) {
-    return this.post('/transactions', transactionData);
+    // Mapear camelCase do front para snake_case esperado pelo banco
+    const payload = {
+      type: transactionData.type,
+      description: transactionData.description,
+      amount: transactionData.amount,
+      date: transactionData.date,
+      category: transactionData.category,
+      cost_center: transactionData.costCenter ?? null,
+      segment_id: transactionData.segmentId ?? transactionData.segment_id ?? null,
+    };
+    return this.post('/transactions', payload);
   }
 
   async updateTransaction(id, transactionData) {
@@ -270,11 +283,36 @@ class ApiService {
   }
 
   async createProduct(productData) {
-    return this.post('/products', productData);
+    // Mapear camelCase do front para snake_case do backend
+    const payload = {
+      name: productData.name,
+      price: productData.price,
+      category: productData.category ?? null,
+      stock: productData.stock ?? productData.stock_quantity ?? 0,
+      min_stock: productData.minStock ?? productData.minimum_stock ?? 0,
+      segment_id: productData.segment_id ?? productData.segmentId ?? null,
+      code: productData.code ?? null,
+      description: productData.description ?? null,
+      cost_price: productData.cost_price ?? productData.costPrice ?? null,
+      supplier: productData.supplier ?? null,
+    };
+    return this.post('/products', payload);
   }
 
   async updateProduct(id, productData) {
-    return this.put(`/products/${id}`, productData);
+    const payload = {
+      name: productData.name,
+      price: productData.price,
+      category: productData.category ?? null,
+      stock: productData.stock ?? productData.stock_quantity,
+      min_stock: productData.minStock ?? productData.minimum_stock,
+      segment_id: productData.segment_id ?? productData.segmentId,
+      code: productData.code,
+      description: productData.description,
+      cost_price: productData.cost_price ?? productData.costPrice,
+      supplier: productData.supplier,
+    };
+    return this.put(`/products/${id}`, payload);
   }
 
   async deleteProduct(id) {
@@ -407,10 +445,37 @@ class ApiService {
     return this.get('/partners', params);
   }
   async createPartner(partnerData) {
-    return this.post('/partners', partnerData);
+    const payload = {
+      name: partnerData.name,
+      tax_id: partnerData.tax_id || partnerData.taxId || '',
+      email: partnerData.email || '',
+      phone: partnerData.phone || '',
+      address: partnerData.address || '',
+      city: partnerData.city || '',
+      state: partnerData.state || '',
+      zip_code: partnerData.zip_code || partnerData.zipCode || '',
+      notes: partnerData.notes || '',
+      status: partnerData.status || 'active',
+      segment_id: partnerData.segment_id || partnerData.segmentId || null,
+      roles: partnerData.roles || (partnerData.role ? [partnerData.role] : undefined),
+    };
+    return this.post('/partners', payload);
   }
   async updatePartner(id, partnerData) {
-    return this.put(`/partners/${id}`, partnerData);
+    const payload = {
+      name: partnerData.name,
+      tax_id: partnerData.tax_id || partnerData.taxId,
+      email: partnerData.email,
+      phone: partnerData.phone,
+      address: partnerData.address,
+      city: partnerData.city,
+      state: partnerData.state,
+      zip_code: partnerData.zip_code || partnerData.zipCode,
+      notes: partnerData.notes,
+      status: partnerData.status,
+      segment_id: partnerData.segment_id || partnerData.segmentId || null,
+    };
+    return this.put(`/partners/${id}`, payload);
   }
   async deletePartner(id) {
     return this.delete(`/partners/${id}`);

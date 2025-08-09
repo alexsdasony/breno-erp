@@ -156,10 +156,21 @@ export const AppDataProvider = ({ children }) => {
   }, [currentUser, authLoading]);
 
   // Data loading functions with memory cache
+  const reloadSegments = async () => {
+    try {
+      const response = await apiService.getSegments();
+      const serverSegments = response.segments || [];
+      setSegments(serverSegments);
+      return { segments: serverSegments };
+    } catch (error) {
+      console.error('Load segments error:', error);
+      throw error;
+    }
+  };
   const loadTransactions = async (params = {}) => {
     try {
       // Verificar cache em memória primeiro
-      if (globalMemoryCache.data?.transactions && !params.segment_id) {
+      if (globalMemoryCache.data?.transactions && !params.segment_id && !params.force) {
         console.log('📊 Using cached transactions');
         setData(prev => ({ ...prev, transactions: globalMemoryCache.data.transactions }));
         return { transactions: globalMemoryCache.data.transactions };
@@ -239,15 +250,34 @@ export const AppDataProvider = ({ children }) => {
 
   const loadPartners = async (params = {}) => {
     try {
-      if (globalMemoryCache.data?.partners && !params.segment_id) {
-        console.log('🤝 Using cached partners');
-        setData(prev => ({ ...prev, partners: globalMemoryCache.data.partners }));
-        return { partners: globalMemoryCache.data.partners };
+      const role = params.role || null;
+      const hasSegmentFilter = Boolean(params.segment_id);
+      if (!globalMemoryCache.data) globalMemoryCache.data = {};
+      if (!globalMemoryCache.data.partnersByRole) {
+        globalMemoryCache.data.partnersByRole = {};
       }
+
+      // Cache: quando houver role, manter cache por role; sem role, usar lista completa
+      if (!hasSegmentFilter) {
+        if (role && globalMemoryCache.data.partnersByRole[role]) {
+          console.log(`🤝 Using cached partners for role=${role}`);
+          setData(prev => ({ ...prev, partners: globalMemoryCache.data.partnersByRole[role] }));
+          return { partners: globalMemoryCache.data.partnersByRole[role] };
+        }
+        if (!role && globalMemoryCache.data.partners) {
+          console.log('🤝 Using cached partners (all)');
+          setData(prev => ({ ...prev, partners: globalMemoryCache.data.partners }));
+          return { partners: globalMemoryCache.data.partners };
+        }
+      }
+
       const response = await apiService.getPartners(params);
       const partners = response.partners || response.data || [];
-      if (!globalMemoryCache.data) globalMemoryCache.data = {};
-      globalMemoryCache.data.partners = partners;
+      if (role) {
+        globalMemoryCache.data.partnersByRole[role] = partners;
+      } else {
+        globalMemoryCache.data.partners = partners;
+      }
       setData(prev => ({ ...prev, partners }));
       return { partners };
     } catch (error) {
@@ -399,7 +429,11 @@ export const AppDataProvider = ({ children }) => {
 
   // LAZY LOADING FUNCTIONS
   const ensureCostCentersLoaded = async () => {
+    console.log('🔄 ensureCostCentersLoaded - Iniciando verificação');
+    console.log('📊 Estado atual:', { loaded: lazyState.costCenters.loaded, loading: lazyState.costCenters.loading });
+    
     if (lazyState.costCenters.loaded || lazyState.costCenters.loading) {
+      console.log('⏭️ ensureCostCentersLoaded - Pulando carregamento (já carregado ou carregando)');
       return;
     }
 
@@ -408,11 +442,12 @@ export const AppDataProvider = ({ children }) => {
     
     try {
       const segmentFilter = currentUser?.segment_id ? { segment_id: currentUser.segment_id } : {};
+      console.log('🔍 ensureCostCentersLoaded - Filtro de segmento:', segmentFilter);
       await loadCostCenters(segmentFilter);
       setLazyState(prev => ({ ...prev, costCenters: { loaded: true, loading: false } }));
       console.log('✅ CostCenters loaded successfully');
     } catch (error) {
-      console.error('Failed to lazy load costCenters:', error);
+      console.error('❌ Failed to lazy load costCenters:', error);
       setLazyState(prev => ({ ...prev, costCenters: { loaded: false, loading: false } }));
     }
   };
@@ -528,6 +563,7 @@ export const AppDataProvider = ({ children }) => {
     segments,
     activeSegmentId,
     setActiveSegmentId,
+    reloadSegments,
     
     // Data loading functions
     loadTransactions,

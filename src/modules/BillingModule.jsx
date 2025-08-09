@@ -235,10 +235,11 @@ const BillingModule = ({ metrics, addFinancialDocument, updateFinancialDocument,
         </div>
         <div className="flex space-x-2">
           <ImportDataButton 
+            id="billings-import-button"
             onImport={(parsedData) => importData(parsedData, 'billings', activeSegmentId)}
             moduleName="Cobranças"
           />
-          <Button onClick={() => setShowForm(!showForm)} className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700">
+          <Button id="billings-new-button" onClick={() => setShowForm(!showForm)} className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700">
             <Plus className="w-4 h-4 mr-2" />
             Nova Cobrança
           </Button>
@@ -304,14 +305,14 @@ const BillingModule = ({ metrics, addFinancialDocument, updateFinancialDocument,
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Segmento</label>
-                <select value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                <select id="billings-segment-select" value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
                   <option value="">Selecione um segmento</option>
                   {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Cliente</label>
-                <select value={formData.customerId} onChange={handleCustomerSelect} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                <select id="billings-customer-select" value={formData.customerId} onChange={handleCustomerSelect} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
                   <option value="">Selecione um cliente</option>
                   {customers.map(customer => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
                 </select>
@@ -342,7 +343,7 @@ const BillingModule = ({ metrics, addFinancialDocument, updateFinancialDocument,
               </div>
                <div>
                 <label className="block text-sm font-medium mb-2">Status</label>
-                <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                <select id="billings-status-select" value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
                   <option value="Pendente">Pendente</option>
                   <option value="Paga">Paga</option>
                   <option value="Vencida">Vencida</option>
@@ -350,8 +351,8 @@ const BillingModule = ({ metrics, addFinancialDocument, updateFinancialDocument,
                 </select>
               </div>
               <div className="md:col-span-2 flex space-x-3">
-                <Button type="submit" className="bg-gradient-to-r from-pink-500 to-rose-600">Salvar Cobrança</Button>
-                <Button type="button" variant="outline" onClick={handleCancel}>Cancelar</Button>
+                <Button id="billings-submit-button" type="submit" className="bg-gradient-to-r from-pink-500 to-rose-600">Salvar Cobrança</Button>
+                <Button id="billings-cancel-button" type="button" variant="outline" onClick={handleCancel}>Cancelar</Button>
               </div>
             </form>
           </motion.div>
@@ -384,7 +385,7 @@ const BillingModule = ({ metrics, addFinancialDocument, updateFinancialDocument,
           </div>
         </div>
         <div className="overflow-x-auto max-h-96 scrollbar-hide">
-          <table className="w-full">
+          <table id="billings-table" className="w-full">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left p-3">Cliente</th>
@@ -397,7 +398,7 @@ const BillingModule = ({ metrics, addFinancialDocument, updateFinancialDocument,
             </thead>
             <tbody>
               {filteredBillings.map(billing => (
-                <motion.tr key={billing.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
+                <motion.tr key={billing.id} id={`billings-row-${billing.id}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
                   <td className="p-3 font-medium">{billing.customerName || billing.customer_name || 'N/A'}</td>
                   <td className="p-3">{segments.find(s => s.id === (billing.segmentId || billing.segment_id))?.name || 'N/A'}</td>
                   <td className="p-3 text-right font-medium">{formatCurrency(billing.amount || 0)}</td>

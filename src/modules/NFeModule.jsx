@@ -442,12 +442,13 @@ Sistema ERP
         </div>
         <div className="flex space-x-2">
           <ImportDataButton 
+            id="nfe-import-button"
             onImport={importData} 
             expectedHeaders={nfeHeaders}
             moduleName="NF-es"
             importAction="nfeList"
           />
-          <Button onClick={() => setShowForm(!showForm)} className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700">
+          <Button id="nfe-new-button" onClick={() => setShowForm(!showForm)} className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700">
             <Plus className="w-4 h-4 mr-2" />
             Nova NF-e
           </Button>
@@ -535,6 +536,7 @@ Sistema ERP
               <div>
                 <label className="block text-sm font-medium mb-2">Cliente</label>
                 <select
+                  id="nfe-customer-select"
                   value={formData.customerId}
                   onChange={handleCustomerSelect}
                   className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
@@ -579,10 +581,10 @@ Sistema ERP
                 </select>
               </div>
               <div className="md:col-span-2 flex space-x-3">
-                <Button type="submit" className="bg-gradient-to-r from-indigo-500 to-purple-600">
+                <Button id="nfe-submit-button" type="submit" className="bg-gradient-to-r from-indigo-500 to-purple-600">
                   {isEditing ? 'Atualizar NF-e' : 'Gerar NF-e'}
                 </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
+                <Button id="nfe-cancel-button" type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
               </div>
@@ -614,7 +616,7 @@ Sistema ERP
           </div>
         </div>
         <div className="overflow-x-auto max-h-96 scrollbar-hide">
-          <table className="w-full">
+          <table id="nfe-table" className="w-full">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left p-3">Número</th>
@@ -629,6 +631,7 @@ Sistema ERP
               {safeNFeList.map(nfe => (
                 <motion.tr
                   key={nfe.id}
+                  id={`nfe-row-${nfe.id}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="border-b border-border hover:bg-muted/50 transition-colors"

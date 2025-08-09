@@ -15,10 +15,12 @@ const SuppliersModule = ({ toast, importData, addPartner, updatePartner, deleteP
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
-    if (!data.partners || data.partners.length === 0) {
-      loadPartners();
+    const params = { role: 'supplier' };
+    if (activeSegmentId && activeSegmentId !== 0) {
+      params.segment_id = activeSegmentId;
     }
-  }, [data.partners, loadPartners]);
+    loadPartners(params).catch(() => {});
+  }, [activeSegmentId, loadPartners]);
 
   const suppliers = (data.partners || []).filter(p => (p.roles || p.partner_roles || []).some(r => r.role === 'supplier'));
 
@@ -51,7 +53,6 @@ const SuppliersModule = ({ toast, importData, addPartner, updatePartner, deleteP
     e.preventDefault();
     try {
       const payload = { ...formData, role: 'supplier' };
-      if (typeof payload.segmentId === 'string') payload.segmentId = parseInt(payload.segmentId, 10);
       await addPartner(payload);
       toast?.({ title: 'Fornecedor criado!' });
       await loadPartners({ role: 'supplier' });
@@ -102,7 +103,7 @@ const SuppliersModule = ({ toast, importData, addPartner, updatePartner, deleteP
           <ImportDataButton onImport={(rows) => importData(rows, 'partners', activeSegmentId)} moduleName="Fornecedores" expectedHeaders={[
             'name','tax_id','email','phone','address','city','state','zip_code','status','segment_id'
           ]} />
-          <Button onClick={() => setShowCreateModal(true)} className="bg-gradient-to-r from-blue-500 to-emerald-600 hover:from-blue-600 hover:to-emerald-700">
+          <Button id="suppliers-new-button" onClick={() => setShowCreateModal(true)} className="bg-gradient-to-r from-blue-500 to-emerald-600 hover:from-blue-600 hover:to-emerald-700">
             <Plus className="w-4 h-4 mr-2" />Novo Fornecedor
           </Button>
         </div>
@@ -130,7 +131,7 @@ const SuppliersModule = ({ toast, importData, addPartner, updatePartner, deleteP
             </thead>
             <tbody>
               {suppliers.map(partner => (
-                <tr key={partner.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                <tr key={partner.id} id={`suppliers-row-${partner.id}`} data-testid={`suppliers-row-${partner.id}`} className="border-b border-border hover:bg-muted/50 transition-colors">
                   <td className="p-3">
                     <div>
                       <p className="font-medium">{partner.name}</p>
@@ -175,29 +176,29 @@ const SuppliersModule = ({ toast, importData, addPartner, updatePartner, deleteP
         <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Segmento</label>
-            <select value={formData.segmentId} onChange={(e) => setFormData({ ...formData, segmentId: e.target.value })} required className="w-full p-3 bg-muted border border-border rounded-lg">
+           <select id="suppliers-segment-select" value={formData.segmentId} onChange={(e) => setFormData({ ...formData, segmentId: e.target.value })} required className="w-full p-3 bg-muted border border-border rounded-lg">
               <option value="">Selecione um segmento</option>
               {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">Nome</label>
-            <input value={formData.name} onChange={(e)=>setFormData({...formData, name:e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg" required />
+            <input id="suppliers-name-input" value={formData.name} onChange={(e)=>setFormData({...formData, name:e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg" required />
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">CPF/CNPJ</label>
-            <input value={formData.tax_id} onChange={(e)=>setFormData({...formData, tax_id:e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg" />
+            <input id="suppliers-doc-input" value={formData.tax_id} onChange={(e)=>setFormData({...formData, tax_id:e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg" />
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">E-mail</label>
-            <input type="email" value={formData.email} onChange={(e)=>setFormData({...formData, email:e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg" />
+            <input id="suppliers-email-input" type="email" value={formData.email} onChange={(e)=>setFormData({...formData, email:e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg" />
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">Telefone</label>
             <input value={formData.phone} onChange={(e)=>setFormData({...formData, phone:e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg" />
           </div>
           <div className="md:col-span-2 flex space-x-3">
-            <Button type="submit" className="bg-gradient-to-r from-blue-500 to-emerald-600">Salvar</Button>
+            <Button id="suppliers-submit-button" type="submit" className="bg-gradient-to-r from-blue-500 to-emerald-600">Salvar</Button>
             <Button type="button" variant="outline" onClick={()=>setShowCreateModal(false)}>Cancelar</Button>
           </div>
         </form>

@@ -6,8 +6,9 @@ export const useCrud = () => {
   const addTransaction = async (transaction) => {
     try {
       const response = await apiService.createTransaction(transaction);
+      const created = response.transaction || response.transactions || response.data || response;
       toast({ title: "Transação adicionada!", description: "Nova transação foi registrada com sucesso." });
-      return response.transaction;
+      return created;
     } catch (error) {
       console.error('Add transaction error:', error);
       toast({ 
@@ -22,8 +23,9 @@ export const useCrud = () => {
   const updateTransaction = async (id, transactionData) => {
     try {
       const response = await apiService.updateTransaction(id, transactionData);
+      const updated = response.transaction || response.transactions || response.data || response;
       toast({ title: "Transação atualizada!" });
-      return response.transaction;
+      return updated;
     } catch (error) {
       console.error('Update transaction error:', error);
       toast({ 

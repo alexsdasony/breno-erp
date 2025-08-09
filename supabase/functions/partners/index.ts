@@ -33,6 +33,8 @@ serve(async (req) => {
         const ids = (partnersByRole || []).map((r: any) => r.partner_id);
         query = query.in('id', ids);
       }
+      // Ordenar por criação desc para listas mais previsíveis no frontend/tests
+      query = query.order('created_at', { ascending: false });
       const { data, error } = await query;
       if (error) return serverError(error.message);
       // attach roles per partner

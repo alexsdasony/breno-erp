@@ -30,13 +30,15 @@ import { formatCurrency, formatDate } from '@/lib/utils.js';
 const CustomersModule = ({ metrics, addCustomer, updateCustomer, deleteCustomer, toast, importData }) => {
   const { data, activeSegmentId, loadPartners } = useAppData();
   
-  // Carregar partners (clientes) quando o componente for montado
+  // Carregar clientes (via partners role=customer) ao montar e ao trocar de segmento
   useEffect(() => {
-    if (!data.partners || data.partners.length === 0) {
-      console.log('🔄 Carregando partners...');
-      loadPartners();
+    const params = { role: 'customer' };
+    // a API de partners atualmente não filtra por segment_id, mas manteremos padrão
+    if (activeSegmentId && activeSegmentId !== 0) {
+      params.segment_id = activeSegmentId;
     }
-  }, [loadPartners, data.partners]);
+    loadPartners(params).catch(() => {});
+  }, [activeSegmentId, loadPartners]);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -275,7 +277,7 @@ const CustomersModule = ({ metrics, addCustomer, updateCustomer, deleteCustomer,
             moduleName="Clientes"
             expectedHeaders={customerHeaders}
           />
-          <Button onClick={() => setShowCreateModal(true)} className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700">
+          <Button id="customers-new-button" onClick={() => setShowCreateModal(true)} className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700">
             <Plus className="w-4 h-4 mr-2" />
             Novo Cliente
           </Button>
@@ -327,7 +329,7 @@ const CustomersModule = ({ metrics, addCustomer, updateCustomer, deleteCustomer,
             </div>
           </div>
         <div className="overflow-x-auto max-h-96 scrollbar-hide">
-          <table className="w-full">
+          <table id="customers-table" className="w-full">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left p-3">Cliente</th>
@@ -341,7 +343,7 @@ const CustomersModule = ({ metrics, addCustomer, updateCustomer, deleteCustomer,
             </thead>
             <tbody>
               {filteredCustomers.map(customer => (
-                <motion.tr key={customer.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
+                <motion.tr key={customer.id} id={`customers-row-${customer.id}`} data-testid={`customers-row-${customer.id}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
                   <td className="p-3">
                     <div>
                       <p className="font-medium">{customer.name}</p>
@@ -427,7 +429,7 @@ const CustomersModule = ({ metrics, addCustomer, updateCustomer, deleteCustomer,
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Segmento</label>
-            <select value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+            <select id="customers-segment-select" value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
               <option value="">Selecione um segmento</option>
               {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
@@ -435,6 +437,7 @@ const CustomersModule = ({ metrics, addCustomer, updateCustomer, deleteCustomer,
           <div>
             <label className="block text-sm font-medium mb-2">Nome Completo *</label>
                 <input
+                  id="customers-name-input"
                   type="text"
                   value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})} 
@@ -446,6 +449,7 @@ const CustomersModule = ({ metrics, addCustomer, updateCustomer, deleteCustomer,
           <div>
             <label className="block text-sm font-medium mb-2">Tipo de Pessoa *</label>
             <select
+              id="customers-person-type-select"
               value={formData.tipoPessoa}
               onChange={(e) => setFormData({...formData, tipoPessoa: e.target.value, cpf: '', cnpj: ''})}
               className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
@@ -460,6 +464,7 @@ const CustomersModule = ({ metrics, addCustomer, updateCustomer, deleteCustomer,
               {formData.tipoPessoa === 'pf' ? 'CPF *' : 'CNPJ *'}
             </label>
                 <input
+                  id="customers-doc-input"
                   type="text"
                 value={formData.tipoPessoa === 'pf' ? formData.cpf : formData.cnpj}
                 onChange={(e) => {
@@ -477,6 +482,7 @@ const CustomersModule = ({ metrics, addCustomer, updateCustomer, deleteCustomer,
           <div>
             <label className="block text-sm font-medium mb-2">E-mail *</label>
                 <input
+                  id="customers-email-input"
               type="email" 
               value={formData.email} 
               onChange={(e) => setFormData({...formData, email: e.target.value})} 
@@ -565,7 +571,7 @@ const CustomersModule = ({ metrics, addCustomer, updateCustomer, deleteCustomer,
           </select>
           </div>
           <div className="md:col-span-2 flex space-x-3">
-            <Button type="submit" className="bg-gradient-to-r from-purple-500 to-pink-600">Salvar Cliente</Button>
+            <Button id="customers-submit-button" type="submit" className="bg-gradient-to-r from-purple-500 to-pink-600">Salvar Cliente</Button>
             <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>Cancelar</Button>
         </div>
         </form>

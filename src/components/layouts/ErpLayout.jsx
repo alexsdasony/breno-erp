@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Briefcase, LogOut, UserCircle, ShieldAlert, ChevronsUpDown } from 'lucide-react';
@@ -10,23 +10,25 @@ import { useAppData } from '@/hooks/useAppData.jsx';
 import { menuItems as appMenuItems } from '@/config/menuConfig'; 
 import { calculateMetrics } from '@/utils/metrics';
 
-import DashboardModule from '@/modules/DashboardModule';
-import FinancialModule from '@/modules/FinancialModule';
-import InventoryModule from '@/modules/InventoryModule';
-import SalesModule from '@/modules/SalesModule';
-import ReportsModule from '@/modules/ReportsModule';
-import CustomersModule from '@/modules/CustomersModule';
-import SuppliersModule from '@/modules/SuppliersModule';
-import NFeModule from '@/modules/NFeModule'; 
-import IntegrationsModule from '@/modules/IntegrationsModule';
-import BillingModule from '@/modules/BillingModule';
-import CostCentersModule from '@/modules/CostCentersModule';
-import ChartOfAccountsModule from '@/modules/ChartOfAccountsModule';
-import SchemaViewerModule from '@/modules/SchemaViewerModule';
-import ProfileModule from '@/modules/ProfileModule';
-import AccountsPayableModule from '@/modules/AccountsPayableModule';
-import SegmentsModule from '@/modules/SegmentsModule';
-import ReceitaModule from '@/modules/ReceitaModule';
+// Lazy loading para todos os módulos
+const DashboardModule = lazy(() => import('@/modules/DashboardModule'));
+const FinancialModule = lazy(() => import('@/modules/FinancialModule'));
+const InventoryModule = lazy(() => import('@/modules/InventoryModule'));
+const SalesModule = lazy(() => import('@/modules/SalesModule'));
+const ReportsModule = lazy(() => import('@/modules/ReportsModule'));
+const CustomersModule = lazy(() => import('@/modules/CustomersModule'));
+const SuppliersModule = lazy(() => import('@/modules/SuppliersModule'));
+const NFeModule = lazy(() => import('@/modules/NFeModule'));
+const IntegrationsModule = lazy(() => import('@/modules/IntegrationsModule'));
+const BillingModule = lazy(() => import('@/modules/BillingModule'));
+const CostCentersModule = lazy(() => import('@/modules/CostCentersModule'));
+const ChartOfAccountsModule = lazy(() => import('@/modules/ChartOfAccountsModule'));
+const SchemaViewerModule = lazy(() => import('@/modules/SchemaViewerModule'));
+const ProfileModule = lazy(() => import('@/modules/ProfileModule'));
+const AccountsPayableModule = lazy(() => import('@/modules/AccountsPayableModule'));
+const SegmentsModule = lazy(() => import('@/modules/SegmentsModule'));
+const ReceitaModule = lazy(() => import('@/modules/ReceitaModule'));
+const TestModule = lazy(() => import('@/modules/TestModule'));
 
 const ErpLayout = () => {
   const location = useLocation();
@@ -98,10 +100,26 @@ const ErpLayout = () => {
   // TEMPORARY FIX - SAFE SEGMENT ACCESS
   const activeSegment = (data.segments || []).find(s => s.id === activeSegmentId);
 
+  // Componente de loading para módulos
+  const ModuleLoadingFallback = () => (
+    <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+      <div className="text-center">
+        <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mb-4 mx-auto animate-pulse">
+          <Briefcase className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-xl font-semibold text-white mb-2">Carregando módulo...</h2>
+        <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto"></div>
+      </div>
+    </div>
+  );
+
   const renderModuleContent = (moduleName) => {
+    console.log(`🔍 renderModuleContent chamado para: ${moduleName}`);
     const moduleProps = { ...appData, metrics, toast, setActiveModule };
     
+    // Verificar acesso restrito
     if (moduleName === 'schema' && !isAdmin) {
+      console.log('🚫 Acesso negado ao módulo schema - usuário não é admin');
       return (
         <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] text-center">
           <ShieldAlert className="w-16 h-16 text-yellow-400 mb-4" />
@@ -111,25 +129,43 @@ const ErpLayout = () => {
       );
     }
 
-    switch (moduleName) {
-      case 'receita': return <ReceitaModule {...moduleProps} />;
-      case 'dashboard': return <DashboardModule {...moduleProps} />;
-      case 'financial': return <FinancialModule {...moduleProps} />;
-      case 'accountsPayable': return <AccountsPayableModule {...moduleProps} />;
-      case 'billing': return <BillingModule {...moduleProps} />;
-      case 'inventory': return <InventoryModule {...moduleProps} />;
-      case 'sales': return <SalesModule {...moduleProps} />;
-      case 'customers': return <CustomersModule {...moduleProps} />;
-      case 'suppliers': return <SuppliersModule {...moduleProps} />;
-      case 'costCenters': return <CostCentersModule {...moduleProps} />;
-      case 'chartOfAccounts': return <ChartOfAccountsModule {...moduleProps} />;
-      case 'segments': return <SegmentsModule {...moduleProps} />;
-      case 'nfe': return <NFeModule {...moduleProps} />;
-      case 'reports': return <ReportsModule {...moduleProps} />;
-      case 'schema': return <SchemaViewerModule {...moduleProps} />;
-      case 'profile': return <ProfileModule {...moduleProps} />;
-      default: return <Navigate to="/dashboard" replace />;
+    // Mapeamento de módulos com lazy loading
+    const moduleMap = {
+      'receita': ReceitaModule,
+      'dashboard': DashboardModule,
+      'financial': FinancialModule,
+      'accountsPayable': AccountsPayableModule,
+      'billing': BillingModule,
+      'inventory': InventoryModule,
+      'sales': SalesModule,
+      'customers': CustomersModule,
+      'suppliers': SuppliersModule,
+      'costCenters': CostCentersModule,
+      'chartOfAccounts': ChartOfAccountsModule,
+      'segments': SegmentsModule,
+      'nfe': NFeModule,
+      'reports': ReportsModule,
+      'schema': SchemaViewerModule,
+      'profile': ProfileModule,
+      'test': TestModule,
+    };
+
+    const ModuleComponent = moduleMap[moduleName];
+    
+    if (!ModuleComponent) {
+      console.error(`❌ Módulo não encontrado: ${moduleName}`);
+      console.log('📋 Módulos disponíveis:', Object.keys(moduleMap));
+      return <Navigate to="/dashboard" replace />;
     }
+
+    console.log(`🔄 Renderizando módulo: ${moduleName}`);
+    console.log('📦 Props passadas:', Object.keys(moduleProps));
+    
+    return (
+      <Suspense fallback={<ModuleLoadingFallback />}>
+        <ModuleComponent {...moduleProps} />
+      </Suspense>
+    );
   };
 
   return (
@@ -163,9 +199,12 @@ const ErpLayout = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => {
+                      console.log(`🖱️ Clique no menu: ${item.id}`);
+                      console.log(`📍 Navegando para: /${item.id}`);
                       setActiveModule(item.id);
                       navigate(`/${item.id}`);
                     }}
+                    id={`menu-${item.id}`}
                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                       activeModule === item.id
                         ? 'bg-gradient-to-r from-blue-500/20 to-purple-600/20 border border-blue-500/30 text-white'
@@ -248,25 +287,30 @@ const ErpLayout = () => {
           <main className="p-6">
             <AnimatePresence mode="wait">
               <Routes>
-                {menuItems.map(item => (
-                  <Route 
-                    key={item.id} 
-                    path={`/${item.id}`} 
-                    element={
-                      <motion.div
-                        key={`${item.id}-${activeSegmentId}`}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        {renderModuleContent(item.id)}
-                      </motion.div>
-                    } 
-                  />
-                ))}
+                {menuItems.map(item => {
+                  console.log(`��️ Criando rota para: /${item.id}`);
+                  return (
+                    <Route 
+                      key={item.id} 
+                      path={`/${item.id}`} 
+                      element={
+                        <motion.div
+                          key={`${item.id}-${activeSegmentId}`}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.3 }}
+                          onAnimationStart={() => console.log(`🎬 Animação iniciada para: ${item.id}`)}
+                          onAnimationComplete={() => console.log(`✅ Animação concluída para: ${item.id}`)}
+                        >
+                          {renderModuleContent(item.id)}
+                        </motion.div>
+                      } 
+                    />
+                  );
+                })}
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
             </AnimatePresence>
           </main>

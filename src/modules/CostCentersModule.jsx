@@ -7,6 +7,8 @@ import { useAppData } from '@/hooks/useAppData.jsx';
 import apiService from '@/services/api';
 
 const CostCentersModule = ({ toast }) => {
+  console.log('🏢 CostCentersModule - Componente montado');
+  
   const { data, activeSegmentId, ensureCostCentersLoaded, addCostCenter, updateCostCenter, deleteCostCenter, importData } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [showAccountsModal, setShowAccountsModal] = useState(false);
@@ -23,7 +25,7 @@ const CostCentersModule = ({ toast }) => {
 
   // Lazy load costCenters when component mounts
   useEffect(() => {
-  
+    console.log('🔄 CostCentersModule - useEffect ensureCostCentersLoaded executado');
     ensureCostCentersLoaded();
   }, [ensureCostCentersLoaded]);
 
@@ -225,7 +227,7 @@ const CostCentersModule = ({ toast }) => {
             moduleName="Centros de Custo"
             expectedHeaders={costCenterHeaders}
           />
-          <Button onClick={handleAddNew} className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700">
+          <Button id="costCenters-new-button" onClick={handleAddNew} className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700">
             <Plus className="w-4 h-4 mr-2" />
             Novo Centro de Custo
           </Button>
@@ -246,21 +248,21 @@ const CostCentersModule = ({ toast }) => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="segmentId" className="block text-sm font-medium mb-1">Segmento</label>
-                <select id="segmentId" value={formData.segmentId} onChange={handleSegmentChange} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                <select id="costCenters-segment-select" value={formData.segmentId} onChange={handleSegmentChange} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
                   <option value="">Selecione um segmento</option>
                   {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
               <div>
                 <label htmlFor="costCenterName" className="block text-sm font-medium mb-1">Nome do Centro de Custo</label>
-                <input id="costCenterName" type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" placeholder="Ex: Administrativo, Vendas" />
+                <input id="costCenters-name-input" type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" placeholder="Ex: Administrativo, Vendas" />
               </div>
               <div className="flex space-x-3">
-                <Button type="submit" className="bg-gradient-to-r from-teal-500 to-cyan-600">
+                <Button id="costCenters-submit-button" type="submit" className="bg-gradient-to-r from-teal-500 to-cyan-600">
                   <Save className="w-4 h-4 mr-2" />
                   {isEditing ? 'Salvar Alterações' : 'Adicionar'}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                <Button id="costCenters-cancel-button" type="button" variant="outline" onClick={() => setShowForm(false)}>
                   <XCircle className="w-4 h-4 mr-2" />
                   Cancelar
                 </Button>
@@ -276,7 +278,7 @@ const CostCentersModule = ({ toast }) => {
           <p className="text-muted-foreground">Nenhum centro de custo cadastrado para este segmento.</p>
         ) : (
           <div className="overflow-x-auto max-h-96 scrollbar-hide">
-            <table className="w-full">
+            <table id="costCenters-table" className="w-full">
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left p-3">Nome</th>
@@ -287,7 +289,7 @@ const CostCentersModule = ({ toast }) => {
               </thead>
               <tbody>
                 {filteredCostCenters.map(cc => (
-                  <motion.tr key={cc.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
+                  <motion.tr key={cc.id} id={`costCenters-row-${cc.id}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
                     <td className="p-3 font-medium">{cc.name}</td>
                     <td className="p-3">{segments.find(s => String(s.id) === String(cc.segmentId))?.name || 'N/A'}</td>
                     <td className="p-3 text-center">

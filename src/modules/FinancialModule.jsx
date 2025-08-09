@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   DollarSign, 
@@ -19,7 +19,7 @@ import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTransaction, toast, importData }) => {
-  const { data, activeSegmentId } = useAppData();
+  const { data, activeSegmentId, loadTransactions } = useAppData();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -49,7 +49,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
     setShowEditModal(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.description || !formData.amount || !formData.category || !formData.segmentId) {
       toast({
@@ -72,16 +72,21 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
       ...formData,
       amount: parseFloat(formData.amount),
       costCenter: formData.type === 'receita' ? null : formData.costCenter,
-      segmentId: parseInt(formData.segmentId)
+      // segmentId é UUID no banco; manter como string
+      segmentId: formData.segmentId || null,
     };
 
     if (currentTransaction) {
-      updateTransaction(currentTransaction.id, transactionData);
+      await updateTransaction(currentTransaction.id, transactionData);
       setShowEditModal(false);
     } else {
-      addTransaction(transactionData);
+      await addTransaction(transactionData);
       setShowCreateModal(false);
     }
+
+    // Recarregar lista para refletir imediatamente (forçando ignorar cache)
+    const segmentFilter = activeSegmentId && activeSegmentId !== 0 ? { segment_id: activeSegmentId } : {};
+    try { await loadTransactions({ ...segmentFilter, force: true }); } catch (_) {}
     
     resetForm();
   };
@@ -163,6 +168,12 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
   });
   const segments = data.segments || [];
 
+  // Garantir carregamento/atualização das transações ao abrir o módulo ou trocar de segmento
+  useEffect(() => {
+    const segmentFilter = activeSegmentId && activeSegmentId !== 0 ? { segment_id: activeSegmentId } : {};
+    loadTransactions(segmentFilter).catch(() => {});
+  }, [activeSegmentId, loadTransactions]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -182,7 +193,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
             moduleName="Transações"
             expectedHeaders={transactionHeaders}
           />
-          <Button onClick={() => setShowCreateModal(true)} className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700">
+          <Button id="financial-new-transaction-button" onClick={() => setShowCreateModal(true)} className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700">
             <Plus className="w-4 h-4 mr-2" />
             Nova Transação
           </Button>
@@ -230,7 +241,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
           </div>
         </div>
         <div className="overflow-x-auto max-h-96 scrollbar-hide">
-          <table className="w-full">
+          <table id="financial-transactions-table" className="w-full">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left p-3">Data</th>
@@ -243,7 +254,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
             </thead>
             <tbody>
               {filteredTransactions.map(transaction => (
-                <motion.tr key={transaction.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
+                <motion.tr key={transaction.id} id={`financial-row-${transaction.id}`} data-testid={`financial-row-${transaction.id}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
                   <td className="p-3">{formatDate(transaction.date)}</td>
                   <td className="p-3 font-medium">{transaction.description}</td>
                   <td className="p-3">{segments.find(s => s.id === transaction.segmentId)?.name || 'N/A'}</td>
@@ -301,14 +312,14 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Segmento *</label>
-            <select value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+            <select id="financial-segment-select" value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
               <option value="">Selecione um segmento</option>
               {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">Tipo *</label>
-            <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value, costCenter: ''})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+            <select id="financial-type-select" value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value, costCenter: ''})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
               <option value="receita">Receita</option>
               <option value="despesa">Despesa</option>
             </select>
@@ -316,6 +327,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
           <div className="md:col-span-2">
             <label className="block text-sm font-medium mb-2">Descrição *</label>
             <input 
+              id="financial-description-input"
               type="text" 
               value={formData.description} 
               onChange={(e) => setFormData({...formData, description: e.target.value})} 
@@ -327,6 +339,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
           <div>
             <label className="block text-sm font-medium mb-2">Categoria *</label>
             <input 
+              id="financial-category-input"
               type="text" 
               value={formData.category} 
               onChange={(e) => setFormData({...formData, category: e.target.value})} 
@@ -338,6 +351,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
           <div>
             <label className="block text-sm font-medium mb-2">Valor *</label>
             <input 
+              id="financial-amount-input"
               type="number" 
               step="0.01" 
               value={formData.amount} 
@@ -350,7 +364,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
           {formData.type === 'despesa' && (
             <div>
               <label className="block text-sm font-medium mb-2">Centro de Custo *</label>
-              <select value={formData.costCenter} onChange={(e) => setFormData({...formData, costCenter: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" required>
+              <select id="financial-cost-center-select" value={formData.costCenter} onChange={(e) => setFormData({...formData, costCenter: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" required>
                 <option value="">Selecione...</option>
                 {data.costCenters.filter(cc => !activeSegmentId || activeSegmentId === 0 || cc.segmentId === activeSegmentId).map(cc => <option key={cc.id} value={cc.name}>{cc.name}</option>)}
               </select>
@@ -359,6 +373,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
           <div>
             <label className="block text-sm font-medium mb-2">Data *</label>
             <input
+              id="financial-date-input"
               type="date"
               value={formData.date ? formData.date.split('T')[0] : ''}
               onChange={(e) => setFormData({...formData, date: e.target.value})}
@@ -367,10 +382,10 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
             />
           </div>
           <div className="md:col-span-2 flex space-x-3">
-            <Button type="submit" className="bg-gradient-to-r from-green-500 to-blue-600">
+            <Button id="financial-submit-button" type="submit" className="bg-gradient-to-r from-green-500 to-blue-600">
               Salvar Transação
             </Button>
-            <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>
+            <Button id="financial-cancel-button" type="button" variant="outline" onClick={() => setShowCreateModal(false)}>
               Cancelar
             </Button>
           </div>

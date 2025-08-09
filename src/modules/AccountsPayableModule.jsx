@@ -275,11 +275,11 @@ const AccountsPayableModule = ({ addFinancialDocument, updateFinancialDocument, 
           Contas a Pagar
         </h1>
         <div className="flex gap-2">
-          <ImportDataButton onImport={handleImport} moduleName="Contas a Pagar" expectedHeaders={['supplier', 'description', 'amount', 'dueDate', 'status', 'segmentId']} />
-           <Button onClick={exportData} variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-700">
+          <ImportDataButton id="accountsPayable-import-button" onImport={handleImport} moduleName="Contas a Pagar" expectedHeaders={['supplier', 'description', 'amount', 'dueDate', 'status', 'segmentId']} />
+           <Button id="accountsPayable-export-button" onClick={exportData} variant="outline" className="bg-slate-800 hover:bg-slate-700 border-slate-700">
             <FileDown className="mr-2 h-4 w-4" /> Exportar JSON
           </Button>
-          <Button onClick={() => setShowCreateModal(true)} className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+          <Button id="accountsPayable-new-button" onClick={() => setShowCreateModal(true)} className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
             <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Conta
           </Button>
         </div>
@@ -345,7 +345,7 @@ const AccountsPayableModule = ({ addFinancialDocument, updateFinancialDocument, 
       </div>
 
       <div className="overflow-x-auto glass-effect p-4 rounded-lg border border-white/10">
-        <table className="w-full min-w-max text-left">
+        <table id="accountsPayable-table" className="w-full min-w-max text-left">
           <thead>
             <tr className="border-b border-slate-700">
               <th className="p-3">Fornecedor</th>
@@ -359,7 +359,7 @@ const AccountsPayableModule = ({ addFinancialDocument, updateFinancialDocument, 
           </thead>
           <tbody>
             {filteredAccounts.map((account) => (
-              <motion.tr key={account.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="border-b border-slate-800 hover:bg-slate-800/60">
+              <motion.tr key={account.id} id={`accountsPayable-row-${account.id}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="border-b border-slate-800 hover:bg-slate-800/60">
                 <td className="p-3">
                   <div>
                     <div className="font-medium">{suppliers.find(s => s.id === (account.partner_id || account.supplier_id))?.name || 'N/A'}</div>
@@ -408,14 +408,14 @@ const AccountsPayableModule = ({ addFinancialDocument, updateFinancialDocument, 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Segmento *</label>
-              <select name="segmentId" value={formData.segmentId} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
+              <select id="accountsPayable-segment-select" name="segmentId" value={formData.segmentId} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
                 <option value="">Selecione um segmento</option>
                 {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Fornecedor *</label>
-              <select name="supplierId" value={formData.supplierId} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
+              <select id="accountsPayable-supplier-select" name="supplierId" value={formData.supplierId} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
                 <option value="">Selecione um fornecedor</option>
                 {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
@@ -425,11 +425,11 @@ const AccountsPayableModule = ({ addFinancialDocument, updateFinancialDocument, 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Número da NF</label>
-              <input type="text" name="numeroNotaFiscal" value={formData.numeroNotaFiscal} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              <input id="accountsPayable-docno-input" type="text" name="numeroNotaFiscal" value={formData.numeroNotaFiscal} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Categoria</label>
-              <select name="categoriaId" value={formData.categoriaId} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
+              <select id="accountsPayable-category-select" name="categoriaId" value={formData.categoriaId} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
                 <option value="">Selecione uma categoria</option>
                 {accountCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -438,28 +438,28 @@ const AccountsPayableModule = ({ addFinancialDocument, updateFinancialDocument, 
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Descrição *</label>
-            <textarea name="descricao" value={formData.descricao} onChange={handleInputChange} required rows={2} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
+            <textarea id="accountsPayable-description-input" name="descricao" value={formData.descricao} onChange={handleInputChange} required rows={2} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Valor (R$) *</label>
-              <input type="number" step="0.01" name="valor" value={formData.valor} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              <input id="accountsPayable-amount-input" type="number" step="0.01" name="valor" value={formData.valor} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Data de Vencimento *</label>
-              <input type="date" name="dataVencimento" value={formData.dataVencimento} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              <input id="accountsPayable-dueDate-input" type="date" name="dataVencimento" value={formData.dataVencimento} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Data de Pagamento</label>
-              <input type="date" name="dataPagamento" value={formData.dataPagamento} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              <input id="accountsPayable-paymentDate-input" type="date" name="dataPagamento" value={formData.dataPagamento} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Status</label>
-              <select name="status" value={formData.status} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
+              <select id="accountsPayable-status-select" name="status" value={formData.status} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
                 <option value="pendente">Pendente</option>
                 <option value="paga">Paga</option>
                 <option value="vencida">Vencida</option>
@@ -468,7 +468,7 @@ const AccountsPayableModule = ({ addFinancialDocument, updateFinancialDocument, 
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Forma de Pagamento</label>
-              <select name="formaPagamento" value={formData.formaPagamento} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
+              <select id="accountsPayable-paymentMethod-select" name="formaPagamento" value={formData.formaPagamento} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
                 <option value="boleto">Boleto</option>
                 <option value="pix">PIX</option>
                 <option value="transferencia">Transferência</option>
@@ -500,8 +500,8 @@ const AccountsPayableModule = ({ addFinancialDocument, updateFinancialDocument, 
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
-            <Button type="button" variant="outline" onClick={resetForm} className="border-slate-600 hover:bg-slate-700">Cancelar</Button>
-            <Button type="submit" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">Adicionar Conta</Button>
+            <Button id="accountsPayable-cancel-button" type="button" variant="outline" onClick={resetForm} className="border-slate-600 hover:bg-slate-700">Cancelar</Button>
+            <Button id="accountsPayable-submit-button" type="submit" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">Adicionar Conta</Button>
           </div>
         </form>
       </Modal>
@@ -517,14 +517,14 @@ const AccountsPayableModule = ({ addFinancialDocument, updateFinancialDocument, 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Segmento *</label>
-                <select name="segmentId" value={formData.segmentId} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
+                <select id="accountsPayable-edit-segment-select" name="segmentId" value={formData.segmentId} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
                   <option value="">Selecione um segmento</option>
                   {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
               <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Fornecedor *</label>
-              <select name="supplierId" value={formData.supplierId} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
+              <select id="accountsPayable-edit-supplier-select" name="supplierId" value={formData.supplierId} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
                 <option value="">Selecione um fornecedor</option>
                 {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
@@ -534,11 +534,11 @@ const AccountsPayableModule = ({ addFinancialDocument, updateFinancialDocument, 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Número da NF</label>
-              <input type="text" name="numeroNotaFiscal" value={formData.numeroNotaFiscal} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+               <input id="accountsPayable-edit-docno-input" type="text" name="numeroNotaFiscal" value={formData.numeroNotaFiscal} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Categoria</label>
-              <select name="categoriaId" value={formData.categoriaId} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
+               <select id="accountsPayable-edit-category-select" name="categoriaId" value={formData.categoriaId} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
                 <option value="">Selecione uma categoria</option>
                 {accountCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -547,28 +547,28 @@ const AccountsPayableModule = ({ addFinancialDocument, updateFinancialDocument, 
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Descrição *</label>
-            <textarea name="descricao" value={formData.descricao} onChange={handleInputChange} required rows={2} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
+             <textarea id="accountsPayable-edit-description-input" name="descricao" value={formData.descricao} onChange={handleInputChange} required rows={2} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Valor (R$) *</label>
-              <input type="number" step="0.01" name="valor" value={formData.valor} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+               <input id="accountsPayable-edit-amount-input" type="number" step="0.01" name="valor" value={formData.valor} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Data de Vencimento *</label>
-              <input type="date" name="dataVencimento" value={formData.dataVencimento} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+               <input id="accountsPayable-edit-dueDate-input" type="date" name="dataVencimento" value={formData.dataVencimento} onChange={handleInputChange} required className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Data de Pagamento</label>
-              <input type="date" name="dataPagamento" value={formData.dataPagamento} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+               <input id="accountsPayable-edit-paymentDate-input" type="date" name="dataPagamento" value={formData.dataPagamento} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Status</label>
-              <select name="status" value={formData.status} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
+               <select id="accountsPayable-edit-status-select" name="status" value={formData.status} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
                 <option value="pendente">Pendente</option>
                 <option value="paga">Paga</option>
                 <option value="vencida">Vencida</option>
@@ -577,7 +577,7 @@ const AccountsPayableModule = ({ addFinancialDocument, updateFinancialDocument, 
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Forma de Pagamento</label>
-              <select name="formaPagamento" value={formData.formaPagamento} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
+               <select id="accountsPayable-edit-paymentMethod-select" name="formaPagamento" value={formData.formaPagamento} onChange={handleInputChange} className="w-full p-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
                 <option value="boleto">Boleto</option>
                 <option value="pix">PIX</option>
                 <option value="transferencia">Transferência</option>
@@ -609,8 +609,8 @@ const AccountsPayableModule = ({ addFinancialDocument, updateFinancialDocument, 
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
-            <Button type="button" variant="outline" onClick={resetForm} className="border-slate-600 hover:bg-slate-700">Cancelar</Button>
-            <Button type="submit" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">Salvar Alterações</Button>
+            <Button id="accountsPayable-edit-cancel-button" type="button" variant="outline" onClick={resetForm} className="border-slate-600 hover:bg-slate-700">Cancelar</Button>
+            <Button id="accountsPayable-update-button" type="submit" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">Salvar Alterações</Button>
           </div>
         </form>
       </Modal>

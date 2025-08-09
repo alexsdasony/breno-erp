@@ -18,8 +18,8 @@ import Modal from '@/components/ui/modal';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency } from '@/lib/utils.js';
 
-const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
-  const { data, activeSegmentId } = useAppData();
+const InventoryModule = ({ metrics, addProduct, updateProduct, deleteProduct, toast, importData }) => {
+  const { data, activeSegmentId, loadProducts } = useAppData();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -34,7 +34,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
     segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.stock || !formData.minStock || !formData.price || !formData.category || !formData.segmentId) {
       toast({
@@ -44,17 +44,20 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
       });
       return;
     }
-    
-    addProduct({
-      ...formData,
-      stock: parseInt(formData.stock),
-      minStock: parseInt(formData.minStock),
-      price: parseFloat(formData.price),
-      segmentId: parseInt(formData.segmentId)
-    });
-    
-    setFormData({ name: '', stock: '', minStock: '', price: '', category: '', segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '') });
-    setShowCreateModal(false);
+    try {
+      await addProduct({
+        ...formData,
+        stock: parseInt(formData.stock),
+        minStock: parseInt(formData.minStock),
+        price: parseFloat(formData.price),
+        segmentId: parseInt(formData.segmentId)
+      });
+      await loadProducts();
+      setFormData({ name: '', stock: '', minStock: '', price: '', category: '', segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '') });
+      setShowCreateModal(false);
+    } catch (err) {
+      // toast de erro já emitido por addProduct
+    }
   };
 
   const handleViewProduct = (product) => {
@@ -80,16 +83,25 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
-    toast({
-      title: "Produto Excluído",
-      description: `${selectedProduct.name} foi excluído com sucesso.`,
-    });
-    setShowDeleteConfirm(false);
-    setSelectedProduct(null);
+  const confirmDelete = async () => {
+    try {
+      if (selectedProduct?.id) {
+        await deleteProduct(selectedProduct.id);
+        await loadProducts();
+      }
+      toast({
+        title: "Produto Excluído",
+        description: `${selectedProduct.name} foi excluído com sucesso.`,
+      });
+    } catch (e) {
+      toast({ title: "Erro", description: "Falha ao excluir produto.", variant: "destructive" });
+    } finally {
+      setShowDeleteConfirm(false);
+      setSelectedProduct(null);
+    }
   };
 
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.stock || !formData.minStock || !formData.price || !formData.category || !formData.segmentId) {
       toast({
@@ -99,12 +111,25 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
       });
       return;
     }
-    
-    toast({
-      title: "Produto Atualizado",
-      description: `${formData.name} foi atualizado com sucesso.`,
-    });
-    
+    try {
+      if (selectedProduct?.id) {
+        await updateProduct(selectedProduct.id, {
+          ...formData,
+          minStock: parseInt(formData.minStock),
+          stock: parseInt(formData.stock),
+          price: parseFloat(formData.price),
+          segmentId: parseInt(formData.segmentId),
+        });
+        await loadProducts();
+      }
+      toast({
+        title: "Produto Atualizado",
+        description: `${formData.name} foi atualizado com sucesso.`,
+      });
+    } catch (err) {
+      toast({ title: "Erro", description: "Falha ao atualizar produto.", variant: "destructive" });
+      return;
+    }
     setShowEditModal(false);
     setSelectedProduct(null);
     setFormData({ name: '', stock: '', minStock: '', price: '', category: '', segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '') });
@@ -140,7 +165,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
             moduleName="Produtos"
             expectedHeaders={productHeaders}
           />
-          <Button onClick={() => setShowCreateModal(true)} className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700">
+          <Button id="products-new-button" onClick={() => setShowCreateModal(true)} className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700">
             <Plus className="w-4 h-4 mr-2" />
             Novo Produto
           </Button>
@@ -190,7 +215,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
           </div>
         </div>
         <div className="overflow-x-auto max-h-96 scrollbar-hide">
-          <table className="w-full">
+          <table id="products-table" className="w-full">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left p-3">Produto</th>
@@ -203,7 +228,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
             </thead>
             <tbody>
               {filteredProducts.map(product => (
-                <motion.tr key={product.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
+                <motion.tr key={product.id} id={`products-row-${product.id}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
                   <td className="p-3 font-medium">{product.name}</td>
                   <td className="p-3">{segments.find(s => s.id === product.segmentId)?.name || 'N/A'}</td>
                   <td className="p-3 text-center">{product.stock}</td>
@@ -216,6 +241,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
                   <td className="p-3 text-center">
                     <div className="flex justify-center space-x-2">
                       <Button 
+                        id={`products-view-button-${product.id}`}
                         variant="ghost" 
                         size="sm"
                         onClick={() => handleViewProduct(product)}
@@ -224,6 +250,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
                         <Eye className="w-4 h-4" />
                       </Button>
                       <Button 
+                        id={`products-edit-button-${product.id}`}
                         variant="ghost" 
                         size="sm"
                         onClick={() => handleEditProduct(product)}
@@ -232,6 +259,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button 
+                        id={`products-delete-button-${product.id}`}
                         variant="ghost" 
                         size="sm"
                         onClick={() => handleDeleteProduct(product)}
@@ -259,7 +287,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Segmento</label>
-            <select value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+            <select id="products-segment-select" value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
               <option value="">Selecione um segmento</option>
               {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
@@ -267,6 +295,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
           <div>
             <label className="block text-sm font-medium mb-2">Nome do Produto *</label>
             <input 
+              id="products-name-input"
               type="text" 
               value={formData.name} 
               onChange={(e) => setFormData({...formData, name: e.target.value})} 
@@ -278,6 +307,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
           <div>
             <label className="block text-sm font-medium mb-2">Categoria *</label>
             <input 
+              id="products-category-input"
               type="text" 
               value={formData.category} 
               onChange={(e) => setFormData({...formData, category: e.target.value})} 
@@ -289,6 +319,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
           <div>
             <label className="block text-sm font-medium mb-2">Estoque Atual *</label>
             <input 
+              id="products-stock-input"
               type="number" 
               value={formData.stock} 
               onChange={(e) => setFormData({...formData, stock: e.target.value})} 
@@ -300,6 +331,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
           <div>
             <label className="block text-sm font-medium mb-2">Estoque Mínimo *</label>
             <input 
+              id="products-minStock-input"
               type="number" 
               value={formData.minStock} 
               onChange={(e) => setFormData({...formData, minStock: e.target.value})} 
@@ -311,6 +343,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
           <div>
             <label className="block text-sm font-medium mb-2">Preço *</label>
             <input 
+              id="products-price-input"
               type="number" 
               step="0.01" 
               value={formData.price} 
@@ -321,8 +354,8 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
             />
           </div>
           <div className="md:col-span-2 flex space-x-3">
-            <Button type="submit" className="bg-gradient-to-r from-purple-500 to-pink-600">Salvar Produto</Button>
-            <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>Cancelar</Button>
+            <Button id="products-submit-button" type="submit" className="bg-gradient-to-r from-purple-500 to-pink-600">Salvar Produto</Button>
+            <Button id="products-cancel-button" type="button" variant="outline" onClick={() => setShowCreateModal(false)}>Cancelar</Button>
           </div>
         </form>
       </Modal>
@@ -384,7 +417,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
         <form onSubmit={handleEditSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Segmento</label>
-            <select value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+            <select id="products-segment-select" value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
               <option value="">Selecione um segmento</option>
               {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
@@ -392,6 +425,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
           <div>
             <label className="block text-sm font-medium mb-2">Nome do Produto *</label>
             <input 
+              id="products-name-input"
               type="text" 
               value={formData.name} 
               onChange={(e) => setFormData({...formData, name: e.target.value})} 
@@ -403,6 +437,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
           <div>
             <label className="block text-sm font-medium mb-2">Categoria *</label>
             <input 
+              id="products-category-input"
               type="text" 
               value={formData.category} 
               onChange={(e) => setFormData({...formData, category: e.target.value})} 
@@ -414,6 +449,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
           <div>
             <label className="block text-sm font-medium mb-2">Estoque Atual *</label>
             <input 
+              id="products-stock-input"
               type="number" 
               value={formData.stock} 
               onChange={(e) => setFormData({...formData, stock: e.target.value})} 
@@ -425,6 +461,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
           <div>
             <label className="block text-sm font-medium mb-2">Estoque Mínimo *</label>
             <input 
+              id="products-minStock-input"
               type="number" 
               value={formData.minStock} 
               onChange={(e) => setFormData({...formData, minStock: e.target.value})} 
@@ -436,6 +473,7 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
           <div>
             <label className="block text-sm font-medium mb-2">Preço *</label>
             <input 
+              id="products-price-input"
               type="number" 
               step="0.01" 
               value={formData.price} 
@@ -446,10 +484,10 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
             />
           </div>
           <div className="md:col-span-2 flex space-x-3">
-            <Button type="submit" className="bg-gradient-to-r from-purple-500 to-pink-600">
+            <Button id="products-submit-button" type="submit" className="bg-gradient-to-r from-purple-500 to-pink-600">
               Atualizar Produto
             </Button>
-            <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>
+            <Button id="products-cancel-button" type="button" variant="outline" onClick={() => setShowEditModal(false)}>
               Cancelar
             </Button>
           </div>
@@ -475,12 +513,14 @@ const InventoryModule = ({ metrics, addProduct, toast, importData }) => {
           
           <div className="flex space-x-3 justify-center">
             <Button
+              id="products-confirm-delete-button"
               variant="destructive"
               onClick={confirmDelete}
             >
               Sim, Excluir
             </Button>
             <Button
+              id="products-cancel-delete-button"
               variant="outline"
               onClick={() => setShowDeleteConfirm(false)}
             >

@@ -7,7 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from '@/components/ui/use-toast';
 
 const SegmentsModule = () => {
-  const { data, addSegment, updateSegment, deleteSegment } = useAppData();
+  const { data, addSegment, updateSegment, deleteSegment, reloadSegments } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentSegment, setCurrentSegment] = useState(null);
@@ -27,11 +27,12 @@ const SegmentsModule = () => {
     setShowForm(true);
   };
 
-  const handleDelete = (id) => {
-    deleteSegment(id);
+  const handleDelete = async (id) => {
+    await deleteSegment(id);
+    await reloadSegments();
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) {
       toast({
@@ -43,10 +44,12 @@ const SegmentsModule = () => {
     }
 
     if (isEditing && currentSegment) {
-      updateSegment(currentSegment.id, formData);
+      await updateSegment(currentSegment.id, formData);
     } else {
-      addSegment(formData);
+      await addSegment(formData);
     }
+
+    await reloadSegments();
 
     setShowForm(false);
     setFormData({ name: '', description: '' });
@@ -67,7 +70,7 @@ const SegmentsModule = () => {
           </h1>
           <p className="text-muted-foreground mt-2">Adicione, edite ou remova segmentos.</p>
         </div>
-        <Button onClick={handleAddNew} className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700">
+        <Button id="segments-new-button" onClick={handleAddNew} className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700">
           <Plus className="w-4 h-4 mr-2" />
           Novo Segmento
         </Button>
@@ -89,6 +92,7 @@ const SegmentsModule = () => {
                 <label htmlFor="segmentName" className="block text-sm font-medium mb-1">Nome do Segmento</label>
                 <input
                   id="segmentName"
+                  data-testid="segments-name-input"
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -100,6 +104,7 @@ const SegmentsModule = () => {
                 <label htmlFor="segmentDescription" className="block text-sm font-medium mb-1">Descrição</label>
                 <textarea
                   id="segmentDescription"
+                  data-testid="segments-description-input"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
@@ -108,11 +113,11 @@ const SegmentsModule = () => {
                 />
               </div>
               <div className="flex space-x-3">
-                <Button type="submit" className="bg-gradient-to-r from-indigo-500 to-purple-600">
+                <Button id="segments-submit-button" type="submit" className="bg-gradient-to-r from-indigo-500 to-purple-600">
                   <Save className="w-4 h-4 mr-2" />
                   {isEditing ? 'Salvar Alterações' : 'Adicionar Segmento'}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                <Button id="segments-cancel-button" type="button" variant="outline" onClick={() => setShowForm(false)}>
                   <XCircle className="w-4 h-4 mr-2" />
                   Cancelar
                 </Button>
@@ -133,7 +138,7 @@ const SegmentsModule = () => {
           <p className="text-muted-foreground">Nenhum segmento cadastrado.</p>
         ) : (
           <div className="overflow-x-auto max-h-96 scrollbar-hide">
-            <table className="w-full">
+            <table id="segments-table" className="w-full">
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left p-3">Nome</th>
@@ -145,6 +150,7 @@ const SegmentsModule = () => {
                 {data.segments.map(segment => (
                   <motion.tr
                     key={segment.id}
+                    id={`segments-row-${segment.id}`}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="border-b border-border hover:bg-muted/50 transition-colors"
@@ -153,12 +159,12 @@ const SegmentsModule = () => {
                     <td className="p-3 text-muted-foreground">{segment.description}</td>
                     <td className="p-3 text-center">
                       <div className="flex justify-center space-x-1">
-                        <Button variant="ghost" size="sm" title="Editar" onClick={() => handleEdit(segment)}>
+                        <Button id={`segments-edit-${segment.id}`} variant="ghost" size="sm" title="Editar" onClick={() => handleEdit(segment)}>
                           <Edit className="w-4 h-4" />
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" title="Excluir">
+                            <Button id={`segments-delete-${segment.id}`} variant="ghost" size="sm" title="Excluir">
                               <Trash2 className="w-4 h-4 text-red-500" />
                             </Button>
                           </AlertDialogTrigger>
@@ -171,7 +177,7 @@ const SegmentsModule = () => {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(segment.id)}>Excluir</AlertDialogAction>
+                              <AlertDialogAction id={`segments-confirm-delete-${segment.id}`} onClick={() => handleDelete(segment.id)}>Excluir</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>

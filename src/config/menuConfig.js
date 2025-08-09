@@ -1,4 +1,4 @@
-import { LayoutDashboard, DollarSign, Package, ShoppingCart, BarChart3, Users, FileSpreadsheet, Zap, CreditCard, Building, Database, ListChecks, Briefcase, BookOpen, Search, Factory } from 'lucide-react';
+import { LayoutDashboard, DollarSign, Package, ShoppingCart, BarChart3, Users, FileSpreadsheet, Zap, CreditCard, Building, Database, ListChecks, Briefcase, BookOpen, Search, Factory, TestTube } from 'lucide-react';
 
 export const menuItems = [
   { id: 'receita', label: 'Receita Federal', icon: Search },
@@ -16,5 +16,6 @@ export const menuItems = [
   { id: 'nfe', label: 'Emissão NF-e', icon: FileSpreadsheet },
   // { id: 'integrations', label: 'Integrações', icon: Zap }, // REMOVED - causing issues
   { id: 'reports', label: 'Relatórios', icon: BarChart3 },
-  { id: 'schema', label: 'Schema do Banco', icon: Database },
+  { id: 'test', label: 'Teste Lazy Loading', icon: TestTube }, // Item de teste
+  { id: 'schema', label: 'Schema Viewer', icon: Database }, // Admin only
 ];
