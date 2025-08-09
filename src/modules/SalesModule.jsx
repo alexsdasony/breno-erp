@@ -26,8 +26,8 @@ import Autocomplete from '@/components/ui/autocomplete';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
-const SalesModule = ({ metrics, addSale, toast, importData }) => {
-  const { data, activeSegmentId, loadProducts } = useAppData();
+const SalesModule = () => {
+  const { data, activeSegmentId, loadProducts, metrics, toast, addSale, importData } = useAppData();
   
   // Carregar produtos quando o componente for montado
   useEffect(() => {
@@ -307,7 +307,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total de Vendas</p>
-              <p className="text-2xl font-bold text-orange-400">{metrics.totalSales}</p>
+              <p className="text-2xl font-bold text-orange-400">{metrics?.totalSales || 0}</p>
             </div>
             <ShoppingCart className="w-8 h-8 text-orange-400" />
           </div>
@@ -316,7 +316,7 @@ const SalesModule = ({ metrics, addSale, toast, importData }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Clientes Ativos</p>
-              <p className="text-2xl font-bold text-blue-400">{metrics.totalCustomers}</p>
+              <p className="text-2xl font-bold text-blue-400">{metrics?.totalCustomers || 0}</p>
             </div>
             <Users className="w-8 h-8 text-blue-400" />
           </div>

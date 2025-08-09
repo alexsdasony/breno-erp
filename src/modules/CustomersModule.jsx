@@ -27,8 +27,8 @@ import Modal from '@/components/ui/modal';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
-const CustomersModule = ({ metrics, addCustomer, updateCustomer, deleteCustomer, toast, importData }) => {
-  const { data, activeSegmentId, loadPartners } = useAppData();
+const CustomersModule = () => {
+  const { data, activeSegmentId, loadPartners, metrics, toast, addCustomer, updateCustomer, deleteCustomer, importData } = useAppData();
   
   // Carregar clientes (via partners role=customer) ao montar e ao trocar de segmento
   useEffect(() => {
@@ -289,7 +289,7 @@ const CustomersModule = ({ metrics, addCustomer, updateCustomer, deleteCustomer,
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total de Clientes</p>
-              <p className="text-2xl font-bold text-blue-400">{metrics.totalCustomers || filteredCustomers.length}</p>
+              <p className="text-2xl font-bold text-blue-400">{metrics?.totalCustomers || filteredCustomers.length}</p>
             </div>
             <Users className="w-8 h-8 text-blue-400" />
         </div>

@@ -18,8 +18,8 @@ import Modal from '@/components/ui/modal';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency } from '@/lib/utils.js';
 
-const InventoryModule = ({ metrics, addProduct, updateProduct, deleteProduct, toast, importData }) => {
-  const { data, activeSegmentId, loadProducts } = useAppData();
+const InventoryModule = () => {
+  const { data, activeSegmentId, loadProducts, metrics, toast, addProduct, updateProduct, deleteProduct, importData } = useAppData();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -177,7 +177,7 @@ const InventoryModule = ({ metrics, addProduct, updateProduct, deleteProduct, to
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total de Produtos</p>
-              <p className="text-2xl font-bold text-blue-400">{metrics.totalProducts}</p>
+              <p className="text-2xl font-bold text-blue-400">{metrics?.totalProducts || 0}</p>
             </div>
             <Package className="w-8 h-8 text-blue-400" />
           </div>
@@ -186,7 +186,7 @@ const InventoryModule = ({ metrics, addProduct, updateProduct, deleteProduct, to
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Estoque Baixo</p>
-              <p className="text-2xl font-bold text-yellow-400">{metrics.lowStockProducts}</p>
+              <p className="text-2xl font-bold text-yellow-400">{metrics?.lowStockProducts || 0}</p>
             </div>
             <AlertTriangle className="w-8 h-8 text-yellow-400" />
           </div>

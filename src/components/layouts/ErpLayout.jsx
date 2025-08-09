@@ -113,7 +113,7 @@ const ErpLayout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
@@ -125,7 +125,7 @@ const ErpLayout = ({ children }) => {
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 transform transition-transform duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } lg:translate-x-0 lg:static lg:inset-0`}>
+      } lg:translate-x-0 lg:relative lg:flex-shrink-0`}>
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
@@ -237,7 +237,7 @@ const ErpLayout = ({ children }) => {
       </div>
 
       {/* Main Content */}
-      <div className="lg:ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen">
         {/* Top Bar */}
         <header className="bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50 p-4">
           <div className="flex items-center justify-between">

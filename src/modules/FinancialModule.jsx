@@ -18,8 +18,8 @@ import Modal from '@/components/ui/modal';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
-const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTransaction, toast, importData }) => {
-  const { data, activeSegmentId, loadTransactions } = useAppData();
+const FinancialModule = () => {
+  const { data, activeSegmentId, loadTransactions, metrics, toast, addTransaction, updateTransaction, deleteTransaction, importData } = useAppData();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -77,9 +77,11 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
     };
 
     if (currentTransaction) {
+      // Usar o método do useAppData
       await updateTransaction(currentTransaction.id, transactionData);
       setShowEditModal(false);
     } else {
+      // Usar o método do useAppData
       await addTransaction(transactionData);
       setShowCreateModal(false);
     }
@@ -99,9 +101,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
       amount: transaction.amount.toString(),
       category: transaction.category,
       costCenter: transaction.costCenter || '',
-      segmentId: transaction.segmentId || activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : ''),
-      // Corrigir formato da data para yyyy-MM-dd
-      date: transaction.date ? transaction.date.split('T')[0] : new Date().toISOString().split('T')[0]
+      segmentId: transaction.segmentId || activeSegmentId || ''
     });
     setShowEditModal(true);
   };
@@ -117,62 +117,46 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
   };
 
   const confirmDelete = async () => {
-    try {
-      await deleteTransaction(currentTransaction.id);
+    if (currentTransaction) {
+      try {
+        // Usar o método do useAppData
+        await deleteTransaction(currentTransaction.id);
         toast({
           title: "Sucesso",
           description: "Transação excluída com sucesso.",
         });
-      setShowDeleteConfirm(false);
-      setCurrentTransaction(null);
+        
+        // Recarregar lista
+        const segmentFilter = activeSegmentId && activeSegmentId !== 0 ? { segment_id: activeSegmentId } : {};
+        try { await loadTransactions({ ...segmentFilter, force: true }); } catch (_) {}
       } catch (error) {
-        console.error('Erro ao excluir transação:', error);
         toast({
           title: "Erro",
-          description: "Erro ao excluir transação.",
-          variant: "destructive"
-        });
-    }
-  };
-
-  // Adicionar função para auto-save ao alterar segmento
-  const handleSegmentChange = async (e) => {
-    const newSegmentId = e.target.value;
-    setFormData({ ...formData, segmentId: newSegmentId });
-    if (currentTransaction) {
-      // Salvar automaticamente ao alterar o segmento
-      try {
-        const updated = await updateTransaction(currentTransaction.id, { ...formData, segmentId: parseInt(newSegmentId) });
-        setCurrentTransaction(updated);
-        setFormData(f => ({ ...f, segmentId: updated.segmentId }));
-        toast({
-          title: "Segmento atualizado!",
-          description: "A transação foi atualizada com sucesso.",
-        });
-      } catch (error) {
-        toast({
-          title: "Erro ao atualizar segmento",
-          description: "Não foi possível atualizar o segmento da transação.",
+          description: "Falha ao excluir transação.",
           variant: "destructive"
         });
       }
     }
+    setShowDeleteConfirm(false);
+    setCurrentTransaction(null);
   };
 
-  const transactionHeaders = ['type', 'description', 'amount', 'category', 'costCenter', 'date', 'segmentId'];
-  const filteredTransactions = data.transactions.filter(t => {
-    if (!activeSegmentId || activeSegmentId === 0) {
-      return true;
-    }
-    return t.segmentId === activeSegmentId;
-  });
-  const segments = data.segments || [];
+  const handleSegmentChange = async (e) => {
+    const newSegmentId = e.target.value;
+    setFormData(prev => ({ ...prev, segmentId: newSegmentId }));
+    
+    // Recarregar transações do novo segmento
+    const segmentFilter = newSegmentId && newSegmentId !== '0' ? { segment_id: newSegmentId } : {};
+    try { await loadTransactions({ ...segmentFilter, force: true }); } catch (_) {}
+  };
 
-  // Garantir carregamento/atualização das transações ao abrir o módulo ou trocar de segmento
-  useEffect(() => {
-    const segmentFilter = activeSegmentId && activeSegmentId !== 0 ? { segment_id: activeSegmentId } : {};
-    loadTransactions(segmentFilter).catch(() => {});
-  }, [activeSegmentId, loadTransactions]);
+  // Filtrar transações por segmento ativo
+  const filteredTransactions = data.transactions.filter(transaction => {
+    if (!activeSegmentId || activeSegmentId === 0) return true;
+    return transaction.segmentId === activeSegmentId;
+  });
+
+  const segments = data.segments || [];
 
   return (
     <motion.div
@@ -191,7 +175,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
           <ImportDataButton 
             onImport={(parsedData) => importData(parsedData, 'transactions', activeSegmentId)}
             moduleName="Transações"
-            expectedHeaders={transactionHeaders}
+            expectedHeaders={['type', 'description', 'amount', 'category', 'costCenter', 'date', 'segmentId']}
           />
           <Button id="financial-new-transaction-button" onClick={() => setShowCreateModal(true)} className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700">
             <Plus className="w-4 h-4 mr-2" />
@@ -205,7 +189,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total de Receitas</p>
-              <p className="text-2xl font-bold text-green-400">{formatCurrency(metrics.totalRevenue || 0)}</p>
+              <p className="text-2xl font-bold text-green-400">{formatCurrency(metrics?.totalRevenue || 0)}</p>
             </div>
             <TrendingUp className="w-8 h-8 text-green-400" />
           </div>
@@ -214,7 +198,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total de Despesas</p>
-              <p className="text-2xl font-bold text-red-400">{formatCurrency(metrics.totalExpenses || 0)}</p>
+              <p className="text-2xl font-bold text-red-400">{formatCurrency(metrics?.totalExpenses || 0)}</p>
             </div>
             <TrendingDown className="w-8 h-8 text-red-400" />
           </div>
@@ -223,9 +207,9 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Lucro Bruto</p>
-              <p className={`text-2xl font-bold ${(metrics.profit || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>{formatCurrency(metrics.profit || 0)}</p>
+              <p className={`text-2xl font-bold ${(metrics?.profit || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>{formatCurrency(metrics?.profit || 0)}</p>
             </div>
-            <DollarSign className={`w-8 h-8 ${metrics.profit >= 0 ? 'text-green-400' : 'text-red-400'}`} />
+            <DollarSign className={`w-8 h-8 ${metrics?.profit >= 0 ? 'text-green-400' : 'text-red-400'}`} />
           </div>
         </motion.div>
       </div>
@@ -312,7 +296,7 @@ const FinancialModule = ({ metrics, addTransaction, updateTransaction, deleteTra
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Segmento *</label>
-            <select id="financial-segment-select" value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
+            <select id="financial-segment-select" value={formData.segmentId} onChange={handleSegmentChange} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
               <option value="">Selecione um segmento</option>
               {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
