@@ -2,7 +2,7 @@
 // Usa VITE_API_URL quando definido (Edge Functions em prod). Caso contrário, usa backend local via '/api'.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
-// Cache em memória para token - SEM localStorage
+// Cache em memória para token - COM sessionStorage para persistência
 let tokenCache = null;
 let isRedirectingToLogin = false;
 
@@ -51,23 +51,52 @@ class ApiService {
     };
   }
 
-  // Set authentication token - SEM localStorage
+  // Set authentication token - COM sessionStorage para persistência
   setToken(token) {
     this.token = token;
     tokenCache = token;
-    // NÃO usar localStorage
+    // Usar sessionStorage para persistir durante a sessão
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('auth_token', token);
+      } catch (error) {
+        console.warn('Erro ao salvar token no sessionStorage:', error);
+      }
+    }
   }
 
-  // Get authentication token - SEM localStorage
+  // Get authentication token - COM sessionStorage para persistência
   getToken() {
-    return tokenCache;
+    if (tokenCache) return tokenCache;
+    
+    // Tentar recuperar do sessionStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const storedToken = sessionStorage.getItem('auth_token');
+        if (storedToken) {
+          tokenCache = storedToken;
+          return storedToken;
+        }
+      } catch (error) {
+        console.warn('Erro ao recuperar token do sessionStorage:', error);
+      }
+    }
+    
+    return null;
   }
 
-  // Clear token - SEM localStorage
+  // Clear token - COM sessionStorage para persistência
   clearToken() {
     this.token = null;
     tokenCache = null;
-    // NÃO usar localStorage
+    // Limpar do sessionStorage
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.removeItem('auth_token');
+      } catch (error) {
+        console.warn('Erro ao limpar token do sessionStorage:', error);
+      }
+    }
   }
 
   // Generic request method

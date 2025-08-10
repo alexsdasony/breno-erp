@@ -21,8 +21,8 @@ import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
-const BillingModule = ({ metrics, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, toast, importData }) => {
-  const { data, activeSegmentId, loadFinancialDocuments, loadPartners } = useAppData();
+const BillingModule = () => {
+  const { data, activeSegmentId, loadFinancialDocuments, loadPartners, metrics, toast, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [editingBilling, setEditingBilling] = useState(null);
   const [viewingBilling, setViewingBilling] = useState(null);

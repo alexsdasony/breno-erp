@@ -24,8 +24,8 @@ import { formatDate } from '@/lib/utils.js';
 import { calculateMetrics } from '@/utils/metrics.js';
 import apiService from '@/services/api.js';
 
-const DashboardModule = ({ metrics, setActiveModule }) => {
-  const { data, activeSegmentId, reloadDashboardData } = useAppData();
+const DashboardModule = () => {
+  const { data, activeSegmentId, reloadDashboardData, metrics } = useAppData();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false); // Novo estado para controlar inicialização

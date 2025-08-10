@@ -9,62 +9,55 @@ import { toast } from '@/components/ui/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu.jsx';
 
 import { useAppData } from '@/hooks/useAppData.jsx';
-import { menuItems as appMenuItems } from '@/config/menuConfig'; 
+import { menuItems as appMenuItems } from '@/config/menuConfig';
+import { getRouteFromMenuId, getMenuIdFromRoute } from '@/config/routeConfig';
 import { calculateMetrics } from '@/utils/metrics';
 
 const ErpLayout = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname();
-  const [activeModule, setActiveModule] = useState(pathname.substring(1) || 'dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  
+
   const appData = useAppData();
   const { currentUser, logoutUser, data, activeSegmentId, setActiveSegmentId, loading } = appData;
   const metrics = calculateMetrics(data, activeSegmentId);
 
   const isAdmin = currentUser?.role === 'admin';
 
-  // TODOS OS HOOKS DEVEM SER CHAMADOS ANTES DE QUALQUER EARLY RETURN
   const menuItems = React.useMemo(() => [
     ...appMenuItems,
-    { id: 'profile', label: 'Meu Perfil', icon: UserCircle } 
+    { id: 'profile', label: 'Meu Perfil', icon: UserCircle }
   ], []);
 
-  React.useEffect(() => {
-    const currentPath = pathname.substring(1);
-    if (menuItems.some(item => item.id === currentPath)) {
-      setActiveModule(currentPath);
-    } else if (currentPath === '' || currentPath === '/') {
-      setActiveModule('dashboard');
-    }
-  }, [pathname, menuItems]);
+  // Determinar o módulo ativo baseado na rota atual
+  const activeModule = React.useMemo(() => {
+    return getMenuIdFromRoute(pathname);
+  }, [pathname]);
 
-  // AGORA sim podemos fazer early returns
-  // Show loading screen during initialization
+  React.useEffect(() => {
+    if (!loading && !currentUser) {
+      router.push('/login');
+    }
+  }, [currentUser, loading, router]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
-        >
+        <div className="text-center">
           <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mb-4 mx-auto">
-            <Briefcase className="w-8 h-8 text-white" />
+            <div className="w-8 h-8 text-white">🚀</div>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">ERP Pro</h2>
-          <p className="text-gray-400">Carregando sistema...</p>
+          <h2 className="text-2xl font-bold text-white mb-2">Breno ERP</h2>
+          <p className="text-gray-400">Carregando...</p>
           <div className="mt-4 flex justify-center">
             <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
           </div>
-        </motion.div>
+        </div>
       </div>
     );
   }
 
-  // Only redirect after loading is complete and user is not authenticated
   if (!currentUser) {
-    router.push('/login');
     return null;
   }
 
@@ -78,8 +71,7 @@ const ErpLayout = ({ children }) => {
     toast({ title: "Logout realizado", description: "Você foi desconectado." });
     router.push('/login');
   };
-  
-  // TEMPORARY FIX - SAFE SEGMENT ACCESS
+
   const safeSegments = data.segments || [];
   const safeActiveSegmentId = activeSegmentId || 0;
 
@@ -92,24 +84,15 @@ const ErpLayout = ({ children }) => {
     </div>
   );
 
-  const renderModuleContent = (moduleName) => {
-    return (
-      <Suspense fallback={<ModuleLoadingFallback />}>
-        {children}
-      </Suspense>
-    );
-  };
-
   const handleNavigation = (moduleId) => {
-    setActiveModule(moduleId);
     setSidebarOpen(false);
     
-    // Navigate to the appropriate route
-    if (moduleId === 'dashboard') {
-      router.push('/dashboard');
-    } else {
-      router.push(`/${moduleId}`);
-    }
+    // Usar o mapeamento de rotas correto
+    const route = getRouteFromMenuId(moduleId);
+    console.log(`🔄 Navegando para: ${moduleId} -> ${route}`);
+    
+    // Navegar para a rota correta
+    router.push(route);
   };
 
   return (
@@ -281,17 +264,19 @@ const ErpLayout = ({ children }) => {
 
         {/* Page Content */}
         <main className="flex-1 p-6">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeModule}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              {renderModuleContent(activeModule)}
-            </motion.div>
-          </AnimatePresence>
+          <Suspense fallback={<ModuleLoadingFallback />}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeModule}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
+          </Suspense>
         </main>
       </div>
     </div>

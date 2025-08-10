@@ -8,8 +8,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
-const AccountsPayableModule = ({ addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData, toast }) => {
-  const { data, activeSegmentId, loadFinancialDocuments, loadPartners } = useAppData();
+const AccountsPayableModule = () => {
+  const { data, activeSegmentId, loadFinancialDocuments, loadPartners, toast, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData } = useAppData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [periodType, setPeriodType] = useState('all');

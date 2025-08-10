@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import apiService from '@/services/api';
 import { calculateMetrics } from '@/utils/metrics';
@@ -99,257 +99,179 @@ export const AppDataProvider = ({ children }) => {
             
             console.log('🚀 Loading essential data for user:', currentUser.name);
             
-            // Load data sequentially to avoid quota issues
-            console.log('📊 Loading transactions...');
-            await loadTransactions(segmentFilter);
-            
-            console.log('📦 Loading products...');
-            await loadProducts(segmentFilter);
-            
-            console.log('👥 Loading customers...');
-            await loadCustomers(segmentFilter);
-            
-            console.log('🤝 Loading partners...');
-            await loadPartners(segmentFilter);
-            
-            console.log('💰 Loading sales...');
-            await loadSales(segmentFilter);
-            
-            console.log('💳 Loading billings...');
-            await loadBillings(segmentFilter);
-            
-            console.log('📄 Loading NFe...');
-            await loadNFe(segmentFilter);
-            
-            console.log('💸 Loading accounts payable...');
-            await loadAccountsPayable(segmentFilter);
-            
-            console.log('📑 Loading financial documents...');
-            await loadFinancialDocuments(segmentFilter);
-            
-            console.log('🏢 Loading cost centers...');
-            await loadCostCenters(segmentFilter);
-            
+            // Load essential data in parallel
+            const [transactionsRes, productsRes, customersRes, salesRes, billingsRes, nfeRes] = await Promise.allSettled([
+              apiService.getTransactions(segmentFilter),
+              apiService.getProducts(segmentFilter),
+              apiService.getCustomers(segmentFilter),
+              apiService.getSales(segmentFilter),
+              apiService.getBillings(segmentFilter),
+              apiService.getNFes(segmentFilter)
+            ]);
+
+            // Update data with results
+            setData(prev => ({
+              ...prev,
+              transactions: transactionsRes.status === 'fulfilled' ? (transactionsRes.value.transactions || transactionsRes.value.data || []) : [],
+              products: productsRes.status === 'fulfilled' ? (productsRes.value.products || productsRes.value.data || []) : [],
+              customers: customersRes.status === 'fulfilled' ? (customersRes.value.customers || customersRes.value.data || []) : [],
+              sales: salesRes.status === 'fulfilled' ? (salesRes.value.sales || salesRes.value.data || []) : [],
+              billings: billingsRes.status === 'fulfilled' ? (billingsRes.value.billings || billingsRes.value.data || []) : [],
+              nfeList: nfeRes.status === 'fulfilled' ? (nfeRes.value.nfeList || nfeRes.value.data || []) : []
+            }));
+
             console.log('✅ Essential data loaded successfully');
           } catch (error) {
-            console.error('❌ Data loading failed:', error);
-            toast({
-              title: "Erro ao carregar dados",
-              description: "Alguns dados podem não estar disponíveis.",
-              variant: "destructive"
-            });
+            console.error('❌ Error loading essential data:', error);
           }
-        } else {
-          console.log('👤 Nenhum usuário logado');
         }
       } catch (error) {
         console.error('❌ App initialization error:', error);
       } finally {
-        console.log('✅ Inicialização concluída');
         setLoading(false);
       }
     };
 
     if (!authLoading) {
-    initializeApp();
+      initializeApp();
     }
   }, [currentUser, authLoading]);
 
-  // Data loading functions with memory cache
-  const reloadSegments = async () => {
+  // Memoized functions to prevent infinite loops
+  const reloadSegments = useCallback(async () => {
     try {
       const response = await apiService.getSegments();
-      const serverSegments = response.segments || [];
-      setSegments(serverSegments);
-      return { segments: serverSegments };
+      setSegments(response.segments || []);
+      return response;
     } catch (error) {
-      console.error('Load segments error:', error);
+      console.error('Reload segments error:', error);
       throw error;
     }
-  };
-  const loadTransactions = async (params = {}) => {
+  }, []);
+
+  const loadTransactions = useCallback(async (params = {}) => {
     try {
-      // Verificar cache em memória primeiro
-      if (globalMemoryCache.data?.transactions && !params.segment_id && !params.force) {
+      if (globalMemoryCache.data?.transactions && !params.segment_id) {
         console.log('📊 Using cached transactions');
         setData(prev => ({ ...prev, transactions: globalMemoryCache.data.transactions }));
         return { transactions: globalMemoryCache.data.transactions };
       }
-      
       const response = await apiService.getTransactions(params);
-      const transactions = response.transactions || [];
-      
-      // Converter segment_id para segmentId (snake_case para camelCase)
-      const convertedTransactions = transactions.map(transaction => ({
-        ...transaction,
-        segmentId: transaction.segment_id || transaction.segmentId,
-        costCenter: transaction.cost_center || transaction.costCenter
-      }));
-      
-      console.log('🔍 Debug loadTransactions - Transações convertidas:', convertedTransactions.slice(0, 3));
-      
-      // Atualizar cache em memória
+      const transactions = response.transactions || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
-      globalMemoryCache.data.transactions = convertedTransactions;
-      
-      setData(prev => ({ ...prev, transactions: convertedTransactions }));
-      return { transactions: convertedTransactions };
+      globalMemoryCache.data.transactions = transactions;
+      setData(prev => ({ ...prev, transactions }));
+      return { transactions };
     } catch (error) {
       console.error('Load transactions error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const loadProducts = async (params = {}) => {
+  const loadProducts = useCallback(async (params = {}) => {
     try {
-      // Verificar cache em memória primeiro
       if (globalMemoryCache.data?.products && !params.segment_id) {
         console.log('📦 Using cached products');
         setData(prev => ({ ...prev, products: globalMemoryCache.data.products }));
         return { products: globalMemoryCache.data.products };
       }
-      
       const response = await apiService.getProducts(params);
-      const products = response.products || [];
-      
-      // Atualizar cache em memória
+      const products = response.products || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
       globalMemoryCache.data.products = products;
-      
       setData(prev => ({ ...prev, products }));
-      return response;
+      return { products };
     } catch (error) {
       console.error('Load products error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const loadCustomers = async (params = {}) => {
+  const loadCustomers = useCallback(async (params = {}) => {
     try {
-      // Verificar cache em memória primeiro
       if (globalMemoryCache.data?.customers && !params.segment_id) {
         console.log('👥 Using cached customers');
         setData(prev => ({ ...prev, customers: globalMemoryCache.data.customers }));
         return { customers: globalMemoryCache.data.customers };
       }
-      
       const response = await apiService.getCustomers(params);
-      const customers = response.customers || [];
-      
-      // Atualizar cache em memória
+      const customers = response.customers || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
       globalMemoryCache.data.customers = customers;
-      
       setData(prev => ({ ...prev, customers }));
-      return response;
+      return { customers };
     } catch (error) {
       console.error('Load customers error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const loadPartners = async (params = {}) => {
+  const loadPartners = useCallback(async (params = {}) => {
     try {
-      const role = params.role || null;
-      const hasSegmentFilter = Boolean(params.segment_id);
-      if (!globalMemoryCache.data) globalMemoryCache.data = {};
-      if (!globalMemoryCache.data.partnersByRole) {
-        globalMemoryCache.data.partnersByRole = {};
+      if (globalMemoryCache.data?.partners && !params.segment_id) {
+        console.log('🤝 Using cached partners');
+        setData(prev => ({ ...prev, partners: globalMemoryCache.data.partners }));
+        return { partners: globalMemoryCache.data.partners };
       }
-
-      // Cache: quando houver role, manter cache por role; sem role, usar lista completa
-      if (!hasSegmentFilter) {
-        if (role && globalMemoryCache.data.partnersByRole[role]) {
-          console.log(`🤝 Using cached partners for role=${role}`);
-          setData(prev => ({ ...prev, partners: globalMemoryCache.data.partnersByRole[role] }));
-          return { partners: globalMemoryCache.data.partnersByRole[role] };
-        }
-        if (!role && globalMemoryCache.data.partners) {
-          console.log('🤝 Using cached partners (all)');
-          setData(prev => ({ ...prev, partners: globalMemoryCache.data.partners }));
-          return { partners: globalMemoryCache.data.partners };
-        }
-      }
-
       const response = await apiService.getPartners(params);
       const partners = response.partners || response.data || [];
-      if (role) {
-        globalMemoryCache.data.partnersByRole[role] = partners;
-      } else {
-        globalMemoryCache.data.partners = partners;
-      }
+      if (!globalMemoryCache.data) globalMemoryCache.data = {};
+      globalMemoryCache.data.partners = partners;
       setData(prev => ({ ...prev, partners }));
       return { partners };
     } catch (error) {
       console.error('Load partners error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const loadSales = async (params = {}) => {
+  const loadSales = useCallback(async (params = {}) => {
     try {
-      // Verificar cache em memória primeiro
       if (globalMemoryCache.data?.sales && !params.segment_id) {
         console.log('💰 Using cached sales');
         setData(prev => ({ ...prev, sales: globalMemoryCache.data.sales }));
         return { sales: globalMemoryCache.data.sales };
       }
-      
       const response = await apiService.getSales(params);
-      const sales = response.sales || [];
-      
-      // Atualizar cache em memória
+      const sales = response.sales || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
       globalMemoryCache.data.sales = sales;
-      
       setData(prev => ({ ...prev, sales }));
-      return response;
+      return { sales };
     } catch (error) {
       console.error('Load sales error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const loadBillings = async (params = {}) => {
+  const loadBillings = useCallback(async (params = {}) => {
     try {
-      // Verificar cache em memória primeiro
       if (globalMemoryCache.data?.billings && !params.segment_id) {
         console.log('💳 Using cached billings');
         setData(prev => ({ ...prev, billings: globalMemoryCache.data.billings }));
         return { billings: globalMemoryCache.data.billings };
       }
-      
       const response = await apiService.getBillings(params);
-      const billings = response.billings || [];
-      
-      // Atualizar cache em memória
+      const billings = response.billings || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
       globalMemoryCache.data.billings = billings;
-      
       setData(prev => ({ ...prev, billings }));
-      return response;
+      return { billings };
     } catch (error) {
       console.error('Load billings error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const loadCostCenters = async (params = {}) => {
+  const loadCostCenters = useCallback(async (params = {}) => {
     try {
-      // Verificar cache em memória primeiro
       if (globalMemoryCache.data?.costCenters && !params.segment_id) {
         console.log('🏢 Using cached cost centers');
         setData(prev => ({ ...prev, costCenters: globalMemoryCache.data.costCenters }));
         return { costCenters: globalMemoryCache.data.costCenters };
       }
-      
       const response = await apiService.getCostCenters(params);
-      // Converter segment_id para segmentId
-      const costCenters = (response.costCenters || []).map(cc => ({
-        ...cc,
-        segmentId: cc.segment_id,
-      }));
-      // Atualizar cache em memória
+      const costCenters = response.costCenters || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
       globalMemoryCache.data.costCenters = costCenters;
       setData(prev => ({ ...prev, costCenters }));
@@ -358,57 +280,47 @@ export const AppDataProvider = ({ children }) => {
       console.error('Load cost centers error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const loadNFe = async (params = {}) => {
+  const loadNFe = useCallback(async (params = {}) => {
     try {
-      // Verificar cache em memória primeiro
       if (globalMemoryCache.data?.nfeList && !params.segment_id) {
         console.log('📄 Using cached NFe');
         setData(prev => ({ ...prev, nfeList: globalMemoryCache.data.nfeList }));
         return { nfeList: globalMemoryCache.data.nfeList };
       }
-      
       const response = await apiService.getNFes(params);
-      const nfeList = response.nfeList || [];
-      
-      // Atualizar cache em memória
+      const nfeList = response.nfeList || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
       globalMemoryCache.data.nfeList = nfeList;
-      
       setData(prev => ({ ...prev, nfeList }));
-      return response;
+      return { nfeList };
     } catch (error) {
       console.error('Load NFe error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const loadAccountsPayable = async (params = {}) => {
+  const loadAccountsPayable = useCallback(async (params = {}) => {
     try {
-      // Verificar cache em memória primeiro
       if (globalMemoryCache.data?.accountsPayable && !params.segment_id) {
         console.log('💸 Using cached accounts payable');
         setData(prev => ({ ...prev, accountsPayable: globalMemoryCache.data.accountsPayable }));
         return { accountsPayable: globalMemoryCache.data.accountsPayable };
       }
-      
       const response = await apiService.getAccountsPayable(params);
-      const accountsPayable = response.accountsPayable || [];
-      
-      // Atualizar cache em memória
+      const accountsPayable = response.accountsPayable || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
       globalMemoryCache.data.accountsPayable = accountsPayable;
-      
       setData(prev => ({ ...prev, accountsPayable }));
-      return response;
+      return { accountsPayable };
     } catch (error) {
       console.error('Load accounts payable error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const loadFinancialDocuments = async (params = {}) => {
+  const loadFinancialDocuments = useCallback(async (params = {}) => {
     try {
       if (globalMemoryCache.data?.financialDocuments && !params.segment_id) {
         console.log('📑 Using cached financial documents');
@@ -425,10 +337,10 @@ export const AppDataProvider = ({ children }) => {
       console.error('Load financial documents error:', error);
       throw error;
     }
-  };
+  }, []);
 
   // LAZY LOADING FUNCTIONS
-  const ensureCostCentersLoaded = async () => {
+  const ensureCostCentersLoaded = useCallback(async () => {
     console.log('🔄 ensureCostCentersLoaded - Iniciando verificação');
     console.log('📊 Estado atual:', { loaded: lazyState.costCenters.loaded, loading: lazyState.costCenters.loading });
     
@@ -450,9 +362,9 @@ export const AppDataProvider = ({ children }) => {
       console.error('❌ Failed to lazy load costCenters:', error);
       setLazyState(prev => ({ ...prev, costCenters: { loaded: false, loading: false } }));
     }
-  };
+  }, [lazyState.costCenters.loaded, lazyState.costCenters.loading, currentUser?.segment_id, loadCostCenters]);
 
-  const ensureAccountsPayableLoaded = async () => {
+  const ensureAccountsPayableLoaded = useCallback(async () => {
     if (lazyState.accountsPayable.loaded || lazyState.accountsPayable.loading) {
       return;
     }
@@ -469,10 +381,10 @@ export const AppDataProvider = ({ children }) => {
       console.error('Failed to lazy load accountsPayable:', error);
       setLazyState(prev => ({ ...prev, accountsPayable: { loaded: false, loading: false } }));
     }
-  };
+  }, [lazyState.accountsPayable.loaded, lazyState.accountsPayable.loading, currentUser?.segment_id, loadAccountsPayable]);
 
   // Adicionar função para recarregar dados do dashboard
-  const reloadDashboardData = async (segmentId) => {
+  const reloadDashboardData = useCallback(async (segmentId) => {
     try {
       console.log('🔄 Recarregando dados para segmento:', segmentId);
       
@@ -507,20 +419,19 @@ export const AppDataProvider = ({ children }) => {
       console.log('🏢 Recarregando cost centers...');
       await loadCostCenters(segmentFilter);
       
-      console.log('✅ Dados recarregados com sucesso para segmento:', newSegmentId);
-      
+      console.log('✅ Dados recarregados com sucesso');
     } catch (error) {
-      console.error('Erro ao recarregar dados do dashboard:', error);
+      console.error('❌ Erro ao recarregar dados:', error);
       toast({
-        title: "Erro!",
+        title: "Erro",
         description: "Falha ao recarregar dados. Tente novamente.",
         variant: "destructive"
       });
     }
-  };
+  }, [activeSegmentId, loadTransactions, loadProducts, loadCustomers, loadSales, loadBillings, loadNFe, loadAccountsPayable, loadCostCenters, toast]);
 
   // Metrics functions
-  const getDashboardMetrics = async (params = {}) => {
+  const getDashboardMetrics = useCallback(async (params = {}) => {
     try {
       // Add user's segment context if available
       const segmentFilter = currentUser?.segment_id ? { segment_id: currentUser.segment_id } : {};
@@ -529,9 +440,9 @@ export const AppDataProvider = ({ children }) => {
       console.error('Get dashboard metrics error:', error);
       throw error;
     }
-  };
+  }, [currentUser?.segment_id]);
 
-  const getFinancialMetrics = async (params = {}) => {
+  const getFinancialMetrics = useCallback(async (params = {}) => {
     try {
       // Add user's segment context if available
       const segmentFilter = currentUser?.segment_id ? { segment_id: currentUser.segment_id } : {};
@@ -540,16 +451,16 @@ export const AppDataProvider = ({ children }) => {
       console.error('Get financial metrics error:', error);
       throw error;
     }
-  };
+  }, [currentUser?.segment_id]);
 
-  const getSalesMetrics = async (params = {}) => {
+  const getSalesMetrics = useCallback(async (params = {}) => {
     try {
       return await apiService.getSalesMetrics(params);
     } catch (error) {
       console.error('Get sales metrics error:', error);
       throw error;
     }
-  };
+  }, []);
 
   const value = {
     data: {
