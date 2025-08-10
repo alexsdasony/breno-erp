@@ -5,19 +5,52 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
-  async rewrites() {
+  // Configurações específicas para Vercel
+  serverExternalPackages: ['@/hooks/useAppData'],
+  // Desabilitar SSR para páginas que usam useAppData
+  async headers() {
     return [
       {
-        source: '/api/:path*',
-        destination: process.env.NODE_ENV === 'development' 
-          ? 'http://localhost:3001/api/:path*' 
-          : `${process.env.NEXT_PUBLIC_API_URL}/:path*`,
-      },
-      {
-        source: '/functions/:path*',
-        destination: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/:path*`,
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store',
+          },
+        ],
       },
     ];
+  },
+  async rewrites() {
+    const rewrites = [];
+    
+    // Rewrite para API local em desenvolvimento
+    if (process.env.NODE_ENV === 'development') {
+      rewrites.push({
+        source: '/api/:path*',
+        destination: 'http://localhost:3001/api/:path*',
+      });
+    } else {
+      // Rewrite para API externa em produção
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (apiUrl) {
+        rewrites.push({
+          source: '/api/:path*',
+          destination: `${apiUrl}/:path*`,
+        });
+      }
+    }
+    
+    // Rewrite para Supabase Functions
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (supabaseUrl) {
+      rewrites.push({
+        source: '/functions/:path*',
+        destination: `${supabaseUrl}/functions/:path*`,
+      });
+    }
+    
+    return rewrites;
   },
   webpack: (config) => {
     config.resolve.alias = {

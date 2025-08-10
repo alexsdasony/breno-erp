@@ -9,7 +9,7 @@ import { toast } from '@/components/ui/use-toast';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { LogIn, UserPlus, Briefcase, KeyRound } from 'lucide-react';
 
-const LoginPage = () => {
+export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
@@ -116,6 +116,4 @@ const LoginPage = () => {
       </motion.div>
     </div>
   );
-};
-
-export default LoginPage;
+}

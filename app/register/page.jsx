@@ -7,9 +7,9 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { useAppData } from '@/hooks/useAppData.jsx';
-import { UserPlus, Briefcase, LogIn } from 'lucide-react';
+import { UserPlus, Briefcase, Mail, Lock, User } from 'lucide-react';
 
-const RegisterPage = () => {
+export default function RegisterPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -49,7 +49,7 @@ const RegisterPage = () => {
 
     if (formData.password.length < 6) {
       toast({
-        title: "Senha Muito Curta",
+        title: "Senha Fraca",
         description: "A senha deve ter pelo menos 6 caracteres.",
         variant: "destructive",
       });
@@ -57,7 +57,7 @@ const RegisterPage = () => {
     }
 
     try {
-      const success = await registerUser(formData.email, formData.password, { name: formData.name });
+      const success = await registerUser(formData.name, formData.email, formData.password);
       if (success) {
         toast({
           title: "Registro Bem-sucedido!",
@@ -89,8 +89,8 @@ const RegisterPage = () => {
         className="w-full max-w-md glass-effect p-8 rounded-xl shadow-2xl border border-white/10"
       >
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mb-4">
-            <Briefcase className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-600 rounded-lg flex items-center justify-center mb-4">
+            <UserPlus className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white">ERP PRO</h1>
           <p className="text-gray-400">Criar Conta</p>
@@ -98,50 +98,66 @@ const RegisterPage = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Nome</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="Seu nome completo"
-            />
+            <label className="block text-sm font-medium text-gray-300 mb-1">Nome Completo</label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="w-full pl-10 p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="Seu nome completo"
+              />
+            </div>
           </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="seu@email.com"
-            />
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full pl-10 p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="seu@email.com"
+              />
+            </div>
           </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Senha</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="Mínimo 6 caracteres"
-            />
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full pl-10 p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="Mínimo 6 caracteres"
+              />
+            </div>
           </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Confirmar Senha</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="w-full p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="Confirme sua senha"
-            />
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className="w-full pl-10 p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="Confirme sua senha"
+              />
+            </div>
           </div>
-          <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3">
+          
+          <Button type="submit" className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-semibold py-3">
             <UserPlus className="w-5 h-5 mr-2" />
             Criar Conta
           </Button>
@@ -156,13 +172,11 @@ const RegisterPage = () => {
           <p className="text-gray-400 text-sm">
             Já tem uma conta?{' '}
             <Link href="/login" className="text-blue-400 hover:text-blue-300 font-medium">
-              Faça login
+              Faça Login
             </Link>
           </p>
         </motion.div>
       </motion.div>
     </div>
   );
-};
-
-export default RegisterPage;
+}
