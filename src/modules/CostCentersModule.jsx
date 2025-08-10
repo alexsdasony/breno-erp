@@ -6,10 +6,10 @@ import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import apiService from '@/services/api';
 
-const CostCentersModule = ({ toast }) => {
+const CostCentersModule = () => {
   console.log('🏢 CostCentersModule - Componente montado');
   
-  const { data, activeSegmentId, ensureCostCentersLoaded, addCostCenter, updateCostCenter, deleteCostCenter, importData } = useAppData();
+  const { data, activeSegmentId, ensureCostCentersLoaded, addCostCenter, updateCostCenter, deleteCostCenter, importData, toast } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [showAccountsModal, setShowAccountsModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -94,7 +94,7 @@ const CostCentersModule = ({ toast }) => {
     deleteCostCenter(id);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.segmentId) {
       toast({
@@ -105,16 +105,27 @@ const CostCentersModule = ({ toast }) => {
       return;
     }
 
-    if (isEditing && currentCostCenter) {
-      updateCostCenter(currentCostCenter.id, { name: formData.name, segmentId: parseInt(formData.segmentId) });
-    } else {
-      addCostCenter({ name: formData.name, segmentId: parseInt(formData.segmentId) });
-    }
+    try {
+      // Converter para o formato esperado pelo backend (snake_case)
+      const costCenterData = {
+        name: formData.name.trim(),
+        segment_id: parseInt(formData.segmentId)
+      };
 
-    setShowForm(false);
-    setFormData({ name: '', segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '') });
-    setCurrentCostCenter(null);
-    setIsEditing(false);
+      if (isEditing && currentCostCenter) {
+        await updateCostCenter(currentCostCenter.id, costCenterData);
+      } else {
+        await addCostCenter(costCenterData);
+      }
+
+      setShowForm(false);
+      setFormData({ name: '', segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '') });
+      setCurrentCostCenter(null);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error saving cost center:', error);
+      // O toast de erro já é mostrado pelo useCrud
+    }
   };
 
   const handleAddAccount = async (accountId, allocationPercentage = 100, isPrimary = false) => {
@@ -189,12 +200,21 @@ const CostCentersModule = ({ toast }) => {
     }
   };
 
-  const handleSegmentChange = (e) => {
+  const handleSegmentChange = async (e) => {
     const newSegmentId = e.target.value;
     setFormData({ ...formData, segmentId: newSegmentId });
     if (isEditing && currentCostCenter) {
       // Salvar automaticamente ao alterar o segmento
-      updateCostCenter(currentCostCenter.id, { name: formData.name, segmentId: parseInt(newSegmentId) });
+      try {
+        const costCenterData = {
+          name: formData.name,
+          segment_id: parseInt(newSegmentId)
+        };
+        await updateCostCenter(currentCostCenter.id, costCenterData);
+      } catch (error) {
+        console.error('Error updating cost center segment:', error);
+        // O toast de erro já é mostrado pelo useCrud
+      }
     }
   };
 
