@@ -12,8 +12,26 @@ export const useAuth = () => {
       try {
         const token = apiService.getToken();
         if (token) {
-          const profile = await apiService.getProfile();
-          setCurrentUser(profile.user);
+          // Verificar se o token é válido
+          const isValid = await apiService.checkAuth();
+          if (isValid) {
+            // Tentar obter o perfil do usuário
+            try {
+              const profile = await apiService.getProfile();
+              if (profile && profile.user) {
+                setCurrentUser(profile.user);
+              } else {
+                console.warn('Profile response invalid, but token is valid');
+              }
+            } catch (profileError) {
+              console.warn('Failed to get profile, but token is valid:', profileError);
+              // Token é válido mas não conseguimos obter o perfil
+              // Isso pode acontecer se o endpoint /auth/profile não existir
+            }
+          } else {
+            console.warn('Token invalid, clearing token');
+            apiService.clearToken();
+          }
         }
       } catch (error) {
         console.error('Auth check failed:', error);

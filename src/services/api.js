@@ -210,6 +210,16 @@ class ApiService {
     return this.get('/auth/profile');
   }
 
+  async checkAuth() {
+    // Verificar se o token é válido usando um endpoint simples
+    try {
+      await this.get('/segments');
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
   async updateProfile(userData) {
     return this.put('/auth/profile', userData);
   }
