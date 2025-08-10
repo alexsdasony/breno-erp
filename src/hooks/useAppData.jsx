@@ -151,11 +151,6 @@ export const AppDataProvider = ({ children }) => {
 
   const loadTransactions = useCallback(async (params = {}) => {
     try {
-      if (globalMemoryCache.data?.transactions && !params.segment_id) {
-        console.log('📊 Using cached transactions');
-        setData(prev => ({ ...prev, transactions: globalMemoryCache.data.transactions }));
-        return { transactions: globalMemoryCache.data.transactions };
-      }
       const response = await apiService.getTransactions(params);
       const transactions = response.transactions || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
@@ -170,11 +165,6 @@ export const AppDataProvider = ({ children }) => {
 
   const loadProducts = useCallback(async (params = {}) => {
     try {
-      if (globalMemoryCache.data?.products && !params.segment_id) {
-        console.log('📦 Using cached products');
-        setData(prev => ({ ...prev, products: globalMemoryCache.data.products }));
-        return { products: globalMemoryCache.data.products };
-      }
       const response = await apiService.getProducts(params);
       const products = response.products || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
@@ -189,11 +179,6 @@ export const AppDataProvider = ({ children }) => {
 
   const loadCustomers = useCallback(async (params = {}) => {
     try {
-      if (globalMemoryCache.data?.customers && !params.segment_id) {
-        console.log('👥 Using cached customers');
-        setData(prev => ({ ...prev, customers: globalMemoryCache.data.customers }));
-        return { customers: globalMemoryCache.data.customers };
-      }
       const response = await apiService.getCustomers(params);
       const customers = response.customers || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
@@ -208,16 +193,15 @@ export const AppDataProvider = ({ children }) => {
 
   const loadPartners = useCallback(async (params = {}) => {
     try {
-      if (globalMemoryCache.data?.partners && !params.segment_id) {
-        console.log('🤝 Using cached partners');
-        setData(prev => ({ ...prev, partners: globalMemoryCache.data.partners }));
-        return { partners: globalMemoryCache.data.partners };
-      }
+      console.log('🔄 Loading partners from API (CACHE DESABLED)...', params);
       const response = await apiService.getPartners(params);
       const partners = response.partners || response.data || [];
+      
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
       globalMemoryCache.data.partners = partners;
       setData(prev => ({ ...prev, partners }));
+      
+      console.log('✅ Partners loaded:', partners.length, 'items');
       return { partners };
     } catch (error) {
       console.error('Load partners error:', error);
@@ -227,11 +211,6 @@ export const AppDataProvider = ({ children }) => {
 
   const loadSales = useCallback(async (params = {}) => {
     try {
-      if (globalMemoryCache.data?.sales && !params.segment_id) {
-        console.log('💰 Using cached sales');
-        setData(prev => ({ ...prev, sales: globalMemoryCache.data.sales }));
-        return { sales: globalMemoryCache.data.sales };
-      }
       const response = await apiService.getSales(params);
       const sales = response.sales || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
@@ -246,11 +225,6 @@ export const AppDataProvider = ({ children }) => {
 
   const loadBillings = useCallback(async (params = {}) => {
     try {
-      if (globalMemoryCache.data?.billings && !params.segment_id) {
-        console.log('💳 Using cached billings');
-        setData(prev => ({ ...prev, billings: globalMemoryCache.data.billings }));
-        return { billings: globalMemoryCache.data.billings };
-      }
       const response = await apiService.getBillings(params);
       const billings = response.billings || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
@@ -265,11 +239,6 @@ export const AppDataProvider = ({ children }) => {
 
   const loadCostCenters = useCallback(async (params = {}) => {
     try {
-      if (globalMemoryCache.data?.costCenters && !params.segment_id) {
-        console.log('🏢 Using cached cost centers');
-        setData(prev => ({ ...prev, costCenters: globalMemoryCache.data.costCenters }));
-        return { costCenters: globalMemoryCache.data.costCenters };
-      }
       const response = await apiService.getCostCenters(params);
       const costCenters = response.costCenters || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
@@ -284,11 +253,6 @@ export const AppDataProvider = ({ children }) => {
 
   const loadNFe = useCallback(async (params = {}) => {
     try {
-      if (globalMemoryCache.data?.nfeList && !params.segment_id) {
-        console.log('📄 Using cached NFe');
-        setData(prev => ({ ...prev, nfeList: globalMemoryCache.data.nfeList }));
-        return { nfeList: globalMemoryCache.data.nfeList };
-      }
       const response = await apiService.getNFes(params);
       const nfeList = response.nfeList || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
@@ -303,11 +267,6 @@ export const AppDataProvider = ({ children }) => {
 
   const loadAccountsPayable = useCallback(async (params = {}) => {
     try {
-      if (globalMemoryCache.data?.accountsPayable && !params.segment_id) {
-        console.log('💸 Using cached accounts payable');
-        setData(prev => ({ ...prev, accountsPayable: globalMemoryCache.data.accountsPayable }));
-        return { accountsPayable: globalMemoryCache.data.accountsPayable };
-      }
       const response = await apiService.getAccountsPayable(params);
       const accountsPayable = response.accountsPayable || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
@@ -322,11 +281,6 @@ export const AppDataProvider = ({ children }) => {
 
   const loadFinancialDocuments = useCallback(async (params = {}) => {
     try {
-      if (globalMemoryCache.data?.financialDocuments && !params.segment_id) {
-        console.log('📑 Using cached financial documents');
-        setData(prev => ({ ...prev, financialDocuments: globalMemoryCache.data.financialDocuments }));
-        return { financialDocuments: globalMemoryCache.data.financialDocuments };
-      }
       const response = await apiService.getFinancialDocuments(params);
       const financialDocuments = response.financialDocuments || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
@@ -511,7 +465,40 @@ export const AppDataProvider = ({ children }) => {
     resetPassword,
     
     // CRUD operations from useCrud
-    ...crudOperations
+    ...crudOperations,
+    
+    // Customer operations with auto-refetch
+    addCustomerWithRefetch: async (customer) => {
+      try {
+        const result = await crudOperations.addCustomer(customer);
+        // Refetch partners data to update the list
+        await loadPartners();
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+    
+    updateCustomerWithRefetch: async (id, customerData) => {
+      try {
+        const result = await crudOperations.updateCustomer(id, customerData);
+        // Refetch partners data to update the list
+        await loadPartners();
+        return result;
+      } catch (error) {
+        throw error;
+      }
+    },
+    
+    deleteCustomerWithRefetch: async (id) => {
+      try {
+        await crudOperations.deleteCustomer(id);
+        // Refetch partners data to update the list
+        await loadPartners();
+      } catch (error) {
+        throw error;
+      }
+    }
   };
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

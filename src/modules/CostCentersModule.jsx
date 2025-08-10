@@ -109,7 +109,7 @@ const CostCentersModule = () => {
       // Converter para o formato esperado pelo backend (snake_case)
       const costCenterData = {
         name: formData.name.trim(),
-        segment_id: parseInt(formData.segmentId)
+        segment_id: formData.segmentId ? parseInt(formData.segmentId) : null
       };
 
       if (isEditing && currentCostCenter) {

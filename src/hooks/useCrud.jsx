@@ -237,6 +237,7 @@ export const useCrud = () => {
         role: 'customer'
       };
       const response = await apiService.createPartner(partnerPayload);
+      
       toast({ title: "Cliente adicionado!", description: "Novo cliente foi cadastrado com sucesso." });
       return response.partner || response.data;
     } catch (error) {
@@ -261,6 +262,7 @@ export const useCrud = () => {
         segment_id: customerData.segmentId || customerData.segment_id
       };
       const response = await apiService.updatePartner(id, partnerPayload);
+      
       toast({ title: "Cliente atualizado!" });
       return response.partner || response.data;
     } catch (error) {
@@ -273,6 +275,7 @@ export const useCrud = () => {
   const deleteCustomer = async (id) => {
     try {
       await apiService.deletePartner(id);
+      
       toast({ title: "Cliente excluído!", variant: 'destructive' });
     } catch (error) {
       console.error('Delete customer error:', error);
@@ -381,13 +384,14 @@ export const useCrud = () => {
   const addCostCenter = async (costCenter) => {
     try {
       const response = await apiService.createCostCenter(costCenter);
+      const result = response.costCenter || response.cost_centers || response.cot_centers || response.data || response;
       toast({ title: "Centro de Custo Adicionado!" });
-      return response.costCenter;
+      return result;
     } catch (error) {
       console.error('Add cost center error:', error);
       toast({ 
         title: "Erro!", 
-        description: "Falha ao adicionar centro de custo. Tente novamente.", 
+        description: (error && error.message) || "Falha ao adicionar centro de custo. Tente novamente.", 
         variant: 'destructive' 
       });
       throw error;
@@ -397,13 +401,14 @@ export const useCrud = () => {
   const updateCostCenter = async (id, costCenterData) => {
     try {
       const response = await apiService.updateCostCenter(id, costCenterData);
+      const result = response.costCenter || response.cost_centers || response.cot_centers || response.data || response;
       toast({ title: "Centro de Custo Atualizado!" });
-      return response.costCenter;
+      return result;
     } catch (error) {
       console.error('Update cost center error:', error);
       toast({ 
         title: "Erro!", 
-        description: "Falha ao atualizar centro de custo. Tente novamente.", 
+        description: (error && error.message) || "Falha ao atualizar centro de custo. Tente novamente.", 
         variant: 'destructive' 
       });
       throw error;

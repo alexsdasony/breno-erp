@@ -138,7 +138,13 @@ class ApiService {
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.error || `HTTP error! status: ${response.status}`);
+        const errorMessage = data.error || data.message || `HTTP error! status: ${response.status}`;
+        const error = {
+          message: errorMessage,
+          status: response.status,
+          data: data
+        };
+        throw error;
       }
       
       return data;
@@ -216,6 +222,7 @@ class ApiService {
       await this.get('/segments');
       return true;
     } catch (error) {
+      console.warn('Auth check failed:', error);
       return false;
     }
   }

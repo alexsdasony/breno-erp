@@ -74,7 +74,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          cot_centers: data
+          cost_centers: data
         }),
         { 
           status: 200, 
@@ -106,7 +106,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          cot_centers: data,
+          cost_centers: data,
           message: 'Centro de Custo criado com sucesso'
         }),
         { 
@@ -140,7 +140,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          cot_centers: data,
+          cost_centers: data,
           message: 'Centro de Custo atualizado com sucesso'
         }),
         { 

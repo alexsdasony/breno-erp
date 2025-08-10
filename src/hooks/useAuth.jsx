@@ -20,22 +20,51 @@ export const useAuth = () => {
               const profile = await apiService.getProfile();
               if (profile && profile.user) {
                 setCurrentUser(profile.user);
+                console.log('✅ Usuário autenticado restaurado:', profile.user.name);
               } else {
                 console.warn('Profile response invalid, but token is valid');
+                // Se não conseguimos obter o perfil mas o token é válido,
+                // vamos tentar fazer login novamente com dados em cache
+                const cachedUser = sessionStorage.getItem('cached_user');
+                if (cachedUser) {
+                  try {
+                    const user = JSON.parse(cachedUser);
+                    setCurrentUser(user);
+                    console.log('✅ Usuário restaurado do cache:', user.name);
+                  } catch (e) {
+                    console.warn('Failed to parse cached user:', e);
+                  }
+                }
               }
             } catch (profileError) {
               console.warn('Failed to get profile, but token is valid:', profileError);
               // Token é válido mas não conseguimos obter o perfil
-              // Isso pode acontecer se o endpoint /auth/profile não existir
+              // Vamos tentar restaurar do cache
+              const cachedUser = sessionStorage.getItem('cached_user');
+              if (cachedUser) {
+                try {
+                  const user = JSON.parse(cachedUser);
+                  setCurrentUser(user);
+                  console.log('✅ Usuário restaurado do cache após erro de perfil:', user.name);
+                } catch (e) {
+                  console.warn('Failed to parse cached user:', e);
+                }
+              }
             }
           } else {
             console.warn('Token invalid, clearing token');
             apiService.clearToken();
+            sessionStorage.removeItem('cached_user');
           }
         }
       } catch (error) {
         console.error('Auth check failed:', error);
-        apiService.clearToken();
+        // Não limpar o token automaticamente em caso de erro de rede
+        // Apenas limpar se for um erro de autenticação específico
+        if (error && error.status === 401) {
+          apiService.clearToken();
+          sessionStorage.removeItem('cached_user');
+        }
       } finally {
         setLoading(false);
       }
@@ -51,6 +80,8 @@ export const useAuth = () => {
       
       if (response.user) {
         setCurrentUser(response.user);
+        // Cache do usuário para persistência
+        sessionStorage.setItem('cached_user', JSON.stringify(response.user));
         if (response.token) {
           apiService.setToken(response.token);
         }
@@ -65,7 +96,7 @@ export const useAuth = () => {
       console.error('Registration error:', error);
       toast({
         title: "Erro no cadastro",
-        description: error.message || "Falha ao criar conta. Tente novamente.",
+        description: (error && error.message) || "Falha ao criar conta. Tente novamente.",
         variant: "destructive"
       });
       throw error;
@@ -81,6 +112,8 @@ export const useAuth = () => {
       
       if (response.user) {
         setCurrentUser(response.user);
+        // Cache do usuário para persistência
+        sessionStorage.setItem('cached_user', JSON.stringify(response.user));
         if (response.token) {
           apiService.setToken(response.token);
         }
@@ -95,7 +128,7 @@ export const useAuth = () => {
       console.error('Login error:', error);
       toast({
         title: "Erro no login",
-        description: error.message || "Email ou senha incorretos.",
+        description: (error && error.message) || "Email ou senha incorretos.",
         variant: "destructive"
       });
       throw error;
@@ -108,6 +141,8 @@ export const useAuth = () => {
     try {
       await apiService.logout();
       setCurrentUser(null);
+      // Limpar cache do usuário
+      sessionStorage.removeItem('cached_user');
       toast({
         title: "Logout realizado",
         description: "Você foi desconectado com sucesso."
@@ -117,6 +152,7 @@ export const useAuth = () => {
       // Mesmo se falhar no servidor, limpar localmente
       setCurrentUser(null);
       apiService.clearToken();
+      sessionStorage.removeItem('cached_user');
     }
   };
 
@@ -138,7 +174,7 @@ export const useAuth = () => {
       console.error('Profile update error:', error);
       toast({
         title: "Erro na atualização",
-        description: error.message || "Falha ao atualizar perfil. Tente novamente.",
+        description: (error && error.message) || "Falha ao atualizar perfil. Tente novamente.",
         variant: "destructive"
       });
       throw error;
@@ -160,7 +196,7 @@ export const useAuth = () => {
       console.error('Password change error:', error);
       toast({
         title: "Erro na alteração",
-        description: error.message || "Falha ao alterar senha. Tente novamente.",
+        description: (error && error.message) || "Falha ao alterar senha. Tente novamente.",
         variant: "destructive"
       });
       throw error;
@@ -182,7 +218,7 @@ export const useAuth = () => {
       console.error('Password reset request error:', error);
       toast({
         title: "Erro na solicitação",
-        description: error.message || "Falha ao solicitar recuperação. Tente novamente.",
+        description: (error && error.message) || "Falha ao solicitar recuperação. Tente novamente.",
         variant: "destructive"
       });
       throw error;
@@ -209,7 +245,7 @@ export const useAuth = () => {
       console.error('Password reset error:', error);
       toast({
         title: "Erro na redefinição",
-        description: error.message || "Falha ao redefinir senha. Tente novamente.",
+        description: (error && error.message) || "Falha ao redefinir senha. Tente novamente.",
         variant: "destructive"
       });
       throw error;

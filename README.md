@@ -1,152 +1,282 @@
 # Breno ERP
 
-Sistema ERP completo desenvolvido com React + Vite e Supabase Edge Functions.
+Sistema ERP completo desenvolvido com **Next.js 15**, **React 18**, **Tailwind CSS** e **Supabase** como backend.
 
 ## 🏗️ Arquitetura
 
-- **Frontend**: React + Vite + Tailwind CSS
-- **Backend**: Supabase Edge Functions (Deno)
-- **Database**: Supabase PostgreSQL
-- **Deploy**: Vercel (Frontend) + Supabase (Backend/DB)
+### Frontend
+- **Framework**: Next.js 15 com App Router
+- **UI**: React 18 + Tailwind CSS + Radix UI
+- **Estado**: Context API + Hooks customizados
+- **Roteamento**: Next.js App Router (file-based routing)
+- **Autenticação**: JWT com sessionStorage
 
-## 🚀 Funcionalidades
+### Backend
+- **Banco de Dados**: Supabase (PostgreSQL)
+- **API**: Supabase Edge Functions (Deno)
+- **Autenticação**: JWT customizado
+- **Proxy**: Next.js rewrites para desenvolvimento
 
-- ✅ Dashboard com métricas
-- ✅ Gestão financeira completa
-- ✅ Controle de estoque
-- ✅ Gestão de vendas
-- ✅ Cadastro de clientes
-- ✅ Sistema de cobranças
-- ✅ Contas a pagar
-- ✅ Emissão de NFe
-- ✅ Centros de custo
-- ✅ Segmentação
-- ✅ Integrações
-- ✅ Relatórios
-- ✅ Importação de dados
-- ✅ Autenticação e perfis
-
-## 🛠️ Tecnologias
-
-- **Frontend**: React 18, Vite, Tailwind CSS
-- **Backend**: Supabase Edge Functions (Deno)
-- **Database**: Supabase PostgreSQL
-- **Autenticação**: Custom JWT
-- **Deploy**: Vercel + Supabase
-
-## 📦 Instalação
-
-```bash
-# Clone o repositório
-git clone <repository-url>
-cd breno-erp
-
-# Instale as dependências
-npm install
-
-# Configure as variáveis de ambiente
-cp env.example .env.local
-```
-
-## ⚙️ Configuração
-
-### Variáveis de Ambiente
-
-Crie um arquivo `.env.local` com:
-
-```env
-VITE_API_URL=https://qerubjitetqwfqqydhzv.supabase.co/functions/v1
-VITE_SUPABASE_URL=https://qerubjitetqwfqqydhzv.supabase.co
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-### Supabase
-
-1. Configure o projeto no Supabase
-2. Execute as migrações: `npx supabase db push`
-3. Deploy das Edge Functions: `npx supabase functions deploy --all`
-
-## 🚀 Deploy
-
-### Frontend (Vercel)
-
-1. Conecte o repositório ao Vercel
-2. Configure as variáveis de ambiente
-3. Deploy automático
-
-### Backend (Supabase)
-
-```bash
-cd supabase
-npx supabase functions deploy --all
-```
-
-## 📚 Estrutura do Projeto
+## 📁 Estrutura do Projeto
 
 ```
 breno-erp/
+├── app/                          # Next.js App Router
+│   ├── (dashboard)/             # Grupo de rotas autenticadas
+│   │   ├── dashboard/           # Dashboard principal
+│   │   ├── financial/          # Módulo financeiro
+│   │   ├── sales/              # Módulo de vendas
+│   │   ├── customers/          # Módulo de clientes
+│   │   ├── inventory/          # Módulo de produtos
+│   │   ├── billing/            # Módulo de cobrança
+│   │   ├── accounts-payable/   # Contas a pagar
+│   │   ├── cost-centers/       # Centros de custo
+│   │   ├── segments/           # Segmentos
+│   │   ├── nfe/                # Notas fiscais
+│   │   ├── reports/            # Relatórios
+│   │   ├── profile/            # Perfil do usuário
+│   │   └── layout.js           # Layout do dashboard
+│   ├── login/                  # Página de login
+│   ├── register/               # Página de registro
+│   ├── forgot-password/        # Recuperação de senha
+│   ├── reset-password/         # Reset de senha
+│   ├── layout.js               # Layout raiz
+│   ├── providers.js            # Providers (Context)
+│   └── globals.css             # Estilos globais
 ├── src/
-│   ├── components/     # Componentes React
-│   ├── modules/        # Módulos do ERP
-│   ├── services/       # Serviços de API
-│   └── utils/          # Utilitários
-├── supabase/
-│   ├── functions/      # Edge Functions
-│   ├── migrations/     # Migrações do banco
-│   └── config.toml     # Configuração Supabase
-└── public/             # Arquivos estáticos
+│   ├── components/             # Componentes reutilizáveis
+│   │   ├── ui/                 # Componentes base (Radix UI)
+│   │   └── layouts/            # Layouts específicos
+│   ├── modules/                # Módulos do sistema
+│   │   ├── DashboardModule.jsx
+│   │   ├── FinancialModule.jsx
+│   │   ├── SalesModule.jsx
+│   │   ├── CustomersModule.jsx
+│   │   ├── InventoryModule.jsx
+│   │   ├── BillingModule.jsx
+│   │   ├── AccountsPayableModule.jsx
+│   │   ├── CostCentersModule.jsx
+│   │   ├── SegmentsModule.jsx
+│   │   ├── NFeModule.jsx
+│   │   ├── ReportsModule.jsx
+│   │   ├── ProfileModule.jsx
+│   │   └── IntegrationsModule.jsx
+│   ├── hooks/                  # Hooks customizados
+│   │   ├── useAuth.jsx         # Autenticação
+│   │   ├── useAppData.jsx      # Dados globais
+│   │   └── useCrud.jsx         # Operações CRUD
+│   ├── services/               # Serviços
+│   │   ├── api.js              # Cliente HTTP
+│   │   └── supabase.js         # Cliente Supabase
+│   ├── config/                 # Configurações
+│   │   ├── constants.js        # Constantes
+│   │   ├── menuConfig.js       # Configuração do menu
+│   │   └── routeConfig.js      # Mapeamento de rotas
+│   └── pages/                  # Páginas (legado)
+├── supabase/                   # Backend (Supabase)
+│   ├── functions/              # Edge Functions
+│   │   ├── auth/               # Autenticação
+│   │   ├── users/              # Usuários
+│   │   ├── segments/           # Segmentos
+│   │   ├── customers/          # Clientes
+│   │   ├── products/           # Produtos
+│   │   ├── sales/              # Vendas
+│   │   ├── transactions/       # Transações
+│   │   ├── billings/           # Cobranças
+│   │   ├── accounts-payable/   # Contas a pagar
+│   │   ├── cost-centers/       # Centros de custo
+│   │   ├── nfe/                # Notas fiscais
+│   │   ├── metrics/            # Métricas
+│   │   └── integrations/       # Integrações
+│   ├── migrations/             # Migrações do banco
+│   ├── seed-data.js            # Dados iniciais
+│   └── config.toml             # Configuração Supabase
+└── tests/                      # Testes E2E
+    └── e2e/                    # Testes Playwright
 ```
 
-## 🔧 Desenvolvimento
+## 🚀 Configuração
 
+### 1. Instalação
 ```bash
-# Iniciar servidor de desenvolvimento
-npm run dev
-
-# Build para produção
-npm run build
-
-# Preview da build
-npm run preview
+npm install
 ```
 
-## 📊 Banco de Dados
+### 2. Variáveis de Ambiente
+Copie `env.example` para `.env.local`:
+```bash
+cp env.example .env.local
+```
 
-O sistema utiliza as seguintes tabelas principais:
+**Variáveis obrigatórias:**
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://qerubjitetqwfqqydhzv.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-- `users` - Usuários do sistema
-- `segments` - Segmentos de negócio
-- `customers` - Clientes
-- `products` - Produtos
-- `transactions` - Transações financeiras
-- `sales` - Vendas
-- `billings` - Cobranças
-- `accounts_payable` - Contas a pagar
-- `cost_centers` - Centros de custo
-- `nfe` - Notas fiscais eletrônicas
+# API
+NEXT_PUBLIC_API_URL=https://qerubjitetqwfqqydhzv.supabase.co/functions/v1
+
+# JWT
+JWT_SECRET=f3696dd52f7674b95e4606c46a6e69065b65600544b4129ba7b09538476f06fa...
+```
+
+### 3. Banco de Dados
+Execute as migrações do Supabase:
+```bash
+cd supabase
+npx supabase db push
+```
+
+### 4. Dados Iniciais
+Execute o seed para criar dados de teste:
+```bash
+cd supabase
+npm run seed
+```
+
+### 5. Edge Functions
+Deploy das Edge Functions:
+```bash
+cd supabase
+npx supabase functions deploy
+```
+
+## 🏃‍♂️ Execução
+
+### Desenvolvimento
+```bash
+npm run dev
+```
+Acesse: http://localhost:3000
+
+### Produção
+```bash
+npm run build
+npm start
+```
+
+## 🧪 Testes
+
+### Testes E2E
+```bash
+# Executar todos os testes
+npm run test:e2e
+
+# Executar com interface
+npm run test:e2e:ui
+
+# Executar com browser visível
+npm run test:e2e:headed
+
+# Executar em modo debug
+npm run test:e2e:debug
+```
+
+## 📊 Módulos do Sistema
+
+### 1. **Dashboard**
+- Métricas gerais
+- Gráficos de performance
+- Resumo financeiro
+
+### 2. **Financeiro**
+- Transações
+- Relatórios financeiros
+- Fluxo de caixa
+
+### 3. **Vendas**
+- Gestão de vendas
+- Histórico de vendas
+- Relatórios de vendas
+
+### 4. **Clientes**
+- Cadastro de clientes
+- Histórico de compras
+- Gestão de contatos
+
+### 5. **Produtos**
+- Controle de estoque
+- Preços
+- Categorias
+
+### 6. **Cobrança**
+- Faturas
+- Controle de pagamentos
+- Relatórios de cobrança
+
+### 7. **Contas a Pagar**
+- Fornecedores
+- Contas a pagar
+- Controle de pagamentos
+
+### 8. **Centros de Custo**
+- Gestão de centros de custo
+- Alocação de custos
+
+### 9. **Segmentos**
+- Gestão de segmentos
+- Filtros por segmento
+
+### 10. **Notas Fiscais**
+- Gestão de NFes
+- Integração com Receita
+
+### 11. **Relatórios**
+- Relatórios customizados
+- Exportação de dados
+
+### 12. **Integrações**
+- APIs externas
+- Webhooks
 
 ## 🔐 Autenticação
 
-Sistema de autenticação customizado usando:
-- Tabela `users` personalizada
-- JWT tokens
-- Edge Function para login
+O sistema usa autenticação JWT customizada:
 
-## 📈 Status
+- **Login**: Email/senha
+- **Persistência**: sessionStorage
+- **Proteção**: Middleware de autenticação
+- **Redirecionamento**: Automático para login
 
-✅ **Produção**: Sistema completo funcionando
-✅ **Edge Functions**: Todas as APIs migradas
-✅ **Frontend**: Deployado na Vercel
-✅ **Database**: Supabase PostgreSQL
+## 🗄️ Banco de Dados
 
-## 🤝 Contribuição
+### Tabelas Principais
+- `users` - Usuários do sistema
+- `segments` - Segmentos empresariais
+- `customers` - Clientes
+- `products` - Produtos
+- `sales` - Vendas
+- `transactions` - Transações financeiras
+- `billings` - Cobranças
+- `accounts_payable` - Contas a pagar
+- `cost_centers` - Centros de custo
+- `nfe_list` - Notas fiscais
 
-1. Fork o projeto
-2. Crie uma branch para sua feature
-3. Commit suas mudanças
-4. Push para a branch
-5. Abra um Pull Request
+### Políticas de Segurança
+- RLS (Row Level Security) ativo
+- Políticas por segmento
+- Controle de acesso por usuário
 
-## 📄 Licença
+## 🔧 Desenvolvimento
 
-Este projeto está sob a licença MIT.
+### Scripts Disponíveis
+```bash
+npm run dev          # Desenvolvimento
+npm run build        # Build de produção
+npm run start        # Servidor de produção
+npm run lint         # Linting
+npm run test:e2e     # Testes E2E
+```
+
+### Tecnologias Utilizadas
+- **Frontend**: Next.js 15, React 18, Tailwind CSS, Radix UI
+- **Backend**: Supabase Edge Functions (Deno)
+- **Banco**: PostgreSQL (Supabase)
+- **Testes**: Playwright
+- **Deploy**: Vercel
+
+## 📝 Licença
+
+Projeto privado - Breno ERP

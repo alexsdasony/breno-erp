@@ -26,9 +26,11 @@ import ImportDataButton from '@/components/ui/ImportDataButton';
 import Modal from '@/components/ui/modal';
 import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
+import { useRouter } from 'next/navigation';
 
 const CustomersModule = () => {
-  const { data, activeSegmentId, loadPartners, metrics, toast, addCustomer, updateCustomer, deleteCustomer, importData } = useAppData();
+  const router = useRouter();
+  const { data, activeSegmentId, loadPartners, metrics, toast, deleteCustomer, importData } = useAppData();
   
   // Carregar clientes (via partners role=customer) ao montar e ao trocar de segmento
   useEffect(() => {
@@ -37,128 +39,20 @@ const CustomersModule = () => {
     if (activeSegmentId && activeSegmentId !== 0) {
       params.segment_id = activeSegmentId;
     }
+    // SEMPRE buscar dados frescos da API
     loadPartners(params).catch(() => {});
   }, [activeSegmentId, loadPartners]);
 
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
   
-  // Estado inicial do formulário
-  const [formData, setFormData] = useState({
-    name: '',
-    tipoPessoa: 'pf',
-    cpf: '',
-    cnpj: '',
-    rg: '',
-    dataNascimento: '',
-    estadoCivil: '',
-    profissao: '',
-    empresa: '',
-    cargo: '',
-    dataAdmissao: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    cep: '',
-    numero: '',
-    complemento: '',
-    bairro: '',
-    tipoImovel: '',
-    celular: '',
-    telefoneComercial: '',
-    possuiPatrimonio: false,
-    valorPatrimonio: '',
-    descricaoPatrimonio: '',
-    status: 'pendente',
-    observacoes: '',
-    responsavelCadastro: '',
-    dataCadastro: new Date().toISOString().split('T')[0],
-    segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
-  });
-
-  // Atualizar segmentId quando activeSegmentId ou segments mudarem
-  useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
-    }));
-  }, [activeSegmentId, data.segments]);
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      tipoPessoa: 'pf',
-      cpf: '',
-      cnpj: '',
-      rg: '',
-      dataNascimento: '',
-      estadoCivil: '',
-      profissao: '',
-      empresa: '',
-      cargo: '',
-      dataAdmissao: '',
-      email: '',
-      phone: '',
-      address: '',
-      city: '',
-      state: '',
-      cep: '',
-      numero: '',
-      complemento: '',
-      bairro: '',
-      tipoImovel: '',
-      celular: '',
-      telefoneComercial: '',
-      possuiPatrimonio: false,
-      valorPatrimonio: '',
-      descricaoPatrimonio: '',
-      status: 'pendente',
-      observacoes: '',
-      responsavelCadastro: '',
-      dataCadastro: new Date().toISOString().split('T')[0],
-      segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
-    });
-    setIsEditing(false);
-    setSelectedCustomer(null);
-    setShowCreateModal(false);
-    setShowEditModal(false);
+  const handleCreateCustomer = () => {
+    router.push('/customer-form');
   };
 
-  const validateForm = () => {
-    if (!formData.name || formData.name.length < 2) {
-      toast({ title: 'Erro', description: 'O nome deve ter pelo menos 2 caracteres.', variant: 'destructive' });
-        return false;
-      }
-    if (!formData.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(formData.email)) {
-      toast({ title: 'Erro', description: 'Informe um e-mail válido.', variant: 'destructive' });
-        return false;
-      }
-      return true;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-    
-    try {
-      if (isEditing && selectedCustomer) {
-        await updateCustomer(selectedCustomer.id, formData);
-        toast({ title: 'Sucesso', description: 'Cliente atualizado com sucesso!' });
-      } else {
-        await addCustomer(formData);
-        toast({ title: 'Sucesso', description: 'Cliente cadastrado com sucesso!' });
-      }
-        await loadCustomers();
-        resetForm();
-    } catch (error) {
-      console.error('Erro ao salvar cliente:', error);
-    }
+  const handleEditCustomer = (customer) => {
+    router.push(`/customer-form/${customer.id}`);
   };
 
   const handleViewCustomer = (customer) => {
@@ -166,44 +60,7 @@ const CustomersModule = () => {
     setShowViewModal(true);
   };
 
-  const handleEditCustomer = (customer) => {
-    setSelectedCustomer(customer);
-    setFormData({
-      name: customer.name || '',
-      tipoPessoa: customer.tipo_pessoa || 'pf',
-      cpf: customer.cpf || '',
-      cnpj: customer.cnpj || '',
-      rg: customer.rg || '',
-      dataNascimento: customer.data_nascimento || '',
-      estadoCivil: customer.estado_civil || '',
-      profissao: customer.profissao || '',
-      empresa: customer.empresa || '',
-      cargo: customer.cargo || '',
-      dataAdmissao: customer.data_admissao || '',
-      email: customer.email || '',
-      phone: customer.phone || '',
-      address: customer.address || '',
-      city: customer.city || '',
-      state: customer.state || '',
-      cep: customer.cep || '',
-      numero: customer.numero || '',
-      complemento: customer.complemento || '',
-      bairro: customer.bairro || '',
-      tipoImovel: customer.tipo_imovel || '',
-      celular: customer.celular || '',
-      telefoneComercial: customer.telefone_comercial || '',
-      possuiPatrimonio: customer.possui_patrimonio || false,
-      valorPatrimonio: customer.valor_patrimonio || '',
-      descricaoPatrimonio: customer.descricao_patrimonio || '',
-      status: customer.status || 'pendente',
-      observacoes: customer.observacoes || '',
-      responsavelCadastro: customer.responsavel_cadastro || '',
-      dataCadastro: customer.data_cadastro || new Date().toISOString().split('T')[0],
-      segmentId: customer.segment_id || activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
-    });
-    setIsEditing(true);
-    setShowEditModal(true);
-  };
+
 
   const handleDeleteCustomer = (customer) => {
     setSelectedCustomer(customer);
@@ -216,7 +73,8 @@ const CustomersModule = () => {
       toast({ title: 'Cliente excluído!', description: `${selectedCustomer.name} foi excluído com sucesso.` });
       setShowDeleteConfirm(false);
       setSelectedCustomer(null);
-      await loadCustomers();
+      // Sempre buscar dados frescos
+      await loadPartners({ role: 'customer' });
       } catch (error) {
       console.error('Erro ao excluir cliente:', error);
     }
@@ -277,7 +135,7 @@ const CustomersModule = () => {
             moduleName="Clientes"
             expectedHeaders={customerHeaders}
           />
-          <Button id="customers-new-button" onClick={() => setShowCreateModal(true)} className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700">
+          <Button id="customers-new-button" onClick={handleCreateCustomer} className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700">
             <Plus className="w-4 h-4 mr-2" />
             Novo Cliente
           </Button>
@@ -419,163 +277,7 @@ const CustomersModule = () => {
       </div>
       </motion.div>
 
-      {/* Modal de Criação */}
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        title="Novo Cliente"
-        size="lg"
-      >
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Segmento</label>
-            <select id="customers-segment-select" value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
-              <option value="">Selecione um segmento</option>
-              {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Nome Completo *</label>
-                <input
-                  id="customers-name-input"
-                  type="text"
-                  value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})} 
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-              placeholder="Nome completo"
-              required
-                />
-              </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Tipo de Pessoa *</label>
-            <select
-              id="customers-person-type-select"
-              value={formData.tipoPessoa}
-              onChange={(e) => setFormData({...formData, tipoPessoa: e.target.value, cpf: '', cnpj: ''})}
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-              required
-            >
-              <option value="pf">Pessoa Física (CPF)</option>
-              <option value="pj">Pessoa Jurídica (CNPJ)</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              {formData.tipoPessoa === 'pf' ? 'CPF *' : 'CNPJ *'}
-            </label>
-                <input
-                  id="customers-doc-input"
-                  type="text"
-                value={formData.tipoPessoa === 'pf' ? formData.cpf : formData.cnpj}
-                onChange={(e) => {
-                  if (formData.tipoPessoa === 'pf') {
-                    setFormData({...formData, cpf: e.target.value});
-                  } else {
-                    setFormData({...formData, cnpj: e.target.value});
-                  }
-                }}
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                placeholder={formData.tipoPessoa === 'pf' ? '000.000.000-00' : '00.000.000/0000-00'}
-                required
-              />
-              </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">E-mail *</label>
-                <input
-                  id="customers-email-input"
-              type="email" 
-              value={formData.email} 
-              onChange={(e) => setFormData({...formData, email: e.target.value})} 
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-              placeholder="cliente@email.com" 
-                required
-                />
-              </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Telefone</label>
-                <input
-              type="tel" 
-              value={formData.phone} 
-              onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-              placeholder="(11) 1234-5678" 
-                />
-              </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Endereço</label>
-                <input
-                  type="text"
-              value={formData.address} 
-              onChange={(e) => setFormData({...formData, address: e.target.value})} 
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-              placeholder="Rua, Avenida, etc." 
-                />
-              </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Cidade</label>
-            <input
-              type="text"
-              value={formData.city} 
-              onChange={(e) => setFormData({...formData, city: e.target.value})} 
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-              placeholder="Nome da cidade" 
-            />
-              </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Estado</label>
-            <select
-              value={formData.state}
-              onChange={(e) => setFormData({...formData, state: e.target.value})}
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-            >
-              <option value="">Selecione...</option>
-              <option value="AC">Acre</option>
-              <option value="AL">Alagoas</option>
-              <option value="AP">Amapá</option>
-              <option value="AM">Amazonas</option>
-              <option value="BA">Bahia</option>
-              <option value="CE">Ceará</option>
-              <option value="DF">Distrito Federal</option>
-              <option value="ES">Espírito Santo</option>
-              <option value="GO">Goiás</option>
-              <option value="MA">Maranhão</option>
-              <option value="MT">Mato Grosso</option>
-              <option value="MS">Mato Grosso do Sul</option>
-              <option value="MG">Minas Gerais</option>
-              <option value="PA">Pará</option>
-              <option value="PB">Paraíba</option>
-              <option value="PR">Paraná</option>
-              <option value="PE">Pernambuco</option>
-              <option value="PI">Piauí</option>
-              <option value="RJ">Rio de Janeiro</option>
-              <option value="RN">Rio Grande do Norte</option>
-              <option value="RS">Rio Grande do Sul</option>
-              <option value="RO">Rondônia</option>
-              <option value="RR">Roraima</option>
-              <option value="SC">Santa Catarina</option>
-              <option value="SP">São Paulo</option>
-              <option value="SE">Sergipe</option>
-              <option value="TO">Tocantins</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Status</label>
-          <select
-              value={formData.status}
-              onChange={(e) => setFormData({...formData, status: e.target.value})}
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-            >
-              <option value="active">Ativo</option>
-              <option value="inactive">Inativo</option>
-              <option value="suspended">Suspenso</option>
-          </select>
-          </div>
-          <div className="md:col-span-2 flex space-x-3">
-            <Button id="customers-submit-button" type="submit" className="bg-gradient-to-r from-purple-500 to-pink-600">Salvar Cliente</Button>
-            <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>Cancelar</Button>
-        </div>
-        </form>
-      </Modal>
+
 
       {/* Modal de Visualização */}
       <Modal
@@ -649,163 +351,7 @@ const CustomersModule = () => {
         )}
       </Modal>
 
-      {/* Modal de Edição */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        title="Editar Cliente"
-        size="lg"
-      >
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Segmento</label>
-            <select value={formData.segmentId} onChange={(e) => setFormData({...formData, segmentId: e.target.value})} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
-              <option value="">Selecione um segmento</option>
-              {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-                </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Nome Completo *</label>
-          <input
-            type="text"
-              value={formData.name} 
-              onChange={(e) => setFormData({...formData, name: e.target.value})} 
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-              placeholder="Nome completo" 
-              required
-          />
-                  </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Tipo de Pessoa *</label>
-          <select
-              value={formData.tipoPessoa}
-              onChange={(e) => setFormData({...formData, tipoPessoa: e.target.value, cpf: '', cnpj: ''})}
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-            required
-          >
-              <option value="pf">Pessoa Física (CPF)</option>
-              <option value="pj">Pessoa Jurídica (CNPJ)</option>
-          </select>
-                </div>
-                <div>
-            <label className="block text-sm font-medium mb-2">
-              {formData.tipoPessoa === 'pf' ? 'CPF *' : 'CNPJ *'}
-            </label>
-                  <input
-                    type="text"
-              value={formData.tipoPessoa === 'pf' ? formData.cpf : formData.cnpj}
-            onChange={(e) => {
-                if (formData.tipoPessoa === 'pf') {
-                  setFormData({...formData, cpf: e.target.value});
-                } else {
-                  setFormData({...formData, cnpj: e.target.value});
-                }
-              }}
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-              placeholder={formData.tipoPessoa === 'pf' ? '000.000.000-00' : '00.000.000/0000-00'}
-            required
-                  />
-                </div>
-                <div>
-            <label className="block text-sm font-medium mb-2">E-mail *</label>
-                  <input
-              type="email" 
-              value={formData.email} 
-              onChange={(e) => setFormData({...formData, email: e.target.value})} 
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-              placeholder="cliente@email.com" 
-            required
-                  />
-                </div>
-                <div>
-            <label className="block text-sm font-medium mb-2">Telefone</label>
-                  <input
-              type="tel" 
-              value={formData.phone} 
-              onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-              placeholder="(11) 1234-5678" 
-                  />
-                </div>
-                <div>
-            <label className="block text-sm font-medium mb-2">Endereço</label>
-                  <input
-            type="text"
-              value={formData.address} 
-              onChange={(e) => setFormData({...formData, address: e.target.value})} 
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-              placeholder="Rua, Avenida, etc." 
-                  />
-                </div>
-                <div>
-            <label className="block text-sm font-medium mb-2">Cidade</label>
-                  <input
-                    type="text"
-              value={formData.city} 
-              onChange={(e) => setFormData({...formData, city: e.target.value})} 
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
-              placeholder="Nome da cidade" 
-                  />
-                </div>
-                <div>
-            <label className="block text-sm font-medium mb-2">Estado</label>
-                  <select
-              value={formData.state}
-              onChange={(e) => setFormData({...formData, state: e.target.value})}
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-          >
-            <option value="">Selecione...</option>
-                    <option value="AC">Acre</option>
-                    <option value="AL">Alagoas</option>
-                    <option value="AP">Amapá</option>
-                    <option value="AM">Amazonas</option>
-                    <option value="BA">Bahia</option>
-                    <option value="CE">Ceará</option>
-                    <option value="DF">Distrito Federal</option>
-                    <option value="ES">Espírito Santo</option>
-                    <option value="GO">Goiás</option>
-                    <option value="MA">Maranhão</option>
-                    <option value="MT">Mato Grosso</option>
-                    <option value="MS">Mato Grosso do Sul</option>
-                    <option value="MG">Minas Gerais</option>
-                    <option value="PA">Pará</option>
-                    <option value="PB">Paraíba</option>
-                    <option value="PR">Paraná</option>
-                    <option value="PE">Pernambuco</option>
-                    <option value="PI">Piauí</option>
-                    <option value="RJ">Rio de Janeiro</option>
-                    <option value="RN">Rio Grande do Norte</option>
-                    <option value="RS">Rio Grande do Sul</option>
-                    <option value="RO">Rondônia</option>
-                    <option value="RR">Roraima</option>
-                    <option value="SC">Santa Catarina</option>
-                    <option value="SP">São Paulo</option>
-                    <option value="SE">Sergipe</option>
-                    <option value="TO">Tocantins</option>
-                  </select>
-                </div>
-        <div>
-            <label className="block text-sm font-medium mb-2">Status</label>
-          <select
-            value={formData.status}
-            onChange={(e) => setFormData({...formData, status: e.target.value})}
-              className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-          >
-            <option value="active">Ativo</option>
-            <option value="inactive">Inativo</option>
-            <option value="suspended">Suspenso</option>
-          </select>
-        </div>
-          <div className="md:col-span-2 flex space-x-3">
-            <Button type="submit" className="bg-gradient-to-r from-purple-500 to-pink-600">
-              Atualizar Cliente
-            </Button>
-            <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>
-              Cancelar
-            </Button>
-        </div>
-        </form>
-      </Modal>
+
 
       {/* Modal de Confirmação de Exclusão */}
       <Modal
