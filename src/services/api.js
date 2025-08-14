@@ -1,6 +1,6 @@
 // API Service - Centralized HTTP client for backend communication
 // Usa VITE_API_URL quando definido (Edge Functions em prod). Caso contrário, usa backend local via '/api'.
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+const API_BASE_URL = 'https://qerubjitetqwfqqydhzv.supabase.co/functions/v1';
 
 // Cache em memória para token - COM sessionStorage para persistência
 let tokenCache = null;
@@ -104,7 +104,7 @@ class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     const token = this.getToken();
     
-    const isEdgeFunctions = typeof this.baseURL === 'string' && this.baseURL.includes('supabase.co/functions');
+    const isEdgeFunctions = this.baseURL === '/api' || (typeof this.baseURL === 'string' && this.baseURL.includes('supabase.co'));
     const config = {
       headers: {
         'Content-Type': 'application/json',
@@ -192,7 +192,7 @@ class ApiService {
   }
 
   async login(credentials) {
-    const response = await this.post('/auth/login', credentials);
+    const response = await this.post('/auth', credentials);
     
     if (response.token) {
       this.setToken(response.token);

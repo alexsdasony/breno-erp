@@ -24,21 +24,13 @@ const nextConfig = {
   async rewrites() {
     const rewrites = [];
     
-    // Rewrite para API local em desenvolvimento
-    if (process.env.NODE_ENV === 'development') {
+    // Rewrite para API externa (Edge Functions) em desenvolvimento e produção
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (apiUrl) {
       rewrites.push({
         source: '/api/:path*',
-        destination: 'http://localhost:3001/api/:path*',
+        destination: `${apiUrl}/:path*`,
       });
-    } else {
-      // Rewrite para API externa em produção
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (apiUrl) {
-        rewrites.push({
-          source: '/api/:path*',
-          destination: `${apiUrl}/:path*`,
-        });
-      }
     }
     
     // Rewrite para Supabase Functions
