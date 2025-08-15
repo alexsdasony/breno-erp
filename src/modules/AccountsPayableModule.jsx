@@ -315,10 +315,10 @@ const AccountsPayableModule = () => {
           />
         </div>
         <div className="flex flex-col gap-2">
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full p-2 pl-10 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
-              <option value="all">Todos os Status</option>
+        <div className="relative">
+          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full p-2 pl-10 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
+            <option value="all">Todos os Status</option>
               <option value="pendente">Pendente</option>
               <option value="paga">Paga</option>
               <option value="vencida">Vencida</option>
@@ -333,7 +333,7 @@ const AccountsPayableModule = () => {
               <option value="week">Semana</option>
               <option value="month">Mês</option>
               <option value="custom">Personalizado</option>
-            </select>
+          </select>
           </div>
           {periodType === 'custom' && (
             <div className="flex gap-2 mt-2">

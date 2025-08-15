@@ -71,8 +71,8 @@ const CustomersModule = () => {
     try {
       await deleteCustomer(selectedCustomer.id);
       toast({ title: 'Cliente excluído!', description: `${selectedCustomer.name} foi excluído com sucesso.` });
-      setShowDeleteConfirm(false);
-      setSelectedCustomer(null);
+    setShowDeleteConfirm(false);
+    setSelectedCustomer(null);
       // Sempre buscar dados frescos
       await loadPartners({ role: 'customer' });
       } catch (error) {
@@ -141,7 +141,7 @@ const CustomersModule = () => {
           </Button>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <motion.div whileHover={{ scale: 1.02 }} className="glass-effect rounded-xl p-6 gradient-card border">
           <div className="flex items-center justify-between">
@@ -161,7 +161,7 @@ const CustomersModule = () => {
               </p>
       </div>
             <CheckCircle className="w-8 h-8 text-green-400" />
-            </div>
+          </div>
         </motion.div>
         <motion.div whileHover={{ scale: 1.02 }} className="glass-effect rounded-xl p-6 gradient-card border">
           <div className="flex items-center justify-between">
@@ -174,8 +174,8 @@ const CustomersModule = () => {
             <DollarSign className="w-8 h-8 text-purple-400" />
           </div>
         </motion.div>
-          </div>
-        
+      </div>
+
 
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-effect rounded-xl p-6 border">
@@ -185,7 +185,7 @@ const CustomersModule = () => {
             <Button variant="outline" size="sm"><Search className="w-4 h-4 mr-2" />Buscar</Button>
             <Button variant="outline" size="sm"><Filter className="w-4 h-4 mr-2" />Filtrar</Button>
             </div>
-          </div>
+        </div>
         <div className="overflow-x-auto max-h-96 scrollbar-hide">
           <table id="customers-table" className="w-full">
             <thead>
@@ -214,7 +214,7 @@ const CustomersModule = () => {
                       <p className="text-xs text-muted-foreground">
                         {customer.tax_id ? 'Documento' : customer.cpf ? 'CPF' : customer.cnpj ? 'CNPJ' : ''}
                       </p>
-    </div>
+                    </div>
                   </td>
                   <td className="p-3">
                     <div>
@@ -233,7 +233,7 @@ const CustomersModule = () => {
                       {getStatusIcon(customer.status)}
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(customer.status)}`}>
                         {customer.status}
-                      </span>
+                    </span>
                     </div>
                   </td>
                   <td className="p-3 text-center">
@@ -243,15 +243,15 @@ const CustomersModule = () => {
                   </td>
                   <td className="p-3 text-center">
                     <div className="flex justify-center space-x-2">
-          <Button 
+                      <Button 
                         variant="ghost" 
                         size="sm"
                         onClick={() => handleViewCustomer(customer)}
                         title="Visualizar cliente"
                       >
                         <Eye className="w-4 h-4" />
-          </Button>
-          <Button 
+                      </Button>
+                      <Button 
                         variant="ghost" 
                         size="sm"
                         onClick={() => handleEditCustomer(customer)}
@@ -267,14 +267,14 @@ const CustomersModule = () => {
                         className="text-red-500 hover:text-red-700"
                       >
                         <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
+                      </Button>
+                    </div>
                   </td>
                 </motion.tr>
               ))}
             </tbody>
           </table>
-      </div>
+        </div>
       </motion.div>
 
 
@@ -288,59 +288,59 @@ const CustomersModule = () => {
       >
         {selectedCustomer && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground">Nome</label>
-                <p className="text-lg font-medium">{selectedCustomer.name}</p>
-                    </div>
-              <div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground">Nome</label>
+                  <p className="text-lg font-medium">{selectedCustomer.name}</p>
+                </div>
+                  <div>
                 <label className="block text-sm font-medium text-muted-foreground">E-mail</label>
-                <p className="flex items-center">
+                  <p className="flex items-center">
                   <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
-                  {selectedCustomer.email}
-                </p>
-                    </div>
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground">Telefone</label>
-                <p className="flex items-center">
+                      {selectedCustomer.email}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground">Telefone</label>
+                  <p className="flex items-center">
                   <Phone className="w-4 h-4 mr-2 text-muted-foreground" />
                   {selectedCustomer.phone || 'N/A'}
-                </p>
-        </div>
-              <div>
+                  </p>
+                </div>
+                <div>
                 <label className="block text-sm font-medium text-muted-foreground">Documento</label>
-                <p className="flex items-center">
+                  <p className="flex items-center">
                   <FileText className="w-4 h-4 mr-2 text-muted-foreground" />
                   {selectedCustomer.cpf || selectedCustomer.cnpj || 'N/A'}
-                </p>
-        </div>
+                  </p>
+                </div>
               </div>
               
             <div className="space-y-4">
-              <div>
+                <div>
                 <label className="block text-sm font-medium text-muted-foreground">Endereço</label>
                 <p className="flex items-center">
                   <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
                   {selectedCustomer.address ? `${selectedCustomer.address}, ${selectedCustomer.city} - ${selectedCustomer.state}` : 'N/A'}
                 </p>
                 </div>
-              <div>
+                <div>
                 <label className="block text-sm font-medium text-muted-foreground">Status</label>
                 <div className="flex items-center space-x-2">
                   {getStatusIcon(selectedCustomer.status)}
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedCustomer.status)}`}>
                     {selectedCustomer.status}
                   </span>
-                  </div>
-                  </div>
-              <div>
+                </div>
+                </div>
+                <div>
                 <label className="block text-sm font-medium text-muted-foreground">Segmento</label>
                 <p className="flex items-center">
                   <Building className="w-4 h-4 mr-2 text-muted-foreground" />
                   {segments.find(s => s.id === selectedCustomer.segment_id)?.name || 'N/A'}
                 </p>
                 </div>
-              <div>
+                <div>
                 <label className="block text-sm font-medium text-muted-foreground">Total em Compras</label>
                 <p className="text-lg font-medium text-green-400">
                   {formatCurrency(selectedCustomer.total_purchases || 0)}
@@ -360,31 +360,31 @@ const CustomersModule = () => {
         title="Confirmar Exclusão"
         size="sm"
         showCloseButton={false}
-      >
-        <div className="text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-            <Trash2 className="h-6 w-6 text-red-600" />
+            >
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                  <Trash2 className="h-6 w-6 text-red-600" />
                 </div>
-          <p className="text-muted-foreground mb-6">
+                <p className="text-muted-foreground mb-6">
             Tem certeza que deseja excluir o cliente <strong>{selectedCustomer?.name}</strong>? 
-            Esta ação não pode ser desfeita.
-          </p>
-          
-          <div className="flex space-x-3 justify-center">
-            <Button
-              variant="destructive"
-              onClick={confirmDelete}
-            >
-              Sim, Excluir
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteConfirm(false)}
-            >
-              Cancelar
-            </Button>
-      </div>
-        </div>
+                  Esta ação não pode ser desfeita.
+                </p>
+                
+                <div className="flex space-x-3 justify-center">
+                  <Button
+                    variant="destructive"
+                    onClick={confirmDelete}
+                  >
+                    Sim, Excluir
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDeleteConfirm(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
       </Modal>
     </motion.div>
   );

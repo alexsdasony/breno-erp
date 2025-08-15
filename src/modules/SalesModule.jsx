@@ -56,7 +56,7 @@ const SalesModule = () => {
   useEffect(() => {
     setFormData(prev => ({
       ...prev,
-      segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+    segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
     }));
   }, [activeSegmentId, data.segments]);
 
@@ -147,7 +147,7 @@ const SalesModule = () => {
       items: saleItems,
       segmentId: parseInt(formData.segmentId)
     };
-
+    
     await addSale(saleData);
     resetForm();
     setShowForm(false);
@@ -415,28 +415,28 @@ const SalesModule = () => {
                     displayKey="name"
                     valueKey="id"
                   />
-                </div>
-                <div>
+              </div>
+              <div>
                   <label className="block text-sm font-medium mb-2">Quantidade</label>
-                  <input 
+                <input 
                     id="sales-item-qty-input"
-                    type="number" 
+                  type="number" 
                     value={newItem.quantity} 
                     onChange={handleQuantityChange}
                     min="1"
-                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-                <div>
+                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
+                />
+              </div>
+              <div>
                   <label className="block text-sm font-medium mb-2">Preço Unitário</label>
-                  <input 
-                    type="number" 
+                <input 
+                  type="number" 
                     value={newItem.unitPrice} 
                     readOnly
-                    step="0.01"
-                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  />
-                </div>
+                  step="0.01" 
+                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
+                />
+              </div>
                 <div className="flex items-end">
                   <Button id="sales-add-item-button" onClick={addItemToSale} className="w-full bg-green-600 hover:bg-green-700">
                     <Plus className="w-4 h-4 mr-2" />
@@ -576,8 +576,8 @@ const SalesModule = () => {
                         sale.status === 'Pendente' ? 'bg-yellow-500/20 text-yellow-400' : 
                         'bg-red-500/20 text-red-400'
                       }`}>
-                        {sale.status}
-                      </span>
+                      {sale.status}
+                    </span>
                     </div>
                   </td>
                   <td className="p-3 text-center">
@@ -647,14 +647,14 @@ const SalesModule = () => {
               <div className="space-y-6">
                 {/* Informações da Venda */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">Cliente</label>
-                    <p className="text-lg font-medium">{selectedSale.customerName}</p>
-                  </div>
-                  <div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground">Cliente</label>
+                  <p className="text-lg font-medium">{selectedSale.customerName}</p>
+                </div>
+                <div>
                     <label className="block text-sm font-medium text-muted-foreground">Data</label>
                     <p>{formatDate(selectedSale.saleDate || selectedSale.date)}</p>
-                  </div>
+                </div>
                   <div>
                     <label className="block text-sm font-medium text-muted-foreground">Forma de Pagamento</label>
                     <div className="flex items-center">
@@ -722,12 +722,12 @@ const SalesModule = () => {
                     <div>
                       <p className="text-sm text-muted-foreground">Subtotal</p>
                       <p className="text-lg font-semibold">{formatCurrency(selectedSale.totalAmount || selectedSale.total)}</p>
-                    </div>
-                    <div>
+                </div>
+                <div>
                       <p className="text-sm text-muted-foreground">Desconto</p>
                       <p className="text-lg font-semibold text-red-600">{formatCurrency(selectedSale.discount || 0)}</p>
-                    </div>
-                    <div>
+                </div>
+                <div>
                       <p className="text-sm text-muted-foreground">Total</p>
                       <p className="text-xl font-bold text-green-600">{formatCurrency(selectedSale.finalAmount || selectedSale.total)}</p>
                     </div>
@@ -798,7 +798,7 @@ const SalesModule = () => {
                       required
                     />
                   </div>
-                  <div>
+                <div>
                     <label className="block text-sm font-medium mb-2">Data da Venda</label>
                     <input 
                       type="date" 
@@ -806,15 +806,15 @@ const SalesModule = () => {
                       onChange={(e) => setFormData({...formData, saleDate: e.target.value})} 
                       className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                     />
-                  </div>
-                  <div>
+                </div>
+                <div>
                     <label className="block text-sm font-medium mb-2">Forma de Pagamento</label>
                     <select value={formData.paymentMethod} onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
                       <option value="dinheiro">Dinheiro</option>
                       <option value="cartão">Cartão</option>
                       <option value="pix">PIX</option>
                       <option value="boleto">Boleto</option>
-                    </select>
+                  </select>
                   </div>
                 </div>
 
@@ -840,25 +840,25 @@ const SalesModule = () => {
                         displayKey="name"
                         valueKey="id"
                       />
-                    </div>
-                    <div>
+                </div>
+                <div>
                       <label className="block text-sm font-medium mb-2">Quantidade</label>
-                      <input 
-                        type="number" 
+                  <input 
+                    type="number" 
                         value={newItem.quantity} 
                         onChange={handleQuantityChange}
                         min="1"
-                        className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                      />
-                    </div>
-                    <div>
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
+                  />
+                </div>
+                <div>
                       <label className="block text-sm font-medium mb-2">Preço Unitário</label>
-                      <input 
-                        type="number" 
+                  <input 
+                    type="number" 
                         value={newItem.unitPrice} 
                         readOnly
-                        step="0.01"
-                        className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    step="0.01" 
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" 
                       />
                     </div>
                     <div className="flex items-end">
@@ -999,4 +999,4 @@ const SalesModule = () => {
   );
 };
 
-export default SalesModule; 
+export default SalesModule;

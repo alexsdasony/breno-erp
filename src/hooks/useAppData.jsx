@@ -119,7 +119,7 @@ export const AppDataProvider = ({ children }) => {
               billings: billingsRes.status === 'fulfilled' ? (billingsRes.value.billings || billingsRes.value.data || []) : [],
               nfeList: nfeRes.status === 'fulfilled' ? (nfeRes.value.nfeList || nfeRes.value.data || []) : []
             }));
-
+            
             console.log('✅ Essential data loaded successfully');
           } catch (error) {
             console.error('❌ Error loading essential data:', error);
@@ -133,7 +133,7 @@ export const AppDataProvider = ({ children }) => {
     };
 
     if (!authLoading) {
-      initializeApp();
+    initializeApp();
     }
   }, [currentUser, authLoading]);
 
@@ -303,7 +303,7 @@ export const AppDataProvider = ({ children }) => {
       return;
     }
 
-    console.log('🔄 Loading costCenters...');
+          console.log('🔄 Loading costCenters...');
     setLazyState(prev => ({ ...prev, costCenters: { ...prev.costCenters, loading: true } }));
     
     try {
@@ -323,7 +323,7 @@ export const AppDataProvider = ({ children }) => {
       return;
     }
 
-    console.log('🔄 Loading accountsPayable...');
+          console.log('🔄 Loading accountsPayable...');
     setLazyState(prev => ({ ...prev, accountsPayable: { ...prev.accountsPayable, loading: true } }));
     
     try {

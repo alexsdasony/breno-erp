@@ -9,7 +9,7 @@ import { toast } from '@/components/ui/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu.jsx';
 
 import { useAppData } from '@/hooks/useAppData.jsx';
-import { menuItems as appMenuItems } from '@/config/menuConfig';
+import { menuItems as appMenuItems } from '@/config/menuConfig'; 
 import { getRouteFromMenuId, getMenuIdFromRoute } from '@/config/routeConfig';
 import { calculateMetrics } from '@/utils/metrics';
 
@@ -17,7 +17,7 @@ const ErpLayout = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
+  
   const appData = useAppData();
   const { currentUser, logoutUser, data, activeSegmentId, setActiveSegmentId, loading } = appData;
   const metrics = calculateMetrics(data, activeSegmentId);
@@ -26,7 +26,7 @@ const ErpLayout = ({ children }) => {
 
   const menuItems = React.useMemo(() => [
     ...appMenuItems,
-    { id: 'profile', label: 'Meu Perfil', icon: UserCircle }
+    { id: 'profile', label: 'Meu Perfil', icon: UserCircle } 
   ], []);
 
   // Determinar o módulo ativo baseado na rota atual
@@ -81,8 +81,8 @@ const ErpLayout = ({ children }) => {
         <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
         <p className="text-gray-500">Carregando módulo...</p>
       </div>
-    </div>
-  );
+        </div>
+      );
 
   const handleNavigation = (moduleId) => {
     setSidebarOpen(false);
@@ -181,30 +181,30 @@ const ErpLayout = ({ children }) => {
 
           {/* Navigation Menu */}
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
+              {menuItems.map((item) => {
+                const Icon = item.icon;
               const isActive = activeModule === item.id;
               const isAdminOnly = item.id === 'schema' && !isAdmin;
               
               if (isAdminOnly) return null;
 
-              return (
+                return (
                 <button
-                  key={item.id}
+                    key={item.id}
                   id={`menu-${item.id}`}
                   onClick={() => handleNavigation(item.id)}
                   className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     isActive
                       ? 'bg-blue-600 text-white shadow-lg'
                       : 'text-gray-300 hover:bg-slate-800 hover:text-white'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
                   <span>{item.label}</span>
                 </button>
-              );
-            })}
-          </nav>
+                );
+              })}
+            </nav>
 
           {/* Footer */}
           <div className="p-4 border-t border-slate-700/50">
@@ -224,16 +224,16 @@ const ErpLayout = ({ children }) => {
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Top Bar */}
         <header className="bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50 p-4">
-          <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
+                <Button
+                  variant="ghost"
+                  size="sm"
                 className="lg:hidden text-gray-400 hover:text-white"
                 onClick={() => setSidebarOpen(true)}
-              >
+                >
                 <Menu className="w-5 h-5" />
-              </Button>
+                </Button>
               <h2 className="text-lg font-semibold text-white">
                 {menuItems.find(item => item.id === activeModule)?.label || 'Dashboard'}
               </h2>
@@ -247,12 +247,12 @@ const ErpLayout = ({ children }) => {
                   R$ {metrics?.totalRevenue?.toLocaleString('pt-BR') || '0'}
                 </p>
               </div>
-              <div className="text-right">
+                <div className="text-right">
                 <p className="text-xs text-gray-400">Despesas</p>
                 <p className="text-sm font-semibold text-red-400">
                   R$ {metrics?.totalExpenses?.toLocaleString('pt-BR') || '0'}
-                </p>
-              </div>
+                  </p>
+                </div>
               <div className="text-right">
                 <p className="text-xs text-gray-400">Lucro</p>
                 <p className="text-sm font-semibold text-blue-400">
@@ -267,18 +267,18 @@ const ErpLayout = ({ children }) => {
         <main className="flex-1 p-6">
           <Suspense fallback={<ModuleLoadingFallback />}>
             <AnimatePresence mode="wait">
-              <motion.div
+                      <motion.div
                 key={activeModule}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-              >
+                        transition={{ duration: 0.3 }}
+                      >
                 {children}
-              </motion.div>
+                      </motion.div>
             </AnimatePresence>
           </Suspense>
-        </main>
+          </main>
       </div>
     </div>
   );

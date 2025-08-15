@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { hash } from "https://deno.land/x/bcrypt@v0.4.1/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -74,7 +75,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          uers: data
+          user: data
         }),
         { 
           status: 200, 
@@ -87,13 +88,54 @@ serve(async (req) => {
     if (req.method === 'POST') {
       const body = await req.json()
       
+      // Validação básica
+      if (!body.name || !body.email || !body.password) {
+        return new Response(
+          JSON.stringify({ error: 'Nome, email e senha são obrigatórios' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
+      // Verificar se email já existe
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', body.email)
+        .single()
+      
+      if (existingUser) {
+        return new Response(
+          JSON.stringify({ error: 'Email já cadastrado' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
+      // Hash da senha
+      const hashedPassword = await hash(body.password)
+      
+      const userData = {
+        name: body.name,
+        email: body.email,
+        password: hashedPassword,
+        role: body.role || 'user',
+        segment_id: body.segment_id || null,
+        status: body.status || 'ativo'
+      }
+      
       const { data, error } = await supabase
         .from('users')
-        .insert(body)
+        .insert(userData)
         .select()
         .single()
 
       if (error) {
+        console.error('Erro ao criar usuário:', error)
         return new Response(
           JSON.stringify({ error: 'Erro ao criar usuário' }),
           { 
@@ -106,7 +148,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          uers: data,
+          user: data,
           message: 'Usuário criado com sucesso'
         }),
         { 
@@ -140,7 +182,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          uers: data,
+          user: data,
           message: 'Usuário atualizado com sucesso'
         }),
         { 

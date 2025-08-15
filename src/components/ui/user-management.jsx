@@ -16,17 +16,21 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { useAppData } from '@/hooks/useAppData.jsx';
+import { useCrud } from '@/hooks/useCrud.jsx';
 
 const UserManagement = () => {
   const { 
     currentUser, 
     data, 
+    segments 
+  } = useAppData();
+
+  const {
     loadUsers, 
     createUser, 
     updateUser, 
-    deleteUser,
-    segments 
-  } = useAppData();
+    deleteUser
+  } = useCrud();
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -64,7 +68,7 @@ const UserManagement = () => {
         ...(filterSegment && { segment_id: filterSegment })
       };
       const response = await loadUsers(params);
-      setUsers(response.users || []);
+      setUsers(response.users || response || []);
       setTotalPages(response.pagination?.pages || 1);
     } catch (error) {
       console.error('Error loading users:', error);
