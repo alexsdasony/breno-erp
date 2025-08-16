@@ -5,11 +5,11 @@ import { PlusCircle, Edit, Trash2, Search, Filter, FileDown, Eye } from 'lucide-
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import Modal from '@/components/ui/modal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const AccountsPayableModule = () => {
-  const { data, activeSegmentId, loadFinancialDocuments, loadPartners, toast, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData } = useAppData();
+  const { data, activeSegmentId, loadFinancialDocuments, loadPartners, toast, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData } = useAppDataRefactored();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [periodType, setPeriodType] = useState('all');
@@ -44,11 +44,16 @@ const AccountsPayableModule = () => {
   const suppliers = (data.partners || []).filter(p => (p.roles || p.partner_roles || []).some(r => r.role === 'supplier'));
   const accountCategories = data.accountCategories || [];
 
-  // Load financial documents (payables) and partners when component mounts
+  // Load financial documents (payables) and partners when component mounts and when segment changes
   useEffect(() => {
-    loadFinancialDocuments();
-    loadPartners();
-  }, [loadFinancialDocuments, loadPartners]);
+    const params = {};
+    if (activeSegmentId && activeSegmentId !== 0) {
+      params.segment_id = activeSegmentId;
+    }
+    // SEMPRE buscar dados frescos da API
+    loadFinancialDocuments(params).catch(() => {});
+    loadPartners(params).catch(() => {});
+  }, [activeSegmentId, loadFinancialDocuments, loadPartners]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

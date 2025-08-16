@@ -15,11 +15,11 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
-import { useAppData } from '@/hooks/useAppData';
+import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const NFeModule = () => {
-  const { data, metrics, addNFe, updateNFe, deleteNFe, importData, toast, loadCustomers } = useAppData();
+  const { data, metrics, addNFe, updateNFe, deleteNFe, importData, toast, loadCustomers } = useAppDataRefactored();
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentNFe, setCurrentNFe] = useState(null);

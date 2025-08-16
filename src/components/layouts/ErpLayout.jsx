@@ -184,7 +184,7 @@ const ErpLayout = ({ children }) => {
               {menuItems.map((item) => {
                 const Icon = item.icon;
               const isActive = activeModule === item.id;
-              const isAdminOnly = item.id === 'schema' && !isAdmin;
+              const isAdminOnly = false; // Removido schema viewer
               
               if (isAdminOnly) return null;
 

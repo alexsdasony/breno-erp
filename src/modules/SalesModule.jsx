@@ -23,19 +23,21 @@ import {
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import Autocomplete from '@/components/ui/autocomplete';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const SalesModule = () => {
-  const { data, activeSegmentId, loadProducts, metrics, toast, addSale, importData } = useAppData();
+  const { data, activeSegmentId, loadProducts, metrics, toast, addSale, importData } = useAppDataRefactored();
   
-  // Carregar produtos quando o componente for montado
+  // Carregar produtos quando o componente for montado e ao trocar de segmento
   useEffect(() => {
-    if (!data.products || data.products.length === 0) {
-      console.log('🔄 Carregando produtos...');
-      loadProducts();
+    const params = {};
+    if (activeSegmentId && activeSegmentId !== 0) {
+      params.segment_id = activeSegmentId;
     }
-  }, [loadProducts, data.products]);
+    // SEMPRE buscar dados frescos da API
+    loadProducts(params).catch(() => {});
+  }, [activeSegmentId, loadProducts]);
   const [showForm, setShowForm] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);

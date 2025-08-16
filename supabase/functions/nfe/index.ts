@@ -21,7 +21,10 @@ serve(async (req) => {
     const url = new URL(req.url)
     const pathSegments = url.pathname.split('/')
     const lastSegment = pathSegments[pathSegments.length - 1]
-    const isSpecificId = lastSegment && lastSegment !== 'nfe' && lastSegment.length > 10
+    
+    // Usar regex para detectar se é uma rota /:id (UUID ou número)
+    const isSpecificId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lastSegment) || 
+                        /^\d+$/.test(lastSegment)
 
     // GET - Listar todos
     if (req.method === 'GET' && !isSpecificId) {

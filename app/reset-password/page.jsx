@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
 import { Lock, ArrowLeft, KeyRound } from 'lucide-react';
 
 function ResetPasswordContent() {
@@ -17,7 +17,7 @@ function ResetPasswordContent() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { resetPassword } = useAppData();
+  const { resetPassword } = useAppDataRefactored();
 
   const token = searchParams.get('token');
 

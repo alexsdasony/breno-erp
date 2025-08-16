@@ -4,8 +4,10 @@ import { Zap, Settings, CheckCircle, XCircle, ExternalLink, Save } from 'lucide-
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch'; 
 import { Label } from '@/components/ui/label';
+import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
 
-const IntegrationsModule = ({ data, updateIntegrationSettings, toast }) => {
+const IntegrationsModule = () => {
+  const { data, toast, updateIntegrationSettings } = useAppDataRefactored();
   const [imobziApiKey, setImobziApiKey] = useState('');
   const [imobziEnabled, setImobziEnabled] = useState(false);
 
@@ -16,12 +18,20 @@ const IntegrationsModule = ({ data, updateIntegrationSettings, toast }) => {
     }
   }, [data.integrations]);
 
-  const handleSaveImobziSettings = () => {
-    updateIntegrationSettings('imobzi', { apiKey: imobziApiKey, enabled: imobziEnabled });
-    toast({
-      title: "Configurações Salvas!",
-      description: "As configurações da integração Imobzi foram atualizadas."
-    });
+  const handleSaveImobziSettings = async () => {
+    try {
+      await updateIntegrationSettings('imobzi', { apiKey: imobziApiKey, enabled: imobziEnabled });
+      toast({
+        title: "Configurações Salvas!",
+        description: "As configurações da integração Imobzi foram atualizadas."
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao salvar configurações.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

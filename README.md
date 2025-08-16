@@ -22,7 +22,7 @@ Sistema ERP completo desenvolvido com **Next.js 15**, **React 18**, **Tailwind C
 ```
 breno-erp/
 ├── app/                          # Next.js App Router
-│   ├── (dashboard)/             # Grupo de rotas autenticadas
+│   ├── (admin)/                # Grupo de rotas autenticadas
 │   │   ├── dashboard/           # Dashboard principal
 │   │   ├── financial/          # Módulo financeiro
 │   │   ├── sales/              # Módulo de vendas

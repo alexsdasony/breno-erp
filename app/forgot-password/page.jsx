@@ -5,13 +5,13 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
 import { Mail, ArrowLeft, KeyRound } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { requestPasswordReset } = useAppData();
+  const { requestPasswordReset } = useAppDataRefactored();
 
   const handleSubmit = async (e) => {
     e.preventDefault();

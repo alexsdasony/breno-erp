@@ -1,6 +1,6 @@
 // API Service - Centralized HTTP client for backend communication
-// Usa VITE_API_URL quando definido (Edge Functions em prod). Caso contrário, usa backend local via '/api'.
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/functions/v1';
+// Usa NEXT_PUBLIC_API_BASE_URL quando definido (Edge Functions em prod). Caso contrário, usa backend local via '/functions/v1'.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/functions/v1';
 
 // Cache em memória para token - COM sessionStorage para persistência
 let tokenCache = null;
@@ -480,11 +480,7 @@ class ApiService {
     return this.get('/metrics/sales', params);
   }
 
-  // Schema endpoint - Usando APENAS o backend
-  async getDatabaseSchema(params = {}) {
-    // Endpoint convencional: /schema (aceita retornar JSON ou SQL)
-    return this.get('/schema', params);
-  }
+
 
   // Partners endpoints - Usando APENAS o backend
   async getPartners(params = {}) {

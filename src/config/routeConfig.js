@@ -14,8 +14,7 @@ export const routeMapping = {
   'segments': '/segments',
   'nfe': '/nfe',
   'reports': '/reports',
-  'test': '/test',
-  'schema': '/schema',
+
   'profile': '/profile'
 };
 

@@ -18,11 +18,11 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const BillingModule = () => {
-  const { data, activeSegmentId, loadFinancialDocuments, loadPartners, metrics, toast, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData } = useAppData();
+  const { data, activeSegmentId, loadFinancialDocuments, loadPartners, metrics, toast, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData } = useAppDataRefactored();
   const [showForm, setShowForm] = useState(false);
   const [editingBilling, setEditingBilling] = useState(null);
   const [viewingBilling, setViewingBilling] = useState(null);
@@ -49,11 +49,16 @@ const BillingModule = () => {
     }
   }, [data.segments, activeSegmentId, formData.segmentId]);
 
-  // Carregar documentos financeiros (recebíveis) e parceiros (clientes)
+  // Carregar documentos financeiros (recebíveis) e parceiros (clientes) quando componente monta e ao trocar segmento
   useEffect(() => {
-    loadFinancialDocuments();
-    loadPartners();
-  }, [loadFinancialDocuments, loadPartners]);
+    const params = {};
+    if (activeSegmentId && activeSegmentId !== 0) {
+      params.segment_id = activeSegmentId;
+    }
+    // SEMPRE buscar dados frescos da API
+    loadFinancialDocuments(params).catch(() => {});
+    loadPartners(params).catch(() => {});
+  }, [activeSegmentId, loadFinancialDocuments, loadPartners]);
 
   const customers = (data.partners || []).filter(p => (p.roles || p.partner_roles || []).some(r => r.role === 'customer'));
 

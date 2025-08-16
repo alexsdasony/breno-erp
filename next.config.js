@@ -5,8 +5,22 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
-  // Configurações específicas para Vercel
-  serverExternalPackages: ['@/hooks/useAppData'],
+  // Configuração para páginas que usam hooks
+  output: 'standalone',
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   // Desabilitar SSR para páginas que usam useAppData
   async headers() {
     return [

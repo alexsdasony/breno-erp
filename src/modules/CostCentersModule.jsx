@@ -1,115 +1,96 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building, Plus, Edit, Trash2, Save, XCircle, CreditCard, Settings, Users } from 'lucide-react';
+import { 
+  Building, 
+  Plus, 
+  Edit, 
+  Trash2,
+  Search,
+  Filter,
+  DollarSign,
+  Users,
+  Activity
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
-import { useAppData } from '@/hooks/useAppData.jsx';
-import apiService from '@/services/api';
+import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
+import { formatCurrency } from '@/lib/utils.js';
 
 const CostCentersModule = () => {
-  console.log('🏢 CostCentersModule - Componente montado');
+  const { data, activeSegmentId, ensureCostCentersLoaded, addCostCenter, updateCostCenter, deleteCostCenter, importData, toast } = useAppDataRefactored();
   
-  const { data, activeSegmentId, ensureCostCentersLoaded, addCostCenter, updateCostCenter, deleteCostCenter, importData, toast } = useAppData();
+  // Carregar centros de custo ao montar e ao trocar de segmento
+  useEffect(() => {
+    ensureCostCentersLoaded();
+  }, [activeSegmentId, ensureCostCentersLoaded]);
+
   const [showForm, setShowForm] = useState(false);
-  const [showAccountsModal, setShowAccountsModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentCostCenter, setCurrentCostCenter] = useState(null);
-  const [accounts, setAccounts] = useState([]);
-  const [costCenterAccounts, setCostCenterAccounts] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
-    segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+    description: '',
+    budget: '',
+    manager: '',
+    segmentId: activeSegmentId || (data.segments?.[0]?.id || '')
   });
 
+  const costCenters = data.costCenters || [];
+  const filteredCostCenters = costCenters.filter(cc => {
+    if (!activeSegmentId || activeSegmentId === 0) {
+      return true;
+    }
+    return cc.segment_id === activeSegmentId;
+  });
   const segments = data.segments || [];
-
-  // Lazy load costCenters when component mounts
-  useEffect(() => {
-    console.log('🔄 CostCentersModule - useEffect ensureCostCentersLoaded executado');
-    ensureCostCentersLoaded();
-  }, [ensureCostCentersLoaded]);
-
-  // Load accounts when needed
-  useEffect(() => {
-    if (showAccountsModal) {
-      loadAccounts();
-      loadCostCenterAccounts();
-    }
-  }, [showAccountsModal, currentCostCenter]);
-
-  const loadAccounts = async () => {
-    try {
-      const response = await fetch('/api/chart-of-accounts', {
-        headers: {
-          'Authorization': `Bearer ${apiService.getToken()}`
-        }
-      });
-      if (response.ok) {
-        const accountsData = await response.json();
-        setAccounts(accountsData);
-      }
-    } catch (error) {
-      console.error('Error loading accounts:', error);
-    }
-  };
-
-  const loadCostCenterAccounts = async () => {
-    if (!currentCostCenter) return;
-    
-    try {
-      const response = await fetch(`/api/cost-center-accounts/cost-center/${currentCostCenter.id}`, {
-        headers: {
-          'Authorization': `Bearer ${apiService.getToken()}`
-        }
-      });
-      if (response.ok) {
-        const costCenterAccountsData = await response.json();
-        setCostCenterAccounts(costCenterAccountsData);
-      }
-    } catch (error) {
-      console.error('Error loading cost center accounts:', error);
-    }
-  };
 
   const handleAddNew = () => {
     setIsEditing(false);
     setCurrentCostCenter(null);
-    setFormData({ name: '', segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '') });
+    setFormData({
+      name: '',
+      description: '',
+      budget: '',
+      manager: '',
+      segmentId: activeSegmentId || (data.segments?.[0]?.id || '')
+    });
     setShowForm(true);
   };
 
   const handleEdit = (costCenter) => {
     setIsEditing(true);
     setCurrentCostCenter(costCenter);
-    setFormData({ name: costCenter.name, segmentId: costCenter.segmentId });
+    setFormData({
+      name: costCenter.name || '',
+      description: costCenter.description || '',
+      budget: costCenter.budget || '',
+      manager: costCenter.manager || '',
+      segmentId: costCenter.segment_id || activeSegmentId || (data.segments?.[0]?.id || '')
+    });
     setShowForm(true);
   };
 
-  const handleManageAccounts = (costCenter) => {
-    setCurrentCostCenter(costCenter);
-    setShowAccountsModal(true);
-  };
-
-  const handleDelete = (id) => {
-    deleteCostCenter(id);
+  const handleDelete = async (costCenter) => {
+    try {
+      await deleteCostCenter(costCenter.id);
+      await ensureCostCentersLoaded();
+    } catch (error) {
+      console.error('Erro ao excluir centro de custo:', error);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.segmentId) {
-      toast({
-        title: "Erro",
-        description: "Nome e Segmento são obrigatórios.",
-        variant: "destructive"
-      });
+    if (!formData.name.trim()) {
+      toast({ title: "Erro", description: "O nome do centro de custo é obrigatório.", variant: "destructive" });
       return;
     }
 
     try {
-      // Converter para o formato esperado pelo backend (snake_case)
       const costCenterData = {
-        name: formData.name.trim(),
-        segment_id: formData.segmentId ? parseInt(formData.segmentId) : null
+        ...formData,
+        budget: parseFloat(formData.budget) || 0,
+        segment_id: formData.segmentId
       };
 
       if (isEditing && currentCostCenter) {
@@ -118,115 +99,21 @@ const CostCentersModule = () => {
         await addCostCenter(costCenterData);
       }
 
+      await ensureCostCentersLoaded();
       setShowForm(false);
-      setFormData({ name: '', segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '') });
+      setFormData({
+        name: '',
+        description: '',
+        budget: '',
+        manager: '',
+        segmentId: activeSegmentId || (data.segments?.[0]?.id || '')
+      });
       setCurrentCostCenter(null);
       setIsEditing(false);
     } catch (error) {
-      console.error('Error saving cost center:', error);
-      // O toast de erro já é mostrado pelo useCrud
+      console.error('Erro ao salvar centro de custo:', error);
     }
   };
-
-  const handleAddAccount = async (accountId, allocationPercentage = 100, isPrimary = false) => {
-    try {
-      const response = await fetch('/api/cost-center-accounts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiService.getToken()}`
-        },
-        body: JSON.stringify({
-          cost_center_id: currentCostCenter.id,
-          account_id: accountId,
-          allocation_percentage: allocationPercentage,
-          is_primary: isPrimary
-        })
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Sucesso",
-          description: "Conta adicionada ao centro de custo.",
-        });
-        loadCostCenterAccounts();
-      } else {
-        const error = await response.json();
-        toast({
-          title: "Erro",
-          description: error.error || "Erro ao adicionar conta.",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error('Error adding account:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao adicionar conta.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleRemoveAccount = async (relationshipId) => {
-    try {
-      const response = await fetch(`/api/cost-center-accounts/${relationshipId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${apiService.getToken()}`
-        }
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Sucesso",
-          description: "Conta removida do centro de custo.",
-        });
-        loadCostCenterAccounts();
-      } else {
-        toast({
-          title: "Erro",
-          description: "Erro ao remover conta.",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error('Error removing account:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao remover conta.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleSegmentChange = async (e) => {
-    const newSegmentId = e.target.value;
-    setFormData({ ...formData, segmentId: newSegmentId });
-    if (isEditing && currentCostCenter) {
-      // Salvar automaticamente ao alterar o segmento
-      try {
-        const costCenterData = {
-          name: formData.name,
-          segment_id: parseInt(newSegmentId)
-        };
-        await updateCostCenter(currentCostCenter.id, costCenterData);
-      } catch (error) {
-        console.error('Error updating cost center segment:', error);
-        // O toast de erro já é mostrado pelo useCrud
-      }
-    }
-  };
-
-  const costCenterHeaders = ['name', 'segmentId'];
-  const filteredCostCenters = data.costCenters.filter(cc => {
-    // Se activeSegmentId é 0 ou null (Todos os Segmentos), mostrar todos os centros de custo
-    if (!activeSegmentId || activeSegmentId === 0) {
-      return true;
-    }
-    // Se há um segmento específico selecionado, filtrar por esse segmento
-    return cc.segmentId === activeSegmentId;
-  });
 
   return (
     <motion.div
@@ -236,22 +123,56 @@ const CostCentersModule = () => {
     >
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-400 to-cyan-500 bg-clip-text text-transparent">
-            Gerenciar Centros de Custo
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
+            Centros de Custo
           </h1>
-          <p className="text-muted-foreground mt-2">Adicione, edite ou remova centros de custo e suas contas contábeis.</p>
+          <p className="text-muted-foreground mt-2">Gerencie os centros de custo da sua empresa</p>
         </div>
         <div className="flex space-x-2">
           <ImportDataButton 
-            onImport={(parsedData) => importData(parsedData, 'costCenters', activeSegmentId)}
-            moduleName="Centros de Custo"
-            expectedHeaders={costCenterHeaders}
+            onImport={(rows) => importData(rows, 'cost-centers', activeSegmentId)} 
+            moduleName="Centros de Custo" 
+            expectedHeaders={['name', 'description', 'budget', 'manager', 'segmentId']}
           />
-          <Button id="costCenters-new-button" onClick={handleAddNew} className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700">
+          <Button id="cost-centers-new-button" onClick={handleAddNew} className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700">
             <Plus className="w-4 h-4 mr-2" />
             Novo Centro de Custo
           </Button>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div whileHover={{ scale: 1.02 }} className="glass-effect rounded-xl p-6 gradient-card border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Total de Centros</p>
+              <p className="text-2xl font-bold text-indigo-400">{filteredCostCenters.length}</p>
+            </div>
+            <Building className="w-8 h-8 text-indigo-400" />
+          </div>
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.02 }} className="glass-effect rounded-xl p-6 gradient-card border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Orçamento Total</p>
+              <p className="text-2xl font-bold text-green-400">
+                {formatCurrency(filteredCostCenters.reduce((sum, cc) => sum + (cc.budget || 0), 0))}
+              </p>
+            </div>
+            <DollarSign className="w-8 h-8 text-green-400" />
+          </div>
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.02 }} className="glass-effect rounded-xl p-6 gradient-card border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Ativos</p>
+              <p className="text-2xl font-bold text-purple-400">
+                {filteredCostCenters.filter(cc => cc.status === 'active').length}
+              </p>
+            </div>
+            <Activity className="w-8 h-8 text-purple-400" />
+          </div>
+        </motion.div>
       </div>
 
       <AnimatePresence>
@@ -266,24 +187,69 @@ const CostCentersModule = () => {
               {isEditing ? 'Editar Centro de Custo' : 'Novo Centro de Custo'}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="segmentId" className="block text-sm font-medium mb-1">Segmento</label>
-                <select id="costCenters-segment-select" value={formData.segmentId} onChange={handleSegmentChange} required className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary">
-                  <option value="">Selecione um segmento</option>
-                  {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="costCenterName" className="block text-sm font-medium mb-1">Nome do Centro</label>
+                  <input
+                    id="costCenterName"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    placeholder="Nome do centro de custo"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="costCenterManager" className="block text-sm font-medium mb-1">Responsável</label>
+                  <input
+                    id="costCenterManager"
+                    type="text"
+                    value={formData.manager}
+                    onChange={(e) => setFormData({ ...formData, manager: e.target.value })}
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    placeholder="Nome do responsável"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="costCenterBudget" className="block text-sm font-medium mb-1">Orçamento</label>
+                  <input
+                    id="costCenterBudget"
+                    type="number"
+                    step="0.01"
+                    value={formData.budget}
+                    onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="costCenterSegment" className="block text-sm font-medium mb-1">Segmento</label>
+                  <select
+                    id="costCenterSegment"
+                    value={formData.segmentId}
+                    onChange={(e) => setFormData({ ...formData, segmentId: e.target.value })}
+                    className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                  >
+                    {segments.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
               </div>
               <div>
-                <label htmlFor="costCenterName" className="block text-sm font-medium mb-1">Nome do Centro de Custo</label>
-                <input id="costCenters-name-input" type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" placeholder="Ex: Administrativo, Vendas" />
+                <label htmlFor="costCenterDescription" className="block text-sm font-medium mb-1">Descrição</label>
+                <textarea
+                  id="costCenterDescription"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                  placeholder="Descrição do centro de custo"
+                  rows="3"
+                />
               </div>
               <div className="flex space-x-3">
-                <Button id="costCenters-submit-button" type="submit" className="bg-gradient-to-r from-teal-500 to-cyan-600">
-                  <Save className="w-4 h-4 mr-2" />
-                  {isEditing ? 'Salvar Alterações' : 'Adicionar'}
+                <Button id="cost-centers-submit-button" type="submit" className="bg-gradient-to-r from-indigo-500 to-purple-600">
+                  {isEditing ? 'Salvar Alterações' : 'Adicionar Centro de Custo'}
                 </Button>
-                <Button id="costCenters-cancel-button" type="button" variant="outline" onClick={() => setShowForm(false)}>
-                  <XCircle className="w-4 h-4 mr-2" />
+                <Button id="cost-centers-cancel-button" type="button" variant="outline" onClick={() => setShowForm(false)}>
                   Cancelar
                 </Button>
               </div>
@@ -292,47 +258,99 @@ const CostCentersModule = () => {
         )}
       </AnimatePresence>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-effect rounded-xl p-6 border">
-        <h3 className="text-lg font-semibold mb-4">Lista de Centros de Custo</h3>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="glass-effect rounded-xl p-6 border"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold">Lista de Centros de Custo</h3>
+          <div className="flex items-center space-x-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Buscar centros de custo..."
+                className="pl-10 pr-4 py-2 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <Button variant="outline" size="sm">
+              <Filter className="w-4 h-4 mr-2" />
+              Filtros
+            </Button>
+          </div>
+        </div>
+
         {filteredCostCenters.length === 0 ? (
-          <p className="text-muted-foreground">Nenhum centro de custo cadastrado para este segmento.</p>
+          <div className="text-center py-12">
+            <Building className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">Nenhum centro de custo encontrado.</p>
+            <Button onClick={handleAddNew} className="mt-4">
+              <Plus className="w-4 h-4 mr-2" />
+              Adicionar Primeiro Centro de Custo
+            </Button>
+          </div>
         ) : (
-          <div className="overflow-x-auto max-h-96 scrollbar-hide">
-            <table id="costCenters-table" className="w-full">
+          <div className="overflow-x-auto">
+            <table id="cost-centers-table" className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left p-3">Nome</th>
+                  <th className="text-left p-3">Centro de Custo</th>
+                  <th className="text-left p-3">Responsável</th>
                   <th className="text-left p-3">Segmento</th>
-                  <th className="text-center p-3">Contas</th>
+                  <th className="text-left p-3">Orçamento</th>
+                  <th className="text-left p-3">Status</th>
                   <th className="text-center p-3">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredCostCenters.map(cc => (
-                  <motion.tr key={cc.id} id={`costCenters-row-${cc.id}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
-                    <td className="p-3 font-medium">{cc.name}</td>
-                    <td className="p-3">{segments.find(s => String(s.id) === String(cc.segmentId))?.name || 'N/A'}</td>
-                    <td className="p-3 text-center">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        <CreditCard className="w-3 h-3 mr-1" />
-                        {costCenterAccounts.filter(cca => cca.cost_center_id === cc.id).length} contas
+                {filteredCostCenters.map(costCenter => (
+                  <motion.tr
+                    key={costCenter.id}
+                    id={`cost-centers-row-${costCenter.id}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="border-b border-border hover:bg-muted/50 transition-colors"
+                  >
+                    <td className="p-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
+                          <Building className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{costCenter.name}</p>
+                          <p className="text-sm text-muted-foreground">{costCenter.description}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <div className="flex items-center space-x-2">
+                        <Users className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm">{costCenter.manager}</span>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <span className="text-sm text-muted-foreground">
+                        {segments.find(s => s.id === costCenter.segment_id)?.name || 'N/A'}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <p className="font-medium">{formatCurrency(costCenter.budget)}</p>
+                    </td>
+                    <td className="p-3">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        costCenter.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+                      }`}>
+                        {costCenter.status === 'active' ? 'Ativo' : 'Inativo'}
                       </span>
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex justify-center space-x-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          title="Gerenciar Contas" 
-                          onClick={() => handleManageAccounts(cc)}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <Settings className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" title="Editar" onClick={() => handleEdit(cc)}>
+                        <Button id={`cost-centers-edit-${costCenter.id}`} variant="ghost" size="sm" title="Editar" onClick={() => handleEdit(costCenter)}>
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" title="Excluir" onClick={() => handleDelete(cc.id)}>
+                        <Button id={`cost-centers-delete-${costCenter.id}`} variant="ghost" size="sm" title="Excluir" onClick={() => handleDelete(costCenter)}>
                           <Trash2 className="w-4 h-4 text-red-500" />
                         </Button>
                       </div>
@@ -344,123 +362,6 @@ const CostCentersModule = () => {
           </div>
         )}
       </motion.div>
-
-      {/* Modal de Gerenciamento de Contas */}
-      <AnimatePresence>
-        {showAccountsModal && currentCostCenter && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={() => setShowAccountsModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-effect rounded-xl p-6 border max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">
-                  Contas Contábeis - {currentCostCenter.name}
-                </h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAccountsModal(false)}
-                >
-                  <XCircle className="w-4 h-4" />
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Contas Atribuídas */}
-                <div>
-                  <h4 className="text-md font-semibold mb-3 text-green-600">Contas Atribuídas</h4>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {costCenterAccounts.length === 0 ? (
-                      <p className="text-muted-foreground text-sm">Nenhuma conta atribuída</p>
-                    ) : (
-                      costCenterAccounts.map((cca) => (
-                        <div key={cca.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border">
-                          <div className="flex-1">
-                            <div className="flex items-center">
-                              <CreditCard className="w-4 h-4 mr-2 text-green-600" />
-                              <span className="font-medium text-sm">{cca.account_code}</span>
-                              {cca.is_primary && (
-                                <span className="ml-2 px-2 py-1 bg-green-200 text-green-800 text-xs rounded-full">
-                                  Principal
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-600 mt-1">{cca.account_name}</p>
-                            <p className="text-xs text-gray-500">{cca.account_category}</p>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-xs text-gray-500">{cca.allocation_percentage}%</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveAccount(cca.id)}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* Contas Disponíveis */}
-                <div>
-                  <h4 className="text-md font-semibold mb-3 text-blue-600">Contas Disponíveis</h4>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {accounts.length === 0 ? (
-                      <p className="text-muted-foreground text-sm">Carregando contas...</p>
-                    ) : (
-                      accounts
-                        .filter(account => !costCenterAccounts.some(cca => cca.account_id === account.id))
-                        .map((account) => (
-                          <div key={account.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border">
-                            <div className="flex-1">
-                              <div className="flex items-center">
-                                <CreditCard className="w-4 h-4 mr-2 text-blue-600" />
-                                <span className="font-medium text-sm">{account.account_code}</span>
-                                <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                                  account.account_type === 'expense' ? 'bg-red-200 text-red-800' :
-                                  account.account_type === 'revenue' ? 'bg-green-200 text-green-800' :
-                                  account.account_type === 'asset' ? 'bg-blue-200 text-blue-800' :
-                                  account.account_type === 'liability' ? 'bg-orange-200 text-orange-800' :
-                                  'bg-gray-200 text-gray-800'
-                                }`}>
-                                  {account.account_type}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-600 mt-1">{account.account_name}</p>
-                              <p className="text-xs text-gray-500">{account.account_category}</p>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleAddAccount(account.id)}
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              <Plus className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 };

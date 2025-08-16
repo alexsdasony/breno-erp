@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
 import { UserPlus, Briefcase, Mail, Lock, User } from 'lucide-react';
 
 export default function RegisterPage() {
@@ -17,7 +17,7 @@ export default function RegisterPage() {
     confirmPassword: ''
   });
   const router = useRouter();
-  const { registerUser } = useAppData();
+  const { registerUser } = useAppDataRefactored();
 
   const handleChange = (e) => {
     setFormData({

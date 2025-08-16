@@ -15,11 +15,11 @@ import {
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import Modal from '@/components/ui/modal';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const FinancialModule = () => {
-  const { data, activeSegmentId, loadTransactions, metrics, toast, addTransaction, updateTransaction, deleteTransaction, importData } = useAppData();
+  const { data, activeSegmentId, loadTransactions, metrics, toast, addTransaction, updateTransaction, deleteTransaction, importData } = useAppDataRefactored();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -86,9 +86,9 @@ const FinancialModule = () => {
       setShowCreateModal(false);
     }
 
-    // Recarregar lista para refletir imediatamente (forçando ignorar cache)
+    // Recarregar lista para refletir imediatamente
     const segmentFilter = activeSegmentId && activeSegmentId !== 0 ? { segment_id: activeSegmentId } : {};
-    try { await loadTransactions({ ...segmentFilter, force: true }); } catch (_) {}
+    try { await loadTransactions(segmentFilter); } catch (_) {}
     
     resetForm();
   };
@@ -128,7 +128,7 @@ const FinancialModule = () => {
         
         // Recarregar lista
         const segmentFilter = activeSegmentId && activeSegmentId !== 0 ? { segment_id: activeSegmentId } : {};
-        try { await loadTransactions({ ...segmentFilter, force: true }); } catch (_) {}
+        try { await loadTransactions(segmentFilter); } catch (_) {}
       } catch (error) {
         toast({
           title: "Erro",
@@ -147,7 +147,7 @@ const FinancialModule = () => {
     
     // Recarregar transações do novo segmento
     const segmentFilter = newSegmentId && newSegmentId !== '0' ? { segment_id: newSegmentId } : {};
-    try { await loadTransactions({ ...segmentFilter, force: true }); } catch (_) {}
+    try { await loadTransactions(segmentFilter); } catch (_) {}
   };
 
   // Filtrar transações por segmento ativo
