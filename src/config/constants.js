@@ -8,10 +8,16 @@
 // SUPABASE CONFIGURATION
 // ============================================================================
 export const SUPABASE_CONFIG = {
-  // Supabase URL e chaves
-  URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qerubjitetqwfqqydhzv.supabase.co',
-  ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlcnViaml0ZXRxd2ZxcXlkaHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwMDU5NDUsImV4cCI6MjA2OTU4MTk0NX0.eP6QxQI1oerd5HxPxYpHF8mhKLK6bwnuIyw_aKFjuwU',
-  SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlcnViaml0ZXRxd2ZxcXlkaHp2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDAwNTk0NSwiZXhwIjoyMDY5NTgxOTQ1fQ.hBfdao-iJX4KvjMQ7LzcmBf4PXtbcMrat9IGr2asfDc',
+  // Supabase URL e chaves - com suporte para local
+  URL: process.env.USE_LOCAL_DATABASE === 'true' 
+    ? 'http://localhost:5432' 
+    : (process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qerubjitetqwfqqydhzv.supabase.co'),
+  ANON_KEY: process.env.USE_LOCAL_DATABASE === 'true'
+    ? 'local_development_key'
+    : (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlcnViaml0ZXRxd2ZxcXlkaHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwMDU5NDUsImV4cCI6MjA2OTU4MTk0NX0.eP6QxQI1oerd5HxPxYpHF8mhKLK6bwnuIyw_aKFjuwU'),
+  SERVICE_ROLE_KEY: process.env.USE_LOCAL_DATABASE === 'true'
+    ? 'local_service_key'
+    : (process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlcnViaml0ZXRxd2ZxcXlkaHp2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDAwNTk0NSwiZXhwIjoyMDY5NTgxOTQ1fQ.hBfdao-iJX4KvjMQ7LzcmBf4PXtbcMrat9IGr2asfDc'),
   
   // Senha do usuário Supabase
   USER_PASSWORD: 'C0ntr0l3t0t@l#'
@@ -21,8 +27,10 @@ export const SUPABASE_CONFIG = {
 // DATABASE CONFIGURATION
 // ============================================================================
 export const DATABASE_CONFIG = {
-  // Conexão direta com PostgreSQL
-  URL: 'postgresql://postgres:C0ntr0l3t0t%40l%23@db.qerubjitetqwfqqydhzv.supabase.co:5432/postgres',
+  // Conexão direta com PostgreSQL - com suporte para local
+  URL: process.env.USE_LOCAL_DATABASE === 'true'
+    ? 'postgresql://postgres:admin123@localhost:5432/breno_erp'
+    : 'postgresql://postgres:C0ntr0l3t0t%40l%23@db.qerubjitetqwfqqydhzv.supabase.co:5432/postgres',
   
   // Conexão com pooler (para serverless)
   URL_POOLER: 'postgresql://postgres.qerubjitetqwfqqydhzv:C0ntr0l3t0t%40l%23@aws-0-sa-east-1.pooler.supabase.com:6543/postgres',
@@ -41,8 +49,10 @@ export const API_CONFIG = {
   // URL da API local
   LOCAL_URL: 'http://localhost:3001/api',
   
-  // URL da API de produção
-  PRODUCTION_URL: process.env.NEXT_PUBLIC_API_URL || 'https://breno-erp.vercel.app/api'
+  // URL da API de produção - com suporte para local
+  PRODUCTION_URL: process.env.USE_LOCAL_API === 'true'
+    ? 'http://localhost:3000/api'
+    : (process.env.NEXT_PUBLIC_API_URL || 'https://breno-erp.vercel.app/api')
 };
 
 // ============================================================================

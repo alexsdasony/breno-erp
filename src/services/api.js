@@ -1,6 +1,8 @@
 // API Service - Centralized HTTP client for backend communication
 // Usa VITE_API_URL quando definido (Edge Functions em prod). Caso contrário, usa backend local via '/api'.
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/functions/v1';
+const API_BASE_URL = process.env.USE_LOCAL_API === 'true' 
+  ? 'http://localhost:3000/api' 
+  : (process.env.NEXT_PUBLIC_API_URL || '/functions/v1');
 
 // Cache em memória para token - COM sessionStorage para persistência
 let tokenCache = null;
@@ -388,7 +390,7 @@ class ApiService {
 
   // Billings endpoints - Usando APENAS o backend
   async getBillings(params = {}) {
-    return this.get('/billings', params);
+    return this.get('/financial-documents', params);
   }
 
   async createBilling(billingData) {
@@ -420,6 +422,23 @@ class ApiService {
     return this.delete(`/cost-centers/${id}`);
   }
 
+  // Chart of Accounts endpoints - Usando APENAS o backend
+  async getChartOfAccounts(params = {}) {
+    return this.get('/chart-of-accounts', params);
+  }
+
+  async createChartOfAccount(accountData) {
+    return this.post('/chart-of-accounts', accountData);
+  }
+
+  async updateChartOfAccount(id, accountData) {
+    return this.put(`/chart-of-accounts/${id}`, accountData);
+  }
+
+  async deleteChartOfAccount(id) {
+    return this.delete(`/chart-of-accounts/${id}`);
+  }
+
   // Accounts Payable endpoints - Usando APENAS o backend
   async getAccountsPayable(params = {}) {
     return this.get('/accounts-payable', params);
@@ -439,7 +458,7 @@ class ApiService {
 
   // NFe endpoints - Usando APENAS o backend
   async getNFes(params = {}) {
-    return this.get('/nfe', params);
+    return this.get('/financial-documents', params);
   }
 
   async createNFe(nfeData) {
@@ -682,6 +701,23 @@ class ApiService {
 
   async consultarReceitaCNPJ(cnpj) {
     return this.get(`/receita/consulta-cnpj/${cnpj}`);
+  }
+
+  // Suppliers/Fornecedores
+  async getSuppliers() {
+    return this.get('/suppliers');
+  }
+
+  async createSupplier(supplierData) {
+    return this.post('/suppliers', supplierData);
+  }
+
+  async updateSupplier(id, supplierData) {
+    return this.put(`/suppliers/${id}`, supplierData);
+  }
+
+  async deleteSupplier(id) {
+    return this.delete(`/suppliers/${id}`);
   }
 }
 

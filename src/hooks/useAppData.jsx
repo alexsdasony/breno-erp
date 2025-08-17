@@ -36,6 +36,8 @@ const defaultInitialData = {
   costCenters: [],
   accountsPayable: [],
   financialDocuments: [],
+  chartOfAccounts: [],
+  suppliers: [],
   integrations: {
     imobzi: { apiKey: '', enabled: false }
   },
@@ -100,25 +102,57 @@ export const AppDataProvider = ({ children }) => {
             console.log('🚀 Loading essential data for user:', currentUser.name);
             
             // Load essential data in parallel
-            const [transactionsRes, productsRes, customersRes, salesRes, billingsRes, nfeRes] = await Promise.allSettled([
+            console.log('📊 Carregando dados essenciais...');
+            const [transactionsRes, productsRes, customersRes, salesRes, billingsRes, nfeRes, chartOfAccountsRes, suppliersRes] = await Promise.allSettled([
               apiService.getTransactions(segmentFilter),
               apiService.getProducts(segmentFilter),
               apiService.getCustomers(segmentFilter),
               apiService.getSales(segmentFilter),
               apiService.getBillings(segmentFilter),
-              apiService.getNFes(segmentFilter)
+              apiService.getNFes(segmentFilter),
+              apiService.getChartOfAccounts(segmentFilter),
+              apiService.getSuppliers(segmentFilter)
             ]);
 
+            // Log results for debugging
+            console.log('📊 Resultados do carregamento:');
+            console.log('Transactions:', transactionsRes.status, transactionsRes.value?.transactions?.length || 0);
+            console.log('Products:', productsRes.status, productsRes.value?.products?.length || 0);
+            console.log('Customers:', customersRes.status, customersRes.value?.customers?.length || 0);
+            console.log('Sales:', salesRes.status, salesRes.value?.sales?.length || 0);
+            console.log('Billings:', billingsRes.status, billingsRes.value?.financialDocuments?.length || 0);
+            console.log('NFEs:', nfeRes.status, nfeRes.value?.financialDocuments?.length || 0);
+            console.log('ChartOfAccounts:', chartOfAccountsRes.status, chartOfAccountsRes.value?.chartOfAccounts?.length || 0);
+            console.log('Suppliers:', suppliersRes.status, suppliersRes.value?.suppliers?.length || 0);
+
             // Update data with results
-            setData(prev => ({
-              ...prev,
-              transactions: transactionsRes.status === 'fulfilled' ? (transactionsRes.value.transactions || transactionsRes.value.data || []) : [],
-              products: productsRes.status === 'fulfilled' ? (productsRes.value.products || productsRes.value.data || []) : [],
-              customers: customersRes.status === 'fulfilled' ? (customersRes.value.customers || customersRes.value.data || []) : [],
-              sales: salesRes.status === 'fulfilled' ? (salesRes.value.sales || salesRes.value.data || []) : [],
-              billings: billingsRes.status === 'fulfilled' ? (billingsRes.value.billings || billingsRes.value.data || []) : [],
-              nfeList: nfeRes.status === 'fulfilled' ? (nfeRes.value.nfeList || nfeRes.value.data || []) : []
-            }));
+            setData(prev => {
+              const newData = {
+                ...prev,
+                transactions: transactionsRes.status === 'fulfilled' ? (transactionsRes.value.transactions || transactionsRes.value.data || []) : [],
+                products: productsRes.status === 'fulfilled' ? (productsRes.value.products || productsRes.value.data || []) : [],
+                customers: customersRes.status === 'fulfilled' ? (customersRes.value.customers || customersRes.value.data || []) : [],
+                sales: salesRes.status === 'fulfilled' ? (salesRes.value.sales || salesRes.value.data || []) : [],
+                billings: billingsRes.status === 'fulfilled' ? (billingsRes.value.billings || billingsRes.value.financialDocuments || billingsRes.value.data || []) : [],
+                nfeList: nfeRes.status === 'fulfilled' ? (nfeRes.value.nfeList || nfeRes.value.financialDocuments || nfeRes.value.data || []) : [],
+                chartOfAccounts: chartOfAccountsRes.status === 'fulfilled' ? (chartOfAccountsRes.value.chartOfAccounts || chartOfAccountsRes.value.data || []) : [],
+                suppliers: suppliersRes.status === 'fulfilled' ? (suppliersRes.value.suppliers || suppliersRes.value.data || []) : []
+              };
+              
+              console.log('📊 Dados finais carregados:', {
+                transactions: newData.transactions.length,
+                products: newData.products.length,
+                customers: newData.customers.length,
+                sales: newData.sales.length,
+                billings: newData.billings.length,
+                nfeList: newData.nfeList.length,
+                chartOfAccounts: newData.chartOfAccounts.length,
+                suppliers: newData.suppliers.length
+              });
+
+              
+              return newData;
+            });
             
             console.log('✅ Essential data loaded successfully');
           } catch (error) {
@@ -293,6 +327,34 @@ export const AppDataProvider = ({ children }) => {
     }
   }, []);
 
+  const loadChartOfAccounts = useCallback(async (params = {}) => {
+    try {
+      const response = await apiService.getChartOfAccounts(params);
+      const chartOfAccounts = response.chartOfAccounts || response.data || [];
+      if (!globalMemoryCache.data) globalMemoryCache.data = {};
+      globalMemoryCache.data.chartOfAccounts = chartOfAccounts;
+      setData(prev => ({ ...prev, chartOfAccounts }));
+      return { chartOfAccounts };
+    } catch (error) {
+      console.error('Load chart of accounts error:', error);
+      throw error;
+    }
+  }, []);
+
+  const loadSuppliers = useCallback(async (params = {}) => {
+    try {
+      const response = await apiService.getSuppliers(params);
+      const suppliers = response.suppliers || response.data || [];
+      if (!globalMemoryCache.data) globalMemoryCache.data = {};
+      globalMemoryCache.data.suppliers = suppliers;
+      setData(prev => ({ ...prev, suppliers }));
+      return { suppliers };
+    } catch (error) {
+      console.error('Load suppliers error:', error);
+      throw error;
+    }
+  }, []);
+
   // LAZY LOADING FUNCTIONS
   const ensureCostCentersLoaded = useCallback(async () => {
     console.log('🔄 ensureCostCentersLoaded - Iniciando verificação');
@@ -441,6 +503,8 @@ export const AppDataProvider = ({ children }) => {
     loadNFe,
     loadAccountsPayable,
     loadFinancialDocuments,
+    loadChartOfAccounts,
+    loadSuppliers,
     
     // Lazy loading functions
     ensureCostCentersLoaded,
@@ -466,6 +530,37 @@ export const AppDataProvider = ({ children }) => {
     
     // CRUD operations from useCrud
     ...crudOperations,
+    
+    // Supplier operations
+    createSupplier: async (supplierData) => {
+      try {
+        const response = await apiService.createSupplier(supplierData);
+        await loadSuppliers(); // Recarregar lista
+        return response;
+      } catch (error) {
+        throw error;
+      }
+    },
+    
+    updateSupplier: async (id, supplierData) => {
+      try {
+        const response = await apiService.updateSupplier(id, supplierData);
+        await loadSuppliers(); // Recarregar lista
+        return response;
+      } catch (error) {
+        throw error;
+      }
+    },
+    
+    deleteSupplier: async (id) => {
+      try {
+        const response = await apiService.deleteSupplier(id);
+        await loadSuppliers(); // Recarregar lista
+        return response;
+      } catch (error) {
+        throw error;
+      }
+    },
     
     // Customer operations with auto-refetch
     addCustomerWithRefetch: async (customer) => {

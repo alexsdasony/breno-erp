@@ -1,0 +1,33 @@
+/* Estilos para o formulário de fornecedores */
+.suppliers-form input,
+.suppliers-form select,
+.suppliers-form textarea {
+  color: #111827 !important; /* text-gray-900 */
+  background-color: #ffffff !important; /* bg-white */
+  border: 1px solid #d1d5db !important; /* border-gray-300 */
+}
+
+.suppliers-form input:focus,
+.suppliers-form select:focus,
+.suppliers-form textarea:focus {
+  outline: none !important;
+  border-color: #3b82f6 !important; /* focus:ring-blue-500 */
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important; /* focus:ring-2 */
+}
+
+.suppliers-form input::placeholder,
+.suppliers-form textarea::placeholder {
+  color: #6b7280 !important; /* text-gray-500 */
+}
+
+/* Garantir que o texto seja visível em todos os estados */
+.suppliers-form input[type="text"],
+.suppliers-form input[type="email"],
+.suppliers-form input[type="url"],
+.suppliers-form input[type="tel"],
+.suppliers-form input[type="number"],
+.suppliers-form select,
+.suppliers-form textarea {
+  color: #111827 !important;
+  background-color: #ffffff !important;
+}
