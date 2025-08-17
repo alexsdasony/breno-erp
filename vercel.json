@@ -1,7 +1,15 @@
 {
   "version": 2,
-  "name": "breno-erp-frontend",
+  "name": "breno-erp",
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "functions": {
+    "app/api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "env": {
+    "NODE_ENV": "production"
+  }
 } 
