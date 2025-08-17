@@ -1,6 +1,7 @@
 {
   "version": 2,
   "name": "breno-erp",
+  "rootDirectory": "breno-erp",
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
