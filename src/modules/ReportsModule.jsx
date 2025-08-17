@@ -7,7 +7,7 @@ import { formatCurrency } from '@/lib/utils.js';
 import apiService from '@/services/api.js';
 
 const ReportsModule = ({ toast }) => {
-  const { data, activeSegmentId } = useAppData();
+  const { data, activeSegmentId, loadCostCenters, loadChartOfAccounts } = useAppData();
   const [dreData, setDreData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
@@ -22,8 +22,8 @@ const ReportsModule = ({ toast }) => {
 
   // Load data
   useEffect(() => {
-    loadCostCenters();
-    loadChartOfAccounts();
+    loadCostCentersData();
+    loadChartOfAccountsData();
   }, [activeSegmentId]);
 
   useEffect(() => {
@@ -32,22 +32,20 @@ const ReportsModule = ({ toast }) => {
     }
   }, [filters, activeSegmentId]);
 
-  const loadCostCenters = async () => {
+  const loadCostCentersData = async () => {
     try {
-      const data = await apiService.get('/cost-centers');
-      // Garantir que costCenters seja sempre um array
-      setCostCenters(Array.isArray(data) ? data : (data?.costCenters || []));
+      const result = await loadCostCenters();
+      setCostCenters(result.costCenters || []);
     } catch (error) {
       console.error('Error loading cost centers:', error);
       setCostCenters([]); // Fallback para array vazio
     }
   };
 
-  const loadChartOfAccounts = async () => {
+  const loadChartOfAccountsData = async () => {
     try {
-      const data = await apiService.get('/chart-of-accounts');
-      // Garantir que chartOfAccounts seja sempre um array
-      setChartOfAccounts(Array.isArray(data) ? data : (data?.chartOfAccounts || []));
+      const result = await loadChartOfAccounts();
+      setChartOfAccounts(result.chartOfAccounts || []);
     } catch (error) {
       console.error('Error loading chart of accounts:', error);
       setChartOfAccounts([]); // Fallback para array vazio

@@ -22,7 +22,7 @@ import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const BillingModule = () => {
-  const { data, activeSegmentId, loadFinancialDocuments, loadPartners, metrics, toast, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData } = useAppData();
+  const { data, activeSegmentId, loadBillings, loadPartners, metrics, toast, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [editingBilling, setEditingBilling] = useState(null);
   const [viewingBilling, setViewingBilling] = useState(null);
@@ -49,11 +49,11 @@ const BillingModule = () => {
     }
   }, [data.segments, activeSegmentId, formData.segmentId]);
 
-  // Carregar documentos financeiros (recebíveis) e parceiros (clientes)
+  // Carregar cobranças e parceiros (clientes)
   useEffect(() => {
-    loadFinancialDocuments();
+    loadBillings();
     loadPartners();
-  }, [loadFinancialDocuments, loadPartners]);
+  }, [loadBillings, loadPartners]);
 
   const customers = (data.partners || []).filter(p => (p.roles || p.partner_roles || []).some(r => r.role === 'customer'));
 
@@ -95,7 +95,7 @@ const BillingModule = () => {
       await addFinancialDocument(docPayload);
     }
     
-    await loadFinancialDocuments();
+    await loadBillings();
     setFormData({ customerId: '', customerName: '', amount: '', dueDate: '', status: 'Pendente', segmentId: '' });
     setShowForm(false);
   };
@@ -131,7 +131,7 @@ const BillingModule = () => {
     if (window.confirm('Tem certeza que deseja excluir esta cobrança?')) {
       try {
         await deleteFinancialDocument(billingId);
-        await loadFinancialDocuments();
+        await loadBillings();
       } catch (error) {
         console.error('Delete billing error:', error);
       }
@@ -176,8 +176,7 @@ const BillingModule = () => {
   }
 
   // Usar status calculado em toda a renderização e nos filtros
-  let allBillings = (data.financialDocuments || [])
-    .filter(doc => doc.direction === 'receivable')
+  let allBillings = (data.billings || [])
     .map(billing => ({ ...billing, status: getStatusWithDueDate(billing) }));
 
   // Filtro por segmento

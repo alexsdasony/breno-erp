@@ -6,8 +6,7 @@ import { useAppData } from '@/hooks/useAppData.jsx';
 import apiService from '@/services/api';
 
 const ChartOfAccountsModule = ({ toast }) => {
-  const { data, activeSegmentId } = useAppData();
-  const [accounts, setAccounts] = useState([]);
+  const { data, activeSegmentId, loadChartOfAccounts } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentAccount, setCurrentAccount] = useState(null);
@@ -23,26 +22,10 @@ const ChartOfAccountsModule = ({ toast }) => {
 
   const segments = data.segments || [];
 
-  // Load accounts
-  useEffect(() => {
-    loadAccounts();
-  }, [activeSegmentId]);
-
-  const loadAccounts = async () => {
-    try {
-      const response = await fetch('/api/chart-of-accounts', {
-        headers: {
-          'Authorization': `Bearer ${apiService.getToken()}`
-        }
-      });
-      if (response.ok) {
-        const accountsData = await response.json();
-        setAccounts(accountsData);
-      }
-    } catch (error) {
-      console.error('Error loading accounts:', error);
-    }
-  };
+  // No need to load accounts separately - they are loaded in essential data
+  // useEffect(() => {
+  //   loadChartOfAccounts();
+  // }, [loadChartOfAccounts]);
 
   const handleAddNew = () => {
     setIsEditing(false);
@@ -63,12 +46,12 @@ const ChartOfAccountsModule = ({ toast }) => {
     setIsEditing(true);
     setCurrentAccount(account);
     setFormData({
-      account_code: account.account_code,
-      account_name: account.account_name,
-      account_type: account.account_type,
-      account_category: account.account_category,
+      account_code: account.code,
+      account_name: account.name,
+      account_type: account.type,
+      account_category: account.category || '',
       description: account.description || '',
-      parent_account_id: account.parent_account_id || '',
+      parent_account_id: account.parent_id || '',
       segment_id: account.segment_id || activeSegmentId || ''
     });
     setShowForm(true);
@@ -88,7 +71,7 @@ const ChartOfAccountsModule = ({ toast }) => {
           title: "Sucesso",
           description: "Conta contábil excluída com sucesso.",
         });
-        loadAccounts();
+        loadChartOfAccounts();
       } else {
         const error = await response.json();
         toast({
@@ -146,7 +129,7 @@ const ChartOfAccountsModule = ({ toast }) => {
           description: isEditing ? "Conta contábil atualizada com sucesso." : "Conta contábil criada com sucesso.",
         });
         setShowForm(false);
-        loadAccounts();
+        loadChartOfAccounts();
       } else {
         const error = await response.json();
         toast({
@@ -187,9 +170,14 @@ const ChartOfAccountsModule = ({ toast }) => {
     }
   };
 
-  const filteredAccounts = accounts.filter(account => 
+  console.log('📊 ChartOfAccountsModule - data.chartOfAccounts:', data.chartOfAccounts?.length || 0);
+  
+  const filteredAccounts = (data.chartOfAccounts || []).filter(account => 
     !activeSegmentId || account.segment_id === activeSegmentId
   );
+  
+  console.log('📊 ChartOfAccountsModule - filteredAccounts:', filteredAccounts.length);
+  console.log('📊 ChartOfAccountsModule - activeSegmentId:', activeSegmentId);
 
   return (
     <motion.div
@@ -293,9 +281,9 @@ const ChartOfAccountsModule = ({ toast }) => {
                   className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                 >
                   <option value="">Nenhuma (Conta raiz)</option>
-                  {accounts.map(account => (
+                  {filteredAccounts.map(account => (
                     <option key={account.id} value={account.id}>
-                      {account.account_code} - {account.account_name}
+                      {account.code} - {account.name}
                     </option>
                   ))}
                 </select>
@@ -349,14 +337,14 @@ const ChartOfAccountsModule = ({ toast }) => {
               <tbody>
                 {filteredAccounts.map(account => (
                   <motion.tr key={account.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-b border-border hover:bg-muted/50 transition-colors">
-                    <td className="p-3 font-mono text-sm">{account.account_code}</td>
-                    <td className="p-3 font-medium">{account.account_name}</td>
+                    <td className="p-3 font-mono text-sm">{account.code}</td>
+                    <td className="p-3 font-medium">{account.name}</td>
                     <td className="p-3">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getAccountTypeColor(account.account_type)}`}>
-                        {getAccountTypeLabel(account.account_type)}
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getAccountTypeColor(account.type)}`}>
+                        {getAccountTypeLabel(account.type)}
                       </span>
                     </td>
-                    <td className="p-3 text-sm">{account.account_category}</td>
+                    <td className="p-3 text-sm">{account.category || '-'}</td>
                     <td className="p-3 text-sm">{account.segment_name || 'Todos'}</td>
                     <td className="p-3 text-center">
                       <div className="flex justify-center space-x-1">

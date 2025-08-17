@@ -32,10 +32,6 @@ const DashboardModule = () => {
   
   useEffect(() => {
     // Buscar dados do backend filtrando por segmento
-    if (!initialized) {
-      setInitialized(true);
-      return; // Evita buscar dados na primeira renderização automática
-    }
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
@@ -53,6 +49,8 @@ const DashboardModule = () => {
         setLoading(false);
       }
     };
+    
+    // Forçar carregamento imediato
     fetchDashboardData();
   }, [activeSegmentId]);
 
@@ -82,7 +80,7 @@ const DashboardModule = () => {
   // Aplicar a mesma lógica de filtros do BillingModule
   let filteredBillings = (data.billings || [])
     .map(billing => ({ ...billing, status: getStatusWithDueDate(billing) }))
-    .filter(b => !activeSegmentId || activeSegmentId === 0 || b.segmentId === activeSegmentId);
+    .filter(b => !activeSegmentId || activeSegmentId === 0 || b.segment_id === activeSegmentId);
 
   // Cálculos usando a mesma lógica do módulo de cobranças
   const totalBillings = filteredBillings.length;

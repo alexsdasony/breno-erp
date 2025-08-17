@@ -9,7 +9,7 @@ import { useAppData } from '@/hooks/useAppData.jsx';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const AccountsPayableModule = () => {
-  const { data, activeSegmentId, loadFinancialDocuments, loadPartners, toast, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData } = useAppData();
+  const { data, activeSegmentId, loadAccountsPayable, loadPartners, toast, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData } = useAppData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [periodType, setPeriodType] = useState('all');
@@ -46,9 +46,9 @@ const AccountsPayableModule = () => {
 
   // Load financial documents (payables) and partners when component mounts
   useEffect(() => {
-    loadFinancialDocuments();
+    loadAccountsPayable();
     loadPartners();
-  }, [loadFinancialDocuments, loadPartners]);
+  }, [loadAccountsPayable, loadPartners]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -85,16 +85,11 @@ const AccountsPayableModule = () => {
     }
     
     const docPayload = {
-      partner_id: formData.supplierId,
-      direction: 'payable',
-      doc_no: formData.numeroNotaFiscal || null,
+      supplier_id: formData.supplierId,
       description: formData.descricao,
       amount: parseFloat(formData.valor),
       due_date: formData.dataVencimento,
       status: formData.status,
-      category_id: formData.categoriaId || null,
-      payment_method: formData.formaPagamento || null,
-      notes: formData.observacoes || null,
       segment_id: parseInt(formData.segmentId)
     };
 
@@ -103,7 +98,7 @@ const AccountsPayableModule = () => {
     } else {
       await addFinancialDocument(docPayload);
     }
-    await loadFinancialDocuments();
+    await loadAccountsPayable();
     resetForm();
     toast({ title: "Sucesso", description: currentAccount ? "Conta atualizada!" : "Conta adicionada!" });
   };
@@ -111,7 +106,7 @@ const AccountsPayableModule = () => {
   const handleEdit = (account) => {
       setCurrentAccount(account);
       setFormData({
-      supplierId: account.partner_id || '',
+      supplierId: account.supplier_id || '',
       numeroNotaFiscal: account.doc_no || '',
       descricao: account.description || '',
       valor: account.amount || '',
@@ -142,7 +137,7 @@ const AccountsPayableModule = () => {
   const confirmDelete = async () => {
     if (currentAccount) {
       await deleteFinancialDocument(currentAccount.id);
-      await loadFinancialDocuments();
+      await loadAccountsPayable();
       setShowDeleteConfirm(false);
       setCurrentAccount(null);
       toast({ title: "Sucesso", description: "Conta excluída!" });
@@ -164,37 +159,32 @@ const AccountsPayableModule = () => {
 
   // Filtro de período
   function isWithinPeriod(account) {
-    const due = new Date(account.data_vencimento || account.due_date || account.dueDate);
+    if (periodType === 'all') return true;
+    
+    const dueDate = new Date(account.due_date || account.data_vencimento || account.dueDate);
     const today = new Date();
-    today.setHours(0,0,0,0);
-    if (periodType === 'day') {
-      return due.toDateString() === today.toDateString();
+    
+    switch (periodType) {
+      case 'today':
+        return dueDate.toDateString() === today.toDateString();
+      case 'week':
+        const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+        return dueDate >= today && dueDate <= weekFromNow;
+      case 'month':
+        const monthFromNow = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+        return dueDate >= today && dueDate <= monthFromNow;
+      case 'custom':
+        if (!customStart || !customEnd) return true;
+        const start = new Date(customStart);
+        const end = new Date(customEnd);
+        return dueDate >= start && dueDate <= end;
+      default:
+        return true;
     }
-    if (periodType === 'week') {
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - today.getDay());
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      return due >= weekStart && due <= weekEnd;
-    }
-    if (periodType === 'month') {
-      return due.getMonth() === today.getMonth() && due.getFullYear() === today.getFullYear();
-    }
-    if (periodType === 'custom') {
-      if (!customStart && !customEnd) return true;
-      const start = customStart ? new Date(customStart) : null;
-      const end = customEnd ? new Date(customEnd) : null;
-      if (start && end) return due >= start && due <= end;
-      if (start) return due >= start;
-      if (end) return due <= end;
-      return true;
-    }
-    return true;
   }
 
   // Usar status calculado em toda a renderização e nos filtros
-  const filteredAccounts = (data.financialDocuments || [])
-    .filter(doc => doc.direction === 'payable')
+  const filteredAccounts = (data.accountsPayable || [])
     .map(account => ({ ...account, status: getStatusWithDueDate(account) }))
     .filter(account => {
       // Se activeSegmentId é 0 ou null (Todos os Segmentos), mostrar todas as contas
@@ -205,7 +195,7 @@ const AccountsPayableModule = () => {
       return (account.segment_id || account.segmentId) === activeSegmentId;
     })
     .filter(account => {
-      const supplierName = suppliers.find(s => s.id === (account.partner_id || account.supplier_id))?.name || '';
+      const supplierName = account.supplier_name || '';
       const description = account.description || '';
       return supplierName.toLowerCase().includes(searchTerm.toLowerCase()) ||
              description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -362,7 +352,7 @@ const AccountsPayableModule = () => {
               <motion.tr key={account.id} id={`accountsPayable-row-${account.id}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="border-b border-slate-800 hover:bg-slate-800/60">
                 <td className="p-3">
                   <div>
-                    <div className="font-medium">{suppliers.find(s => s.id === (account.partner_id || account.supplier_id))?.name || 'N/A'}</div>
+                    <div className="font-medium">{account.supplier_name || 'N/A'}</div>
                     <div className="text-sm text-gray-400 truncate max-w-48">{account.description || ''}</div>
                   </div>
                 </td>
