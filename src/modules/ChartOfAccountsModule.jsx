@@ -3,11 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CreditCard, Plus, Edit, Trash2, Save, XCircle, Search, Filter, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData';
+import { useChartOfAccounts } from '@/modules/ChartOfAccounts/hooks/useChartOfAccounts';
 import apiService from '@/services/api';
 
 const ChartOfAccountsModule = () => {
   const { data, activeSegmentId, toast } = useAppData();
-  const [accounts, setAccounts] = useState([]);
+  const { chartOfAccounts, loading, create, update, remove, loadMore, hasMore } = useChartOfAccounts({ 
+    segmentId: activeSegmentId 
+  });
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentAccount, setCurrentAccount] = useState(null);
@@ -75,35 +78,8 @@ const ChartOfAccountsModule = () => {
   };
 
   const handleDelete = async (id) => {
-    try {
-      const response = await fetch(`/api/chart-of-accounts/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${apiService.getToken()}`
-        }
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Sucesso",
-          description: "Conta contábil excluída com sucesso.",
-        });
-        loadAccounts();
-      } else {
-        const error = await response.json();
-        toast({
-          title: "Erro",
-          description: error.error || "Erro ao excluir conta.",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error('Error deleting account:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao excluir conta.",
-        variant: "destructive"
-      });
+    if (window.confirm('Tem certeza que deseja excluir esta conta contábil?')) {
+      await remove(id);
     }
   };
 
@@ -120,48 +96,25 @@ const ChartOfAccountsModule = () => {
     }
 
     try {
-      const url = isEditing ? `/api/chart-of-accounts/${currentAccount.id}` : '/api/chart-of-accounts';
-      const method = isEditing ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiService.getToken()}`
-        },
-        body: JSON.stringify({
-          account_code: formData.account_code,
-          account_name: formData.account_name,
-          account_type: formData.account_type,
-          account_category: formData.account_category,
-          description: formData.description,
-          parent_account_id: formData.parent_account_id || null,
-          segment_id: formData.segment_id || null
-        })
-      });
+      const accountData = {
+        account_code: formData.account_code,
+        account_name: formData.account_name,
+        account_type: formData.account_type,
+        account_category: formData.account_category,
+        description: formData.description,
+        parent_account_id: formData.parent_account_id || null,
+        segment_id: formData.segment_id || null
+      };
 
-      if (response.ok) {
-        toast({
-          title: "Sucesso",
-          description: isEditing ? "Conta contábil atualizada com sucesso." : "Conta contábil criada com sucesso.",
-        });
-        setShowForm(false);
-        loadAccounts();
+      if (isEditing && currentAccount) {
+        await update(currentAccount.id, accountData);
       } else {
-        const error = await response.json();
-        toast({
-          title: "Erro",
-          description: error.error || "Erro ao salvar conta.",
-          variant: "destructive"
-        });
+        await create(accountData);
       }
+
+      resetForm();
     } catch (error) {
-      console.error('Error saving account:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao salvar conta.",
-        variant: "destructive"
-      });
+      console.error('Erro ao salvar conta contábil:', error);
     }
   };
 
@@ -187,7 +140,7 @@ const ChartOfAccountsModule = () => {
     }
   };
 
-  const filteredAccounts = accounts.filter(account => 
+  const filteredAccounts = chartOfAccounts.filter(account => 
     !activeSegmentId || account.segment_id === activeSegmentId
   );
 
