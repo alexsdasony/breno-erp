@@ -24,10 +24,14 @@ import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import Autocomplete from '@/components/ui/autocomplete';
 import { useAppData } from '@/hooks/useAppData';
+import { useSales } from '@/modules/Sales/hooks/useSales';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const SalesModule = () => {
   const { data, activeSegmentId, metrics, toast } = useAppData();
+  const { sales, loading, create, update, remove, loadMore, hasMore } = useSales({ 
+    segmentId: activeSegmentId 
+  });
   
   // Carregar produtos quando o componente for montado e ao trocar de segmento
   useEffect(() => {
@@ -150,7 +154,7 @@ const SalesModule = () => {
       segmentId: parseInt(formData.segmentId)
     };
     
-    await addSale(saleData);
+    await create(saleData);
     resetForm();
     setShowForm(false);
   };
@@ -233,7 +237,7 @@ const SalesModule = () => {
   };
 
   const saleHeaders = ['customerId', 'customerName', 'saleDate', 'totalAmount', 'status', 'segmentId'];
-  const filteredSales = data.sales.filter(s => {
+  const filteredSales = sales.filter(s => {
     if (!activeSegmentId || activeSegmentId === 0) return true;
     return s.segmentId === activeSegmentId;
   });
