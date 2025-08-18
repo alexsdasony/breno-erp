@@ -6,10 +6,15 @@ import ImportDataButton from '@/components/ui/ImportDataButton';
 import Modal from '@/components/ui/modal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAppData } from '@/hooks/useAppData';
+import { useFinancialDocuments } from '@/modules/Financial/hooks/useFinancialDocuments';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const AccountsPayableModule = () => {
   const { data, activeSegmentId, toast } = useAppData();
+  const { documents: accountsPayable, loading, create, update, remove, loadMore, hasMore } = useFinancialDocuments({ 
+    segmentId: activeSegmentId,
+    direction: 'payable'
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [periodType, setPeriodType] = useState('all');
@@ -44,16 +49,7 @@ const AccountsPayableModule = () => {
   const suppliers = (data.partners || []).filter(p => (p.roles || p.partner_roles || []).some(r => r.role === 'supplier'));
   const accountCategories = data.accountCategories || [];
 
-  // Load financial documents (payables) and partners when component mounts and when segment changes
-  useEffect(() => {
-    const params = {};
-    if (activeSegmentId && activeSegmentId !== 0) {
-      params.segment_id = activeSegmentId;
-    }
-    // SEMPRE buscar dados frescos da API
-    loadFinancialDocuments(params).catch(() => {});
-    loadPartners(params).catch(() => {});
-  }, [activeSegmentId, loadFinancialDocuments, loadPartners]);
+  // Partners are loaded via useAppData, no need for separate loading
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -104,13 +100,13 @@ const AccountsPayableModule = () => {
     };
 
     if (currentAccount) {
-      await updateFinancialDocument(currentAccount.id, docPayload);
+      await update(currentAccount.id, docPayload);
     } else {
-      await addFinancialDocument(docPayload);
+      await create(docPayload);
     }
-    await loadFinancialDocuments();
     resetForm();
-    toast({ title: "Sucesso", description: currentAccount ? "Conta atualizada!" : "Conta adicionada!" });
+    setShowCreateModal(false);
+    setShowEditModal(false);
   };
 
   const handleEdit = (account) => {
@@ -146,11 +142,9 @@ const AccountsPayableModule = () => {
 
   const confirmDelete = async () => {
     if (currentAccount) {
-      await deleteFinancialDocument(currentAccount.id);
-      await loadFinancialDocuments();
+      await remove(currentAccount.id);
       setShowDeleteConfirm(false);
       setCurrentAccount(null);
-      toast({ title: "Sucesso", description: "Conta excluída!" });
     }
   };
 
@@ -198,8 +192,7 @@ const AccountsPayableModule = () => {
   }
 
   // Usar status calculado em toda a renderização e nos filtros
-  const filteredAccounts = (data.financialDocuments || [])
-    .filter(doc => doc.direction === 'payable')
+  const filteredAccounts = (accountsPayable || [])
     .map(account => ({ ...account, status: getStatusWithDueDate(account) }))
     .filter(account => {
       // Se activeSegmentId é 0 ou null (Todos os Segmentos), mostrar todas as contas
