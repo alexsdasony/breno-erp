@@ -19,10 +19,14 @@ import {
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData';
+import { useBillings } from '@/modules/Billing/hooks/useBillings';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const BillingModule = () => {
   const { data, activeSegmentId, metrics, toast } = useAppData();
+  const { billings, loading, create, update, remove, loadMore, hasMore } = useBillings({ 
+    segmentId: activeSegmentId 
+  });
   const [showForm, setShowForm] = useState(false);
   const [editingBilling, setEditingBilling] = useState(null);
   const [viewingBilling, setViewingBilling] = useState(null);
@@ -94,13 +98,12 @@ const BillingModule = () => {
     };
     
     if (editingBilling) {
-      await updateFinancialDocument(editingBilling.id, docPayload);
+      await update(editingBilling.id, docPayload);
       setEditingBilling(null);
     } else {
-      await addFinancialDocument(docPayload);
+      await create(docPayload);
     }
     
-    await loadFinancialDocuments();
     setFormData({ customerId: '', customerName: '', amount: '', dueDate: '', status: 'Pendente', segmentId: '' });
     setShowForm(false);
   };
@@ -134,12 +137,7 @@ const BillingModule = () => {
 
   const handleDelete = async (billingId) => {
     if (window.confirm('Tem certeza que deseja excluir esta cobrança?')) {
-      try {
-        await deleteFinancialDocument(billingId);
-        await loadFinancialDocuments();
-      } catch (error) {
-        console.error('Delete billing error:', error);
-      }
+      await remove(billingId);
     }
   };
 
@@ -181,8 +179,7 @@ const BillingModule = () => {
   }
 
   // Usar status calculado em toda a renderização e nos filtros
-  let allBillings = (data.financialDocuments || [])
-    .filter(doc => doc.direction === 'receivable')
+  let allBillings = (billings || [])
     .map(billing => ({ ...billing, status: getStatusWithDueDate(billing) }));
 
   // Filtro por segmento
