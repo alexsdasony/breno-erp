@@ -23,6 +23,7 @@ serve(async (req) => {
       }
       let query = supabase.from('financial_documents').select('*');
       if (direction) query = query.eq('direction', direction);
+      query = query.order('created_at', { ascending: false });
       const { data, error } = await query;
       if (error) return serverError(error.message);
       return ok({ financialDocuments: data });

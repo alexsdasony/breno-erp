@@ -32,7 +32,7 @@ serve(async (req) => {
       const { data, error } = await supabase
         .from('segments')
         .select('*')
-        .order('name', { ascending: true })
+        .order('created_at', { ascending: false })
 
       if (error) {
         return new Response(
