@@ -14,15 +14,16 @@ import {
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useAppData } from '@/hooks/useAppData';
+import { useCostCenters } from '@/modules/CostCenters/hooks/useCostCenters';
 import { formatCurrency } from '@/lib/utils.js';
 
 const CostCentersModule = () => {
   const { data, activeSegmentId, toast } = useAppData();
+  const { costCenters, loading, create, update, remove, loadMore, hasMore } = useCostCenters({ 
+    segmentId: activeSegmentId 
+  });
   
-  // Carregar centros de custo ao montar e ao trocar de segmento
-  useEffect(() => {
-    ensureCostCentersLoaded();
-  }, [activeSegmentId, ensureCostCentersLoaded]);
+  // Cost centers are loaded via useCostCenters hook
 
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -35,7 +36,6 @@ const CostCentersModule = () => {
     segmentId: activeSegmentId || (data.segments?.[0]?.id || '')
   });
 
-  const costCenters = data.costCenters || [];
   const filteredCostCenters = costCenters.filter(cc => {
     if (!activeSegmentId || activeSegmentId === 0) {
       return true;
@@ -71,11 +71,8 @@ const CostCentersModule = () => {
   };
 
   const handleDelete = async (costCenter) => {
-    try {
-      await deleteCostCenter(costCenter.id);
-      await ensureCostCentersLoaded();
-    } catch (error) {
-      console.error('Erro ao excluir centro de custo:', error);
+    if (window.confirm('Tem certeza que deseja excluir este centro de custo?')) {
+      await remove(costCenter.id);
     }
   };
 
@@ -94,12 +91,10 @@ const CostCentersModule = () => {
       };
 
       if (isEditing && currentCostCenter) {
-        await updateCostCenter(currentCostCenter.id, costCenterData);
+        await update(currentCostCenter.id, costCenterData);
       } else {
-        await addCostCenter(costCenterData);
+        await create(costCenterData);
       }
-
-      await ensureCostCentersLoaded();
       setShowForm(false);
       setFormData({
         name: '',
