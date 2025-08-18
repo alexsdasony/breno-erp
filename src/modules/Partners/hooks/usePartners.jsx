@@ -2,19 +2,33 @@ import { useState, useEffect } from 'react'
 import { listPartners, createPartner, updatePartner, deletePartner } from '@/services/partnersService'
 import { toast } from '@/components/ui/use-toast'
 
-export function usePartners({ role, segmentId } = {}) {
+export function usePartners({ role, segmentId, pageSize = 20 } = {}) {
   const [partners, setPartners] = useState([])
   const [loading, setLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [page, setPage] = useState(1)
 
-  const load = async () => {
+  const load = async (pageNum = 1, append = false) => {
     setLoading(true)
     try {
-      const params = {}
+      const params = {
+        page: pageNum,
+        limit: pageSize
+      }
       if (role) params.role = role
       if (segmentId) params.segment_id = segmentId
       
-      const data = await listPartners(params)
-      setPartners(data)
+      const response = await listPartners(params)
+      const data = response.partners || response
+      
+      if (append) {
+        setPartners(prev => [...prev, ...data])
+      } else {
+        setPartners(data)
+      }
+      
+      setHasMore(data.length === pageSize)
+      setPage(pageNum)
     } catch (err) {
       console.error('Erro ao carregar parceiros:', err)
       toast({ 
@@ -24,6 +38,12 @@ export function usePartners({ role, segmentId } = {}) {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadMore = async () => {
+    if (!loading && hasMore) {
+      await load(page + 1, true)
     }
   }
 
@@ -95,6 +115,9 @@ export function usePartners({ role, segmentId } = {}) {
     partners, 
     loading, 
     load, 
+    loadMore,
+    hasMore,
+    page,
     create, 
     update, 
     remove 
