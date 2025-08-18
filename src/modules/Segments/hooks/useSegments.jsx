@@ -2,15 +2,31 @@ import { useState, useEffect } from 'react'
 import { listSegments, createSegment, updateSegment, deleteSegment } from '@/services/segmentsService'
 import { toast } from '@/components/ui/use-toast'
 
-export function useSegments() {
+export function useSegments({ pageSize = 20 } = {}) {
   const [segments, setSegments] = useState([])
   const [loading, setLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [page, setPage] = useState(1)
 
-  const load = async () => {
+  const load = async (pageNum = 1, append = false) => {
     setLoading(true)
     try {
-      const data = await listSegments()
-      setSegments(data)
+      const params = {
+        page: pageNum,
+        limit: pageSize
+      }
+      
+      const response = await listSegments(params)
+      const data = response.segments || response
+      
+      if (append) {
+        setSegments(prev => [...prev, ...data])
+      } else {
+        setSegments(data)
+      }
+      
+      setHasMore(data.length === pageSize)
+      setPage(pageNum)
     } catch (err) {
       console.error('Erro ao carregar segmentos:', err)
       toast({ 
@@ -20,6 +36,12 @@ export function useSegments() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadMore = async () => {
+    if (!loading && hasMore) {
+      await load(page + 1, true)
     }
   }
 
@@ -91,6 +113,9 @@ export function useSegments() {
     segments, 
     loading, 
     load, 
+    loadMore,
+    hasMore,
+    page,
     create, 
     update, 
     remove 
