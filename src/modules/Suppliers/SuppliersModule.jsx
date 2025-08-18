@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
-import { usePartners } from './hooks/usePartners';
+import { usePartners } from '@/hooks/usePartners';
 import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency } from '@/lib/utils.js';
 

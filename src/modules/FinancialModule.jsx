@@ -15,11 +15,72 @@ import {
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import Modal from '@/components/ui/modal';
-import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
+import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
+import apiService from '@/services/api';
 
 const FinancialModule = () => {
-  const { data, activeSegmentId, loadTransactions, metrics, toast, addTransaction, updateTransaction, deleteTransaction, importData } = useAppDataRefactored();
+  const { data, activeSegmentId, metrics, toast } = useAppData();
+  
+  // Importar funções do API service diretamente
+  const addTransaction = async (transactionData) => {
+    try {
+      const response = await apiService.createTransaction(transactionData);
+      if (response.success) {
+        toast({
+          title: "Sucesso",
+          description: "Transação criada com sucesso.",
+        });
+        return response;
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao criar transação.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const updateTransaction = async (id, transactionData) => {
+    try {
+      const response = await apiService.updateTransaction(id, transactionData);
+      if (response.success) {
+        toast({
+          title: "Sucesso", 
+          description: "Transação atualizada com sucesso.",
+        });
+        return response;
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar transação.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const deleteTransaction = async (id) => {
+    try {
+      const response = await apiService.deleteTransaction(id);
+      if (response.success) {
+        return response;
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const loadTransactions = async (filters = {}) => {
+    try {
+      await apiService.getTransactions(filters);
+    } catch (error) {
+      console.error('Erro ao carregar transações:', error);
+    }
+  };
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);

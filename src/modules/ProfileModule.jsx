@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Lock, Mail, Phone, Building, Save, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
+import { useAppData } from '@/hooks/useAppData';
 
 const ProfileModule = () => {
-  const { currentUser, updateUserProfile, changeUserPassword, data } = useAppDataRefactored();
+  const { currentUser, updateUserProfile, changeUserPassword, data } = useAppData();
   
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

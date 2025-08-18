@@ -21,15 +21,15 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
+import { useAppData } from '@/hooks/useAppData';
 import { useRouter } from 'next/navigation';
 
 // Desabilitar prerender para esta página
 export const dynamic = 'force-dynamic';
 
-const CustomerFormPage = ({ id }) => {
+const CustomerFormPage = () => {
   const router = useRouter();
-  const { data, activeSegmentId, addCustomerWithRefetch, updateCustomerWithRefetch, toast } = useAppDataRefactored();
+  const { data, activeSegmentId, toast } = useAppData();
   
   const [activeTab, setActiveTab] = useState('dados-pessoais');
   const [isLoading, setIsLoading] = useState(false);

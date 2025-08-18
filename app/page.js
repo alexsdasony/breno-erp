@@ -2,10 +2,11 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAppData } from '@/hooks/useAppData';
 
 export default function HomePage() {
   const router = useRouter();
-  const { currentUser, loading } = useAppDataRefactored();
+  const { currentUser, loading } = useAppData();
 
   useEffect(() => {
     if (!loading) {

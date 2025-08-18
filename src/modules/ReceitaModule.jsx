@@ -9,11 +9,11 @@ import {
   Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
+import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency } from '@/lib/utils.js';
 
 const ReceitaModule = () => {
-  const { data, activeSegmentId } = useAppDataRefactored();
+  const { data, activeSegmentId } = useAppData();
 
   const revenueData = {
     totalRevenue: data.transactions?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0,

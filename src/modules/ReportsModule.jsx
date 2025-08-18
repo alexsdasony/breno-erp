@@ -12,11 +12,11 @@ import {
   Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
+import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency } from '@/lib/utils.js';
 
 const ReportsModule = () => {
-  const { data, activeSegmentId } = useAppDataRefactored();
+  const { data, activeSegmentId } = useAppData();
 
   const reports = [
     {

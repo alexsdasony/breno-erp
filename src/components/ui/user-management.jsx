@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
+import { useAppData } from '@/hooks/useAppData';
 import { useCrud } from '@/hooks/useCrud.jsx';
 
 const UserManagement = () => {
@@ -23,7 +23,7 @@ const UserManagement = () => {
     currentUser, 
     data, 
     segments 
-  } = useAppDataRefactored();
+  } = useAppData();
 
   const {
     loadUsers, 

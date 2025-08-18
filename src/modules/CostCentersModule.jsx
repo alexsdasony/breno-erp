@@ -13,11 +13,11 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
-import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
+import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency } from '@/lib/utils.js';
 
 const CostCentersModule = () => {
-  const { data, activeSegmentId, ensureCostCentersLoaded, addCostCenter, updateCostCenter, deleteCostCenter, importData, toast } = useAppDataRefactored();
+  const { data, activeSegmentId, toast } = useAppData();
   
   // Carregar centros de custo ao montar e ao trocar de segmento
   useEffect(() => {

@@ -1,5 +1,5 @@
 // Hooks principais
-export { useAppDataRefactored, AppDataProvider } from './useAppDataRefactored';
+export { useAppData, AppDataProvider } from './useAppData';
 export { useAuth } from './useAuth';
 
 // Hooks específicos por domínio

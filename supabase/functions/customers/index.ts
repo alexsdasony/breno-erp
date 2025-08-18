@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-user-token',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 }
 
 serve(async (req) => {
@@ -109,7 +110,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          customers: data,
+          customer: data,
           message: 'Cliente criado com sucesso'
         }),
         { 

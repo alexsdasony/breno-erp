@@ -23,7 +23,7 @@ import { formatCurrency } from '@/lib/utils.js';
 
 const InventoryModule = () => {
   const { activeSegmentId, data } = useAppData();
-  const { products, loading, create, update, remove } = useProducts({ 
+  const { products, loading, create, update, remove, loadMore, hasMore } = useProducts({ 
     segmentId: activeSegmentId 
   });
 
@@ -65,19 +65,60 @@ const InventoryModule = () => {
     setShowForm(true);
   };
 
-  const handleEdit = (product) => {
+  const handleEdit = async (product) => {
     setIsEditing(true);
     setCurrentProduct(product);
-    setFormData({
-      name: product.name || '',
-      description: product.description || '',
-      category: product.category || '',
-      price: product.price || '',
-      cost: product.cost || '',
-      stock: product.stock || '',
-      minStock: product.minStock || '',
-      segmentId: product.segment_id || activeSegmentId || (data.segments?.[0]?.id || '')
-    });
+    
+    // Carregar dados completos do produto via API
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${product.id}`, {
+        headers: {
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const { product: fullProduct } = await response.json();
+        setFormData({
+          name: fullProduct.name || '',
+          description: fullProduct.description || '',
+          category: fullProduct.category || '',
+          price: fullProduct.price || '',
+          cost: fullProduct.cost_price || '',
+          stock: fullProduct.stock || '',
+          minStock: fullProduct.min_stock || '',
+          segmentId: fullProduct.segment_id || activeSegmentId || (data.segments?.[0]?.id || '')
+        });
+      } else {
+        // Fallback para dados em memória se a API falhar
+        setFormData({
+          name: product.name || '',
+          description: product.description || '',
+          category: product.category || '',
+          price: product.price || '',
+          cost: product.cost_price || '',
+          stock: product.stock || '',
+          minStock: product.min_stock || '',
+          segmentId: product.segment_id || activeSegmentId || (data.segments?.[0]?.id || '')
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar produto:', error);
+      // Fallback para dados em memória
+      setFormData({
+        name: product.name || '',
+        description: product.description || '',
+        category: product.category || '',
+        price: product.price || '',
+        cost: product.cost_price || '',
+        stock: product.stock || '',
+        minStock: product.min_stock || '',
+        segmentId: product.segment_id || activeSegmentId || (data.segments?.[0]?.id || '')
+      });
+    }
+    
     setShowForm(true);
   };
 
@@ -97,12 +138,14 @@ const InventoryModule = () => {
 
     try {
       const productData = {
-        ...formData,
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
         price: parseFloat(formData.price) || 0,
         cost: parseFloat(formData.cost) || 0,
         stock: parseInt(formData.stock) || 0,
         minStock: parseInt(formData.minStock) || 0,
-        segment_id: formData.segmentId
+        segmentId: formData.segmentId
       };
 
       if (isEditing && currentProduct) {
@@ -446,6 +489,30 @@ const InventoryModule = () => {
                 })}
               </tbody>
             </table>
+            
+            {/* Botão Carregar Mais */}
+            {hasMore && (
+              <div className="flex justify-center mt-6">
+                <Button 
+                  onClick={loadMore} 
+                  disabled={loading}
+                  variant="outline"
+                  className="min-w-[200px]"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Carregando...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Carregar Mais Produtos
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </motion.div>

@@ -1,6 +1,6 @@
 // API Service - Centralized HTTP client for backend communication
-// Usa NEXT_PUBLIC_API_BASE_URL quando definido (Edge Functions em prod). Caso contrário, usa backend local via '/functions/v1'.
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/functions/v1';
+// Usa NEXT_PUBLIC_API_URL para Edge Functions do Supabase
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://qerubjitetqwfqqydhzv.supabase.co/functions/v1';
 
 // Cache em memória para token - COM sessionStorage para persistência
 let tokenCache = null;
@@ -280,7 +280,16 @@ class ApiService {
   }
 
   async updateTransaction(id, transactionData) {
-    return this.put(`/transactions/${id}`, transactionData);
+    const payload = {
+      type: transactionData.type,
+      description: transactionData.description,
+      amount: transactionData.amount,
+      date: transactionData.date,
+      category: transactionData.category,
+      cost_center: transactionData.costCenter ?? transactionData.cost_center ?? null,
+      segment_id: transactionData.segmentId ?? transactionData.segment_id ?? null,
+    };
+    return this.put(`/transactions/${id}`, payload);
   }
 
   async deleteTransaction(id) {
@@ -347,16 +356,16 @@ class ApiService {
 
   async updateProduct(id, productData) {
     const payload = {
-      name: productData.name,
-      price: productData.price,
-      category: productData.category ?? null,
-      stock: productData.stock ?? productData.stock_quantity,
-      min_stock: productData.minStock ?? productData.minimum_stock,
-      segment_id: productData.segment_id ?? productData.segmentId,
-      code: productData.code,
-      description: productData.description,
-      cost_price: productData.cost_price ?? productData.costPrice,
-      supplier: productData.supplier,
+      name: productData.name || null,
+      price: parseFloat(productData.price) || 0,
+      category: productData.category || null,
+      stock_quantity: parseInt(productData.stock) || parseInt(productData.stock_quantity) || 0,
+      minimum_stock: parseInt(productData.minStock) || parseInt(productData.minimum_stock) || 0,
+      segment_id: productData.segment_id || productData.segmentId || null,
+      code: productData.code || null,
+      description: productData.description || null,
+      cost_price: parseFloat(productData.cost) || parseFloat(productData.cost_price) || parseFloat(productData.costPrice) || 0,
+      supplier: productData.supplier || null,
     };
     return this.put(`/products/${id}`, payload);
   }
@@ -375,11 +384,36 @@ class ApiService {
   }
 
   async createSale(saleData) {
-    return this.post('/sales', saleData);
+    const payload = {
+      customer_id: saleData.customer_id || saleData.customerId,
+      customer_name: saleData.customer_name || saleData.customerName || '',
+      sale_date: saleData.sale_date || saleData.saleDate || new Date().toISOString().split('T')[0],
+      total_amount: saleData.total_amount || saleData.totalAmount || 0,
+      discount: saleData.discount || 0,
+      final_amount: saleData.final_amount || saleData.finalAmount || 0,
+      payment_method: saleData.payment_method || saleData.paymentMethod || 'dinheiro',
+      status: saleData.status || 'Pendente',
+      notes: saleData.notes || '',
+      segment_id: saleData.segment_id || saleData.segmentId || null,
+      items: saleData.items || []
+    };
+    return this.post('/sales', payload);
   }
 
   async updateSale(id, saleData) {
-    return this.put(`/sales/${id}`, saleData);
+    const payload = {
+      customer_id: saleData.customer_id || saleData.customerId || null,
+      customer_name: saleData.customer_name || saleData.customerName || null,
+      sale_date: saleData.sale_date || saleData.saleDate || null,
+      total_amount: parseFloat(saleData.total_amount || saleData.totalAmount) || 0,
+      final_amount: parseFloat(saleData.final_amount || saleData.finalAmount) || 0,
+      discount: parseFloat(saleData.discount) || 0,
+      payment_method: saleData.payment_method || saleData.paymentMethod || null,
+      status: saleData.status || 'pending',
+      notes: saleData.notes || null,
+      segment_id: saleData.segment_id || saleData.segmentId || null,
+    };
+    return this.put(`/sales/${id}`, payload);
   }
 
   async deleteSale(id) {
@@ -392,11 +426,39 @@ class ApiService {
   }
 
   async createBilling(billingData) {
-    return this.post('/billings', billingData);
+    const payload = {
+      customer_id: billingData.customer_id || billingData.customerId,
+      customer_name: billingData.customer_name || billingData.customerName || '',
+      invoice_number: billingData.invoice_number || billingData.invoiceNumber || '',
+      issue_date: billingData.issue_date || billingData.issueDate,
+      due_date: billingData.due_date || billingData.dueDate,
+      amount: billingData.amount || 0,
+      tax_amount: billingData.tax_amount || billingData.taxAmount || 0,
+      total_amount: billingData.total_amount || billingData.totalAmount || 0,
+      status: billingData.status || 'pending',
+      payment_method: billingData.payment_method || billingData.paymentMethod || null,
+      notes: billingData.notes || null,
+      segment_id: billingData.segment_id || billingData.segmentId || null
+    };
+    return this.post('/billings', payload);
   }
 
   async updateBilling(id, billingData) {
-    return this.put(`/billings/${id}`, billingData);
+    const payload = {
+      customer_id: billingData.customer_id || billingData.customerId || null,
+      customer_name: billingData.customer_name || billingData.customerName || null,
+      invoice_number: billingData.invoice_number || billingData.invoiceNumber || null,
+      issue_date: billingData.issue_date || billingData.issueDate || null,
+      due_date: billingData.due_date || billingData.dueDate || null,
+      amount: parseFloat(billingData.amount) || 0,
+      tax_amount: parseFloat(billingData.tax_amount || billingData.taxAmount) || 0,
+      total_amount: parseFloat(billingData.total_amount || billingData.totalAmount) || 0,
+      status: billingData.status || 'pending',
+      payment_method: billingData.payment_method || billingData.paymentMethod || null,
+      notes: billingData.notes || null,
+      segment_id: billingData.segment_id || billingData.segmentId || null,
+    };
+    return this.put(`/billings/${id}`, payload);
   }
 
   async deleteBilling(id) {
@@ -409,11 +471,24 @@ class ApiService {
   }
 
   async createCostCenter(costCenterData) {
-    return this.post('/cost-centers', costCenterData);
+    const payload = {
+      name: costCenterData.name,
+      description: costCenterData.description || null,
+      code: costCenterData.code || null,
+      budget: costCenterData.budget || 0,
+      status: costCenterData.status || 'active',
+      segment_id: costCenterData.segment_id || costCenterData.segmentId || null
+    };
+    return this.post('/cost-centers', payload);
   }
 
   async updateCostCenter(id, costCenterData) {
-    return this.put(`/cost-centers/${id}`, costCenterData);
+    const payload = {
+      name: costCenterData.name || null,
+      description: costCenterData.description || null,
+      segment_id: costCenterData.segment_id || costCenterData.segmentId || null,
+    };
+    return this.put(`/cost-centers/${id}`, payload);
   }
 
   async deleteCostCenter(id) {
@@ -426,11 +501,36 @@ class ApiService {
   }
 
   async createAccountPayable(accountData) {
-    return this.post('/accounts-payable', accountData);
+    const payload = {
+      description: accountData.description,
+      amount: accountData.amount,
+      due_date: accountData.due_date || accountData.dueDate,
+      supplier_id: accountData.supplier_id || accountData.supplierId || null,
+      supplier_name: accountData.supplier_name || accountData.supplierName || '',
+      category: accountData.category || null,
+      status: accountData.status || 'pending',
+      segment_id: accountData.segment_id || accountData.segmentId || null,
+      notes: accountData.notes || null,
+      payment_date: accountData.payment_date || accountData.paymentDate || null,
+      payment_method: accountData.payment_method || accountData.paymentMethod || null
+    };
+    return this.post('/accounts-payable', payload);
   }
 
   async updateAccountPayable(id, accountData) {
-    return this.put(`/accounts-payable/${id}`, accountData);
+    const payload = {
+      description: accountData.description || null,
+      amount: parseFloat(accountData.amount) || 0,
+      due_date: accountData.due_date || accountData.dueDate || null,
+      supplier_id: accountData.supplier_id || accountData.supplierId || null,
+      supplier_name: accountData.supplier_name || accountData.supplierName || null,
+      status: accountData.status || 'pending',
+      payment_date: accountData.payment_date || accountData.paymentDate || null,
+      payment_method: accountData.payment_method || accountData.paymentMethod || null,
+      notes: accountData.notes || null,
+      segment_id: accountData.segment_id || accountData.segmentId || null,
+    };
+    return this.put(`/accounts-payable/${id}`, payload);
   }
 
   async deleteAccountPayable(id) {
@@ -443,11 +543,36 @@ class ApiService {
   }
 
   async createNFe(nfeData) {
-    return this.post('/nfe', nfeData);
+    const payload = {
+      customer_id: nfeData.customer_id || nfeData.customerId,
+      customer_name: nfeData.customer_name || nfeData.customerName || '',
+      invoice_number: nfeData.invoice_number || nfeData.invoiceNumber || '',
+      issue_date: nfeData.issue_date || nfeData.issueDate || new Date().toISOString().split('T')[0],
+      total_amount: nfeData.total_amount || nfeData.totalAmount || 0,
+      tax_amount: nfeData.tax_amount || nfeData.taxAmount || 0,
+      status: nfeData.status || 'pending',
+      xml_content: nfeData.xml_content || nfeData.xmlContent || null,
+      access_key: nfeData.access_key || nfeData.accessKey || null,
+      segment_id: nfeData.segment_id || nfeData.segmentId || null,
+      notes: nfeData.notes || null
+    };
+    return this.post('/nfe', payload);
   }
 
   async updateNFe(id, nfeData) {
-    return this.put(`/nfe/${id}`, nfeData);
+    const payload = {
+      customer_id: nfeData.customer_id || nfeData.customerId || null,
+      customer_name: nfeData.customer_name || nfeData.customerName || null,
+      invoice_number: nfeData.invoice_number || nfeData.invoiceNumber || null,
+      issue_date: nfeData.issue_date || nfeData.issueDate || null,
+      total_amount: parseFloat(nfeData.total_amount || nfeData.totalAmount) || 0,
+      tax_amount: parseFloat(nfeData.tax_amount || nfeData.taxAmount) || 0,
+      status: nfeData.status || 'pending',
+      xml_content: nfeData.xml_content || nfeData.xmlContent || null,
+      access_key: nfeData.access_key || nfeData.accessKey || null,
+      segment_id: nfeData.segment_id || nfeData.segmentId || null,
+    };
+    return this.put(`/nfe/${id}`, payload);
   }
 
   async deleteNFe(id) {

@@ -5,11 +5,11 @@ import { PlusCircle, Edit, Trash2, Search, Filter, FileDown, Eye } from 'lucide-
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import Modal from '@/components/ui/modal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
+import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const AccountsPayableModule = () => {
-  const { data, activeSegmentId, loadFinancialDocuments, loadPartners, toast, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData } = useAppDataRefactored();
+  const { data, activeSegmentId, toast } = useAppData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [periodType, setPeriodType] = useState('all');

@@ -38,11 +38,11 @@ export const API_CONFIG = {
   // URL da API legacy (para compatibilidade durante migração)
   LEGACY_URL: 'https://breno-erp-backend.onrender.com/api',
   
-  // URL da API local
-  LOCAL_URL: 'http://localhost:3001/api',
+  // URL das Edge Functions do Supabase
+  SUPABASE_FUNCTIONS_URL: process.env.NEXT_PUBLIC_API_URL || 'https://qerubjitetqwfqqydhzv.supabase.co/functions/v1',
   
-  // URL da API de produção
-  PRODUCTION_URL: process.env.NEXT_PUBLIC_API_URL || 'https://breno-erp.vercel.app/api'
+  // URL da API de produção (legacy)
+  PRODUCTION_URL: 'https://breno-erp.vercel.app/api'
 };
 
 // ============================================================================
@@ -63,7 +63,6 @@ export const CORS_CONFIG = {
   // Origens locais para desenvolvimento
   LOCAL_ORIGINS: [
     'http://localhost:3000',
-    'http://localhost:3001',
     'http://localhost:5173'
   ]
 };

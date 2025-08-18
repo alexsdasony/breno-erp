@@ -1,4 +1,4 @@
-import { DashboardModule } from '@/modules/Dashboard/DashboardModule';
+import DashboardModule from '@/modules/DashboardModule';
 
 export default function DashboardPage() {
   return (
@@ -16,4 +16,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

@@ -12,7 +12,7 @@ export const LowStockTable = ({ products }) => {
     return 'OK';
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
       case 'Crítico':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';

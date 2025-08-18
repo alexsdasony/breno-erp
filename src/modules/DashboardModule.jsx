@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -239,7 +241,5 @@ const DashboardModule = () => {
     </motion.div>
   );
 };
-
-export default DashboardModule;
 
 export default DashboardModule;

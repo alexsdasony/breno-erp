@@ -18,11 +18,11 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
-import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
+import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const BillingModule = () => {
-  const { data, activeSegmentId, loadFinancialDocuments, loadPartners, metrics, toast, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData } = useAppDataRefactored();
+  const { data, activeSegmentId, metrics, toast } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [editingBilling, setEditingBilling] = useState(null);
   const [viewingBilling, setViewingBilling] = useState(null);

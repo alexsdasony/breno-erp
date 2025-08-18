@@ -23,11 +23,11 @@ import {
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import Autocomplete from '@/components/ui/autocomplete';
-import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
+import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const SalesModule = () => {
-  const { data, activeSegmentId, loadProducts, metrics, toast, addSale, importData } = useAppDataRefactored();
+  const { data, activeSegmentId, metrics, toast } = useAppData();
   
   // Carregar produtos quando o componente for montado e ao trocar de segmento
   useEffect(() => {

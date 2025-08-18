@@ -49,14 +49,14 @@ const DashboardSkeleton = () => (
   </div>
 );
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
           {label}
         </p>
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry, index) => (
           <p key={index} className="text-sm text-gray-600 dark:text-gray-400">
             {entry.name}: {entry.value.toLocaleString('pt-BR')}
           </p>
@@ -215,3 +215,5 @@ export const DashboardModule = () => {
     </div>
   );
 };
+
+export default DashboardModule;

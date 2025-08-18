@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CreditCard, Plus, Edit, Trash2, Save, XCircle, Search, Filter, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
+import { useAppData } from '@/hooks/useAppData';
 import apiService from '@/services/api';
 
 const ChartOfAccountsModule = () => {
-  const { data, activeSegmentId, toast } = useAppDataRefactored();
+  const { data, activeSegmentId, toast } = useAppData();
   const [accounts, setAccounts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);

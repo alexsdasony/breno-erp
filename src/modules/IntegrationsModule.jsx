@@ -4,10 +4,10 @@ import { Zap, Settings, CheckCircle, XCircle, ExternalLink, Save } from 'lucide-
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch'; 
 import { Label } from '@/components/ui/label';
-import { useAppDataRefactored } from '@/hooks/useAppDataRefactored.jsx';
+import { useAppData } from '@/hooks/useAppData';
 
 const IntegrationsModule = () => {
-  const { data, toast, updateIntegrationSettings } = useAppDataRefactored();
+  const { data, toast } = useAppData();
   const [imobziApiKey, setImobziApiKey] = useState('');
   const [imobziEnabled, setImobziEnabled] = useState(false);
 

@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-user-token',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 }
 
 serve(async (req) => {
@@ -28,10 +29,23 @@ serve(async (req) => {
 
     // GET - Listar todos
     if (req.method === 'GET' && !isSpecificId) {
-      const { data, error } = await supabase
+      const page = parseInt(url.searchParams.get('page') || '1')
+      const limit = parseInt(url.searchParams.get('limit') || '50')
+      const offset = (page - 1) * limit
+      
+      let query = supabase
         .from('products')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+      // Filtrar por segment_id se fornecido
+      const segmentId = url.searchParams.get('segment_id')
+      if (segmentId) {
+        query = query.eq('segment_id', segmentId)
+      }
+
+      const { data, error, count } = await query
 
       if (error) {
         return new Response(
@@ -47,7 +61,10 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           products: data || [],
-          total: data?.length || 0
+          total: count || 0,
+          page,
+          limit,
+          hasMore: (data?.length || 0) === limit
         }),
         { 
           status: 200, 

@@ -1,4 +1,4 @@
-export const formatCurrencyBR = (value: number): string => {
+export const formatCurrencyBR = (value) => {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
@@ -7,7 +7,7 @@ export const formatCurrencyBR = (value: number): string => {
   }).format(value);
 };
 
-export const formatDateBR = (iso: string): string => {
+export const formatDateBR = (iso) => {
   const date = new Date(iso);
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
@@ -15,7 +15,7 @@ export const formatDateBR = (iso: string): string => {
   }).format(date);
 };
 
-export const formatMonthYear = (iso: string): string => {
+export const formatMonthYear = (iso) => {
   const date = new Date(iso);
   return new Intl.DateTimeFormat('pt-BR', {
     month: 'short',
@@ -23,6 +23,10 @@ export const formatMonthYear = (iso: string): string => {
   }).format(date);
 };
 
-export const formatNumber = (value: number): string => {
+export const formatNumber = (value) => {
+  return new Intl.NumberFormat('pt-BR').format(value);
+};
+
+export const formatPercent = (value) => {
   return new Intl.NumberFormat('pt-BR').format(value);
 };
