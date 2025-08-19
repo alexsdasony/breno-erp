@@ -1,296 +1,204 @@
-import React, { useState } from 'react';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Badge } from '../components/ui/badge';
-import { Separator } from '../components/ui/separator';
-import { useToast } from '../components/ui/use-toast';
-import apiService from '../services/api';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { 
+  TrendingUp, 
+  DollarSign, 
+  BarChart3, 
+  PieChart,
+  Calendar,
+  Download
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAppData } from '@/hooks/useAppData';
+import { formatCurrency } from '@/lib/utils.js';
 
 const ReceitaModule = () => {
-  const [cpf, setCpf] = useState('');
-  const [cnpj, setCnpj] = useState('');
-  const [dadosCPF, setDadosCPF] = useState(null);
-  const [dadosCNPJ, setDadosCNPJ] = useState(null);
-  const [loadingCPF, setLoadingCPF] = useState(false);
-  const [loadingCNPJ, setLoadingCNPJ] = useState(false);
-  const { toast } = useToast();
+  const { data, activeSegmentId } = useAppData();
 
-  const formatarCPF = (value) => {
-    const cpfLimpo = value.replace(/\D/g, '');
-    return cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  };
-
-  const formatarCNPJ = (value) => {
-    const cnpjLimpo = value.replace(/\D/g, '');
-    return cnpjLimpo.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-  };
-
-  const consultarCPF = async () => {
-    if (!cpf || cpf.replace(/\D/g, '').length !== 11) {
-      toast({
-        title: "CPF Inválido",
-        description: "Digite um CPF válido com 11 dígitos.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoadingCPF(true);
-    try {
-      const response = await apiService.consultarReceita(cpf.replace(/\D/g, ''));
-      setDadosCPF(response.data);
-      toast({
-        title: "Consulta Realizada",
-        description: "Dados da Receita Federal obtidos com sucesso!",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro na Consulta",
-        description: error.message || "Erro ao consultar Receita Federal",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingCPF(false);
-    }
-  };
-
-  const consultarCNPJ = async () => {
-    if (!cnpj || cnpj.replace(/\D/g, '').length !== 14) {
-      toast({
-        title: "CNPJ Inválido",
-        description: "Digite um CNPJ válido com 14 dígitos.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoadingCNPJ(true);
-    try {
-      const response = await apiService.consultarReceitaCNPJ(cnpj.replace(/\D/g, ''));
-      setDadosCNPJ(response.data);
-      toast({
-        title: "Consulta Realizada",
-        description: "Dados da Receita Federal obtidos com sucesso!",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro na Consulta",
-        description: error.message || "Erro ao consultar Receita Federal",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingCNPJ(false);
-    }
+  const revenueData = {
+    totalRevenue: data.transactions?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0,
+    monthlyRevenue: data.transactions?.filter(t => {
+      const date = new Date(t.date || t.created_at);
+      const now = new Date();
+      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+    }).reduce((sum, t) => sum + (t.amount || 0), 0) || 0,
+    growthRate: 12.5, // Mock data
+    topProducts: [
+      { name: 'Produto A', revenue: 15000 },
+      { name: 'Produto B', revenue: 12000 },
+      { name: 'Produto C', revenue: 8000 }
+    ]
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Consulta Receita Federal</h1>
-        <p className="text-gray-600 mt-2">
-          Consulte dados cadastrais de CPF e CNPJ na Receita Federal
-        </p>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6"
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
+            Gestão de Receita
+          </h1>
+          <p className="text-muted-foreground mt-2">Acompanhe e analise suas receitas</p>
+        </div>
+        <div className="flex space-x-2">
+          <Button variant="outline">
+            <Calendar className="w-4 h-4 mr-2" />
+            Período
+          </Button>
+          <Button variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Exportar
+          </Button>
+        </div>
       </div>
 
-      <Tabs defaultValue="cpf" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="cpf">Consulta CPF</TabsTrigger>
-          <TabsTrigger value="cnpj">Consulta CNPJ</TabsTrigger>
-        </TabsList>
+      {/* Métricas Principais */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <motion.div whileHover={{ scale: 1.02 }} className="glass-effect rounded-xl p-6 gradient-card border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Receita Total</p>
+              <p className="text-2xl font-bold text-green-400">
+                {formatCurrency(revenueData.totalRevenue)}
+              </p>
+            </div>
+            <DollarSign className="w-8 h-8 text-green-400" />
+          </div>
+        </motion.div>
 
-        <TabsContent value="cpf" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Consulta CPF</CardTitle>
-              <CardDescription>
-                Digite o CPF para consultar dados na Receita Federal
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <Label htmlFor="cpf">CPF</Label>
-                  <Input
-                    id="cpf"
-                    value={cpf}
-                    onChange={(e) => setCpf(formatarCPF(e.target.value))}
-                    placeholder="000.000.000-00"
-                    maxLength={14}
-                  />
+        <motion.div whileHover={{ scale: 1.02 }} className="glass-effect rounded-xl p-6 gradient-card border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Receita Mensal</p>
+              <p className="text-2xl font-bold text-blue-400">
+                {formatCurrency(revenueData.monthlyRevenue)}
+              </p>
+            </div>
+            <TrendingUp className="w-8 h-8 text-blue-400" />
+          </div>
+        </motion.div>
+
+        <motion.div whileHover={{ scale: 1.02 }} className="glass-effect rounded-xl p-6 gradient-card border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Crescimento</p>
+              <p className="text-2xl font-bold text-purple-400">
+                +{revenueData.growthRate}%
+              </p>
+            </div>
+            <BarChart3 className="w-8 h-8 text-purple-400" />
+          </div>
+        </motion.div>
+
+        <motion.div whileHover={{ scale: 1.02 }} className="glass-effect rounded-xl p-6 gradient-card border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Meta Atingida</p>
+              <p className="text-2xl font-bold text-orange-400">
+                85%
+              </p>
+            </div>
+            <PieChart className="w-8 h-8 text-orange-400" />
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Gráficos e Análises */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          className="glass-effect rounded-xl p-6 border"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Receita por Período</h3>
+            <Button variant="outline" size="sm">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Ver Detalhes
+            </Button>
+          </div>
+          <div className="h-64 flex items-center justify-center">
+            <div className="text-center">
+              <TrendingUp className="w-16 h-16 text-green-500 mx-auto mb-4" />
+              <p className="text-2xl font-bold">{formatCurrency(revenueData.monthlyRevenue)}</p>
+              <p className="text-muted-foreground">Este mês</p>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+          className="glass-effect rounded-xl p-6 border"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Top Produtos</h3>
+            <Button variant="outline" size="sm">
+              <PieChart className="w-4 h-4 mr-2" />
+              Ver Detalhes
+            </Button>
+          </div>
+          <div className="space-y-3">
+            {revenueData.topProducts.map((product, index) => (
+              <div key={index} className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${
+                    index === 0 ? 'from-green-500 to-emerald-500' :
+                    index === 1 ? 'from-blue-500 to-cyan-500' :
+                    'from-purple-500 to-pink-500'
+                  }`} />
+                  <span className="text-sm">{product.name}</span>
                 </div>
-                <div className="flex items-end">
-                  <Button 
-                    onClick={consultarCPF} 
-                    disabled={loadingCPF}
-                    className="min-w-[120px]"
-                  >
-                    {loadingCPF ? "Consultando..." : "Consultar"}
-                  </Button>
-                </div>
+                <span className="text-sm font-medium">
+                  {formatCurrency(product.revenue)}
+                </span>
               </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
 
-              {dadosCPF && (
-                <div className="mt-6 space-y-4">
-                  <Separator />
-                  <h3 className="text-lg font-semibold">Dados da Receita Federal</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">Nome</Label>
-                      <p className="text-lg">{dadosCPF.nome}</p>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">CPF</Label>
-                      <p className="text-lg">{dadosCPF.cpf}</p>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">Data de Nascimento</Label>
-                      <p className="text-lg">{new Date(dadosCPF.dataNascimento).toLocaleDateString('pt-BR')}</p>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">Situação Cadastral</Label>
-                      <Badge variant={dadosCPF.situacaoCadastral === 'REGULAR' ? 'default' : 'destructive'}>
-                        {dadosCPF.situacaoCadastral}
-                      </Badge>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">Data de Inscrição</Label>
-                      <p className="text-lg">{new Date(dadosCPF.dataInscricao).toLocaleDateString('pt-BR')}</p>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">Data de Óbito</Label>
-                      <p className="text-lg">{dadosCPF.dataObito ? new Date(dadosCPF.dataObito).toLocaleDateString('pt-BR') : 'N/A'}</p>
-                    </div>
-                  </div>
-
-                  {dadosCPF.endereco && (
-                    <div className="mt-4">
-                      <Label className="text-sm font-medium text-gray-500">Endereço</Label>
-                      <p className="text-lg">
-                        {dadosCPF.endereco.logradouro}, {dadosCPF.endereco.bairro} - {dadosCPF.endereco.cidade}/{dadosCPF.endereco.uf} - CEP: {dadosCPF.endereco.cep}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="mt-4">
-                    <Label className="text-sm font-medium text-gray-500">Última Atualização</Label>
-                    <p className="text-sm text-gray-600">
-                      {new Date(dadosCPF.ultimaAtualizacao).toLocaleString('pt-BR')}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="cnpj" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Consulta CNPJ</CardTitle>
-              <CardDescription>
-                Digite o CNPJ para consultar dados na Receita Federal
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <Label htmlFor="cnpj">CNPJ</Label>
-                  <Input
-                    id="cnpj"
-                    value={cnpj}
-                    onChange={(e) => setCnpj(formatarCNPJ(e.target.value))}
-                    placeholder="00.000.000/0000-00"
-                    maxLength={18}
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button 
-                    onClick={consultarCNPJ} 
-                    disabled={loadingCNPJ}
-                    className="min-w-[120px]"
-                  >
-                    {loadingCNPJ ? "Consultando..." : "Consultar"}
-                  </Button>
-                </div>
-              </div>
-
-              {dadosCNPJ && (
-                <div className="mt-6 space-y-4">
-                  <Separator />
-                  <h3 className="text-lg font-semibold">Dados da Receita Federal</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">Razão Social</Label>
-                      <p className="text-lg">{dadosCNPJ.razaoSocial}</p>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">CNPJ</Label>
-                      <p className="text-lg">{dadosCNPJ.cnpj}</p>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">Nome Fantasia</Label>
-                      <p className="text-lg">{dadosCNPJ.nomeFantasia}</p>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">Situação Cadastral</Label>
-                      <Badge variant={dadosCNPJ.situacaoCadastral === 'ATIVA' ? 'default' : 'destructive'}>
-                        {dadosCNPJ.situacaoCadastral}
-                      </Badge>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">Data de Abertura</Label>
-                      <p className="text-lg">{new Date(dadosCNPJ.dataAbertura).toLocaleDateString('pt-BR')}</p>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">Tipo de Empresa</Label>
-                      <p className="text-lg">{dadosCNPJ.tipoEmpresa}</p>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-sm font-medium text-gray-500">Capital Social</Label>
-                      <p className="text-lg">
-                        R$ {dadosCNPJ.capitalSocial.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                  </div>
-
-                  {dadosCNPJ.endereco && (
-                    <div className="mt-4">
-                      <Label className="text-sm font-medium text-gray-500">Endereço</Label>
-                      <p className="text-lg">
-                        {dadosCNPJ.endereco.logradouro}, {dadosCNPJ.endereco.bairro} - {dadosCNPJ.endereco.cidade}/{dadosCNPJ.endereco.uf} - CEP: {dadosCNPJ.endereco.cep}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="mt-4">
-                    <Label className="text-sm font-medium text-gray-500">Última Atualização</Label>
-                    <p className="text-sm text-gray-600">
-                      {new Date(dadosCNPJ.ultimaAtualizacao).toLocaleString('pt-BR')}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+      {/* Resumo Detalhado */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="glass-effect rounded-xl p-6 border"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Análise de Receita</h3>
+          <Button variant="outline" size="sm">
+            Ver Relatório Completo
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <p className="text-sm text-muted-foreground">Receita Média</p>
+            <p className="text-xl font-bold text-green-600">
+              {formatCurrency(revenueData.totalRevenue / 12)}
+            </p>
+            <p className="text-xs text-muted-foreground">por mês</p>
+          </div>
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <p className="text-sm text-muted-foreground">Projeção Anual</p>
+            <p className="text-xl font-bold text-blue-600">
+              {formatCurrency(revenueData.totalRevenue * 1.15)}
+            </p>
+            <p className="text-xs text-muted-foreground">+15% vs ano anterior</p>
+          </div>
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <p className="text-sm text-muted-foreground">Margem de Lucro</p>
+            <p className="text-xl font-bold text-purple-600">32%</p>
+            <p className="text-xs text-muted-foreground">média do setor</p>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

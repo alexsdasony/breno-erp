@@ -1,11 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart3, TrendingUp, TrendingDown, DollarSign, PieChart, Filter, Download, Calendar, Building, BookOpen, Target, Activity } from 'lucide-react';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { 
+  BarChart3, 
+  PieChart, 
+  TrendingUp, 
+  FileText,
+  Download,
+  Calendar,
+  DollarSign,
+  Users,
+  Package
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency } from '@/lib/utils.js';
-import apiService from '@/services/api.js';
 
+<<<<<<< HEAD
 const ReportsModule = ({ toast }) => {
   const { data, activeSegmentId, loadCostCenters, loadChartOfAccounts } = useAppData();
   const [dreData, setDreData] = useState(null);
@@ -29,9 +39,63 @@ const ReportsModule = ({ toast }) => {
   useEffect(() => {
     if (filters.startDate && filters.endDate) {
       generateDRE();
-    }
-  }, [filters, activeSegmentId]);
+=======
+const ReportsModule = () => {
+  const { data, activeSegmentId } = useAppData();
 
+  const reports = [
+    {
+      id: 1,
+      title: 'Relatório de Vendas',
+      description: 'Análise detalhada das vendas por período',
+      icon: <TrendingUp className="w-6 h-6" />,
+      color: 'from-green-500 to-emerald-500',
+      type: 'sales'
+    },
+    {
+      id: 2,
+      title: 'Relatório Financeiro',
+      description: 'Receitas, despesas e lucros',
+      icon: <DollarSign className="w-6 h-6" />,
+      color: 'from-blue-500 to-cyan-500',
+      type: 'financial'
+    },
+    {
+      id: 3,
+      title: 'Relatório de Clientes',
+      description: 'Análise do comportamento dos clientes',
+      icon: <Users className="w-6 h-6" />,
+      color: 'from-purple-500 to-pink-500',
+      type: 'customers'
+    },
+    {
+      id: 4,
+      title: 'Relatório de Estoque',
+      description: 'Status do inventário e produtos',
+      icon: <Package className="w-6 h-6" />,
+      color: 'from-orange-500 to-red-500',
+      type: 'inventory'
+    },
+    {
+      id: 5,
+      title: 'Relatório de NF-e',
+      description: 'Documentos fiscais emitidos',
+      icon: <FileText className="w-6 h-6" />,
+      color: 'from-indigo-500 to-purple-500',
+      type: 'nfe'
+    },
+    {
+      id: 6,
+      title: 'Relatório de Cobranças',
+      description: 'Status das cobranças e recebimentos',
+      icon: <BarChart3 className="w-6 h-6" />,
+      color: 'from-teal-500 to-green-500',
+      type: 'billing'
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
+    }
+  ];
+
+<<<<<<< HEAD
   const loadCostCentersData = async () => {
     try {
       const result = await loadCostCenters();
@@ -156,6 +220,16 @@ const ReportsModule = ({ toast }) => {
     const revenues = dreData.revenues?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
     const expenses = dreData.expenses?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
     return revenues > 0 ? ((revenues - expenses) / revenues) * 100 : 0;
+=======
+  const handleGenerateReport = (reportType) => {
+    console.log(`Gerando relatório: ${reportType}`);
+    // Implementar geração de relatório
+  };
+
+  const handleExportReport = (reportType) => {
+    console.log(`Exportando relatório: ${reportType}`);
+    // Implementar exportação
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
   };
 
   return (
@@ -166,401 +240,98 @@ const ReportsModule = ({ toast }) => {
     >
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            Relatórios Contábeis
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
+            Relatórios
           </h1>
-          <p className="text-muted-foreground mt-2">DRE baseado em centros de custo e contas contábeis.</p>
+          <p className="text-muted-foreground mt-2">Gere e visualize relatórios do seu negócio</p>
         </div>
         <div className="flex space-x-2">
-          <Button onClick={() => exportDRE('pdf')} variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            PDF
+          <Button variant="outline">
+            <Calendar className="w-4 h-4 mr-2" />
+            Período
           </Button>
-          <Button onClick={() => exportDRE('excel')} variant="outline">
+          <Button variant="outline">
             <Download className="w-4 h-4 mr-2" />
-            Excel
+            Exportar Todos
           </Button>
         </div>
       </div>
 
-      {/* Filtros */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-effect rounded-xl p-6 border">
-        <h3 className="text-lg font-semibold mb-4 flex items-center">
-          <Filter className="w-5 h-5 mr-2" />
-          Filtros do Relatório
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div>
-            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
-              Data Inicial
-            </label>
-            <input
-              id="startDate"
-              name="startDate"
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          
-          <div>
-            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
-              Data Final
-            </label>
-            <input
-              id="endDate"
-              name="endDate"
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          
-          <div>
-            <label htmlFor="costCenter" className="block text-sm font-medium text-gray-700 mb-1">
-              Centro de Custo
-            </label>
-            <select
-              id="costCenter"
-              name="costCenter"
-              value={filters.costCenterId}
-              onChange={(e) => setFilters({ ...filters, costCenterId: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Todos os Centros</option>
-              {Array.isArray(costCenters) ? costCenters.map(center => (
-                <option key={center.id} value={center.id}>
-                  {center.name}
-                </option>
-              )) : null}
-            </select>
-          </div>
-          
-          <div>
-            <label htmlFor="accountType" className="block text-sm font-medium text-gray-700 mb-1">
-              Tipo de Conta
-            </label>
-            <select
-              id="accountType"
-              name="accountType"
-              value={filters.accountType}
-              onChange={(e) => setFilters({ ...filters, accountType: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Todos os Tipos</option>
-              <option value="receita">Receita</option>
-              <option value="despesa">Despesa</option>
-              <option value="ativo">Ativo</option>
-              <option value="passivo">Passivo</option>
-              <option value="patrimonio">Patrimônio</option>
-            </select>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {reports.map((report, index) => (
+          <motion.div
+            key={report.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="glass-effect rounded-xl p-6 border hover:shadow-lg transition-shadow"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className={`w-12 h-12 bg-gradient-to-r ${report.color} rounded-lg flex items-center justify-center text-white`}>
+                {report.icon}
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGenerateReport(report.type)}
+                >
+                  Gerar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleExportReport(report.type)}
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">{report.title}</h3>
+            <p className="text-muted-foreground text-sm mb-4">{report.description}</p>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Última atualização:</span>
+              <span>Hoje</span>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="glass-effect rounded-xl p-6 border"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Relatórios Rápidos</h3>
+          <Button variant="outline" size="sm">
+            Ver Todos
+          </Button>
         </div>
-        
-        {/* Agrupamento */}
-        <div className="mb-6">
-          <label htmlFor="groupBy" className="block text-sm font-medium text-gray-700 mb-2">
-            Agrupar por:
-          </label>
-          <div className="flex flex-wrap gap-3">
-            <label className="flex items-center">
-              <input
-                id="groupByAccount"
-                name="groupBy"
-                type="radio"
-                value="account"
-                checked={filters.groupBy === 'account'}
-                onChange={(e) => setFilters({ ...filters, groupBy: e.target.value })}
-                className="mr-2"
-              />
-              Conta Contábil
-            </label>
-            <label className="flex items-center">
-              <input
-                id="groupByCostCenter"
-                name="groupBy"
-                type="radio"
-                value="costCenter"
-                checked={filters.groupBy === 'costCenter'}
-                onChange={(e) => setFilters({ ...filters, groupBy: e.target.value })}
-                className="mr-2"
-              />
-              Centro de Custo
-            </label>
-            <label className="flex items-center">
-              <input
-                id="groupByBoth"
-                name="groupBy"
-                type="radio"
-                value="both"
-                checked={filters.groupBy === 'both'}
-                onChange={(e) => setFilters({ ...filters, groupBy: e.target.value })}
-                className="mr-2"
-              />
-              Ambos
-            </label>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <DollarSign className="w-8 h-8 text-green-500 mx-auto mb-2" />
+            <p className="text-2xl font-bold">{formatCurrency(data.transactions?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0)}</p>
+            <p className="text-sm text-muted-foreground">Receita Total</p>
+          </div>
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+            <p className="text-2xl font-bold">{data.customers?.length || 0}</p>
+            <p className="text-sm text-muted-foreground">Total Clientes</p>
+          </div>
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <Package className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+            <p className="text-2xl font-bold">{data.products?.length || 0}</p>
+            <p className="text-sm text-muted-foreground">Total Produtos</p>
+          </div>
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <FileText className="w-8 h-8 text-orange-500 mx-auto mb-2" />
+            <p className="text-2xl font-bold">{data.nfeList?.length || 0}</p>
+            <p className="text-sm text-muted-foreground">NF-es Emitidas</p>
           </div>
         </div>
       </motion.div>
-
-      {/* Botões de Ação */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        <Button
-          onClick={generateDRE}
-          disabled={loading}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
-          aria-label="Gerar relatório DRE"
-        >
-          {loading ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-          ) : (
-            <BarChart3 className="h-4 w-4" />
-          )}
-          {loading ? 'Gerando...' : 'Gerar DRE'}
-        </Button>
-        
-        <Button
-          onClick={() => exportDRE('pdf')}
-          disabled={!dreData || loading}
-          className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
-          aria-label="Exportar DRE para PDF"
-        >
-          <Download className="h-4 w-4" />
-          Exportar PDF
-        </Button>
-        
-        <Button
-          onClick={() => exportDRE('excel')}
-          disabled={!dreData || loading}
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
-          aria-label="Exportar DRE para Excel"
-        >
-          <Download className="h-4 w-4" />
-          Exportar Excel
-        </Button>
-      </div>
-
-      {/* Resumo Executivo */}
-      {dreData && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="glass-effect rounded-xl p-6 border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Receitas Totais</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {formatCurrency(dreData.revenues?.reduce((sum, item) => sum + (item.total || 0), 0) || 0)}
-                </p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-green-600" />
-            </div>
-          </div>
-          
-          <div className="glass-effect rounded-xl p-6 border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Despesas Totais</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {formatCurrency(dreData.expenses?.reduce((sum, item) => sum + (item.total || 0), 0) || 0)}
-                </p>
-              </div>
-              <TrendingDown className="w-8 h-8 text-red-600" />
-            </div>
-          </div>
-          
-          <div className="glass-effect rounded-xl p-6 border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Resultado Líquido</p>
-                <p className={`text-2xl font-bold ${calculateNetIncome() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(calculateNetIncome())}
-                </p>
-              </div>
-              <DollarSign className="w-8 h-8 text-blue-600" />
-            </div>
-          </div>
-          
-          <div className="glass-effect rounded-xl p-6 border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Margem de Lucro</p>
-                <p className={`text-2xl font-bold ${calculateMargin() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {calculateMargin().toFixed(1)}%
-                </p>
-              </div>
-              <Target className="w-8 h-8 text-purple-600" />
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* DRE Detalhado */}
-      {dreData && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-effect rounded-xl p-6 border">
-          <h3 className="text-lg font-semibold mb-4 flex items-center">
-            <BarChart3 className="w-5 h-5 mr-2" />
-            Demonstração do Resultado do Exercício
-          </h3>
-          
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
-              <span className="ml-2">Gerando relatório...</span>
-            </div>
-          ) : dreData ? (
-            <div className="space-y-6">
-              {/* Receitas */}
-              {dreData.revenues && dreData.revenues.length > 0 && (
-                <div>
-                  <h4 className="text-lg font-semibold text-green-600 mb-3 flex items-center">
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    Receitas Operacionais
-                  </h4>
-                  <div className="space-y-2">
-                    {dreData.revenues.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">{item.name || item.account_name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {item.cost_center_name && `${item.cost_center_name} • `}
-                            {item.account_code}
-                          </p>
-                        </div>
-                        <p className="font-bold text-green-600">{formatCurrency(item.total)}</p>
-                      </div>
-                    ))}
-                    <div className="flex justify-between items-center p-3 bg-green-100 rounded-lg border-t-2 border-green-300">
-                      <p className="font-bold">Total Receitas</p>
-                      <p className="font-bold text-green-600">
-                        {formatCurrency(dreData.revenues.reduce((sum, item) => sum + (item.total || 0), 0))}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Despesas */}
-              {dreData.expenses && dreData.expenses.length > 0 && (
-                <div>
-                  <h4 className="text-lg font-semibold text-red-600 mb-3 flex items-center">
-                    <TrendingDown className="w-4 h-4 mr-2" />
-                    Custos e Despesas Operacionais
-                  </h4>
-                  <div className="space-y-2">
-                    {dreData.expenses.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">{item.name || item.account_name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {item.cost_center_name && `${item.cost_center_name} • `}
-                            {item.account_code}
-                          </p>
-                        </div>
-                        <p className="font-bold text-red-600">{formatCurrency(item.total)}</p>
-                      </div>
-                    ))}
-                    <div className="flex justify-between items-center p-3 bg-red-100 rounded-lg border-t-2 border-red-300">
-                      <p className="font-bold">Total Despesas</p>
-                      <p className="font-bold text-red-600">
-                        {formatCurrency(dreData.expenses.reduce((sum, item) => sum + (item.total || 0), 0))}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Resultado */}
-              <div className="border-t-2 border-gray-300 pt-4">
-                <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-lg font-bold">Resultado Líquido do Exercício</p>
-                  <p className={`text-2xl font-bold ${calculateNetIncome() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatCurrency(calculateNetIncome())}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <BarChart3 className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <p>Nenhum dado disponível para o período selecionado.</p>
-            </div>
-          )}
-        </motion.div>
-      )}
-
-      {/* Análise por Centro de Custo */}
-      {dreData && dreData.costCenterAnalysis && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-effect rounded-xl p-6 border">
-          <h3 className="text-lg font-semibold mb-4 flex items-center">
-            <Building className="w-5 h-5 mr-2" />
-            Análise por Centro de Custo
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {dreData.costCenterAnalysis.map((center, index) => (
-              <div key={index} className="p-4 border rounded-lg">
-                <h4 className="font-semibold mb-2">{center.name}</h4>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span>Receitas:</span>
-                    <span className="text-green-600 font-medium">{formatCurrency(center.revenues || 0)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Despesas:</span>
-                    <span className="text-red-600 font-medium">{formatCurrency(center.expenses || 0)}</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-1">
-                    <span className="font-medium">Resultado:</span>
-                    <span className={`font-bold ${(center.revenues - center.expenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(center.revenues - center.expenses)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Análise por Conta Contábil */}
-      {dreData && dreData.accountAnalysis && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="glass-effect rounded-xl p-6 border">
-          <h3 className="text-lg font-semibold mb-4 flex items-center">
-            <BookOpen className="w-5 h-5 mr-2" />
-            Análise por Conta Contábil
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left p-3">Código</th>
-                  <th className="text-left p-3">Conta</th>
-                  <th className="text-left p-3">Tipo</th>
-                  <th className="text-left p-3">Centro de Custo</th>
-                  <th className="text-right p-3">Valor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dreData.accountAnalysis.map((account, index) => (
-                  <tr key={index} className="border-b border-border hover:bg-muted/50">
-                    <td className="p-3 font-mono text-sm">{account.account_code}</td>
-                    <td className="p-3 font-medium">{account.account_name}</td>
-                    <td className="p-3">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getAccountTypeColor(account.account_type)}`}>
-                        {getAccountTypeLabel(account.account_type)}
-                      </span>
-                    </td>
-                    <td className="p-3 text-sm">{account.cost_center_name || '-'}</td>
-                    <td className={`p-3 text-right font-medium ${account.account_type === 'revenue' ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(account.total)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
-      )}
     </motion.div>
   );
 };

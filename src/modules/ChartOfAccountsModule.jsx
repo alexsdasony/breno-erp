@@ -2,11 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CreditCard, Plus, Edit, Trash2, Save, XCircle, Search, Filter, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppData } from '@/hooks/useAppData';
+import { useChartOfAccounts } from '@/modules/ChartOfAccounts/hooks/useChartOfAccounts';
 import apiService from '@/services/api';
 
+<<<<<<< HEAD
 const ChartOfAccountsModule = ({ toast }) => {
   const { data, activeSegmentId, loadChartOfAccounts } = useAppData();
+=======
+const ChartOfAccountsModule = () => {
+  const { data, activeSegmentId, toast } = useAppData();
+  const { chartOfAccounts, loading, create, update, remove, loadMore, hasMore } = useChartOfAccounts({ 
+    segmentId: activeSegmentId 
+  });
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentAccount, setCurrentAccount] = useState(null);
@@ -22,10 +31,33 @@ const ChartOfAccountsModule = ({ toast }) => {
 
   const segments = data.segments || [];
 
+<<<<<<< HEAD
   // No need to load accounts separately - they are loaded in essential data
   // useEffect(() => {
   //   loadChartOfAccounts();
   // }, [loadChartOfAccounts]);
+=======
+  // Load accounts when component mounts and when segment changes
+  useEffect(() => {
+    loadAccounts();
+  }, [activeSegmentId]);
+
+  const loadAccounts = async () => {
+    try {
+      const response = await fetch('/api/chart-of-accounts', {
+        headers: {
+          'Authorization': `Bearer ${apiService.getToken()}`
+        }
+      });
+      if (response.ok) {
+        const accountsData = await response.json();
+        setAccounts(accountsData);
+      }
+    } catch (error) {
+      console.error('Error loading accounts:', error);
+    }
+  };
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
 
   const handleAddNew = () => {
     setIsEditing(false);
@@ -58,6 +90,7 @@ const ChartOfAccountsModule = ({ toast }) => {
   };
 
   const handleDelete = async (id) => {
+<<<<<<< HEAD
     try {
       const response = await fetch(`/api/chart-of-accounts/${id}`, {
         method: 'DELETE',
@@ -87,6 +120,10 @@ const ChartOfAccountsModule = ({ toast }) => {
         description: "Erro ao excluir conta.",
         variant: "destructive"
       });
+=======
+    if (window.confirm('Tem certeza que deseja excluir esta conta contábil?')) {
+      await remove(id);
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
     }
   };
 
@@ -103,26 +140,17 @@ const ChartOfAccountsModule = ({ toast }) => {
     }
 
     try {
-      const url = isEditing ? `/api/chart-of-accounts/${currentAccount.id}` : '/api/chart-of-accounts';
-      const method = isEditing ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiService.getToken()}`
-        },
-        body: JSON.stringify({
-          account_code: formData.account_code,
-          account_name: formData.account_name,
-          account_type: formData.account_type,
-          account_category: formData.account_category,
-          description: formData.description,
-          parent_account_id: formData.parent_account_id || null,
-          segment_id: formData.segment_id || null
-        })
-      });
+      const accountData = {
+        account_code: formData.account_code,
+        account_name: formData.account_name,
+        account_type: formData.account_type,
+        account_category: formData.account_category,
+        description: formData.description,
+        parent_account_id: formData.parent_account_id || null,
+        segment_id: formData.segment_id || null
+      };
 
+<<<<<<< HEAD
       if (response.ok) {
         toast({
           title: "Sucesso",
@@ -130,21 +158,17 @@ const ChartOfAccountsModule = ({ toast }) => {
         });
         setShowForm(false);
         loadChartOfAccounts();
+=======
+      if (isEditing && currentAccount) {
+        await update(currentAccount.id, accountData);
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
       } else {
-        const error = await response.json();
-        toast({
-          title: "Erro",
-          description: error.error || "Erro ao salvar conta.",
-          variant: "destructive"
-        });
+        await create(accountData);
       }
+
+      resetForm();
     } catch (error) {
-      console.error('Error saving account:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao salvar conta.",
-        variant: "destructive"
-      });
+      console.error('Erro ao salvar conta contábil:', error);
     }
   };
 
@@ -170,9 +194,13 @@ const ChartOfAccountsModule = ({ toast }) => {
     }
   };
 
+<<<<<<< HEAD
   console.log('📊 ChartOfAccountsModule - data.chartOfAccounts:', data.chartOfAccounts?.length || 0);
   
   const filteredAccounts = (data.chartOfAccounts || []).filter(account => 
+=======
+  const filteredAccounts = chartOfAccounts.filter(account => 
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
     !activeSegmentId || account.segment_id === activeSegmentId
   );
   

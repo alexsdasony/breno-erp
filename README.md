@@ -2,16 +2,39 @@
 
 Sistema ERP completo desenvolvido com **Next.js 15**, **React 18**, **Tailwind CSS** e **Supabase** como backend.
 
+## 🚀 Principais Atualizações (Agosto/2025)
+
+### 🔄 Padronização de Módulos
+- **Padrão Único**: Todos os módulos seguem agora o mesmo padrão do módulo Products
+- **Estrutura Consistente**: Cada módulo implementa o padrão `Module` → `Hook` → `Service` → `API Service`
+- **Paginacão Unificada**: Implementação consistente de paginação em todos os módulos
+
+### 🔄 Melhorias na Integração Frontend-Backend
+- **Padronização de CORS**: Headers CORS completos em todas as edge functions
+- **Mapeamento de Dados**: Conversão consistente entre camelCase (frontend) e snake_case (backend)
+- **Tratamento de Erros**: Mensagens de erro padronizadas e mais descritivas
+- **Tipagem Forte**: Validação e conversão de tipos em todas as requisições
+
+### ✅ Testes E2E
+- **Cobertura Completa**: Testes E2E para todos os módulos principais
+- **Padronização**: Estrutura de testes consistente entre módulos
+- **Testes CRUD**: Operações Create, Read, Update e Delete testadas para cada entidade
+
+### 🛠️ Melhorias Técnicas
+- **Hooks Reutilizáveis**: Hooks compartilhados entre módulos semelhantes (ex: usePartners para Clientes e Fornecedores)
+- **Serviços Compartilhados**: Lógica comum centralizada em serviços reutilizáveis
+- **Performance**: Otimizações de carregamento e renderização
+
 ## 🏗️ Arquitetura
 
-### Frontend
+### Frontend (Atualizado)
 - **Framework**: Next.js 15 com App Router
 - **UI**: React 18 + Tailwind CSS + Radix UI
 - **Estado**: Context API + Hooks customizados
 - **Roteamento**: Next.js App Router (file-based routing)
 - **Autenticação**: JWT com sessionStorage
 
-### Backend
+### Backend (Atualizado)
 - **Banco de Dados**: Supabase (PostgreSQL)
 - **API**: Supabase Edge Functions (Deno)
 - **Autenticação**: JWT customizado
@@ -22,7 +45,7 @@ Sistema ERP completo desenvolvido com **Next.js 15**, **React 18**, **Tailwind C
 ```
 breno-erp/
 ├── app/                          # Next.js App Router
-│   ├── (dashboard)/             # Grupo de rotas autenticadas
+│   ├── (admin)/                # Grupo de rotas autenticadas
 │   │   ├── dashboard/           # Dashboard principal
 │   │   ├── financial/          # Módulo financeiro
 │   │   ├── sales/              # Módulo de vendas
@@ -159,7 +182,7 @@ npm start
 
 ## 🧪 Testes
 
-### Testes E2E
+### Testes E2E (Atualizado)
 ```bash
 # Executar todos os testes
 npm run test:e2e
@@ -167,12 +190,64 @@ npm run test:e2e
 # Executar com interface
 npm run test:e2e:ui
 
-# Executar com browser visível
+# Executar com browser visível (recomendado para debug)
 npm run test:e2e:headed
+
+# Executar teste específico
+ex: npm test tests/e2e/products-crud.spec.js
 
 # Executar em modo debug
 npm run test:e2e:debug
+
+# Gerar relatório de cobertura
+npm run test:e2e:coverage
 ```
+
+### Estrutura dos Testes E2E
+```
+tests/e2e/
+├── accounts-payable-crud.spec.js
+├── billings-crud.spec.js
+├── chart-of-accounts-crud.spec.js
+├── cost-centers-crud.spec.js
+├── customers-crud.spec.js
+├── financial-documents-crud.spec.js
+├── nfe-crud.spec.js
+├── products-crud.spec.js
+├── sales-crud.spec.js
+└── suppliers-crud.spec.js
+```
+
+Cada teste segue o padrão:
+1. Navegação até o módulo
+2. Criação de um novo registro
+3. Verificação da criação
+4. Edição do registro
+5. Exclusão do registro
+
+## 📊 Módulos do Sistema (Atualizado)
+
+### Padrão de Implementação
+Cada módulo segue a seguinte estrutura:
+```
+src/modules/
+  ├── [ModuleName]Module.jsx     # Componente principal
+  ├── hooks/
+  │   └── use[ModuleName].js     # Lógica específica do módulo
+  └── services/
+      └── [moduleName]Service.js # Chamadas à API
+```
+
+### Hooks Compartilhados
+- `usePartners`: Gerencia clientes e fornecedores
+- `useCrud`: Operações CRUD genéricas
+- `useAppData`: Dados globais da aplicação
+- `useAuth`: Gerenciamento de autenticação
+
+### Serviços Compartilhados
+- `api.js`: Cliente HTTP base
+- `supabase.js`: Cliente Supabase
+- Serviços específicos por domínio (ex: `financialService.js`, `salesService.js`)
 
 ## 📊 Módulos do Sistema
 

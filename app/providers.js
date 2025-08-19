@@ -1,7 +1,7 @@
 'use client';
 
-import { AppDataProvider } from '@/hooks/useAppData';
 import { Toaster } from '@/components/ui/toaster';
+import { AppDataProvider } from '@/hooks/useAppData'
 
 export function Providers({ children }) {
   return (

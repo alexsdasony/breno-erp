@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppData } from '@/hooks/useAppData';
 import { Lock, ArrowLeft, KeyRound } from 'lucide-react';
 
 function ResetPasswordContent() {

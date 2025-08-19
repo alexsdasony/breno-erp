@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-user-token',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 }
 
 serve(async (req) => {
@@ -21,7 +22,10 @@ serve(async (req) => {
     const url = new URL(req.url)
     const pathSegments = url.pathname.split('/')
     const lastSegment = pathSegments[pathSegments.length - 1]
-    const isSpecificId = lastSegment && lastSegment !== 'cost-centers' && lastSegment.length > 10
+    
+    // Usar regex para detectar se é uma rota /:id (UUID ou número)
+    const isSpecificId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lastSegment) || 
+                        /^\d+$/.test(lastSegment)
 
     // GET - Listar todos
     if (req.method === 'GET' && !isSpecificId) {

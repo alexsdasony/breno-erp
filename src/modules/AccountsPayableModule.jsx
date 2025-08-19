@@ -5,11 +5,20 @@ import { PlusCircle, Edit, Trash2, Search, Filter, FileDown, Eye } from 'lucide-
 import ImportDataButton from '@/components/ui/ImportDataButton';
 import Modal from '@/components/ui/modal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppData } from '@/hooks/useAppData';
+import { useFinancialDocuments } from '@/modules/Financial/hooks/useFinancialDocuments';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const AccountsPayableModule = () => {
+<<<<<<< HEAD
   const { data, activeSegmentId, loadAccountsPayable, loadPartners, toast, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData } = useAppData();
+=======
+  const { data, activeSegmentId, toast } = useAppData();
+  const { documents: accountsPayable, loading, create, update, remove, loadMore, hasMore } = useFinancialDocuments({ 
+    segmentId: activeSegmentId,
+    direction: 'payable'
+  });
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [periodType, setPeriodType] = useState('all');
@@ -44,11 +53,15 @@ const AccountsPayableModule = () => {
   const suppliers = (data.partners || []).filter(p => (p.roles || p.partner_roles || []).some(r => r.role === 'supplier'));
   const accountCategories = data.accountCategories || [];
 
+<<<<<<< HEAD
   // Load financial documents (payables) and partners when component mounts
   useEffect(() => {
     loadAccountsPayable();
     loadPartners();
   }, [loadAccountsPayable, loadPartners]);
+=======
+  // Partners are loaded via useAppData, no need for separate loading
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -94,13 +107,17 @@ const AccountsPayableModule = () => {
     };
 
     if (currentAccount) {
-      await updateFinancialDocument(currentAccount.id, docPayload);
+      await update(currentAccount.id, docPayload);
     } else {
-      await addFinancialDocument(docPayload);
+      await create(docPayload);
     }
+<<<<<<< HEAD
     await loadAccountsPayable();
+=======
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
     resetForm();
-    toast({ title: "Sucesso", description: currentAccount ? "Conta atualizada!" : "Conta adicionada!" });
+    setShowCreateModal(false);
+    setShowEditModal(false);
   };
 
   const handleEdit = (account) => {
@@ -136,11 +153,14 @@ const AccountsPayableModule = () => {
 
   const confirmDelete = async () => {
     if (currentAccount) {
+<<<<<<< HEAD
       await deleteFinancialDocument(currentAccount.id);
       await loadAccountsPayable();
+=======
+      await remove(currentAccount.id);
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
       setShowDeleteConfirm(false);
       setCurrentAccount(null);
-      toast({ title: "Sucesso", description: "Conta excluída!" });
     }
   };
 
@@ -184,7 +204,11 @@ const AccountsPayableModule = () => {
   }
 
   // Usar status calculado em toda a renderização e nos filtros
+<<<<<<< HEAD
   const filteredAccounts = (data.accountsPayable || [])
+=======
+  const filteredAccounts = (accountsPayable || [])
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
     .map(account => ({ ...account, status: getStatusWithDueDate(account) }))
     .filter(account => {
       // Se activeSegmentId é 0 ou null (Todos os Segmentos), mostrar todas as contas

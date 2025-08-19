@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppData } from '@/hooks/useAppData';
 import { LogIn, UserPlus, Briefcase, KeyRound } from 'lucide-react';
 
 export default function LoginPage() {

@@ -57,8 +57,8 @@ test('E2E Financial - listar e criar transação (caminho feliz)', async ({ page
   // Verificação robusta: consultar diretamente a Edge Function até encontrar a descrição
   const envText = fs.readFileSync('env.example', 'utf-8');
   const getEnv = (k) => (envText.match(new RegExp('^' + k + '=(.*)$', 'm')) || [null, ''])[1].trim();
-  const baseUrl = getEnv('VITE_SUPABASE_URL');
-  const anonKey = getEnv('VITE_SUPABASE_ANON_KEY');
+  const baseUrl = getEnv('NEXT_PUBLIC_SUPABASE_URL');
+  const anonKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
   if (!baseUrl || !anonKey) {
     throw new Error('Variáveis do Supabase não encontradas em env.example');
   }

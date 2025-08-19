@@ -18,11 +18,19 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ImportDataButton from '@/components/ui/ImportDataButton';
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppData } from '@/hooks/useAppData';
+import { useBillings } from '@/modules/Billing/hooks/useBillings';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const BillingModule = () => {
+<<<<<<< HEAD
   const { data, activeSegmentId, loadBillings, loadPartners, metrics, toast, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData } = useAppData();
+=======
+  const { data, activeSegmentId, metrics, toast } = useAppData();
+  const { billings, loading, create, update, remove, loadMore, hasMore } = useBillings({ 
+    segmentId: activeSegmentId 
+  });
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
   const [showForm, setShowForm] = useState(false);
   const [editingBilling, setEditingBilling] = useState(null);
   const [viewingBilling, setViewingBilling] = useState(null);
@@ -49,11 +57,24 @@ const BillingModule = () => {
     }
   }, [data.segments, activeSegmentId, formData.segmentId]);
 
+<<<<<<< HEAD
   // Carregar cobranças e parceiros (clientes)
   useEffect(() => {
     loadBillings();
     loadPartners();
   }, [loadBillings, loadPartners]);
+=======
+  // Carregar documentos financeiros (recebíveis) e parceiros (clientes) quando componente monta e ao trocar segmento
+  useEffect(() => {
+    const params = {};
+    if (activeSegmentId && activeSegmentId !== 0) {
+      params.segment_id = activeSegmentId;
+    }
+    // SEMPRE buscar dados frescos da API
+    loadFinancialDocuments(params).catch(() => {});
+    loadPartners(params).catch(() => {});
+  }, [activeSegmentId, loadFinancialDocuments, loadPartners]);
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
 
   const customers = (data.partners || []).filter(p => (p.roles || p.partner_roles || []).some(r => r.role === 'customer'));
 
@@ -89,13 +110,16 @@ const BillingModule = () => {
     };
     
     if (editingBilling) {
-      await updateFinancialDocument(editingBilling.id, docPayload);
+      await update(editingBilling.id, docPayload);
       setEditingBilling(null);
     } else {
-      await addFinancialDocument(docPayload);
+      await create(docPayload);
     }
     
+<<<<<<< HEAD
     await loadBillings();
+=======
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
     setFormData({ customerId: '', customerName: '', amount: '', dueDate: '', status: 'Pendente', segmentId: '' });
     setShowForm(false);
   };
@@ -129,12 +153,16 @@ const BillingModule = () => {
 
   const handleDelete = async (billingId) => {
     if (window.confirm('Tem certeza que deseja excluir esta cobrança?')) {
+<<<<<<< HEAD
       try {
         await deleteFinancialDocument(billingId);
         await loadBillings();
       } catch (error) {
         console.error('Delete billing error:', error);
       }
+=======
+      await remove(billingId);
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
     }
   };
 
@@ -176,7 +204,11 @@ const BillingModule = () => {
   }
 
   // Usar status calculado em toda a renderização e nos filtros
+<<<<<<< HEAD
   let allBillings = (data.billings || [])
+=======
+  let allBillings = (billings || [])
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
     .map(billing => ({ ...billing, status: getStatusWithDueDate(billing) }));
 
   // Filtro por segmento

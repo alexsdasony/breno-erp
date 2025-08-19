@@ -3,7 +3,6 @@ import { toast } from '@/components/ui/use-toast';
 import apiService from '@/services/api';
 import { calculateMetrics } from '@/utils/metrics';
 import { useAuth } from './useAuth';
-import { useCrud } from './useCrud';
 
 const AppDataContext = createContext();
 
@@ -44,21 +43,14 @@ const defaultInitialData = {
   users: [], 
 };
 
-const defaultLazyState = {
-  costCenters: { loaded: false, loading: false },
-  accountsPayable: { loaded: false, loading: false },
-};
-
 export const AppDataProvider = ({ children }) => {
   const [data, setData] = useState(defaultInitialData);
   const [loading, setLoading] = useState(true);
   const [segments, setSegments] = useState(globalMemoryCache.segments);
   const [activeSegmentId, setActiveSegmentId] = useState(globalMemoryCache.activeSegmentId);
-  const [lazyState, setLazyState] = useState(defaultLazyState);
 
   // Use the corrected hooks
   const { currentUser, loading: authLoading, loginUser, registerUser, logoutUser, updateUserProfile, changeUserPassword, requestPasswordReset, resetPassword } = useAuth();
-  const crudOperations = useCrud();
 
   // Calculate metrics from local data
   const metrics = React.useMemo(() => {
@@ -96,6 +88,7 @@ export const AppDataProvider = ({ children }) => {
             const segmentsResponse = await apiService.getSegments();
             setSegments(segmentsResponse.segments || []);
             
+<<<<<<< HEAD
             // Load ONLY ESSENTIAL data with user's segment context
             const segmentFilter = currentUser.segment_id ? { segment_id: currentUser.segment_id } : {};
             
@@ -155,8 +148,11 @@ export const AppDataProvider = ({ children }) => {
             });
             
             console.log('✅ Essential data loaded successfully');
+=======
+            console.log('✅ App initialization completed');
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
           } catch (error) {
-            console.error('❌ Error loading essential data:', error);
+            console.error('❌ Error loading segments:', error);
           }
         }
       } catch (error) {
@@ -167,7 +163,7 @@ export const AppDataProvider = ({ children }) => {
     };
 
     if (!authLoading) {
-    initializeApp();
+      initializeApp();
     }
   }, [currentUser, authLoading]);
 
@@ -183,6 +179,7 @@ export const AppDataProvider = ({ children }) => {
     }
   }, []);
 
+<<<<<<< HEAD
   const loadTransactions = useCallback(async (params = {}) => {
     try {
       const response = await apiService.getTransactions(params);
@@ -399,6 +396,8 @@ export const AppDataProvider = ({ children }) => {
     }
   }, [lazyState.accountsPayable.loaded, lazyState.accountsPayable.loading, currentUser?.segment_id, loadAccountsPayable]);
 
+=======
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
   // Adicionar função para recarregar dados do dashboard
   const reloadDashboardData = useCallback(async (segmentId) => {
     try {
@@ -408,34 +407,7 @@ export const AppDataProvider = ({ children }) => {
       const newSegmentId = segmentId || activeSegmentId || 0;
       setActiveSegmentId(newSegmentId);
       
-      // Recarregar todos os dados essenciais com o novo filtro de segmento
-      const segmentFilter = newSegmentId && newSegmentId !== 0 ? { segment_id: newSegmentId } : {};
-        
-      console.log('📊 Recarregando transactions...');
-      await loadTransactions(segmentFilter);
-        
-      console.log('📦 Recarregando products...');
-      await loadProducts(segmentFilter);
-      
-      console.log('👥 Recarregando customers...');
-      await loadCustomers(segmentFilter);
-      
-      console.log('💰 Recarregando sales...');
-      await loadSales(segmentFilter);
-      
-      console.log('💳 Recarregando billings...');
-      await loadBillings(segmentFilter);
-      
-      console.log('📄 Recarregando NFe...');
-      await loadNFe(segmentFilter);
-      
-      console.log('💸 Recarregando accounts payable...');
-      await loadAccountsPayable(segmentFilter);
-      
-      console.log('🏢 Recarregando cost centers...');
-      await loadCostCenters(segmentFilter);
-      
-      console.log('✅ Dados recarregados com sucesso');
+      console.log('✅ Dashboard data reload completed');
     } catch (error) {
       console.error('❌ Erro ao recarregar dados:', error);
       toast({
@@ -444,7 +416,7 @@ export const AppDataProvider = ({ children }) => {
         variant: "destructive"
       });
     }
-  }, [activeSegmentId, loadTransactions, loadProducts, loadCustomers, loadSales, loadBillings, loadNFe, loadAccountsPayable, loadCostCenters, toast]);
+  }, [activeSegmentId, toast]);
 
   // Metrics functions
   const getDashboardMetrics = useCallback(async (params = {}) => {
@@ -492,6 +464,7 @@ export const AppDataProvider = ({ children }) => {
     setActiveSegmentId,
     reloadSegments,
     
+<<<<<<< HEAD
     // Data loading functions
     loadTransactions,
     loadProducts,
@@ -510,6 +483,8 @@ export const AppDataProvider = ({ children }) => {
     ensureCostCentersLoaded,
     ensureAccountsPayableLoaded,
     
+=======
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
     // Metrics functions
     getDashboardMetrics,
     getFinancialMetrics,
@@ -527,6 +502,7 @@ export const AppDataProvider = ({ children }) => {
     changeUserPassword,
     requestPasswordReset,
     resetPassword,
+<<<<<<< HEAD
     
     // CRUD operations from useCrud
     ...crudOperations,
@@ -594,6 +570,8 @@ export const AppDataProvider = ({ children }) => {
         throw error;
       }
     }
+=======
+>>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
   };
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

@@ -19,7 +19,7 @@ import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const NFeModule = () => {
-  const { data, metrics, addNFe, updateNFe, deleteNFe, importData, toast, loadCustomers } = useAppData();
+  const { data, metrics, toast } = useAppData();
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentNFe, setCurrentNFe] = useState(null);
