@@ -33,15 +33,10 @@ const SalesModule = () => {
     segmentId: activeSegmentId 
   });
   
-  // Carregar produtos quando o componente for montado e ao trocar de segmento
+  // Produtos são carregados via useAppData
   useEffect(() => {
-    const params = {};
-    if (activeSegmentId && activeSegmentId !== 0) {
-      params.segment_id = activeSegmentId;
-    }
-    // SEMPRE buscar dados frescos da API
-    loadProducts(params).catch(() => {});
-  }, [activeSegmentId, loadProducts]);
+    // Dados são carregados automaticamente
+  }, [activeSegmentId]);
   const [showForm, setShowForm] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -62,7 +57,7 @@ const SalesModule = () => {
   useEffect(() => {
     setFormData(prev => ({
       ...prev,
-    segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+    segmentId: activeSegmentId || (data.segments?.length > 0 ? data.segments[0].id : '')
     }));
   }, [activeSegmentId, data.segments]);
 
@@ -80,7 +75,7 @@ const SalesModule = () => {
   const total = subtotal - discount;
 
   const handleCustomerSelect = (customerId) => {
-    const selectedCustomer = data.customers.find(c => c.id === customerId);
+    const selectedCustomer = (data.customers || []).find(c => c.id === customerId);
     if (selectedCustomer) {
       setFormData({ ...formData, customerId: selectedCustomer.id, customerName: selectedCustomer.name });
     } else {
@@ -89,7 +84,7 @@ const SalesModule = () => {
   };
 
   const handleProductSelect = (productId) => {
-    const selectedProduct = data.products.find(p => p.id === productId);
+    const selectedProduct = (data.products || []).find(p => p.id === productId);
     if (selectedProduct) {
       setNewItem({
         ...newItem,
@@ -167,7 +162,7 @@ const SalesModule = () => {
       paymentMethod: 'dinheiro',
       status: 'Pendente',
       notes: '',
-      segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+      segmentId: activeSegmentId || (data.segments?.length > 0 ? data.segments[0].id : '')
     });
     setSaleItems([]);
     setNewItem({
@@ -193,7 +188,7 @@ const SalesModule = () => {
       paymentMethod: sale.paymentMethod || 'dinheiro',
       status: sale.status || 'Pendente',
       notes: sale.notes || '',
-      segmentId: sale.segmentId || activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+      segmentId: sale.segmentId || activeSegmentId || (data.segments?.length > 0 ? data.segments[0].id : '')
     });
     setSaleItems(sale.items || []);
     setShowEditModal(true);
@@ -237,14 +232,14 @@ const SalesModule = () => {
   };
 
   const saleHeaders = ['customerId', 'customerName', 'saleDate', 'totalAmount', 'status', 'segmentId'];
-  const filteredSales = sales.filter(s => {
+  const filteredSales = (sales || []).filter(s => {
     if (!activeSegmentId || activeSegmentId === 0) return true;
     return s.segmentId === activeSegmentId;
   });
   const segments = data.segments || [];
   
   // Filtrar produtos por segmento - se não há segmento selecionado, mostrar todos os produtos
-  const productsForSegment = data.products.filter(p => {
+  const productsForSegment = (data.products || []).filter(p => {
     // Se não há segmento selecionado, mostrar todos os produtos
     if (!formData.segmentId) return true;
     

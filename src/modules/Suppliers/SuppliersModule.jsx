@@ -42,7 +42,7 @@ const SuppliersModule = () => {
     segmentId: activeSegmentId || (data.segments?.[0]?.id || '')
   });
 
-  const filteredSuppliers = suppliers.filter(s => {
+  const filteredSuppliers = ((suppliers && Array.isArray(suppliers)) ? suppliers : []).filter(s => {
     if (!activeSegmentId || activeSegmentId === 0) {
       return true;
     }

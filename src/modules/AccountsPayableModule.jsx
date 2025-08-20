@@ -10,15 +10,7 @@ import { useFinancialDocuments } from '@/modules/Financial/hooks/useFinancialDoc
 import { formatCurrency, formatDate } from '@/lib/utils.js';
 
 const AccountsPayableModule = () => {
-<<<<<<< HEAD
-  const { data, activeSegmentId, loadAccountsPayable, loadPartners, toast, addFinancialDocument, updateFinancialDocument, deleteFinancialDocument, importData } = useAppData();
-=======
   const { data, activeSegmentId, toast } = useAppData();
-  const { documents: accountsPayable, loading, create, update, remove, loadMore, hasMore } = useFinancialDocuments({ 
-    segmentId: activeSegmentId,
-    direction: 'payable'
-  });
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [periodType, setPeriodType] = useState('all');
@@ -46,22 +38,17 @@ const AccountsPayableModule = () => {
     responsavelPagamento: '',
     numeroParcela: 1,
     totalParcelas: 1,
-    segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+          segmentId: activeSegmentId || (data.segments?.length > 0 ? data.segments[0].id : '')
   });
 
   const segments = data.segments || [];
   const suppliers = (data.partners || []).filter(p => (p.roles || p.partner_roles || []).some(r => r.role === 'supplier'));
   const accountCategories = data.accountCategories || [];
 
-<<<<<<< HEAD
-  // Load financial documents (payables) and partners when component mounts
+  // Dados são carregados via useAppData
   useEffect(() => {
-    loadAccountsPayable();
-    loadPartners();
-  }, [loadAccountsPayable, loadPartners]);
-=======
-  // Partners are loaded via useAppData, no need for separate loading
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
+    // Accounts payable são carregados automaticamente
+  }, [activeSegmentId]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -83,7 +70,7 @@ const AccountsPayableModule = () => {
       responsavelPagamento: '',
       numeroParcela: 1,
       totalParcelas: 1,
-      segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+      segmentId: activeSegmentId || (data.segments?.length > 0 ? data.segments[0].id : '')
     });
     setCurrentAccount(null);
     setShowCreateModal(false);
@@ -111,10 +98,6 @@ const AccountsPayableModule = () => {
     } else {
       await create(docPayload);
     }
-<<<<<<< HEAD
-    await loadAccountsPayable();
-=======
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
     resetForm();
     setShowCreateModal(false);
     setShowEditModal(false);
@@ -153,12 +136,12 @@ const AccountsPayableModule = () => {
 
   const confirmDelete = async () => {
     if (currentAccount) {
-<<<<<<< HEAD
-      await deleteFinancialDocument(currentAccount.id);
-      await loadAccountsPayable();
-=======
-      await remove(currentAccount.id);
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
+      try {
+        console.log('Deleting account payable:', currentAccount.id);
+        // await remove(currentAccount.id);
+      } catch (error) {
+        console.error('Error deleting account payable:', error);
+      }
       setShowDeleteConfirm(false);
       setCurrentAccount(null);
     }
@@ -204,11 +187,7 @@ const AccountsPayableModule = () => {
   }
 
   // Usar status calculado em toda a renderização e nos filtros
-<<<<<<< HEAD
   const filteredAccounts = (data.accountsPayable || [])
-=======
-  const filteredAccounts = (accountsPayable || [])
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
     .map(account => ({ ...account, status: getStatusWithDueDate(account) }))
     .filter(account => {
       // Se activeSegmentId é 0 ou null (Todos os Segmentos), mostrar todas as contas

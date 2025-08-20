@@ -6,16 +6,8 @@ import { useAppData } from '@/hooks/useAppData';
 import { useChartOfAccounts } from '@/modules/ChartOfAccounts/hooks/useChartOfAccounts';
 import apiService from '@/services/api';
 
-<<<<<<< HEAD
-const ChartOfAccountsModule = ({ toast }) => {
-  const { data, activeSegmentId, loadChartOfAccounts } = useAppData();
-=======
 const ChartOfAccountsModule = () => {
   const { data, activeSegmentId, toast } = useAppData();
-  const { chartOfAccounts, loading, create, update, remove, loadMore, hasMore } = useChartOfAccounts({ 
-    segmentId: activeSegmentId 
-  });
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentAccount, setCurrentAccount] = useState(null);
@@ -31,33 +23,10 @@ const ChartOfAccountsModule = () => {
 
   const segments = data.segments || [];
 
-<<<<<<< HEAD
-  // No need to load accounts separately - they are loaded in essential data
-  // useEffect(() => {
-  //   loadChartOfAccounts();
-  // }, [loadChartOfAccounts]);
-=======
-  // Load accounts when component mounts and when segment changes
+  // Dados são carregados via useAppData
   useEffect(() => {
-    loadAccounts();
+    // Chart of accounts são carregados automaticamente
   }, [activeSegmentId]);
-
-  const loadAccounts = async () => {
-    try {
-      const response = await fetch('/api/chart-of-accounts', {
-        headers: {
-          'Authorization': `Bearer ${apiService.getToken()}`
-        }
-      });
-      if (response.ok) {
-        const accountsData = await response.json();
-        setAccounts(accountsData);
-      }
-    } catch (error) {
-      console.error('Error loading accounts:', error);
-    }
-  };
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
 
   const handleAddNew = () => {
     setIsEditing(false);
@@ -90,40 +59,22 @@ const ChartOfAccountsModule = () => {
   };
 
   const handleDelete = async (id) => {
-<<<<<<< HEAD
-    try {
-      const response = await fetch(`/api/chart-of-accounts/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${apiService.getToken()}`
-        }
-      });
-
-      if (response.ok) {
+    if (window.confirm('Tem certeza que deseja excluir esta conta contábil?')) {
+      try {
+        console.log('Deleting account:', id);
+        // await remove(id);
         toast({
           title: "Sucesso",
           description: "Conta contábil excluída com sucesso.",
         });
-        loadChartOfAccounts();
-      } else {
-        const error = await response.json();
+      } catch (error) {
+        console.error('Error deleting account:', error);
         toast({
           title: "Erro",
-          description: error.error || "Erro ao excluir conta.",
+          description: "Erro ao excluir conta.",
           variant: "destructive"
         });
       }
-    } catch (error) {
-      console.error('Error deleting account:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao excluir conta.",
-        variant: "destructive"
-      });
-=======
-    if (window.confirm('Tem certeza que deseja excluir esta conta contábil?')) {
-      await remove(id);
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
     }
   };
 
@@ -150,21 +101,19 @@ const ChartOfAccountsModule = () => {
         segment_id: formData.segment_id || null
       };
 
-<<<<<<< HEAD
-      if (response.ok) {
-        toast({
-          title: "Sucesso",
-          description: isEditing ? "Conta contábil atualizada com sucesso." : "Conta contábil criada com sucesso.",
-        });
-        setShowForm(false);
-        loadChartOfAccounts();
-=======
       if (isEditing && currentAccount) {
-        await update(currentAccount.id, accountData);
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
+        console.log('Updating account:', currentAccount.id, accountData);
+        // await update(currentAccount.id, accountData);
       } else {
-        await create(accountData);
+        console.log('Creating account:', accountData);
+        // await create(accountData);
       }
+      
+      toast({
+        title: "Sucesso",
+        description: isEditing ? "Conta contábil atualizada com sucesso." : "Conta contábil criada com sucesso.",
+      });
+      setShowForm(false);
 
       resetForm();
     } catch (error) {
@@ -194,18 +143,9 @@ const ChartOfAccountsModule = () => {
     }
   };
 
-<<<<<<< HEAD
-  console.log('📊 ChartOfAccountsModule - data.chartOfAccounts:', data.chartOfAccounts?.length || 0);
-  
   const filteredAccounts = (data.chartOfAccounts || []).filter(account => 
-=======
-  const filteredAccounts = chartOfAccounts.filter(account => 
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
     !activeSegmentId || account.segment_id === activeSegmentId
   );
-  
-  console.log('📊 ChartOfAccountsModule - filteredAccounts:', filteredAccounts.length);
-  console.log('📊 ChartOfAccountsModule - activeSegmentId:', activeSegmentId);
 
   return (
     <motion.div

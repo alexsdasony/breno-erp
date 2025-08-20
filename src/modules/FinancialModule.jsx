@@ -93,7 +93,7 @@ const FinancialModule = () => {
     amount: '',
     category: '',
     costCenter: '',
-    segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+    segmentId: activeSegmentId || (data.segments?.length > 0 ? data.segments[0].id : '')
   });
 
   const resetForm = () => {
@@ -103,7 +103,7 @@ const FinancialModule = () => {
       amount: '',
       category: '',
       costCenter: '',
-      segmentId: activeSegmentId || (data.segments.length > 0 ? data.segments[0].id : '')
+      segmentId: activeSegmentId || (data.segments?.length > 0 ? data.segments[0].id : '')
     });
     setCurrentTransaction(null);
     setShowCreateModal(false);
@@ -147,9 +147,7 @@ const FinancialModule = () => {
       setShowCreateModal(false);
     }
 
-    // Recarregar lista para refletir imediatamente
-    const segmentFilter = activeSegmentId && activeSegmentId !== 0 ? { segment_id: activeSegmentId } : {};
-    try { await loadTransactions(segmentFilter); } catch (_) {}
+    // Dados são recarregados automaticamente via useAppData
     
     resetForm();
   };
@@ -187,9 +185,7 @@ const FinancialModule = () => {
           description: "Transação excluída com sucesso.",
         });
         
-        // Recarregar lista
-        const segmentFilter = activeSegmentId && activeSegmentId !== 0 ? { segment_id: activeSegmentId } : {};
-        try { await loadTransactions(segmentFilter); } catch (_) {}
+        // Dados são recarregados automaticamente via useAppData
       } catch (error) {
         toast({
           title: "Erro",
@@ -206,13 +202,11 @@ const FinancialModule = () => {
     const newSegmentId = e.target.value;
     setFormData(prev => ({ ...prev, segmentId: newSegmentId }));
     
-    // Recarregar transações do novo segmento
-    const segmentFilter = newSegmentId && newSegmentId !== '0' ? { segment_id: newSegmentId } : {};
-    try { await loadTransactions(segmentFilter); } catch (_) {}
+    // Dados são recarregados automaticamente via useAppData
   };
 
   // Filtrar transações por segmento ativo
-  const filteredTransactions = data.transactions.filter(transaction => {
+  const filteredTransactions = (data.transactions || []).filter(transaction => {
     if (!activeSegmentId || activeSegmentId === 0) return true;
     return transaction.segmentId === activeSegmentId;
   });
@@ -411,7 +405,7 @@ const FinancialModule = () => {
               <label className="block text-sm font-medium mb-2">Centro de Custo *</label>
               <select id="financial-cost-center-select" value={formData.costCenter} onChange={(e) => setFormData({...formData, costCenter: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" required>
                 <option value="">Selecione...</option>
-                {data.costCenters.filter(cc => !activeSegmentId || activeSegmentId === 0 || cc.segmentId === activeSegmentId).map(cc => <option key={cc.id} value={cc.name}>{cc.name}</option>)}
+                {(data.costCenters || []).filter(cc => !activeSegmentId || activeSegmentId === 0 || cc.segmentId === activeSegmentId).map(cc => <option key={cc.id} value={cc.name}>{cc.name}</option>)}
               </select>
             </div>
           )}
@@ -498,7 +492,7 @@ const FinancialModule = () => {
               <label className="block text-sm font-medium mb-2">Centro de Custo *</label>
               <select value={formData.costCenter} onChange={(e) => setFormData({...formData, costCenter: e.target.value})} className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary" required>
                 <option value="">Selecione...</option>
-                {data.costCenters.filter(cc => !activeSegmentId || activeSegmentId === 0 || cc.segmentId === activeSegmentId).map(cc => <option key={cc.id} value={cc.name}>{cc.name}</option>)}
+                {(data.costCenters || []).filter(cc => !activeSegmentId || activeSegmentId === 0 || cc.segmentId === activeSegmentId).map(cc => <option key={cc.id} value={cc.name}>{cc.name}</option>)}
               </select>
             </div>
           )}

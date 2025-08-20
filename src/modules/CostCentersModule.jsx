@@ -36,7 +36,7 @@ const CostCentersModule = () => {
     segmentId: activeSegmentId || (data.segments?.[0]?.id || '')
   });
 
-  const filteredCostCenters = costCenters.filter(cc => {
+  const filteredCostCenters = (costCenters || []).filter(cc => {
     if (!activeSegmentId || activeSegmentId === 0) {
       return true;
     }

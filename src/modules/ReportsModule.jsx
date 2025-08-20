@@ -15,31 +15,6 @@ import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency } from '@/lib/utils.js';
 
-<<<<<<< HEAD
-const ReportsModule = ({ toast }) => {
-  const { data, activeSegmentId, loadCostCenters, loadChartOfAccounts } = useAppData();
-  const [dreData, setDreData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({
-    startDate: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0], // Início do ano
-    endDate: new Date().toISOString().split('T')[0], // Hoje
-    costCenterId: '',
-    accountType: '',
-    groupBy: 'account_type' // account_type, cost_center, month
-  });
-  const [costCenters, setCostCenters] = useState([]);
-  const [chartOfAccounts, setChartOfAccounts] = useState([]);
-
-  // Load data
-  useEffect(() => {
-    loadCostCentersData();
-    loadChartOfAccountsData();
-  }, [activeSegmentId]);
-
-  useEffect(() => {
-    if (filters.startDate && filters.endDate) {
-      generateDRE();
-=======
 const ReportsModule = () => {
   const { data, activeSegmentId } = useAppData();
 
@@ -91,136 +66,9 @@ const ReportsModule = () => {
       icon: <BarChart3 className="w-6 h-6" />,
       color: 'from-teal-500 to-green-500',
       type: 'billing'
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
     }
   ];
 
-<<<<<<< HEAD
-  const loadCostCentersData = async () => {
-    try {
-      const result = await loadCostCenters();
-      setCostCenters(result.costCenters || []);
-    } catch (error) {
-      console.error('Error loading cost centers:', error);
-      setCostCenters([]); // Fallback para array vazio
-    }
-  };
-
-  const loadChartOfAccountsData = async () => {
-    try {
-      const result = await loadChartOfAccounts();
-      setChartOfAccounts(result.chartOfAccounts || []);
-    } catch (error) {
-      console.error('Error loading chart of accounts:', error);
-      setChartOfAccounts([]); // Fallback para array vazio
-    }
-  };
-
-  const generateDRE = async () => {
-    setLoading(true);
-    try {
-      const params = {
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-        costCenterId: filters.costCenterId,
-        accountType: filters.accountType,
-        groupBy: filters.groupBy,
-        segmentId: activeSegmentId || ''
-      };
-
-      const data = await apiService.get('/reports/dre', params);
-      setDreData(data);
-    } catch (error) {
-      console.error('Error generating DRE:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao gerar DRE.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const exportDRE = async (format = 'pdf') => {
-    try {
-      const params = {
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-        costCenterId: filters.costCenterId,
-        accountType: filters.accountType,
-        groupBy: filters.groupBy,
-        segmentId: activeSegmentId || '',
-        format
-      };
-
-      const response = await fetch(`${apiService.baseURL}/reports/dre/export?${new URLSearchParams(params)}`, {
-        headers: {
-          'Authorization': `Bearer ${apiService.getToken()}`
-        }
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `DRE_${filters.startDate}_${filters.endDate}.${format}`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-
-        toast({
-          title: "Sucesso",
-          description: `DRE exportado em ${format.toUpperCase()}.`,
-        });
-      }
-    } catch (error) {
-      console.error('Error exporting DRE:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao exportar DRE.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const getAccountTypeColor = (type) => {
-    switch (type) {
-      case 'revenue': return 'text-green-600';
-      case 'expense': return 'text-red-600';
-      case 'asset': return 'text-blue-600';
-      case 'liability': return 'text-orange-600';
-      case 'equity': return 'text-purple-600';
-      default: return 'text-gray-600';
-    }
-  };
-
-  const getAccountTypeLabel = (type) => {
-    switch (type) {
-      case 'revenue': return 'Receitas';
-      case 'expense': return 'Despesas';
-      case 'asset': return 'Ativos';
-      case 'liability': return 'Passivos';
-      case 'equity': return 'Patrimônio Líquido';
-      default: return type;
-    }
-  };
-
-  const calculateNetIncome = () => {
-    if (!dreData) return 0;
-    const revenues = dreData.revenues?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
-    const expenses = dreData.expenses?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
-    return revenues - expenses;
-  };
-
-  const calculateMargin = () => {
-    if (!dreData) return 0;
-    const revenues = dreData.revenues?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
-    const expenses = dreData.expenses?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
-    return revenues > 0 ? ((revenues - expenses) / revenues) * 100 : 0;
-=======
   const handleGenerateReport = (reportType) => {
     console.log(`Gerando relatório: ${reportType}`);
     // Implementar geração de relatório
@@ -229,7 +77,6 @@ const ReportsModule = () => {
   const handleExportReport = (reportType) => {
     console.log(`Exportando relatório: ${reportType}`);
     // Implementar exportação
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
   };
 
   return (

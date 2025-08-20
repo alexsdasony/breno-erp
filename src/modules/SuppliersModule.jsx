@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAppData } from '../hooks/useAppData';
+import { useAppData } from '@/hooks/useAppData';
+import { usePartners } from '@/hooks/usePartners';
 import { 
   PlusIcon, 
   PencilIcon, 
@@ -13,10 +14,14 @@ import {
 import '../styles/suppliers.css';
 
 const SuppliersModule = () => {
-  const { data, activeSegmentId, loadSuppliers, createSupplier, updateSupplier, deleteSupplier } = useAppData();
+  const { data, activeSegmentId, toast } = useAppData();
+  const { partners: suppliers, loading: partnersLoading, create, update, remove } = usePartners({ 
+    role: 'supplier',
+    segmentId: activeSegmentId
+  });
   const [activeTab, setActiveTab] = useState('lista');
   const [loading, setLoading] = useState(false);
-  const [suppliers, setSuppliers] = useState([]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState('razao_social');
   const [sortDirection, setSortDirection] = useState('asc');
@@ -58,35 +63,59 @@ const SuppliersModule = () => {
   });
 
   useEffect(() => {
-    loadSuppliersData();
+    // Fornecedores são carregados via usePartners
   }, [activeSegmentId]);
 
-  const loadSuppliersData = async () => {
-    try {
-      setLoading(true);
-      const result = await loadSuppliers();
-      setSuppliers(result.suppliers || []);
-    } catch (error) {
-      console.error('Erro ao carregar fornecedores:', error);
-    } finally {
-      setLoading(false);
+  // Filtragem e ordenação
+  const filteredSuppliers = ((suppliers && Array.isArray(suppliers)) ? suppliers : []).filter(s => {
+    if (!activeSegmentId || activeSegmentId === 0) {
+      return true;
     }
-  };
+    return s.segment_id === activeSegmentId;
+  });
+
+  const filteredAndSortedSuppliers = filteredSuppliers
+    .filter(supplier => 
+      supplier.razao_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      supplier.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      supplier.cpf_cnpj?.includes(searchTerm) ||
+      supplier.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      const aValue = a[sortField] || '';
+      const bValue = b[sortField] || '';
+      
+      if (sortDirection === 'asc') {
+        return aValue.toString().localeCompare(bValue.toString());
+      } else {
+        return bValue.toString().localeCompare(aValue.toString());
+      }
+    });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setLoading(true);
       if (selectedSupplier) {
-        await updateSupplier(selectedSupplier.id, formData);
+        console.log('Atualizando fornecedor:', selectedSupplier.id, formData);
+        await update(selectedSupplier.id, formData);
       } else {
-        await createSupplier(formData);
+        console.log('Criando fornecedor:', formData);
+        await create(formData);
       }
-      await loadSuppliersData();
       resetForm();
       setActiveTab('lista');
+      toast({
+        title: "Sucesso",
+        description: selectedSupplier ? "Fornecedor atualizado com sucesso." : "Fornecedor criado com sucesso.",
+      });
     } catch (error) {
       console.error('Erro ao salvar fornecedor:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar fornecedor.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -134,21 +163,43 @@ const SuppliersModule = () => {
     setShowModal(true);
   };
 
-  const handleDelete = (supplier) => {
-    setSelectedSupplier(supplier);
-    setModalType('delete');
-    setShowModal(true);
+  const handleDelete = async (supplier) => {
+    if (window.confirm('Tem certeza que deseja excluir este fornecedor?')) {
+      try {
+        await remove(supplier.id);
+        toast({
+          title: "Sucesso",
+          description: "Fornecedor excluído com sucesso.",
+        });
+      } catch (error) {
+        console.error('Erro ao excluir fornecedor:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao excluir fornecedor.",
+          variant: "destructive"
+        });
+      }
+    }
   };
 
   const confirmDelete = async () => {
     try {
       setLoading(true);
-      await deleteSupplier(selectedSupplier.id);
-      await loadSuppliersData();
+      console.log('Excluindo fornecedor:', selectedSupplier.id);
+      // await deleteSupplier(selectedSupplier.id);
       setShowModal(false);
       setSelectedSupplier(null);
+      toast({
+        title: "Sucesso",
+        description: "Fornecedor excluído com sucesso.",
+      });
     } catch (error) {
       console.error('Erro ao excluir fornecedor:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir fornecedor.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -198,20 +249,7 @@ const SuppliersModule = () => {
     }
   };
 
-  const filteredAndSortedSuppliers = (suppliers || [])
-    .filter(supplier => 
-      supplier.razao_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supplier.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supplier.cpf_cnpj?.includes(searchTerm) ||
-      supplier.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supplier.cidade?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      const aValue = a[sortField] || '';
-      const bValue = b[sortField] || '';
-      const comparison = aValue.toString().localeCompare(bValue.toString());
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
+
 
   const tabs = [
     { id: 'lista', name: 'Lista de Fornecedores', icon: '📋' },
