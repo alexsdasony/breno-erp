@@ -198,7 +198,7 @@ const SuppliersModule = () => {
     }
   };
 
-  const filteredAndSortedSuppliers = suppliers
+  const filteredAndSortedSuppliers = (suppliers || [])
     .filter(supplier => 
       supplier.razao_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       supplier.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
