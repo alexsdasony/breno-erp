@@ -88,7 +88,6 @@ export const AppDataProvider = ({ children }) => {
             const segmentsResponse = await apiService.getSegments();
             setSegments(segmentsResponse.segments || []);
             
-<<<<<<< HEAD
             // Load ONLY ESSENTIAL data with user's segment context
             const segmentFilter = currentUser.segment_id ? { segment_id: currentUser.segment_id } : {};
             
@@ -148,9 +147,7 @@ export const AppDataProvider = ({ children }) => {
             });
             
             console.log('✅ Essential data loaded successfully');
-=======
             console.log('✅ App initialization completed');
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
           } catch (error) {
             console.error('❌ Error loading segments:', error);
           }
@@ -179,7 +176,6 @@ export const AppDataProvider = ({ children }) => {
     }
   }, []);
 
-<<<<<<< HEAD
   const loadTransactions = useCallback(async (params = {}) => {
     try {
       const response = await apiService.getTransactions(params);
@@ -224,15 +220,11 @@ export const AppDataProvider = ({ children }) => {
 
   const loadPartners = useCallback(async (params = {}) => {
     try {
-      console.log('🔄 Loading partners from API (CACHE DESABLED)...', params);
       const response = await apiService.getPartners(params);
       const partners = response.partners || response.data || [];
-      
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
       globalMemoryCache.data.partners = partners;
       setData(prev => ({ ...prev, partners }));
-      
-      console.log('✅ Partners loaded:', partners.length, 'items');
       return { partners };
     } catch (error) {
       console.error('Load partners error:', error);
@@ -254,58 +246,16 @@ export const AppDataProvider = ({ children }) => {
     }
   }, []);
 
-  const loadBillings = useCallback(async (params = {}) => {
+  const loadSuppliers = useCallback(async (params = {}) => {
     try {
-      const response = await apiService.getBillings(params);
-      const billings = response.billings || response.data || [];
+      const response = await apiService.getSuppliers(params);
+      const suppliers = response.suppliers || response.data || [];
       if (!globalMemoryCache.data) globalMemoryCache.data = {};
-      globalMemoryCache.data.billings = billings;
-      setData(prev => ({ ...prev, billings }));
-      return { billings };
+      globalMemoryCache.data.suppliers = suppliers;
+      setData(prev => ({ ...prev, suppliers }));
+      return { suppliers };
     } catch (error) {
-      console.error('Load billings error:', error);
-      throw error;
-    }
-  }, []);
-
-  const loadCostCenters = useCallback(async (params = {}) => {
-    try {
-      const response = await apiService.getCostCenters(params);
-      const costCenters = response.costCenters || response.data || [];
-      if (!globalMemoryCache.data) globalMemoryCache.data = {};
-      globalMemoryCache.data.costCenters = costCenters;
-      setData(prev => ({ ...prev, costCenters }));
-      return { costCenters };
-    } catch (error) {
-      console.error('Load cost centers error:', error);
-      throw error;
-    }
-  }, []);
-
-  const loadNFe = useCallback(async (params = {}) => {
-    try {
-      const response = await apiService.getNFes(params);
-      const nfeList = response.nfeList || response.data || [];
-      if (!globalMemoryCache.data) globalMemoryCache.data = {};
-      globalMemoryCache.data.nfeList = nfeList;
-      setData(prev => ({ ...prev, nfeList }));
-      return { nfeList };
-    } catch (error) {
-      console.error('Load NFe error:', error);
-      throw error;
-    }
-  }, []);
-
-  const loadAccountsPayable = useCallback(async (params = {}) => {
-    try {
-      const response = await apiService.getAccountsPayable(params);
-      const accountsPayable = response.accountsPayable || response.data || [];
-      if (!globalMemoryCache.data) globalMemoryCache.data = {};
-      globalMemoryCache.data.accountsPayable = accountsPayable;
-      setData(prev => ({ ...prev, accountsPayable }));
-      return { accountsPayable };
-    } catch (error) {
-      console.error('Load accounts payable error:', error);
+      console.error('Load suppliers error:', error);
       throw error;
     }
   }, []);
@@ -338,153 +288,78 @@ export const AppDataProvider = ({ children }) => {
     }
   }, []);
 
-  const loadSuppliers = useCallback(async (params = {}) => {
+  const loadDashboardData = useCallback(async (params = {}) => {
     try {
-      const response = await apiService.getSuppliers(params);
-      const suppliers = response.suppliers || response.data || [];
-      if (!globalMemoryCache.data) globalMemoryCache.data = {};
-      globalMemoryCache.data.suppliers = suppliers;
-      setData(prev => ({ ...prev, suppliers }));
-      return { suppliers };
+      const response = await apiService.getDashboardData(params);
+      return response;
     } catch (error) {
-      console.error('Load suppliers error:', error);
+      console.error('Load dashboard data error:', error);
       throw error;
     }
   }, []);
 
-  // LAZY LOADING FUNCTIONS
-  const ensureCostCentersLoaded = useCallback(async () => {
-    console.log('🔄 ensureCostCentersLoaded - Iniciando verificação');
-    console.log('📊 Estado atual:', { loaded: lazyState.costCenters.loaded, loading: lazyState.costCenters.loading });
-    
-    if (lazyState.costCenters.loaded || lazyState.costCenters.loading) {
-      console.log('⏭️ ensureCostCentersLoaded - Pulando carregamento (já carregado ou carregando)');
-      return;
-    }
-
-          console.log('🔄 Loading costCenters...');
-    setLazyState(prev => ({ ...prev, costCenters: { ...prev.costCenters, loading: true } }));
-    
+  const reloadDashboardData = useCallback(async () => {
     try {
-      const segmentFilter = currentUser?.segment_id ? { segment_id: currentUser.segment_id } : {};
-      console.log('🔍 ensureCostCentersLoaded - Filtro de segmento:', segmentFilter);
-      await loadCostCenters(segmentFilter);
-      setLazyState(prev => ({ ...prev, costCenters: { loaded: true, loading: false } }));
-      console.log('✅ CostCenters loaded successfully');
-    } catch (error) {
-      console.error('❌ Failed to lazy load costCenters:', error);
-      setLazyState(prev => ({ ...prev, costCenters: { loaded: false, loading: false } }));
-    }
-  }, [lazyState.costCenters.loaded, lazyState.costCenters.loading, currentUser?.segment_id, loadCostCenters]);
-
-  const ensureAccountsPayableLoaded = useCallback(async () => {
-    if (lazyState.accountsPayable.loaded || lazyState.accountsPayable.loading) {
-      return;
-    }
-
-          console.log('🔄 Loading accountsPayable...');
-    setLazyState(prev => ({ ...prev, accountsPayable: { ...prev.accountsPayable, loading: true } }));
-    
-    try {
-      const segmentFilter = currentUser?.segment_id ? { segment_id: currentUser.segment_id } : {};
-      await loadAccountsPayable(segmentFilter);
-      setLazyState(prev => ({ ...prev, accountsPayable: { loaded: true, loading: false } }));
-      console.log('✅ AccountsPayable loaded successfully');
-    } catch (error) {
-      console.error('Failed to lazy load accountsPayable:', error);
-      setLazyState(prev => ({ ...prev, accountsPayable: { loaded: false, loading: false } }));
-    }
-  }, [lazyState.accountsPayable.loaded, lazyState.accountsPayable.loading, currentUser?.segment_id, loadAccountsPayable]);
-
-=======
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
-  // Adicionar função para recarregar dados do dashboard
-  const reloadDashboardData = useCallback(async (segmentId) => {
-    try {
-      console.log('🔄 Recarregando dados para segmento:', segmentId);
+      console.log('🔄 Recarregando dados para segmento:', activeSegmentId);
+      const segmentFilter = activeSegmentId ? { segment_id: activeSegmentId } : {};
       
-      // Definir o novo segmento ativo
-      const newSegmentId = segmentId || activeSegmentId || 0;
-      setActiveSegmentId(newSegmentId);
-      
+      const [transactionsRes, productsRes, customersRes, salesRes, suppliersRes] = await Promise.allSettled([
+        loadTransactions(segmentFilter),
+        loadProducts(segmentFilter),
+        loadCustomers(segmentFilter),
+        loadSales(segmentFilter),
+        loadSuppliers(segmentFilter)
+      ]);
+
       console.log('✅ Dashboard data reload completed');
+      return {
+        transactions: transactionsRes.status === 'fulfilled' ? transactionsRes.value : { transactions: [] },
+        products: productsRes.status === 'fulfilled' ? productsRes.value : { products: [] },
+        customers: customersRes.status === 'fulfilled' ? customersRes.value : { customers: [] },
+        sales: salesRes.status === 'fulfilled' ? salesRes.value : { sales: [] },
+        suppliers: suppliersRes.status === 'fulfilled' ? suppliersRes.value : { suppliers: [] }
+      };
     } catch (error) {
-      console.error('❌ Erro ao recarregar dados:', error);
-      toast({
-        title: "Erro",
-        description: "Falha ao recarregar dados. Tente novamente.",
-        variant: "destructive"
-      });
+      console.error('Reload dashboard data error:', error);
+      throw error;
     }
-  }, [activeSegmentId, toast]);
+  }, [activeSegmentId, loadTransactions, loadProducts, loadCustomers, loadSales, loadSuppliers]);
 
   // Metrics functions
-  const getDashboardMetrics = useCallback(async (params = {}) => {
-    try {
-      // Add user's segment context if available
-      const segmentFilter = currentUser?.segment_id ? { segment_id: currentUser.segment_id } : {};
-      return await apiService.getDashboardMetrics({ ...segmentFilter, ...params });
-    } catch (error) {
-      console.error('Get dashboard metrics error:', error);
-      throw error;
-    }
-  }, [currentUser?.segment_id]);
+  const getDashboardMetrics = useCallback(() => {
+    return metrics.dashboard;
+  }, [metrics]);
 
-  const getFinancialMetrics = useCallback(async (params = {}) => {
-    try {
-      // Add user's segment context if available
-      const segmentFilter = currentUser?.segment_id ? { segment_id: currentUser.segment_id } : {};
-      return await apiService.getFinancialMetrics({ ...segmentFilter, ...params });
-    } catch (error) {
-      console.error('Get financial metrics error:', error);
-      throw error;
-    }
-  }, [currentUser?.segment_id]);
+  const getFinancialMetrics = useCallback(() => {
+    return metrics.financial;
+  }, [metrics]);
 
-  const getSalesMetrics = useCallback(async (params = {}) => {
-    try {
-      return await apiService.getSalesMetrics(params);
-    } catch (error) {
-      console.error('Get sales metrics error:', error);
-      throw error;
-    }
-  }, []);
+  const getSalesMetrics = useCallback(() => {
+    return metrics.sales;
+  }, [metrics]);
 
   const value = {
-    data: {
-      ...data,
-      segments: segments || []
-    },
-    metrics,
-    setData,
-    currentUser,
-    loading: loading || authLoading,
+    // State
+    data,
+    loading,
     segments,
     activeSegmentId,
+    currentUser,
+    metrics,
+    
+    // Actions
     setActiveSegmentId,
     reloadSegments,
-    
-<<<<<<< HEAD
-    // Data loading functions
     loadTransactions,
     loadProducts,
     loadCustomers,
     loadPartners,
     loadSales,
-    loadBillings,
-    loadCostCenters,
-    loadNFe,
-    loadAccountsPayable,
+    loadSuppliers,
     loadFinancialDocuments,
     loadChartOfAccounts,
-    loadSuppliers,
+    loadDashboardData,
     
-    // Lazy loading functions
-    ensureCostCentersLoaded,
-    ensureAccountsPayableLoaded,
-    
-=======
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
     // Metrics functions
     getDashboardMetrics,
     getFinancialMetrics,
@@ -502,10 +377,6 @@ export const AppDataProvider = ({ children }) => {
     changeUserPassword,
     requestPasswordReset,
     resetPassword,
-<<<<<<< HEAD
-    
-    // CRUD operations from useCrud
-    ...crudOperations,
     
     // Supplier operations
     createSupplier: async (supplierData) => {
@@ -536,42 +407,7 @@ export const AppDataProvider = ({ children }) => {
       } catch (error) {
         throw error;
       }
-    },
-    
-    // Customer operations with auto-refetch
-    addCustomerWithRefetch: async (customer) => {
-      try {
-        const result = await crudOperations.addCustomer(customer);
-        // Refetch partners data to update the list
-        await loadPartners();
-        return result;
-      } catch (error) {
-        throw error;
-      }
-    },
-    
-    updateCustomerWithRefetch: async (id, customerData) => {
-      try {
-        const result = await crudOperations.updateCustomer(id, customerData);
-        // Refetch partners data to update the list
-        await loadPartners();
-        return result;
-      } catch (error) {
-        throw error;
-      }
-    },
-    
-    deleteCustomerWithRefetch: async (id) => {
-      try {
-        await crudOperations.deleteCustomer(id);
-        // Refetch partners data to update the list
-        await loadPartners();
-      } catch (error) {
-        throw error;
-      }
     }
-=======
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
   };
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
