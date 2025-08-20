@@ -1,13 +1,8 @@
 // API Service - Centralized HTTP client for backend communication
-<<<<<<< HEAD
-// Usa VITE_API_URL quando definido (Edge Functions em prod). Caso contrário, usa backend local via '/api'.
+// Usa configuração local quando disponível, caso contrário usa API remota
 const API_BASE_URL = process.env.USE_LOCAL_API === 'true' 
   ? 'http://localhost:3000/api' 
-  : (process.env.NEXT_PUBLIC_API_URL || '/functions/v1');
-=======
-// Usa NEXT_PUBLIC_API_URL para Edge Functions do Supabase
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://qerubjitetqwfqqydhzv.supabase.co/functions/v1';
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
+  : (process.env.NEXT_PUBLIC_API_URL || '/api');
 
 // Cache em memória para token - COM sessionStorage para persistência
 let tokenCache = null;
