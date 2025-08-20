@@ -13,6 +13,121 @@ import {
 } from '@heroicons/react/24/outline';
 import '../styles/suppliers.css';
 
+// Funções de máscara para CPF e CNPJ
+const applyCPFMask = (value) => {
+  const numbers = value.replace(/\D/g, '');
+  if (numbers.length <= 11) {
+    return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  }
+  return value;
+};
+
+const applyCNPJMask = (value) => {
+  const numbers = value.replace(/\D/g, '');
+  if (numbers.length <= 14) {
+    return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  }
+  return value;
+};
+
+const applyCPFCNPJMask = (value, tipoContribuinte) => {
+  const numbers = value.replace(/\D/g, '');
+  
+  if (tipoContribuinte === 'PF') {
+    // CPF: 11 dígitos
+    if (numbers.length <= 11) {
+      return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    }
+  } else {
+    // CNPJ: 14 dígitos
+    if (numbers.length <= 14) {
+      return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+    }
+  }
+  return value;
+};
+
+const validateCPFCNPJ = (value, tipoContribuinte) => {
+  const numbers = value.replace(/\D/g, '');
+  
+  if (tipoContribuinte === 'PF') {
+    // Validação de CPF
+    if (numbers.length !== 11) return false;
+    
+    // Verifica se todos os dígitos são iguais
+    if (/^(\d)\1{10}$/.test(numbers)) return false;
+    
+    // Validação do primeiro dígito verificador
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+      sum += parseInt(numbers[i]) * (10 - i);
+    }
+    let remainder = sum % 11;
+    let digit1 = remainder < 2 ? 0 : 11 - remainder;
+    
+    if (parseInt(numbers[9]) !== digit1) return false;
+    
+    // Validação do segundo dígito verificador
+    sum = 0;
+    for (let i = 0; i < 10; i++) {
+      sum += parseInt(numbers[i]) * (11 - i);
+    }
+    remainder = sum % 11;
+    let digit2 = remainder < 2 ? 0 : 11 - remainder;
+    
+    return parseInt(numbers[10]) === digit2;
+  } else {
+    // Validação de CNPJ
+    if (numbers.length !== 14) return false;
+    
+    // Verifica se todos os dígitos são iguais
+    if (/^(\d)\1{13}$/.test(numbers)) return false;
+    
+    // Validação do primeiro dígito verificador
+    const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    let sum = 0;
+    for (let i = 0; i < 12; i++) {
+      sum += parseInt(numbers[i]) * weights1[i];
+    }
+    let remainder = sum % 11;
+    let digit1 = remainder < 2 ? 0 : 11 - remainder;
+    
+    if (parseInt(numbers[12]) !== digit1) return false;
+    
+    // Validação do segundo dígito verificador
+    const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    sum = 0;
+    for (let i = 0; i < 13; i++) {
+      sum += parseInt(numbers[i]) * weights2[i];
+    }
+    remainder = sum % 11;
+    let digit2 = remainder < 2 ? 0 : 11 - remainder;
+    
+    return parseInt(numbers[13]) === digit2;
+  }
+};
+
+// Funções de máscara para outros campos
+const applyCEPMask = (value) => {
+  const numbers = value.replace(/\D/g, '');
+  if (numbers.length <= 8) {
+    return numbers.replace(/(\d{5})(\d{3})/, '$1-$2');
+  }
+  return value;
+};
+
+const applyPhoneMask = (value) => {
+  const numbers = value.replace(/\D/g, '');
+  if (numbers.length <= 11) {
+    if (numbers.length <= 10) {
+      return numbers.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    } else {
+      return numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    }
+  }
+  return value;
+};
+
 const SuppliersModule = () => {
   const { data, activeSegmentId, toast } = useAppData();
   const { partners: suppliers, loading: partnersLoading, create, update, remove } = usePartners({ 
@@ -28,6 +143,7 @@ const SuppliersModule = () => {
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState(''); // 'view', 'edit', 'delete'
+  const [cpfCnpjError, setCpfCnpjError] = useState('');
   
   // Form data for create/edit
   const [formData, setFormData] = useState({
@@ -94,6 +210,18 @@ const SuppliersModule = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validar CPF/CNPJ antes de enviar
+    if (formData.cpf_cnpj && !validateCPFCNPJ(formData.cpf_cnpj, formData.tipo_contribuinte)) {
+      setCpfCnpjError('CPF/CNPJ inválido');
+      toast({
+        title: "Erro",
+        description: "CPF/CNPJ inválido. Verifique os dados.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       setLoading(true);
       if (selectedSupplier) {
@@ -180,6 +308,43 @@ const SuppliersModule = () => {
         });
       }
     }
+  };
+
+  const handleCPFCNPJChange = (e) => {
+    const value = e.target.value;
+    const maskedValue = applyCPFCNPJMask(value, formData.tipo_contribuinte);
+    
+    setFormData({...formData, cpf_cnpj: maskedValue});
+    
+    // Validar CPF/CNPJ
+    if (maskedValue.length > 0) {
+      const isValid = validateCPFCNPJ(maskedValue, formData.tipo_contribuinte);
+      if (!isValid) {
+        setCpfCnpjError('CPF/CNPJ inválido');
+      } else {
+        setCpfCnpjError('');
+      }
+    } else {
+      setCpfCnpjError('');
+    }
+  };
+
+  const handleTipoContribuinteChange = (e) => {
+    const newTipo = e.target.value;
+    setFormData({...formData, tipo_contribuinte: newTipo, cpf_cnpj: ''});
+    setCpfCnpjError(''); // Limpar erro quando mudar o tipo
+  };
+
+  const handleCEPChange = (e) => {
+    const value = e.target.value;
+    const maskedValue = applyCEPMask(value);
+    setFormData({...formData, cep: maskedValue});
+  };
+
+  const handlePhoneChange = (e, field) => {
+    const value = e.target.value;
+    const maskedValue = applyPhoneMask(value);
+    setFormData({...formData, [field]: maskedValue});
   };
 
   const confirmDelete = async () => {
@@ -464,7 +629,7 @@ const SuppliersModule = () => {
                     <label className="block text-sm font-medium text-gray-700">Tipo de Contribuinte</label>
                     <select
                       value={formData.tipo_contribuinte}
-                      onChange={(e) => setFormData({...formData, tipo_contribuinte: e.target.value})}
+                      onChange={handleTipoContribuinteChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="PJ">Pessoa Jurídica</option>
@@ -474,15 +639,27 @@ const SuppliersModule = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">CPF/CNPJ *</label>
+                    <label className="block text-sm font-medium text-gray-700">
+                      CPF/CNPJ * 
+                      <span className="text-xs text-gray-500 ml-1">
+                        ({formData.tipo_contribuinte === 'PF' ? 'CPF' : 'CNPJ'})
+                      </span>
+                    </label>
                     <input
                       type="text"
                       required
                       value={formData.cpf_cnpj}
-                      onChange={(e) => setFormData({...formData, cpf_cnpj: e.target.value})}
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={handleCPFCNPJChange}
+                      placeholder={formData.tipo_contribuinte === 'PF' ? '000.000.000-00' : '00.000.000/0000-00'}
+                      maxLength={formData.tipo_contribuinte === 'PF' ? 14 : 18}
+                      className={`mt-1 block w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        cpfCnpjError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                      }`}
                       style={{ color: '#111827', backgroundColor: '#ffffff' }}
                     />
+                    {cpfCnpjError && (
+                      <p className="mt-1 text-sm text-red-600">{cpfCnpjError}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Inscrição Estadual</label>
@@ -523,9 +700,10 @@ const SuppliersModule = () => {
                     <label className="block text-sm font-medium text-gray-700">CEP</label>
                     <input
                       type="text"
-                      maxLength="8"
+                      maxLength="9"
                       value={formData.cep}
-                      onChange={(e) => setFormData({...formData, cep: e.target.value})}
+                      onChange={handleCEPChange}
+                      placeholder="00000-000"
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -586,7 +764,9 @@ const SuppliersModule = () => {
                     <input
                       type="text"
                       value={formData.telefone_fixo}
-                      onChange={(e) => setFormData({...formData, telefone_fixo: e.target.value})}
+                      onChange={(e) => handlePhoneChange(e, 'telefone_fixo')}
+                      placeholder="(00) 0000-0000"
+                      maxLength="14"
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -595,7 +775,9 @@ const SuppliersModule = () => {
                     <input
                       type="text"
                       value={formData.telefone_celular}
-                      onChange={(e) => setFormData({...formData, telefone_celular: e.target.value})}
+                      onChange={(e) => handlePhoneChange(e, 'telefone_celular')}
+                      placeholder="(00) 00000-0000"
+                      maxLength="15"
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
