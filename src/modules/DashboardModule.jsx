@@ -287,6 +287,6 @@ const DashboardModule = () => {
       </motion.div>
     </motion.div>
   );
-};
+}
 
 export default DashboardModule;
