@@ -24,36 +24,11 @@ const DashboardModule = () => {
   const { data, activeSegmentId, reloadDashboardData, metrics } = useAppData();
 
   useEffect(() => {
-<<<<<<< HEAD
-    // Buscar dados do backend filtrando por segmento
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        // Enviar segmentId apenas se for válido, senão enviar null para "todos os segmentos"
-        const segmentId = activeSegmentId && activeSegmentId !== 0 ? activeSegmentId : null;
-        const params = segmentId ? { segmentId } : {};
-        console.log('🔍 Dashboard - Buscando dados para segmento:', segmentId);
-        const result = await apiService.get('/dashboard', params);
-        setDashboardData(result);
-        console.log('✅ Dashboard - Dados recebidos:', result);
-      } catch (error) {
-        console.error('❌ Dashboard - Erro ao buscar dados:', error);
-        setDashboardData(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    // Forçar carregamento imediato
-    fetchDashboardData();
-  }, [activeSegmentId]);
-=======
     const loadData = async () => {
       await reloadDashboardData(activeSegmentId);
     };
     loadData();
   }, [activeSegmentId, reloadDashboardData]);
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
 
   const dashboardMetrics = [
     {
@@ -94,50 +69,77 @@ const DashboardModule = () => {
     }
   ];
 
-<<<<<<< HEAD
-  // Aplicar a mesma lógica de filtros do BillingModule
-  let filteredBillings = (data.billings || [])
-    .map(billing => ({ ...billing, status: getStatusWithDueDate(billing) }))
-    .filter(b => !activeSegmentId || activeSegmentId === 0 || b.segment_id === activeSegmentId);
+  // Dados mockados para demonstração
+  const recentTransactions = [
+    {
+      id: 1,
+      description: 'Venda de Produtos',
+      category: 'Vendas',
+      amount: 1500.00,
+      type: 'income',
+      date: '2024-01-15'
+    },
+    {
+      id: 2,
+      description: 'Compra de Materiais',
+      category: 'Compras',
+      amount: 800.00,
+      type: 'expense',
+      date: '2024-01-14'
+    },
+    {
+      id: 3,
+      description: 'Pagamento de Fornecedor',
+      category: 'Fornecedores',
+      amount: 1200.00,
+      type: 'expense',
+      date: '2024-01-13'
+    }
+  ];
 
-  // Cálculos usando a mesma lógica do módulo de cobranças
-  const totalBillings = filteredBillings.length;
-  const overdueBillings = filteredBillings.filter(b => b.status === 'Vencida').length;
-  const defaultRate = totalBillings > 0 ? (overdueBillings / totalBillings) * 100 : 0;
-  const totalPendingAmount = filteredBillings
-    .filter(b => b.status === 'Pendente' || b.status === 'Vencida')
-    .reduce((sum, b) => sum + Number(b.amount || 0), 0);
-
-  // Calcular métricas gerais (sem filtro de segmento) para comparação
-  const generalMetrics = calculateMetrics(data, 0);
-  const filteredMetrics = calculateMetrics(data, activeSegmentId);
-
-  // Obter nome do segmento ativo
-  const activeSegment = (data.segments || []).find(s => s.id === activeSegmentId);
-=======
-  const recentTransactions = data.transactions?.slice(0, 5) || [];
-  const recentSales = data.sales?.slice(0, 5) || [];
->>>>>>> 8d8b27b5651436ba0f6f11b7ab9cc5b22b8662b6
+  const recentSales = [
+    {
+      id: 1,
+      customer_name: 'João Silva',
+      payment_method: 'Cartão de Crédito',
+      final_amount: 1500.00,
+      sale_date: '2024-01-15'
+    },
+    {
+      id: 2,
+      customer_name: 'Maria Santos',
+      payment_method: 'PIX',
+      final_amount: 800.00,
+      sale_date: '2024-01-14'
+    },
+    {
+      id: 3,
+      customer_name: 'Pedro Costa',
+      payment_method: 'Dinheiro',
+      final_amount: 1200.00,
+      sale_date: '2024-01-13'
+    }
+  ];
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            Dashboard
-          </h1>
-          <p className="text-muted-foreground mt-2">Visão geral do seu negócio</p>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Visão geral do seu negócio</p>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex space-x-3">
           <Button variant="outline">
             <Calendar className="w-4 h-4 mr-2" />
             Hoje
           </Button>
-          <Button variant="outline">
+          <Button>
             <BarChart3 className="w-4 h-4 mr-2" />
             Relatórios
           </Button>
@@ -152,17 +154,17 @@ const DashboardModule = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="glass-effect rounded-xl p-6 gradient-card border"
+            className="glass-effect rounded-xl p-6 border"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">{metric.title}</p>
-                <p className="text-2xl font-bold">{metric.value}</p>
-                <div className="flex items-center mt-2">
+                <p className="text-sm font-medium text-gray-600">{metric.title}</p>
+                <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
+                <div className="flex items-center space-x-2 mt-1">
                   {metric.changeType === 'positive' ? (
-                    <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+                    <TrendingUp className="w-4 h-4 text-green-500" />
                   ) : (
-                    <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
+                    <TrendingDown className="w-4 h-4 text-red-500" />
                   )}
                   <span className={`text-sm ${metric.changeType === 'positive' ? 'text-green-500' : 'text-red-500'}`}>
                     {metric.change}
@@ -287,6 +289,6 @@ const DashboardModule = () => {
       </motion.div>
     </motion.div>
   );
-}
+};
 
 export default DashboardModule;
