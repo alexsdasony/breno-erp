@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppData } from '@/hooks/useAppData';
-import { usePartners } from '@/hooks/usePartners';
+import { useFornecedores } from '@/hooks/useFornecedores';
 import { 
   PlusIcon, 
   PencilIcon, 
@@ -130,8 +130,7 @@ const applyPhoneMask = (value) => {
 
 const SuppliersModule = () => {
   const { data, activeSegmentId, toast } = useAppData();
-  const { partners: suppliers, loading: partnersLoading, create, update, remove } = usePartners({ 
-    role: 'supplier',
+  const { fornecedores: suppliers, loading: partnersLoading, create, update, remove } = useFornecedores({ 
     segmentId: activeSegmentId
   });
   const [activeTab, setActiveTab] = useState('lista');

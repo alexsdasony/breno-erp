@@ -12,7 +12,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
-    "validate:schema": "node scripts/validate_schema.js"
+    "validate:schema": "node scripts/validate_schema.js",
+    "migrate:fornecedores": "node scripts/apply-fornecedores-migration.js"
   },
   "dependencies": {
     "@faker-js/faker": "^9.9.0",
