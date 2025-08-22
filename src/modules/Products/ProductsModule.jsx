@@ -20,6 +20,7 @@ import ImportDataButton from '@/components/ui/ImportDataButton';
 import { useProducts } from './hooks/useProducts';
 import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency } from '@/lib/utils.js';
+import apiService from '@/services/api';
 
 const InventoryModule = () => {
   const { activeSegmentId, data } = useAppData();
@@ -69,30 +70,23 @@ const InventoryModule = () => {
     setIsEditing(true);
     setCurrentProduct(product);
     
-    // Carregar dados completos do produto via API
+    // Carregar dados completos do produto via API centralizada
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${product.id}`, {
-        headers: {
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const { product: fullProduct } = await response.json();
+      const dataResp = await apiService.get(`/products/${product.id}`);
+      const fullProduct = dataResp?.product ?? dataResp;
+      if (fullProduct) {
         setFormData({
           name: fullProduct.name || '',
           description: fullProduct.description || '',
           category: fullProduct.category || '',
           price: fullProduct.price || '',
           cost: fullProduct.cost_price || '',
-          stock: fullProduct.stock || '',
-          minStock: fullProduct.min_stock || '',
+          stock: fullProduct.stock ?? fullProduct.stock_quantity ?? '',
+          minStock: fullProduct.min_stock ?? fullProduct.minimum_stock ?? '',
           segmentId: fullProduct.segment_id || activeSegmentId || (data.segments?.[0]?.id || '')
         });
       } else {
-        // Fallback para dados em memória se a API falhar
+        // Fallback para dados em memória se a API não retornar produto
         setFormData({
           name: product.name || '',
           description: product.description || '',
@@ -105,7 +99,7 @@ const InventoryModule = () => {
         });
       }
     } catch (error) {
-      console.error('Erro ao carregar produto:', error);
+      console.error('Erro ao carregar produto via apiService:', error);
       // Fallback para dados em memória
       setFormData({
         name: product.name || '',

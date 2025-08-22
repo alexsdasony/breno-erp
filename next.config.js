@@ -5,22 +5,8 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
-  // Configuração para páginas que usam hooks
   output: 'standalone',
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  
   // Desabilitar SSR para páginas que usam useAppData
   async headers() {
     return [

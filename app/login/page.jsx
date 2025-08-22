@@ -33,7 +33,10 @@ export default function LoginPage() {
           title: "Login Bem-sucedido!",
           description: "Redirecionando para o painel...",
         });
-        router.push('/dashboard');
+        // Aguardar um pouco para o contexto ser atualizado
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 500);
       } else {
         toast({
           title: "Falha no Login",

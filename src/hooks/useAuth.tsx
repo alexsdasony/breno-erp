@@ -2,8 +2,39 @@ import { useState, useEffect } from 'react';
 import apiService from '@/services/api';
 import { toast } from '@/components/ui/use-toast';
 
-export const useAuth = () => {
-  const [currentUser, setCurrentUser] = useState(null);
+interface ApiResponse<T = any> {
+  data?: T;
+  message?: string;
+  error?: string;
+  status?: number;
+  success?: boolean;
+  user?: any;
+  token?: string;
+}
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role?: string;
+  segment_id?: string | null;
+  status?: string;
+}
+
+interface AuthContextType {
+  currentUser: User | null;
+  loading: boolean;
+  loginUser: (email: string, password: string) => Promise<boolean>;
+  registerUser: (name: string, email: string, password: string, segmentId?: string | null) => Promise<boolean>;
+  logoutUser: () => Promise<void>;
+  updateUserProfile: (name: string, email: string) => Promise<boolean>;
+  changeUserPassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
+  requestPasswordReset: (email: string, phone?: string | null) => Promise<any>;
+  resetPassword: (email: string, phone: string, resetCode: string, newPassword: string) => Promise<any>;
+}
+
+export const useAuth = (): AuthContextType => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Verificar autenticação na inicialização
@@ -17,7 +48,7 @@ export const useAuth = () => {
           if (isValid) {
             // Tentar obter o perfil do usuário
             try {
-              const profile = await apiService.getProfile();
+              const profile = await apiService.getProfile() as any;
               if (profile && profile.user) {
                 setCurrentUser(profile.user);
                 console.log('✅ Usuário autenticado restaurado:', profile.user.name);
@@ -57,7 +88,7 @@ export const useAuth = () => {
             sessionStorage.removeItem('cached_user');
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Auth check failed:', error);
         // Não limpar o token automaticamente em caso de erro de rede
         // Apenas limpar se for um erro de autenticação específico
@@ -73,12 +104,12 @@ export const useAuth = () => {
     checkAuth();
   }, []);
 
-  const registerUser = async (name, email, password, segmentId = null) => {
+  const registerUser = async (name: string, email: string, password: string, segmentId: string | null = null): Promise<boolean> => {
     try {
       setLoading(true);
-      const response = await apiService.register({ name, email, password, segmentId });
+      const response = await apiService.register({ name, email, password, segmentId }) as any;
       
-      if (response.user) {
+      if (response.success && response.user) {
         setCurrentUser(response.user);
         // Cache do usuário para persistência
         sessionStorage.setItem('cached_user', JSON.stringify(response.user));
@@ -92,77 +123,78 @@ export const useAuth = () => {
         return true;
       }
       return false;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
       toast({
         title: "Erro no cadastro",
         description: (error && error.message) || "Falha ao criar conta. Tente novamente.",
         variant: "destructive"
       });
-      throw error;
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const loginUser = async (email, password) => {
+  const loginUser = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      const response = await apiService.login({ email, password });
+      const response = await apiService.login({ email, password }) as any;
       
-      if (response.user) {
+      // Verificar se a resposta tem sucesso e dados do usuário
+      if (response.success && response.user) {
         setCurrentUser(response.user);
         // Cache do usuário para persistência
         sessionStorage.setItem('cached_user', JSON.stringify(response.user));
+        // Salvar token se fornecido
         if (response.token) {
           apiService.setToken(response.token);
         }
         toast({
           title: "Login realizado!",
-          description: `Bem-vindo, ${response.user.name}!`
+          description: "Bem-vindo de volta!"
         });
         return true;
       }
       return false;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
       toast({
         title: "Erro no login",
-        description: (error && error.message) || "Email ou senha incorretos.",
+        description: (error && error.message) || "Credenciais inválidas. Tente novamente.",
         variant: "destructive"
       });
-      throw error;
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const logoutUser = async () => {
+  const logoutUser = async (): Promise<void> => {
     try {
       await apiService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
       setCurrentUser(null);
-      // Limpar cache do usuário
+      apiService.clearToken();
       sessionStorage.removeItem('cached_user');
       toast({
         title: "Logout realizado",
         description: "Você foi desconectado com sucesso."
       });
-    } catch (error) {
-      console.error('Logout error:', error);
-      // Mesmo se falhar no servidor, limpar localmente
-      setCurrentUser(null);
-      apiService.clearToken();
-      sessionStorage.removeItem('cached_user');
     }
   };
 
-  const updateUserProfile = async (name, email) => {
+  const updateUserProfile = async (name: string, email: string): Promise<boolean> => {
     try {
       setLoading(true);
-      const response = await apiService.updateProfile({ name, email });
+      const response = await apiService.updateProfile({ name, email }) as any;
       
-      if (response.user) {
+      if (response.success && response.user) {
         setCurrentUser(response.user);
+        // Atualizar cache
+        sessionStorage.setItem('cached_user', JSON.stringify(response.user));
         toast({
           title: "Perfil atualizado!",
           description: "Suas informações foram atualizadas com sucesso."
@@ -170,55 +202,61 @@ export const useAuth = () => {
         return true;
       }
       return false;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Profile update error:', error);
       toast({
-        title: "Erro na atualização",
+        title: "Erro ao atualizar perfil",
         description: (error && error.message) || "Falha ao atualizar perfil. Tente novamente.",
         variant: "destructive"
       });
-      throw error;
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const changeUserPassword = async (currentPassword, newPassword) => {
+  const changeUserPassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
     try {
       setLoading(true);
-      await apiService.changePassword({ currentPassword, newPassword });
-      toast({
-        title: "Senha alterada!",
-        description: "Sua senha foi alterada com sucesso."
-      });
-      return true;
-    } catch (error) {
+      const response = await apiService.changePassword({ currentPassword, newPassword });
+      
+      if (response.data?.success) {
+        toast({
+          title: "Senha alterada!",
+          description: "Sua senha foi alterada com sucesso."
+        });
+        return true;
+      }
+      return false;
+    } catch (error: any) {
       console.error('Password change error:', error);
       toast({
-        title: "Erro na alteração",
+        title: "Erro ao alterar senha",
         description: (error && error.message) || "Falha ao alterar senha. Tente novamente.",
         variant: "destructive"
       });
-      throw error;
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const requestPasswordReset = async (email, phone = null) => {
+  const requestPasswordReset = async (email: string, phone: string | null = null) => {
     try {
       setLoading(true);
       const response = await apiService.requestPasswordReset({ email, phone });
+      
       toast({
         title: "Solicitação enviada!",
-        description: "Instruções de recuperação foram enviadas para seu email."
+        description: "Verifique seu email para instruções de redefinição."
       });
+      
       return response;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Password reset request error:', error);
       toast({
         title: "Erro na solicitação",
-        description: (error && error.message) || "Falha ao solicitar recuperação. Tente novamente.",
+        description: (error && error.message) || "Falha ao solicitar redefinição. Tente novamente.",
         variant: "destructive"
       });
       throw error;
@@ -227,21 +265,18 @@ export const useAuth = () => {
     }
   };
 
-  const resetPassword = async (email, phone, resetCode, newPassword) => {
+  const resetPassword = async (email: string, phone: string, resetCode: string, newPassword: string) => {
     try {
       setLoading(true);
-      const response = await apiService.resetPassword({ 
-        email, 
-        phone, 
-        resetCode, 
-        newPassword 
-      });
+      const response = await apiService.resetPassword({ email, phone, resetCode, newPassword });
+      
       toast({
         title: "Senha redefinida!",
-        description: "Sua senha foi redefinida com sucesso. Faça login com a nova senha."
+        description: "Sua senha foi redefinida com sucesso."
       });
+      
       return response;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Password reset error:', error);
       toast({
         title: "Erro na redefinição",
@@ -257,12 +292,13 @@ export const useAuth = () => {
   return {
     currentUser,
     loading,
-    registerUser,
     loginUser,
+    registerUser,
     logoutUser,
     updateUserProfile,
     changeUserPassword,
     requestPasswordReset,
-    resetPassword,
+    resetPassword
   };
 };
+

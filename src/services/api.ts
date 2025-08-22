@@ -1,22 +1,63 @@
 // API Service - Centralized HTTP client for backend communication
-// Usa configuração local quando disponível, caso contrário usa API remota
-const API_BASE_URL = process.env.USE_LOCAL_API === 'true' 
-  ? 'http://localhost:3000/api' 
-  : (process.env.NEXT_PUBLIC_API_URL || '/api');
+// Usa NEXT_PUBLIC_API_URL para Edge Functions do Supabase
+import { API_CONFIG, SUPABASE_CONFIG } from '@/config/constants';
+
+const API_BASE_URL = API_CONFIG.baseURL;
 
 // Cache em memória para token - COM sessionStorage para persistência
-let tokenCache = null;
+let tokenCache: string | null = null;
 let isRedirectingToLogin = false;
 
+interface ApiResponse<T = any> {
+  data?: T;
+  message?: string;
+  error?: string;
+  status?: number;
+}
+
+interface Partner {
+  id: string;
+  name: string;
+  tax_id?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  status?: string;
+  segment_id?: string | null;
+  role?: string;
+}
+
+interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  cep: string;
+  cpf: string;
+  cnpj: string;
+  status: string;
+  segment_id: string | null;
+}
+
 class ApiService {
+  private baseURL: string;
+  private token: string | null;
+  private supabaseAnonKey: string | undefined;
+
   constructor() {
     this.baseURL = API_BASE_URL;
     this.token = this.getToken();
-    this.supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    this.supabaseAnonKey = SUPABASE_CONFIG.anonKey;
   }
 
   // Helpers: map customers <-> partners
-  partnerToCustomer(partner) {
+  partnerToCustomer(partner: Partner | null): Customer | null {
     if (!partner) return null;
     const taxId = partner.tax_id || '';
     const isCpf = taxId && taxId.replace(/\D/g, '').length <= 11;
@@ -32,11 +73,11 @@ class ApiService {
       cpf: isCpf ? taxId : '',
       cnpj: !isCpf ? taxId : '',
       status: partner.status || 'pendente',
-      segment_id: partner.segment_id || partner.segmentId || null,
+      segment_id: partner.segment_id || null,
     };
   }
 
-  customerToPartnerPayload(customerData, role = 'customer') {
+  customerToPartnerPayload(customerData: any, role: string = 'customer'): any {
     const tax_id = customerData?.cpf?.trim() || customerData?.cnpj?.trim() || customerData?.tax_id || '';
     return {
       name: customerData.name,
@@ -54,7 +95,7 @@ class ApiService {
   }
 
   // Set authentication token - COM sessionStorage para persistência
-  setToken(token) {
+  setToken(token: string): void {
     this.token = token;
     tokenCache = token;
     // Usar sessionStorage para persistir durante a sessão
@@ -68,7 +109,7 @@ class ApiService {
   }
 
   // Get authentication token - COM sessionStorage para persistência
-  getToken() {
+  getToken(): string | null {
     if (tokenCache) return tokenCache;
     
     // Tentar recuperar do sessionStorage
@@ -88,7 +129,7 @@ class ApiService {
   }
 
   // Clear token - COM sessionStorage para persistência
-  clearToken() {
+  clearToken(): void {
     this.token = null;
     tokenCache = null;
     // Limpar do sessionStorage
@@ -102,12 +143,12 @@ class ApiService {
   }
 
   // Generic request method
-  async request(endpoint, options = {}) {
+  async request<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
     const token = this.getToken();
     
     const isEdgeFunctions = this.baseURL === '/api' || (typeof this.baseURL === 'string' && this.baseURL.includes('supabase.co'));
-    const config = {
+    const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
         // Para Edge Functions do Supabase use as chaves de projeto.
@@ -132,7 +173,7 @@ class ApiService {
         this.clearToken();
         if (!isRedirectingToLogin && typeof window !== 'undefined') {
           isRedirectingToLogin = true;
-        window.location.href = '/login';
+          window.location.href = '/login';
         }
         throw new Error('Authentication failed');
       }
@@ -161,64 +202,64 @@ class ApiService {
   }
 
   // GET request
-  get(endpoint, params = {}) {
+  get<T = any>(endpoint: string, params: Record<string, any> = {}): Promise<T> {
     const queryString = new URLSearchParams(params).toString();
     const url = queryString ? `${endpoint}?${queryString}` : endpoint;
-    return this.request(url, { method: 'GET' });
+    return this.request<T>(url, { method: 'GET' });
   }
 
   // POST request
-  post(endpoint, data) {
-    return this.request(endpoint, {
+  post<T = any>(endpoint: string, data: any): Promise<T> {
+    return this.request<T>(endpoint, {
       method: 'POST',
       body: data,
     });
   }
 
   // PUT request
-  put(endpoint, data) {
-    return this.request(endpoint, {
+  put<T = any>(endpoint: string, data: any): Promise<T> {
+    return this.request<T>(endpoint, {
       method: 'PUT',
       body: data,
     });
   }
 
   // DELETE request
-  delete(endpoint) {
-    return this.request(endpoint, { method: 'DELETE' });
+  delete<T = any>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
   // Auth endpoints - Usando APENAS o backend
-  async register(userData) {
+  async register(userData: any): Promise<ApiResponse> {
     return this.post('/auth/register', userData);
   }
 
-  async login(credentials) {
-    const response = await this.post('/auth', credentials);
+  async login(credentials: any): Promise<ApiResponse> {
+    const response = await this.post<ApiResponse>('/auth', credentials);
     
-    if (response.token) {
-      this.setToken(response.token);
+    if (response.data?.token) {
+      this.setToken(response.data.token);
     }
     
     return response;
   }
 
-  async logout() {
+  async logout(): Promise<ApiResponse> {
     try {
-      await this.post('/auth/logout');
+      await this.post('/auth/logout', {});
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
       this.clearToken();
     }
-    return { success: true };
+    return { data: { success: true } };
   }
 
-  async getProfile() {
+  async getProfile(): Promise<ApiResponse> {
     return this.get('/auth/profile');
   }
 
-  async checkAuth() {
+  async checkAuth(): Promise<boolean> {
     // Verificar se o token é válido usando um endpoint simples
     try {
       await this.get('/segments');
@@ -229,45 +270,45 @@ class ApiService {
     }
   }
 
-  async updateProfile(userData) {
+  async updateProfile(userData: any): Promise<ApiResponse> {
     return this.put('/auth/profile', userData);
   }
 
-  async changePassword(passwordData) {
+  async changePassword(passwordData: any): Promise<ApiResponse> {
     return this.put('/auth/password', passwordData);
   }
 
-  async requestPasswordReset(data) {
+  async requestPasswordReset(data: any): Promise<ApiResponse> {
     return this.post('/auth/forgot-password', data);
   }
 
-  async resetPassword(data) {
+  async resetPassword(data: any): Promise<ApiResponse> {
     return this.post('/auth/reset-password', data);
   }
 
   // Segments endpoints - Usando APENAS o backend
-  async getSegments(params = {}) {
+  async getSegments(params: Record<string, any> = {}): Promise<ApiResponse> {
     return this.get('/segments', params);
   }
 
-  async createSegment(segmentData) {
+  async createSegment(segmentData: any): Promise<ApiResponse> {
     return this.post('/segments', segmentData);
   }
 
-  async updateSegment(id, segmentData) {
+  async updateSegment(id: string, segmentData: any): Promise<ApiResponse> {
     return this.put(`/segments/${id}`, segmentData);
   }
 
-  async deleteSegment(id) {
+  async deleteSegment(id: string): Promise<ApiResponse> {
     return this.delete(`/segments/${id}`);
   }
 
   // Transactions endpoints - Usando APENAS o backend
-  async getTransactions(params = {}) {
+  async getTransactions(params: Record<string, any> = {}): Promise<ApiResponse> {
     return this.get('/transactions', params);
   }
 
-  async createTransaction(transactionData) {
+  async createTransaction(transactionData: any): Promise<ApiResponse> {
     // Mapear camelCase do front para snake_case esperado pelo banco
     const payload = {
       type: transactionData.type,
@@ -281,7 +322,7 @@ class ApiService {
     return this.post('/transactions', payload);
   }
 
-  async updateTransaction(id, transactionData) {
+  async updateTransaction(id: string, transactionData: any): Promise<ApiResponse> {
     const payload = {
       type: transactionData.type,
       description: transactionData.description,
@@ -294,52 +335,52 @@ class ApiService {
     return this.put(`/transactions/${id}`, payload);
   }
 
-  async deleteTransaction(id) {
+  async deleteTransaction(id: string): Promise<ApiResponse> {
     return this.delete(`/transactions/${id}`);
   }
 
-  async importTransactions(transactions) {
+  async importTransactions(transactions: any[]): Promise<ApiResponse> {
     return this.post('/transactions/import', { transactions });
   }
 
   // Customers endpoints - Usando APENAS o backend
-  async getCustomers(params = {}) {
-    const response = await this.get('/partners', { ...params, role: 'customer' });
+  async getCustomers(params: Record<string, any> = {}): Promise<{ customers: Customer[] }> {
+    const response = await this.get<{ partners?: Partner[]; data?: Partner[] }>('/partners', { ...params, role: 'customer' });
     const partners = response.partners || response.data || [];
-    const customers = partners.map((p) => this.partnerToCustomer(p));
+    const customers = partners.map((p) => this.partnerToCustomer(p)).filter(Boolean) as Customer[];
     return { customers };
   }
 
-  async createCustomer(customerData) {
+  async createCustomer(customerData: any): Promise<{ customer: Customer }> {
     const payload = this.customerToPartnerPayload(customerData, 'customer');
-    const created = await this.post('/partners', payload);
+    const created = await this.post<{ partner?: Partner; data?: Partner }>('/partners', payload);
     const partner = created.partner || created.data || created;
-    return { customer: this.partnerToCustomer(partner) };
+    return { customer: this.partnerToCustomer(partner as Partner)! };
   }
 
-  async updateCustomer(id, customerData) {
+  async updateCustomer(id: string, customerData: any): Promise<{ customer: Customer }> {
     const payload = this.customerToPartnerPayload(customerData, 'customer');
-    const updated = await this.put(`/partners/${id}`, payload);
+    const updated = await this.put<{ partner?: Partner; data?: Partner }>(`/partners/${id}`, payload);
     const partner = updated.partner || updated.data || updated;
-    return { customer: this.partnerToCustomer(partner) };
+    return { customer: this.partnerToCustomer(partner as Partner)! };
   }
 
-  async deleteCustomer(id) {
+  async deleteCustomer(id: string): Promise<ApiResponse> {
     return this.delete(`/partners/${id}`);
   }
 
-  async getCustomerById(id) {
-    const response = await this.get(`/partners/${id}`);
+  async getCustomerById(id: string): Promise<{ customer: Customer }> {
+    const response = await this.get<{ partner?: Partner; data?: Partner }>(`/partners/${id}`);
     const partner = response.partner || response.data || response;
-    return { customer: this.partnerToCustomer(partner) };
+    return { customer: this.partnerToCustomer(partner as Partner)! };
   }
 
   // Products endpoints - Usando APENAS o backend
-  async getProducts(params = {}) {
+  async getProducts(params: Record<string, any> = {}): Promise<ApiResponse> {
     return this.get('/products', params);
   }
 
-  async createProduct(productData) {
+  async createProduct(productData: any): Promise<ApiResponse> {
     // Mapear camelCase do front para snake_case do backend
     const payload = {
       name: productData.name,
@@ -356,7 +397,7 @@ class ApiService {
     return this.post('/products', payload);
   }
 
-  async updateProduct(id, productData) {
+  async updateProduct(id: string, productData: any): Promise<ApiResponse> {
     const payload = {
       name: productData.name || null,
       price: parseFloat(productData.price) || 0,
@@ -372,20 +413,20 @@ class ApiService {
     return this.put(`/products/${id}`, payload);
   }
 
-  async deleteProduct(id) {
+  async deleteProduct(id: string): Promise<ApiResponse> {
     return this.delete(`/products/${id}`);
   }
 
-  async getLowStockProducts(params = {}) {
+  async getLowStockProducts(params: Record<string, any> = {}): Promise<ApiResponse> {
     return this.get('/products', { ...params, low_stock: 'true' });
   }
 
   // Sales endpoints - Usando APENAS o backend
-  async getSales(params = {}) {
+  async getSales(params: Record<string, any> = {}): Promise<ApiResponse> {
     return this.get('/sales', params);
   }
 
-  async createSale(saleData) {
+  async createSale(saleData: any): Promise<ApiResponse> {
     const payload = {
       customer_id: saleData.customer_id || saleData.customerId,
       customer_name: saleData.customer_name || saleData.customerName || '',
@@ -402,7 +443,7 @@ class ApiService {
     return this.post('/sales', payload);
   }
 
-  async updateSale(id, saleData) {
+  async updateSale(id: string, saleData: any): Promise<ApiResponse> {
     const payload = {
       customer_id: saleData.customer_id || saleData.customerId || null,
       customer_name: saleData.customer_name || saleData.customerName || null,
@@ -418,16 +459,16 @@ class ApiService {
     return this.put(`/sales/${id}`, payload);
   }
 
-  async deleteSale(id) {
+  async deleteSale(id: string): Promise<ApiResponse> {
     return this.delete(`/sales/${id}`);
   }
 
   // Billings endpoints - Usando APENAS o backend
-  async getBillings(params = {}) {
-    return this.get('/financial-documents', params);
+  async getBillings(params: Record<string, any> = {}): Promise<ApiResponse> {
+    return this.get('/billings', params);
   }
 
-  async createBilling(billingData) {
+  async createBilling(billingData: any): Promise<ApiResponse> {
     const payload = {
       customer_id: billingData.customer_id || billingData.customerId,
       customer_name: billingData.customer_name || billingData.customerName || '',
@@ -445,7 +486,7 @@ class ApiService {
     return this.post('/billings', payload);
   }
 
-  async updateBilling(id, billingData) {
+  async updateBilling(id: string, billingData: any): Promise<ApiResponse> {
     const payload = {
       customer_id: billingData.customer_id || billingData.customerId || null,
       customer_name: billingData.customer_name || billingData.customerName || null,
@@ -463,16 +504,16 @@ class ApiService {
     return this.put(`/billings/${id}`, payload);
   }
 
-  async deleteBilling(id) {
+  async deleteBilling(id: string): Promise<ApiResponse> {
     return this.delete(`/billings/${id}`);
   }
 
   // Cost Centers endpoints - Usando APENAS o backend
-  async getCostCenters(params = {}) {
+  async getCostCenters(params: Record<string, any> = {}): Promise<ApiResponse> {
     return this.get('/cost-centers', params);
   }
 
-  async createCostCenter(costCenterData) {
+  async createCostCenter(costCenterData: any): Promise<ApiResponse> {
     const payload = {
       name: costCenterData.name,
       description: costCenterData.description || null,
@@ -484,7 +525,7 @@ class ApiService {
     return this.post('/cost-centers', payload);
   }
 
-  async updateCostCenter(id, costCenterData) {
+  async updateCostCenter(id: string, costCenterData: any): Promise<ApiResponse> {
     const payload = {
       name: costCenterData.name || null,
       description: costCenterData.description || null,
@@ -493,7 +534,7 @@ class ApiService {
     return this.put(`/cost-centers/${id}`, payload);
   }
 
-  async deleteCostCenter(id) {
+  async deleteCostCenter(id: string): Promise<ApiResponse> {
     return this.delete(`/cost-centers/${id}`);
   }
 
@@ -515,11 +556,11 @@ class ApiService {
   }
 
   // Accounts Payable endpoints - Usando APENAS o backend
-  async getAccountsPayable(params = {}) {
+  async getAccountsPayable(params: Record<string, any> = {}): Promise<ApiResponse> {
     return this.get('/accounts-payable', params);
   }
 
-  async createAccountPayable(accountData) {
+  async createAccountPayable(accountData: any): Promise<ApiResponse> {
     const payload = {
       description: accountData.description,
       amount: accountData.amount,
@@ -536,7 +577,7 @@ class ApiService {
     return this.post('/accounts-payable', payload);
   }
 
-  async updateAccountPayable(id, accountData) {
+  async updateAccountPayable(id: string, accountData: any): Promise<ApiResponse> {
     const payload = {
       description: accountData.description || null,
       amount: parseFloat(accountData.amount) || 0,
@@ -552,16 +593,16 @@ class ApiService {
     return this.put(`/accounts-payable/${id}`, payload);
   }
 
-  async deleteAccountPayable(id) {
+  async deleteAccountPayable(id: string): Promise<ApiResponse> {
     return this.delete(`/accounts-payable/${id}`);
   }
 
   // NFe endpoints - Usando APENAS o backend
-  async getNFes(params = {}) {
-    return this.get('/financial-documents', params);
+  async getNFes(params: Record<string, any> = {}): Promise<ApiResponse> {
+    return this.get('/nfe', params);
   }
 
-  async createNFe(nfeData) {
+  async createNFe(nfeData: any): Promise<ApiResponse> {
     const payload = {
       customer_id: nfeData.customer_id || nfeData.customerId,
       customer_name: nfeData.customer_name || nfeData.customerName || '',
@@ -578,7 +619,7 @@ class ApiService {
     return this.post('/nfe', payload);
   }
 
-  async updateNFe(id, nfeData) {
+  async updateNFe(id: string, nfeData: any): Promise<ApiResponse> {
     const payload = {
       customer_id: nfeData.customer_id || nfeData.customerId || null,
       customer_name: nfeData.customer_name || nfeData.customerName || null,
@@ -594,43 +635,42 @@ class ApiService {
     return this.put(`/nfe/${id}`, payload);
   }
 
-  async deleteNFe(id) {
+  async deleteNFe(id: string): Promise<ApiResponse> {
     return this.delete(`/nfe/${id}`);
   }
 
   // Integrations endpoints - Usando APENAS o backend
-  async getIntegrations() {
+  async getIntegrations(): Promise<ApiResponse> {
     return this.get('/integrations');
   }
 
-  async updateIntegration(name, configData) {
+  async updateIntegration(name: string, configData: any): Promise<ApiResponse> {
     return this.put(`/integrations/${name}`, configData);
   }
 
-  async testIntegration(name) {
-    return this.post(`/integrations/${name}/test`);
+  async testIntegration(name: string): Promise<ApiResponse> {
+    return this.post(`/integrations/${name}/test`, {});
   }
 
   // Metrics endpoints - Usando APENAS o backend
-  async getDashboardMetrics(params = {}) {
+  async getDashboardMetrics(params: Record<string, any> = {}): Promise<ApiResponse> {
     return this.get('/metrics', params);
   }
 
-  async getFinancialMetrics(params = {}) {
+  async getFinancialMetrics(params: Record<string, any> = {}): Promise<ApiResponse> {
     return this.get('/metrics/financial', params);
   }
 
-  async getSalesMetrics(params = {}) {
+  async getSalesMetrics(params: Record<string, any> = {}): Promise<ApiResponse> {
     return this.get('/metrics/sales', params);
   }
 
-
-
   // Partners endpoints - Usando APENAS o backend
-  async getPartners(params = {}) {
+  async getPartners(params: Record<string, any> = {}): Promise<ApiResponse> {
     return this.get('/partners', params);
   }
-  async createPartner(partnerData) {
+
+  async createPartner(partnerData: any): Promise<ApiResponse> {
     const payload = {
       name: partnerData.name,
       tax_id: partnerData.tax_id || partnerData.taxId || '',
@@ -647,7 +687,8 @@ class ApiService {
     };
     return this.post('/partners', payload);
   }
-  async updatePartner(id, partnerData) {
+
+  async updatePartner(id: string, partnerData: any): Promise<ApiResponse> {
     const payload = {
       name: partnerData.name,
       tax_id: partnerData.tax_id || partnerData.taxId,
@@ -663,164 +704,66 @@ class ApiService {
     };
     return this.put(`/partners/${id}`, payload);
   }
-  async deletePartner(id) {
+
+  async deletePartner(id: string): Promise<ApiResponse> {
     return this.delete(`/partners/${id}`);
   }
 
   // Financial Documents endpoints - Usando APENAS o backend
-  async getFinancialDocuments(params = {}) {
+  async getFinancialDocuments(params: Record<string, any> = {}): Promise<ApiResponse> {
     return this.get('/financial-documents', params);
   }
-  async createFinancialDocument(docData) {
+
+  async createFinancialDocument(docData: any): Promise<ApiResponse> {
     return this.post('/financial-documents', docData);
   }
-  async updateFinancialDocument(id, docData) {
+
+  async updateFinancialDocument(id: string, docData: any): Promise<ApiResponse> {
     return this.put(`/financial-documents/${id}`, docData);
   }
-  async deleteFinancialDocument(id) {
+
+  async deleteFinancialDocument(id: string): Promise<ApiResponse> {
     return this.delete(`/financial-documents/${id}`);
   }
 
   // Users endpoints (admin only) - Usando APENAS o backend
-  async getUsers(params = {}) {
+  async getUsers(params: Record<string, any> = {}): Promise<ApiResponse> {
     return this.get('/users', params);
   }
 
-  async getUserById(id) {
+  async getUserById(id: string): Promise<ApiResponse> {
     const response = await this.get(`/users/${id}`);
     // Normalizar resposta para compatibilidade
-    if (response.uers && !response.user) {
-      response.user = response.uers;
-      delete response.uers;
+    if (response.data?.uers && !response.data?.user) {
+      response.data.user = response.data.uers;
+      delete response.data.uers;
     }
     return response;
   }
 
-  async createUser(userData) {
-    // Solução temporária: criar usuário diretamente no Supabase
-    // já que a função Edge não foi atualizada
-    try {
-      const supabaseUrl = 'https://qerubjitetqwfqqydhzv.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlcnViaml0ZXRxd2ZxcXlkaHp2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDAwNTk0NSwiZXhwIjoyMDY5NTgxOTQ1fQ.hBfdao-iJX4KvjMQ7LzcmBf4PXtbcMrat9IGr2asfDc';
-      
-      const response = await fetch(`${supabaseUrl}/rest/v1/users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseKey}`,
-          'apikey': supabaseKey,
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify({
-          name: userData.name,
-          email: userData.email,
-          password: userData.password, // Será hasheada pelo Supabase
-          role: userData.role || 'user',
-          segment_id: userData.segment_id || null,
-          status: userData.status || 'ativo'
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao criar usuário');
-      }
-
-      const data = await response.json();
-      return {
-        success: true,
-        user: data[0], // Supabase retorna array
-        message: 'Usuário criado com sucesso'
-      };
-    } catch (error) {
-      console.error('Erro na criação direta:', error);
-      // Fallback para a função Edge (mesmo com erro)
-      const response = await this.post('/users', userData);
-      // Normalizar resposta para compatibilidade
-      if (response.uers && !response.user) {
-        response.user = response.uers;
-        delete response.uers;
-      }
-      return response;
-    }
+  async createUser(userData: any): Promise<ApiResponse> {
+    return this.post('/users', userData);
   }
 
-  async updateUser(id, userData) {
-    // Solução temporária: atualizar usuário diretamente no Supabase
-    try {
-      const supabaseUrl = 'https://qerubjitetqwfqqydhzv.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlcnViaml0ZXRxd2ZxcXlkaHp2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDAwNTk0NSwiZXhwIjoyMDY5NTgxOTQ1fQ.hBfdao-iJX4KvjMQ7LzcmBf4PXtbcMrat9IGr2asfDc';
-      
-      const response = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseKey}`,
-          'apikey': supabaseKey,
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(userData)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao atualizar usuário');
-      }
-
-      const data = await response.json();
-      return {
-        success: true,
-        user: data[0],
-        message: 'Usuário atualizado com sucesso'
-      };
-    } catch (error) {
-      console.error('Erro na atualização direta:', error);
-      // Fallback para a função Edge
-      const response = await this.put(`/users/${id}`, userData);
-      if (response.uers && !response.user) {
-        response.user = response.uers;
-        delete response.uers;
-      }
-      return response;
+  async updateUser(id: string, userData: any): Promise<ApiResponse> {
+    const response = await this.put(`/users/${id}`, userData);
+    if (response.data?.uers && !response.data?.user) {
+      response.data.user = response.data.uers;
+      delete response.data.uers;
     }
+    return response;
   }
 
-  async deleteUser(id) {
-    // Solução temporária: deletar usuário diretamente no Supabase
-    try {
-      const supabaseUrl = 'https://qerubjitetqwfqqydhzv.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlcnViaml0ZXRxd2ZxcXlkaHp2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDAwNTk0NSwiZXhwIjoyMDY5NTgxOTQ1fQ.hBfdao-iJX4KvjMQ7LzcmBf4PXtbcMrat9IGr2asfDc';
-      
-      const response = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
-          'apikey': supabaseKey
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao deletar usuário');
-      }
-
-      return {
-        success: true,
-        message: 'Usuário deletado com sucesso'
-      };
-    } catch (error) {
-      console.error('Erro na exclusão direta:', error);
-      // Fallback para a função Edge
+  async deleteUser(id: string): Promise<ApiResponse> {
     return this.delete(`/users/${id}`);
-    }
   }
 
   // Receita Federal - Usando APENAS o backend
-  async consultarReceita(cpf) {
+  async consultarReceita(cpf: string): Promise<ApiResponse> {
     return this.get(`/receita/consulta/${cpf}`);
   }
 
-  async consultarReceitaCNPJ(cnpj) {
+  async consultarReceitaCNPJ(cnpj: string): Promise<ApiResponse> {
     return this.get(`/receita/consulta-cnpj/${cnpj}`);
   }
 

@@ -6,9 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Briefcase, LogOut, UserCircle, ShieldAlert, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu.jsx';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
-import { useAppData } from '@/hooks/useAppData.jsx';
+import { useAppData } from '@/hooks/useAppData';
 import { menuItems as appMenuItems } from '@/config/menuConfig'; 
 import { getRouteFromMenuId, getMenuIdFromRoute } from '@/config/routeConfig';
 import { calculateMetrics } from '@/utils/metrics';
@@ -128,22 +128,7 @@ const ErpLayout = ({ children }) => {
             </Button>
           </div>
 
-          {/* User Info */}
-          <div className="p-4 border-b border-slate-700/50">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <UserCircle className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">
-                  {currentUser?.name || 'Usuário'}
-                </p>
-                <p className="text-xs text-gray-400 truncate">
-                  {currentUser?.email || 'usuario@exemplo.com'}
-                </p>
-              </div>
-            </div>
-          </div>
+
 
           {/* Segment Selector */}
           {safeSegments.length > 0 && (
@@ -206,17 +191,7 @@ const ErpLayout = ({ children }) => {
               })}
             </nav>
 
-          {/* Footer */}
-          <div className="p-4 border-t border-slate-700/50">
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-gray-400 hover:text-white hover:bg-slate-800"
-              onClick={handleLogout}
-            >
-              <LogOut className="w-5 h-5 mr-3" />
-              Sair
-            </Button>
-          </div>
+
         </div>
       </div>
 
@@ -239,26 +214,70 @@ const ErpLayout = ({ children }) => {
               </h2>
             </div>
             
-            {/* Quick Stats */}
-            <div className="hidden md:flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-xs text-gray-400">Receita Total</p>
-                <p className="text-sm font-semibold text-green-400">
-                  R$ {metrics?.totalRevenue?.toLocaleString('pt-BR') || '0'}
-                </p>
-              </div>
+            <div className="flex items-center space-x-4">
+              {/* Quick Stats */}
+              <div className="hidden md:flex items-center space-x-4">
                 <div className="text-right">
-                <p className="text-xs text-gray-400">Despesas</p>
-                <p className="text-sm font-semibold text-red-400">
-                  R$ {metrics?.totalExpenses?.toLocaleString('pt-BR') || '0'}
+                  <p className="text-xs text-gray-400">Receita Total</p>
+                  <p className="text-sm font-semibold text-green-400">
+                    R$ {metrics?.totalRevenue?.toLocaleString('pt-BR') || '0'}
                   </p>
                 </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-400">Lucro</p>
-                <p className="text-sm font-semibold text-blue-400">
-                  R$ {metrics?.netProfit?.toLocaleString('pt-BR') || '0'}
-                </p>
+                <div className="text-right">
+                  <p className="text-xs text-gray-400">Despesas</p>
+                  <p className="text-sm font-semibold text-red-400">
+                    R$ {metrics?.totalExpenses?.toLocaleString('pt-BR') || '0'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-gray-400">Lucro</p>
+                  <p className="text-sm font-semibold text-blue-400">
+                    R$ {metrics?.netProfit?.toLocaleString('pt-BR') || '0'}
+                  </p>
+                </div>
               </div>
+
+              {/* User Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-2 text-white hover:bg-slate-700/50">
+                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                      <UserCircle className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="hidden md:block text-left">
+                      <p className="text-sm font-medium truncate">
+                        {currentUser?.name || 'Usuário'}
+                      </p>
+                      <p className="text-xs text-gray-400 truncate">
+                        {currentUser?.email || 'usuario@exemplo.com'}
+                      </p>
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end">
+                  <DropdownMenuLabel>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <UserCircle className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{currentUser?.name || 'Usuário'}</p>
+                        <p className="text-xs text-gray-500">{currentUser?.email || 'usuario@exemplo.com'}</p>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push('/profile')}>
+                    <UserCircle className="w-4 h-4 mr-2" />
+                    Meu Perfil
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
@@ -267,18 +286,18 @@ const ErpLayout = ({ children }) => {
         <main className="flex-1 p-6">
           <Suspense fallback={<ModuleLoadingFallback />}>
             <AnimatePresence mode="wait">
-                      <motion.div
-                key={activeModule}
+              <motion.div
+                key={`${activeModule}-${pathname}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3 }}
-                      >
+                transition={{ duration: 0.3 }}
+              >
                 {children}
-                      </motion.div>
+              </motion.div>
             </AnimatePresence>
           </Suspense>
-          </main>
+        </main>
       </div>
     </div>
   );

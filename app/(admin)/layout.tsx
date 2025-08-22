@@ -7,7 +7,11 @@ import { useRouter } from 'next/navigation';
 import { useAppData } from '@/hooks/useAppData';
 import ErpLayout from '@/components/layouts/ErpLayout';
 
-export default function AdminLayout({ children }) {
+interface AdminLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
   const { currentUser, loading } = useAppData();
 

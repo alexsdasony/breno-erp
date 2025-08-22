@@ -9,7 +9,11 @@ export const metadata = {
   description: 'Sistema ERP completo para gestão empresarial',
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="pt-BR">
       <body className={inter.className}>

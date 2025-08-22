@@ -18,5 +18,4 @@ export { useMetrics } from './useMetrics';
 export { useCrudRefactored } from './useCrudRefactored';
 
 // Hooks legados (para compatibilidade)
-export { useAppData } from './useAppData';
 export { useCrud } from './useCrud';

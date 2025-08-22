@@ -26,10 +26,10 @@ Seja conciso e caloroso. Use listas apenas quando for imprescindível para clare
 9) Segurança: se algo violar diretrizes, responda: “Desculpe, não posso ajudar com isso.”
 
 ### DIRETIVAS TÉCNICAS (STACK)
-- Frontend: Next.js 15 (app router), framer-motion leve, componentes em `src/components/ui/*`. Aderir ao padrão visual existente.
-- Estado/Dados: **usar** `useAppData` + `useCrud` quando disponível; **não duplicar** lógica de fetch.
+- Frontend: Next.js 13+ (app router), framer-motion leve, componentes em `src/components/ui/*`. Aderir ao padrão visual existente.
+- Estado/Dados: **não duplicar** lógica de fetch.
 - API: **sempre** chamar via `apiService` (`src/services/api.js`). **Nunca** hardcode URL.
-- CRUD PARCEIROS: usar `/partners` com `role` (`customer`/`supplier`). **Não** usar `/customers` no front.
+- CRUD PARCEIROS: usar `/partners` com `role` (`customer`/`supplier`). 
 - Auth: tokens via `apiService` (sessionStorage). Evitar uso de `X-User-Token` com Edge Functions.
 - DB: conferir nomes e tipos no `current-schema.sql` antes de criar migração/mutação.
 
@@ -37,15 +37,14 @@ Seja conciso e caloroso. Use listas apenas quando for imprescindível para clare
 Quando eu pedir para criar/ajustar CRUD:
 #1 Checar modelo (tabela, colunas, PK/FK) no schema SQL.
 #2 Checar endpoints no `supabase/functions/<resource>`.
-#3 Checar métodos no `apiService` e no `useCrud`.
-#4 Se o módulo React já existe, usar **os hooks do contexto** (nada de props soltas).
-#5 Entregar: (a) diff do arquivo, (b) teste manual de fluxo (passos e dados) e (c) nota de compatibilidade.
+#3 Manter backend supabase como fonte única de verdade usando edge functions e não usar endpoints/apis ou middlewares paralelos.
+#4 Se o módulo React já existe, usar **os hooks do contexto** (nada de props soltas)..
 
-### TESTE MANUAL PADRÃO (exemplo Partners/Suppliers)
-- Criar: abrir módulo, preencher `name`, `tax_id`, `email`… `role='supplier'`, salvar → lista atualiza.
-- Editar: abrir item, alterar campo visível, salvar → toast sucesso.
-- Excluir: confirmar, sumir da lista → refetch ok.
-- Edge Cases: segment_id nulo, tax_id CPF/CNPJ, status.
+### TESTE PADRÃO (exemplo Partners/Suppliers)
+- Abrir browser chrome, realizar login no sistema com as credenciais de admin padrão (admin@breno-erp.com / admin123), executar clique no menu referente à feature testada (exemplo: Clientes)
+- Criar: clicar no botão de Novo ou Cadastrar, preencher todos os campos obrigatórios de acordo com a validação prevista no frontend, clicar no botao de salvar → verificar se o novo item apareceu como primeiro da lista (tete usar a ID ou nome para verficiar a existencia do item na nova lista)
+- Editar: faça login no sistema, vá até o módulo que está sendo testado usando o evento de clique nna sidebar, vamos usar o primeiro item da lista, clicar no botão de ação de Editar para este item, verificar se todos os dados obrigatórios foram carregados corretamente, alterar um dos campos que aparecem na listagem (para poder checar se a alteração foi efetivada depois), ideal que seja um cmapo de text adicionando uma string (ex: EDITADO ou TESTE DE EDICAO) mas pode ser um campo numerico também (desde que o valor editado fique guardado na memoria do robo de teste para que a pós o salvamento ele possa checar o valor alterado diretamente na lista que sofrerá refetch após a persistência), clicar no botao de salvar → verificar se a alteração se manteve após o refetch.
+- Excluir: faça login no sistema, clique no modulo que esta sendo testado na sidebar imitando um clique do usuário, aguarda a lista carregar, exclua o primeiro item da lista usando o botao de ação excluir ou deletar, confirmar que deseja deletar o item na modal de confirmação, após o fechamento da modal e do toast, verificar se o item sumiu da lista, caso isso nao tenha ocorrido clique num outro modulo na sidebar e após o modulo carregar volte ao módulo onde estava, apenas para garantir que o refetch ocorreu e verifique novamente se o item sumiu para dar o resultado de pass ou fail do teste.
 
 ### AVISOS DE ACURÁCIA
 Informações recentes/externas podem estar desatualizadas — **a fonte é este repositório**.
