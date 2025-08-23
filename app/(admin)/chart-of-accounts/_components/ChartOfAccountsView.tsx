@@ -5,11 +5,17 @@ import { useChartOfAccounts } from '../_hooks/useChartOfAccounts';
 import { Button } from '@/components/ui/button';
 
 export default function ChartOfAccountsView() {
-  const { items, loading, hasMore, loadMore, create, remove } = useChartOfAccounts();
+  const { items, loading, hasMore, loadMore, create, update, remove } = useChartOfAccounts();
   const [showForm, setShowForm] = React.useState(false);
   const [code, setCode] = React.useState('');
   const [name, setName] = React.useState('');
   const [type, setType] = React.useState<'asset' | 'liability' | 'equity' | 'revenue' | 'expense' | ''>('');
+
+  // Edit state
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [editCode, setEditCode] = React.useState('');
+  const [editName, setEditName] = React.useState('');
+  const [editType, setEditType] = React.useState<'asset' | 'liability' | 'equity' | 'revenue' | 'expense' | ''>('');
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,6 +25,27 @@ export default function ChartOfAccountsView() {
     setName('');
     setType('');
     setShowForm(false);
+  };
+
+  const startEdit = (acc: { id: string; code?: string | null; name?: string | null; type?: any }) => {
+    setEditingId(acc.id);
+    setEditCode(acc.code || '');
+    setEditName(acc.name || '');
+    setEditType((acc.type as any) || '');
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditCode('');
+    setEditName('');
+    setEditType('');
+  };
+
+  const onSubmitEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingId || !editCode || !editName || !editType) return;
+    await update(editingId, { code: editCode, name: editName, type: editType });
+    cancelEdit();
   };
 
   return (
@@ -92,21 +119,83 @@ export default function ChartOfAccountsView() {
           </thead>
           <tbody>
             {items.map((acc) => (
-              <tr key={acc.id} className="border-b border-white/5">
-                <td className="p-3 align-top">{acc.code || '-'}</td>
-                <td className="p-3 align-top">{acc.name || '-'}</td>
-                <td className="p-3 align-top">{acc.type || '-'}</td>
-                <td className="p-3 align-top text-right">
-                  <button
-                    type="button"
-                    title="Excluir"
-                    className="px-2 py-1 rounded-md border border-white/10 hover:bg-white/10"
-                    onClick={() => void remove(acc.id)}
-                  >
-                    Excluir
-                  </button>
-                </td>
-              </tr>
+              <React.Fragment key={acc.id}>
+                <tr className="border-b border-white/5">
+                  <td className="p-3 align-top">{acc.code || '-'}</td>
+                  <td className="p-3 align-top">{acc.name || '-'}</td>
+                  <td className="p-3 align-top">{acc.type || '-'}</td>
+                  <td className="p-3 align-top text-right space-x-2">
+                    <button
+                      type="button"
+                      title="Editar"
+                      className="px-2 py-1 rounded-md border border-white/10 hover:bg-white/10"
+                      onClick={() => startEdit(acc)}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      title="Excluir"
+                      className="px-2 py-1 rounded-md border border-white/10 hover:bg-white/10"
+                      onClick={() => void remove(acc.id)}
+                    >
+                      Excluir
+                    </button>
+                  </td>
+                </tr>
+                {editingId === acc.id && (
+                  <tr className="border-b border-white/5 bg-white/5">
+                    <td colSpan={4} className="p-3">
+                      <form className="grid grid-cols-1 md:grid-cols-4 gap-3" onSubmit={onSubmitEdit}>
+                        <div className="flex flex-col gap-1">
+                          <label htmlFor={`editCode-${acc.id}`} className="text-sm">Código</label>
+                          <input
+                            id={`editCode-${acc.id}`}
+                            className="px-3 py-2 rounded-md bg-transparent border border-white/10"
+                            value={editCode}
+                            onChange={(e) => setEditCode(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label htmlFor={`editName-${acc.id}`} className="text-sm">Nome</label>
+                          <input
+                            id={`editName-${acc.id}`}
+                            className="px-3 py-2 rounded-md bg-transparent border border-white/10"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label htmlFor={`editType-${acc.id}`} className="text-sm">Tipo</label>
+                          <select
+                            id={`editType-${acc.id}`}
+                            className="px-3 py-2 rounded-md bg-transparent border border-white/10"
+                            value={editType}
+                            onChange={(e) => setEditType(e.target.value as any)}
+                            required
+                          >
+                            <option value="asset">Ativo</option>
+                            <option value="liability">Passivo</option>
+                            <option value="equity">Patrimônio</option>
+                            <option value="revenue">Receita</option>
+                            <option value="expense">Despesa</option>
+                          </select>
+                        </div>
+                        <div className="flex items-end gap-2">
+                          <Button type="submit" disabled={loading}>
+                            {loading ? 'Salvando...' : 'Salvar'}
+                          </Button>
+                          <button type="button" className="px-3 py-2 rounded-md border border-white/10" onClick={cancelEdit}>
+                            Cancelar
+                          </button>
+                        </div>
+                      </form>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
             ))}
             {items.length === 0 && (
               <tr>
