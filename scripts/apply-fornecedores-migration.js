@@ -1,13 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
+import dotenv from 'dotenv';
+
+// Carregar variáveis de ambiente
+dotenv.config({ path: '.env.local' });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Variáveis de ambiente do Supabase não encontradas');
-  console.error('Certifique-se de que NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY estão definidas');
+  console.error('NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl);
+  console.error('SUPABASE_SERVICE_ROLE_KEY:', supabaseKey ? '***' : 'não encontrada');
   process.exit(1);
 }
 
@@ -23,12 +28,25 @@ async function applyMigration() {
 
     console.log('📄 Executando migração...');
     
-    // Executar a migração
-    const { error } = await supabase.rpc('exec_sql', { sql: migrationSQL });
+    // Dividir o SQL em comandos individuais
+    const commands = migrationSQL
+      .split(';')
+      .map(cmd => cmd.trim())
+      .filter(cmd => cmd.length > 0 && !cmd.startsWith('--'));
 
-    if (error) {
-      console.error('❌ Erro ao executar migração:', error);
-      return;
+    for (const command of commands) {
+      if (command.trim()) {
+        console.log(`Executando: ${command.substring(0, 50)}...`);
+        
+        // Executar cada comando individualmente
+        const { error } = await supabase.rpc('exec_sql', { sql: command + ';' });
+        
+        if (error) {
+          console.error('❌ Erro ao executar comando:', error);
+          console.error('Comando:', command);
+          return;
+        }
+      }
     }
 
     console.log('✅ Migração aplicada com sucesso!');
