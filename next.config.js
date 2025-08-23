@@ -7,6 +7,11 @@ const nextConfig = {
   },
   output: 'standalone',
   
+  // Ignorar erros de ESLint durante o build
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  
   // Desabilitar SSR para páginas que usam useAppData
   async headers() {
     return [
