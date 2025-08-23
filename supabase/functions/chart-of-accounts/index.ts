@@ -86,7 +86,6 @@ serve(async (req) => {
         name: body.name,
         type: body.type, // 'asset', 'liability', 'equity', 'revenue', 'expense'
         parent_id: body.parent_id ?? null,
-        segment_id: body.segment_id ?? null,
       };
 
       const { data, error } = await supabase
@@ -107,7 +106,7 @@ serve(async (req) => {
       const body = await req.json();
 
       const updates: Record<string, any> = {};
-      ['code', 'name', 'type', 'parent_id', 'segment_id'].forEach((k) => {
+      ['code', 'name', 'type', 'parent_id'].forEach((k) => {
         if (k in body) updates[k] = body[k];
       });
 
