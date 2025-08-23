@@ -19,6 +19,7 @@ interface AppData {
     imobzi: { apiKey: string; enabled: boolean };
   };
   users: any[];
+  segments: any[];
   [key: string]: any;
 }
 
@@ -32,6 +33,7 @@ interface AppDataContextType {
   authLoading: boolean;
   setActiveSegmentId: (id: number) => void;
   refreshData: () => Promise<void>;
+  reloadDashboardData: (segmentId?: number) => Promise<void>;
   loginUser: (email: string, password: string) => Promise<boolean>;
   registerUser: (name: string, email: string, password: string, segmentId?: string | null) => Promise<boolean>;
   logoutUser: () => Promise<void>;
@@ -76,6 +78,7 @@ const defaultInitialData: AppData = {
     imobzi: { apiKey: '', enabled: false }
   },
   users: [], 
+  segments: []
 };
 
 interface AppDataProviderProps {
@@ -190,7 +193,8 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         accountsPayable: accountsPayableResponse.data?.accounts_payable || [],
         financialDocuments: financialDocumentsResponse.data?.financial_documents || [],
         integrations: integrationsResponse.data?.integrations || { imobzi: { apiKey: '', enabled: false } },
-        users: usersResponse.data?.users || []
+        users: usersResponse.data?.users || [],
+        segments: segments // Use the existing segments state
       });
 
       toast({
@@ -207,7 +211,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
     } finally {
       setLoading(false);
     }
-  }, [currentUser, activeSegmentId]);
+  }, [currentUser, activeSegmentId, segments]); // Add segments to dependencies
 
   // Auto-refresh data when segment changes
   useEffect(() => {
@@ -215,6 +219,73 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
       refreshData();
     }
   }, [activeSegmentId, currentUser, refreshData]);
+
+  const reloadDashboardData = useCallback(async (segmentId?: number) => {
+    if (!currentUser) return;
+    const targetSegmentId = segmentId || activeSegmentId;
+    if (!targetSegmentId) return;
+
+    try {
+      setLoading(true);
+      const [
+        transactionsResponse,
+        productsResponse,
+        salesResponse,
+        customersResponse,
+        partnersResponse,
+        nfeResponse,
+        billingsResponse,
+        costCentersResponse,
+        accountsPayableResponse,
+        financialDocumentsResponse,
+        integrationsResponse,
+        usersResponse
+      ] = await Promise.all([
+        apiService.getTransactions({ segment_id: targetSegmentId }),
+        apiService.getProducts({ segment_id: targetSegmentId }),
+        apiService.getSales({ segment_id: targetSegmentId }),
+        apiService.getCustomers({ segment_id: targetSegmentId }),
+        apiService.getPartners({ segment_id: targetSegmentId }),
+        apiService.getNFes({ segment_id: targetSegmentId }),
+        apiService.getBillings({ segment_id: targetSegmentId }),
+        apiService.getCostCenters({ segment_id: targetSegmentId }),
+        apiService.getAccountsPayable({ segment_id: targetSegmentId }),
+        apiService.getFinancialDocuments({ segment_id: targetSegmentId }),
+        apiService.getIntegrations(),
+        apiService.getUsers({ segment_id: targetSegmentId })
+      ]);
+
+      setData(prev => ({
+        ...prev,
+        transactions: transactionsResponse.data?.transactions || [],
+        products: productsResponse.data?.products || [],
+        sales: salesResponse.data?.sales || [],
+        customers: customersResponse.customers || [],
+        partners: partnersResponse.data?.partners || [],
+        nfeList: nfeResponse.data?.nfe || [],
+        billings: billingsResponse.data?.billings || [],
+        costCenters: costCentersResponse.data?.cost_centers || [],
+        accountsPayable: accountsPayableResponse.data?.accounts_payable || [],
+        financialDocuments: financialDocumentsResponse.data?.financial_documents || [],
+        integrations: integrationsResponse.data?.integrations || { imobzi: { apiKey: '', enabled: false } },
+        users: usersResponse.data?.users || []
+      }));
+
+      toast({
+        title: "Dados do Dashboard atualizados",
+        description: "Os dados do dashboard foram atualizados com sucesso.",
+      });
+    } catch (error) {
+      console.error('Error reloading dashboard data:', error);
+      toast({
+        title: "Erro ao atualizar dados do Dashboard",
+        description: "Não foi possível atualizar os dados do dashboard. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser, activeSegmentId]);
 
   const contextValue: AppDataContextType = {
     data,
@@ -226,6 +297,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
     authLoading,
     setActiveSegmentId,
     refreshData,
+    reloadDashboardData,
     loginUser,
     registerUser,
     logoutUser,

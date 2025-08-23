@@ -4,22 +4,24 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppData } from '@/hooks/useAppData';
 
+export const dynamic = 'force-dynamic';
+
 export default function HomePage() {
   const router = useRouter();
-  const { currentUser, loading } = useAppData();
+  const { currentUser: user, authLoading } = useAppData();
 
   useEffect(() => {
-    if (!loading) {
-      if (currentUser) {
+    if (!authLoading) {
+      if (user) {
         router.push('/dashboard');
       } else {
         router.push('/login');
       }
     }
-  }, [currentUser, loading, router]);
+  }, [user, authLoading, router]);
 
   // Loading state
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">

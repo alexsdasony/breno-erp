@@ -1,4 +1,4 @@
-interface MetricsData {
+export interface MetricsData {
   transactions: any[];
   products: any[];
   sales: any[];

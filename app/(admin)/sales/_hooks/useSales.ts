@@ -1,0 +1,132 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import apiService from '@/services/api';
+import { toast } from '@/components/ui/use-toast';
+
+export interface SaleItem {
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+}
+
+export interface Sale {
+  id: string;
+  customer_id?: string | null;
+  customer_name?: string | null;
+  date?: string | null;
+  status?: string | null; // draft, confirmed, canceled
+  total_amount?: number | null;
+  notes?: string | null;
+  segment_id?: string | null;
+  items?: SaleItem[];
+}
+
+interface State {
+  items: Sale[];
+  loading: boolean;
+  page: number;
+  hasMore: boolean;
+}
+
+interface Api {
+  load: (reset?: boolean) => Promise<void>;
+  loadMore: () => Promise<void>;
+  create: (data: Partial<Sale>) => Promise<Sale | null>;
+  update: (id: string, data: Partial<Sale>) => Promise<Sale | null>;
+  remove: (id: string) => Promise<boolean>;
+}
+
+const PAGE_SIZE = 20;
+
+export function useSales() {
+  const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
+
+  const fetchPage = useCallback(async (page: number) => {
+    const res = await apiService.getSales({ page, pageSize: PAGE_SIZE });
+    const list = (res as any).sales || (res as any).data || [];
+    return list as Sale[];
+  }, []);
+
+  const load = useCallback(async (reset: boolean = false) => {
+    setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
+    try {
+      const page = reset ? 1 : state.page;
+      const list = await fetchPage(page);
+      setState((s) => ({
+        items: reset ? list : [...s.items, ...list],
+        loading: false,
+        page,
+        hasMore: list.length === PAGE_SIZE,
+      }));
+    } catch (e) {
+      setState((s) => ({ ...s, loading: false }));
+      toast({
+        title: 'Falha ao carregar vendas',
+        description: 'Tente novamente em instantes.',
+        variant: 'destructive',
+      });
+    }
+  }, [state.page, fetchPage]);
+
+  const loadMore = useCallback(async () => {
+    if (state.loading || !state.hasMore) return;
+    const nextPage = state.page + 1;
+    setState((s) => ({ ...s, page: nextPage }));
+    const list = await fetchPage(nextPage);
+    setState((s) => ({
+      ...s,
+      items: [...s.items, ...list],
+      hasMore: list.length === PAGE_SIZE,
+      loading: false,
+    }));
+  }, [state.loading, state.hasMore, state.page, fetchPage]);
+
+  const create = useCallback(async (data: Partial<Sale>) => {
+    try {
+      const res = await apiService.createSale(data);
+      const item = (res as any).sale || (res as any).data || res;
+      setState((s) => ({ ...s, items: [item as Sale, ...s.items] }));
+      toast({ title: 'Venda criada', description: `ID: ${(item as Sale)?.id || ''}` });
+      return item as Sale;
+    } catch (e) {
+      toast({ title: 'Erro ao criar venda', description: 'Verifique os dados informados.', variant: 'destructive' });
+      return null;
+    }
+  }, []);
+
+  const update = useCallback(async (id: string, data: Partial<Sale>) => {
+    try {
+      const res = await apiService.updateSale(id, data);
+      const item = (res as any).sale || (res as any).data || res;
+      setState((s) => ({
+        ...s,
+        items: s.items.map((it) => (it.id === id ? (item as Sale) : it)),
+      }));
+      toast({ title: 'Venda atualizada', description: `ID: ${(item as Sale)?.id || ''}` });
+      return item as Sale;
+    } catch (e) {
+      toast({ title: 'Erro ao atualizar venda', description: 'Tente novamente.', variant: 'destructive' });
+      return null;
+    }
+  }, []);
+
+  const remove = useCallback(async (id: string) => {
+    try {
+      await apiService.deleteSale(id);
+      setState((s) => ({ ...s, items: s.items.filter((it) => it.id !== id) }));
+      toast({ title: 'Venda removida', description: `ID: ${id}` });
+      return true;
+    } catch (e) {
+      toast({ title: 'Erro ao remover venda', description: 'Tente novamente.', variant: 'destructive' });
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    void load(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const api: Api = useMemo(() => ({ load, loadMore, create, update, remove }), [load, loadMore, create, update, remove]);
+
+  return { ...state, ...api };
+}

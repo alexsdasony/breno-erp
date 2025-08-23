@@ -11,16 +11,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuIte
 import { useAppData } from '@/hooks/useAppData';
 import { menuItems as appMenuItems } from '@/config/menuConfig'; 
 import { getRouteFromMenuId, getMenuIdFromRoute } from '@/config/routeConfig';
-import { calculateMetrics } from '@/utils/metrics';
 
 const ErpLayout = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
-  const appData = useAppData();
-  const { currentUser, logoutUser, data, activeSegmentId, setActiveSegmentId, loading } = appData;
-  const metrics = calculateMetrics(data, activeSegmentId);
+  const { currentUser, logoutUser, segments, activeSegmentId, setActiveSegmentId, authLoading, metrics } = useAppData();
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -35,12 +32,12 @@ const ErpLayout = ({ children }) => {
   }, [pathname]);
 
   React.useEffect(() => {
-    if (!loading && !currentUser) {
+    if (!authLoading && !currentUser) {
       router.push('/login');
     }
-  }, [currentUser, loading, router]);
+  }, [currentUser, authLoading, router]);
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
@@ -72,7 +69,7 @@ const ErpLayout = ({ children }) => {
     router.push('/login');
   };
 
-  const safeSegments = data.segments || [];
+  const safeSegments = segments || [];
   const safeActiveSegmentId = activeSegmentId || 0;
 
   const ModuleLoadingFallback = () => (

@@ -1,18 +1,19 @@
-import { Inter } from 'next/font/google';
-import './globals.css';
-import { Providers } from './providers';
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { Providers } from './providers'
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'] })
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Breno ERP',
-  description: 'Sistema ERP completo para gestão empresarial',
-};
+  description: 'Sistema de gestão empresarial completo',
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
     <html lang="pt-BR">
@@ -22,5 +23,5 @@ export default function RootLayout({
         </Providers>
       </body>
     </html>
-  );
+  )
 }

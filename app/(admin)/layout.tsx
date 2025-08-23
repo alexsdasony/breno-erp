@@ -13,15 +13,15 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
-  const { currentUser, loading } = useAppData();
+  const { currentUser: user, authLoading } = useAppData();
 
   useEffect(() => {
-    if (!loading && !currentUser) {
+    if (!authLoading && !user) {
       router.push('/login');
     }
-  }, [currentUser, loading, router]);
+  }, [user, authLoading, router]);
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
@@ -38,9 +38,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  if (!currentUser) {
+  if (!user) {
     return null;
   }
 
   return <ErpLayout>{children}</ErpLayout>;
 }
+

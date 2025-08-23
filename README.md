@@ -66,29 +66,6 @@ breno-erp/
 │   ├── layout.js               # Layout raiz
 │   ├── providers.js            # Providers (Context)
 │   └── globals.css             # Estilos globais
-├── src/
-│   ├── components/             # Componentes reutilizáveis
-│   │   ├── ui/                 # Componentes base (Radix UI)
-│   │   └── layouts/            # Layouts específicos
-│   ├── modules/                # Módulos do sistema
-│   │   ├── DashboardModule.jsx
-│   │   ├── FinancialModule.jsx
-│   │   ├── SalesModule.jsx
-│   │   ├── CustomersModule.jsx
-│   │   ├── InventoryModule.jsx
-│   │   ├── BillingModule.jsx
-│   │   ├── AccountsPayableModule.jsx
-│   │   ├── CostCentersModule.jsx
-│   │   ├── SegmentsModule.jsx
-│   │   ├── NFeModule.jsx
-│   │   ├── ReportsModule.jsx
-│   │   ├── ProfileModule.jsx
-│   │   └── IntegrationsModule.jsx
-│   ├── hooks/                  # Hooks customizados
-│   │   ├── useAuth.jsx         # Autenticação
-│   │   ├── useAppData.jsx      # Dados globais
-│   │   └── useCrud.jsx         # Operações CRUD
-│   ├── services/               # Serviços
 │   │   ├── api.js              # Cliente HTTP
 │   │   └── supabase.js         # Cliente Supabase
 │   ├── config/                 # Configurações
@@ -227,16 +204,17 @@ Cada teste segue o padrão:
 
 ## 📊 Módulos do Sistema (Atualizado)
 
-### Padrão de Implementação
-Cada módulo segue a seguinte estrutura:
+### Padrão de Implementação (App Router)
+Cada rota sob `app/(admin)/<rota>/` segue:
 ```
-src/modules/
-  ├── [ModuleName]Module.jsx     # Componente principal
-  ├── hooks/
-  │   └── use[ModuleName].js     # Lógica específica do módulo
-  └── services/
-      └── [moduleName]Service.js # Chamadas à API
+app/(admin)/<rota>/
+  ├── _hooks/
+  │   └── use<Feature>.ts        # Hook tipado com paginação e CRUD
+  ├── _components/
+  │   └── <Feature>View.tsx      # Componente de UI consumindo o hook
+  └── page.tsx                   # Página importando o View
 ```
+Serviços ficam em `src/services/*.ts` e usam `apiService` (`src/services/api.ts`) com mapeamento camelCase → snake_case.
 
 ### Hooks Compartilhados
 - `usePartners`: Gerencia clientes e fornecedores
