@@ -1,6 +1,5 @@
 'use client';
 
-import { StrictMode } from 'react';
 import { AppDataProvider } from '@/hooks/useAppData';
 
 interface ProvidersProps {
@@ -9,10 +8,8 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <StrictMode>
-      <AppDataProvider>
-        {children}
-      </AppDataProvider>
-    </StrictMode>
+    <AppDataProvider>
+      {children}
+    </AppDataProvider>
   );
 }
