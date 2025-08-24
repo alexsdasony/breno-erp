@@ -543,7 +543,7 @@ class ApiService {
     return this.get('/chart-of-accounts', params);
   }
 
-  async createChartOfAccount(accountData) {
+  async createChartOfAccount(accountData: any) {
     return this.post('/chart-of-accounts', accountData);
   }
 
