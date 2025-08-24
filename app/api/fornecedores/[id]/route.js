@@ -4,14 +4,20 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
+let supabase = null;
+
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+} else {
   console.error("Supabase env vars missing for fornecedores API");
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 // GET - Buscar fornecedor por ID
 export async function GET(request, { params }) {
+  if (!supabase) {
+    return NextResponse.json({ error: 'Supabase não configurado' }, { status: 500 });
+  }
+
   try {
     const { id } = params;
 
@@ -38,6 +44,10 @@ export async function GET(request, { params }) {
 
 // PUT - Atualizar fornecedor
 export async function PUT(request, { params }) {
+  if (!supabase) {
+    return NextResponse.json({ error: 'Supabase não configurado' }, { status: 500 });
+  }
+
   try {
     const { id } = params;
     const body = await request.json();
@@ -123,6 +133,10 @@ export async function PUT(request, { params }) {
 
 // DELETE - Excluir fornecedor
 export async function DELETE(request, { params }) {
+  if (!supabase) {
+    return NextResponse.json({ error: 'Supabase não configurado' }, { status: 500 });
+  }
+
   try {
     const { id } = params;
 

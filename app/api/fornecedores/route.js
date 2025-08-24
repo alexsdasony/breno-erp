@@ -4,14 +4,20 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
+let supabase = null;
+
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+} else {
   console.error("Supabase env vars missing for fornecedores API");
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 // GET - Listar fornecedores
 export async function GET(request) {
+  if (!supabase) {
+    return NextResponse.json({ error: 'Supabase não configurado' }, { status: 500 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const segmentId = searchParams.get('segmentId');
@@ -52,6 +58,10 @@ export async function GET(request) {
 
 // POST - Criar fornecedor
 export async function POST(request) {
+  if (!supabase) {
+    return NextResponse.json({ error: 'Supabase não configurado' }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
 
