@@ -539,7 +539,7 @@ class ApiService {
   }
 
   // Chart of Accounts endpoints - Usando APENAS o backend
-  async getChartOfAccounts(params = {}) {
+  async getChartOfAccounts(params: Record<string, any> = {}) {
     return this.get('/chart-of-accounts', params);
   }
 
@@ -547,11 +547,11 @@ class ApiService {
     return this.post('/chart-of-accounts', accountData);
   }
 
-  async updateChartOfAccount(id, accountData) {
+  async updateChartOfAccount(id: number | string, accountData: any) {
     return this.put(`/chart-of-accounts/${id}`, accountData);
   }
 
-  async deleteChartOfAccount(id) {
+  async deleteChartOfAccount(id: number | string) {
     return this.delete(`/chart-of-accounts/${id}`);
   }
 
@@ -768,19 +768,19 @@ class ApiService {
   }
 
   // Suppliers/Fornecedores
-  async getSuppliers() {
+  async getSuppliers(): Promise<ApiResponse> {
     return this.get('/suppliers');
   }
 
-  async createSupplier(supplierData) {
+  async createSupplier(supplierData: any): Promise<ApiResponse> {
     return this.post('/suppliers', supplierData);
   }
 
-  async updateSupplier(id, supplierData) {
+  async updateSupplier(id: string, supplierData: any): Promise<ApiResponse> {
     return this.put(`/suppliers/${id}`, supplierData);
   }
 
-  async deleteSupplier(id) {
+  async deleteSupplier(id: string): Promise<ApiResponse> {
     return this.delete(`/suppliers/${id}`);
   }
 }
