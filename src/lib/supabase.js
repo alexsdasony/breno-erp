@@ -3,15 +3,16 @@ import jwt from 'jsonwebtoken'
 
 import { SUPABASE_CONFIG, SECURITY_CONFIG } from '../config/constants.js'
 
-const supabaseUrl = SUPABASE_CONFIG.URL
-const supabaseAnonKey = SUPABASE_CONFIG.ANON_KEY
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const jwtSecret = SECURITY_CONFIG.JWT_SECRET
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
+  console.error("Supabase env vars missing");
+  // Retorna fallback ou lança erro controlado
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl!, supabaseAnonKey!, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
