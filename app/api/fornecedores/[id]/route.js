@@ -8,7 +8,7 @@ if (!supabaseUrl || !supabaseKey) {
   console.error("Supabase env vars missing for fornecedores API");
 }
 
-const supabase = createClient(supabaseUrl!, supabaseKey!);
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // GET - Buscar fornecedor por ID
 export async function GET(request, { params }) {
