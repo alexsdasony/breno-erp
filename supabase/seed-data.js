@@ -410,16 +410,6 @@ const seedData = {
   integrations: [
     {
       id: uuidv4(),
-      service_name: 'ChatPro',
-      api_key: 'chatpro_api_key_123',
-      enabled: true,
-      config: {
-        webhook_url: 'https://webhook.chatpro.com/erp',
-        notifications_enabled: true
-      }
-    },
-    {
-      id: uuidv4(),
       service_name: 'WhatsApp Business',
       api_key: 'whatsapp_api_key_456',
       enabled: false,

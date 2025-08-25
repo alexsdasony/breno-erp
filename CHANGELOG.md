@@ -63,7 +63,7 @@
 - **Images**: Otimização automática de imagens
 
 ### 🧪 Testing & Quality
-- **TypeScript**: Compilação sem erros (`tsc --noEmit`)
+- **TypeScript**: Compilação sem erros (`npx tsc --noEmit`)
 - **Build**: Build de produção bem-sucedido
 - **Lint**: ESLint configurado e funcionando
 - **E2E**: IDs mantidos para compatibilidade com testes

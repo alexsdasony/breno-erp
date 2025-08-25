@@ -34,8 +34,23 @@ export function useCostCenters() {
 
   const fetchPage = useCallback(async (page: number) => {
     const res = await apiService.getCostCenters({ page, pageSize: PAGE_SIZE });
-    const list = (res as any).costCenters || (res as any).data || [];
-    return list as CostCenter[];
+    // Debug: inspecionar resposta bruta
+    // eslint-disable-next-line no-console
+    console.log('[useCostCenters] fetchPage raw response:', res);
+    // Normalizar possíveis formatos de retorno
+    const anyRes: any = res ?? {};
+    const list = Array.isArray(anyRes)
+      ? anyRes
+      : anyRes.costCenters ||
+        anyRes.data?.costCenters ||
+        anyRes.data ||
+        anyRes.items ||
+        anyRes.results ||
+        [];
+    const normalized = list as CostCenter[];
+    // eslint-disable-next-line no-console
+    console.log('[useCostCenters] fetchPage normalized length:', normalized?.length);
+    return normalized;
   }, []);
 
   const load = useCallback(async (reset: boolean = false) => {
@@ -49,16 +64,20 @@ export function useCostCenters() {
         page,
         hasMore: list.length === PAGE_SIZE,
       }));
+      // eslint-disable-next-line no-console
+      console.log('[useCostCenters] load items length after set:', reset ? list.length : (list.length + (state.items?.length || 0)));
     } catch (e) {
       setState((s) => ({ ...s, loading: false }));
       toast({ title: 'Falha ao carregar centros de custo', description: 'Tente novamente em instantes.', variant: 'destructive' });
+      // eslint-disable-next-line no-console
+      console.error('[useCostCenters] load error:', e);
     }
   }, [state.page, fetchPage]);
 
   const loadMore = useCallback(async () => {
     if (state.loading || !state.hasMore) return;
     const nextPage = state.page + 1;
-    setState((s) => ({ ...s, page: nextPage }));
+    setState((s) => ({ ...s, page: nextPage, loading: true }));
     const list = await fetchPage(nextPage);
     setState((s) => ({
       ...s,

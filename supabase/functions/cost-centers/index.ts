@@ -47,7 +47,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          cost_centers: data || [],
+          costCenters: data || [],
           total: data?.length || 0
         }),
         { 
@@ -78,7 +78,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          cost_centers: data
+          costCenter: data
         }),
         { 
           status: 200, 
@@ -90,19 +90,37 @@ serve(async (req) => {
     // POST - Criar
     if (req.method === 'POST') {
       const body = await req.json()
-      
+
+      // Apenas colunas válidas no schema atual
+      const payload: { name?: string; segment_id?: string | null } = {
+        name: body?.name,
+        segment_id: body?.segment_id ?? null,
+      }
+
+      // Validação básica
+      if (!payload.name || typeof payload.name !== 'string') {
+        return new Response(
+          JSON.stringify({ error: 'Campo obrigatório ausente: name' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        )
+      }
+
       const { data, error } = await supabase
         .from('cost_centers')
-        .insert(body)
+        .insert(payload)
         .select()
         .single()
 
       if (error) {
+        console.error('Erro ao criar cost_center:', error)
         return new Response(
           JSON.stringify({ error: 'Erro ao criar centro de custo' }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           }
         )
       }
@@ -110,12 +128,12 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          cost_centers: data,
-          message: 'Centro de Custo criado com sucesso'
+          costCenter: data,
+          message: 'Centro de Custo criado com sucesso',
         }),
-        { 
-          status: 201, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 201,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
     }
@@ -123,20 +141,36 @@ serve(async (req) => {
     // PUT - Atualizar
     if (req.method === 'PUT' && isSpecificId) {
       const body = await req.json()
-      
+
+      // Apenas colunas válidas no schema atual
+      const payload: { name?: string; segment_id?: string | null } = {}
+      if (typeof body?.name === 'string') payload.name = body.name
+      if (body?.segment_id !== undefined) payload.segment_id = body.segment_id ?? null
+
+      if (Object.keys(payload).length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'Nenhum campo válido para atualizar' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        )
+      }
+
       const { data, error } = await supabase
         .from('cost_centers')
-        .update(body)
+        .update(payload)
         .eq('id', lastSegment)
         .select()
         .single()
 
       if (error || !data) {
+        console.error('Erro ao atualizar cost_center:', error)
         return new Response(
           JSON.stringify({ error: 'Centro de Custo não encontrado' }),
-          { 
-            status: 404, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           }
         )
       }
@@ -144,12 +178,12 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          cost_centers: data,
-          message: 'Centro de Custo atualizado com sucesso'
+          costCenter: data,
+          message: 'Centro de Custo atualizado com sucesso',
         }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
     }
