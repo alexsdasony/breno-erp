@@ -329,48 +329,130 @@ export default function CostCentersView() {
                   animate={{ opacity: 1 }}
                   className="border-b border-border hover:bg-muted/50 transition-colors"
                 >
-                  <td className="p-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
-                        <Building className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{cc.name}</p>
-                        <p className="text-sm text-muted-foreground">{cc.description}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <div className="flex items-center space-x-2">
-                      <Users className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm">{users.find((u: any) => u.id === (cc as any).manager_id)?.name || '-'}</span>
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <span className="text-sm text-muted-foreground">
-                      {segments.find((s: any) => s.id === cc.segment_id)?.name || 'N/A'}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <p className="font-medium">{formatCurrency((cc as any).budget)}</p>
-                  </td>
-                  <td className="p-3">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      (cc as any).status === 'inactive' ? 'bg-gray-500/20 text-gray-400' : 'bg-green-500/20 text-green-400'
-                    }`}>
-                      {(cc as any).status === 'inactive' ? 'Inativo' : 'Ativo'}
-                    </span>
-                  </td>
-                  <td className="p-3 text-center">
-                    <div className="flex justify-center space-x-1">
-                      <Button id={`cost-centers-edit-${cc.id}`} variant="ghost" size="sm" title="Editar" onClick={() => startEdit(cc)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button id={`cost-centers-delete-${cc.id}`} variant="ghost" size="sm" title="Excluir" onClick={() => setConfirmId(cc.id)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </td>
+                  {editingId === cc.id ? (
+                    <>
+                      <td className="p-3 align-top">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center mt-1">
+                            <Building className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="w-full space-y-2">
+                            <input
+                              id={`edit-name-${cc.id}`}
+                              className="w-full p-2 bg-muted border border-border rounded"
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              placeholder="Nome do centro de custo"
+                            />
+                            <textarea
+                              id={`edit-description-${cc.id}`}
+                              className="w-full p-2 bg-muted border border-border rounded"
+                              rows={2}
+                              value={editDescription}
+                              onChange={(e) => setEditDescription(e.target.value)}
+                              placeholder="Descrição (opcional)"
+                            />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-3 align-top">
+                        <select
+                          id={`edit-manager-${cc.id}`}
+                          className="w-full p-2 bg-muted border border-border rounded"
+                          value={editManagerId}
+                          onChange={(e) => setEditManagerId(e.target.value)}
+                        >
+                          <option value="">Selecione...</option>
+                          {users.map((u: any) => (
+                            <option key={u.id} value={u.id}>{u.name || u.email}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="p-3 align-top">
+                        <span className="text-sm text-muted-foreground">
+                          {segments.find((s: any) => s.id === cc.segment_id)?.name || 'N/A'}
+                        </span>
+                      </td>
+                      <td className="p-3 align-top">
+                        <input
+                          id={`edit-budget-${cc.id}`}
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="w-full p-2 bg-muted border border-border rounded"
+                          value={editBudget}
+                          onChange={(e) => setEditBudget(e.target.value)}
+                          placeholder="0,00"
+                        />
+                      </td>
+                      <td className="p-3 align-top">
+                        <select
+                          id={`edit-status-${cc.id}`}
+                          className="w-full p-2 bg-muted border border-border rounded"
+                          value={editStatus}
+                          onChange={(e) => setEditStatus(e.target.value as any)}
+                        >
+                          <option value="active">Ativo</option>
+                          <option value="inactive">Inativo</option>
+                        </select>
+                      </td>
+                      <td className="p-3 text-center align-top">
+                        <div className="flex justify-center space-x-1">
+                          <Button id={`cost-centers-save-${cc.id}`} size="sm" onClick={(e) => onSubmitEdit(e as any)}>
+                            Salvar
+                          </Button>
+                          <Button id={`cost-centers-cancel-${cc.id}`} variant="outline" size="sm" onClick={cancelEdit}>
+                            Cancelar
+                          </Button>
+                        </div>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="p-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
+                            <Building className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{cc.name}</p>
+                            <p className="text-sm text-muted-foreground">{cc.description}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center space-x-2">
+                          <Users className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm">{users.find((u: any) => u.id === (cc as any).manager_id)?.name || '-'}</span>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <span className="text-sm text-muted-foreground">
+                          {segments.find((s: any) => s.id === cc.segment_id)?.name || 'N/A'}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <p className="font-medium">{formatCurrency((cc as any).budget)}</p>
+                      </td>
+                      <td className="p-3">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          (cc as any).status === 'inactive' ? 'bg-gray-500/20 text-gray-400' : 'bg-green-500/20 text-green-400'
+                        }`}>
+                          {(cc as any).status === 'inactive' ? 'Inativo' : 'Ativo'}
+                        </span>
+                      </td>
+                      <td className="p-3 text-center">
+                        <div className="flex justify-center space-x-1">
+                          <Button id={`cost-centers-edit-${cc.id}`} variant="ghost" size="sm" title="Editar" onClick={() => startEdit(cc)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button id={`cost-centers-delete-${cc.id}`} variant="ghost" size="sm" title="Excluir" onClick={() => setConfirmId(cc.id)}>
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </td>
+                    </>
+                  )}
                 </motion.tr>
               ))}
             </tbody>
