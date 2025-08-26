@@ -175,13 +175,21 @@ class ApiService {
           isRedirectingToLogin = true;
           window.location.href = '/login';
         }
-        throw new Error('Authentication failed');
+        // Lançar erro estruturado (evita {} no console)
+        throw { message: 'Authentication failed', status: 401 };
       }
 
-      const data = await response.json();
+      // Tentar parsear JSON com fallback seguro
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {
+        // Corpo vazio ou inválido
+        data = null;
+      }
       
       if (!response.ok) {
-        const errorMessage = data.error || data.message || `HTTP error! status: ${response.status}`;
+        const errorMessage = (data && (data.error || data.message)) || `HTTP error! status: ${response.status}`;
         const error = {
           message: errorMessage,
           status: response.status,
@@ -190,9 +198,12 @@ class ApiService {
         throw error;
       }
       
-      return data;
-    } catch (error) {
-      console.error(`API Error (${endpoint}):`, error);
+      return data as T;
+    } catch (error: any) {
+      // Evitar logs ruidosos em 401 (já redireciona)
+      if (error?.status !== 401) {
+        console.error(`API Error (${endpoint}):`, error);
+      }
       throw error;
     } finally {
       if (isRedirectingToLogin) {
@@ -256,16 +267,21 @@ class ApiService {
   }
 
   async getProfile(): Promise<ApiResponse> {
+    // Evitar chamada se não houver token de usuário
+    if (!this.getToken()) {
+      throw { message: 'Not authenticated', status: 401 };
+    }
     return this.get('/auth/profile');
   }
 
   async checkAuth(): Promise<boolean> {
-    // Verificar se o token é válido usando um endpoint simples
+    // Se não há token, já retorna false sem chamar a rede
+    if (!this.getToken()) return false;
+    // Verificar token usando /auth/profile silenciosamente
     try {
-      await this.get('/segments');
-      return true;
-    } catch (error) {
-      console.warn('Auth check failed:', error);
+      const profile: any = await this.get('/auth/profile');
+      return Boolean(profile && profile.user && profile.success !== false);
+    } catch (_err) {
       return false;
     }
   }
