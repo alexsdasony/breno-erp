@@ -16,6 +16,15 @@ type Props = {
 };
 
 export default function FinancialTable({ items, currency, pmMap, onDetails, onEdit, onAskDelete }: Props) {
+  const typeLabel = (t?: string | null) => {
+    switch (t) {
+      case 'expense': return 'Despesa';
+      case 'receipt': return 'Receita';
+      case 'income': return 'Receita';
+      case 'transfer': return 'Transferência';
+      default: return '-';
+    }
+  };
   return (
     <div className="glass-effect rounded-xl p-0 border overflow-hidden">
       <div className="overflow-x-auto">
@@ -37,7 +46,7 @@ export default function FinancialTable({ items, currency, pmMap, onDetails, onEd
               <tr key={d.id} className="border-b border-border hover:bg-muted/30">
                 <td className="p-3">{d.date || '-'}</td>
                 <td className="p-3">{d.due_date || '-'}</td>
-                <td className="p-3">{d.type || '-'}</td>
+                <td className="p-3">{typeLabel(d.type)}</td>
                 <td className="p-3">{d.partner_id ? (d.partner_name || d.partner_id) : '-'}</td>
                 <td className="p-3 text-right">{currency(Number(d.amount || 0))}</td>
                 <td className="p-3">{d.payment_method_id ? (pmMap[d.payment_method_id] || d.payment_method_id) : '-'}</td>

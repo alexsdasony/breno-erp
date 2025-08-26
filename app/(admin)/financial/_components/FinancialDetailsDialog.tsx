@@ -19,6 +19,15 @@ export default function FinancialDetailsDialog({ open, onOpenChange, doc, pmMap,
   const DialogH = DialogHeader as any;
   const DialogT = DialogTitle as any;
   const DialogD = DialogDescription as any;
+  const typeLabel = (t?: string | null) => {
+    switch (t) {
+      case 'expense': return 'Despesa';
+      case 'receipt': return 'Receita';
+      case 'income': return 'Receita';
+      case 'transfer': return 'Transferência';
+      default: return '-';
+    }
+  };
   return (
     <DialogRoot open={open} onOpenChange={onOpenChange}>
       <DialogC className="max-w-xl">
@@ -31,7 +40,7 @@ export default function FinancialDetailsDialog({ open, onOpenChange, doc, pmMap,
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <div className="text-xs text-muted-foreground">Tipo</div>
-                <div className="text-sm font-medium">{doc.type || '-'}</div>
+                <div className="text-sm font-medium">{typeLabel(doc.type)}</div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Status</div>
