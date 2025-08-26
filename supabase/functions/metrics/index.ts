@@ -65,6 +65,7 @@ function buildMockDashboardMetrics(params: { segment_id?: string | null } = {}) 
   return {
     total_sales,
     total_revenue,
+    avg_ticket,
     total_customers,
     low_stock_count,
     pending_invoices,
