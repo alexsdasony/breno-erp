@@ -18,7 +18,6 @@ export default function FinancialView() {
   const { paymentMethods } = usePaymentMethodsContext();
 
   // UI state - filtros (somente UI por enquanto)
-  const [query, setQuery] = React.useState('');
   const [dateStart, setDateStart] = React.useState<string>('');
   const [dateEnd, setDateEnd] = React.useState<string>('');
   const [type, setType] = React.useState<string>(''); // receita, despesa, transferencia
@@ -46,7 +45,7 @@ export default function FinancialView() {
 
   // Foco do formulário movido para FinancialFormModal
 
-  // Foco inicial na página: campo de busca dos filtros
+  // Foco inicial na página: campo de parceiro nos filtros
   React.useEffect(() => {
     const t = window.setTimeout(() => {
       filterSearchRef.current?.focus();
@@ -118,15 +117,15 @@ export default function FinancialView() {
 
   // Filtro em memória (somente UI)
   const filtered = React.useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const p = partner.trim().toLowerCase();
     return items.filter((it) => {
-      const matchesQ = !q || `${it.description || ''}`.toLowerCase().includes(q) || `${it.partner_name || ''}`.toLowerCase().includes(q);
+      const matchesPartner = !p || `${it.partner_name || ''}`.toLowerCase().includes(p) || `${it.partner_id || ''}`.toLowerCase().includes(p);
       const matchesType = !type || (it.type || '') === type;
       const matchesStatus = !status || (it.status || '') === status;
-      // Datas/segment/partner como UI por enquanto
-      return matchesQ && matchesType && matchesStatus;
+      // Datas/segment como UI por enquanto (não aplicados)
+      return matchesPartner && matchesType && matchesStatus;
     });
-  }, [items, query, type, status]);
+  }, [items, partner, type, status]);
 
   return (
     <div className="p-6 space-y-6">
@@ -158,8 +157,6 @@ export default function FinancialView() {
 
       {/* Filtros avançados (UI-only) */}
       <FinancialFilters
-        query={query}
-        setQuery={setQuery}
         dateStart={dateStart}
         setDateStart={setDateStart}
         dateEnd={dateEnd}
