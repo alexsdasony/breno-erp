@@ -337,7 +337,7 @@ export default function InventoryView() {
             >
               <option value="all">Todas as categorias</option>
               {Array.from(new Set(items.map(p => p.category).filter(Boolean))).map(category => (
-                <option key={category} value={category}>{category}</option>
+                <option key={category} value={category || ''}>{category}</option>
               ))}
             </select>
           </div>

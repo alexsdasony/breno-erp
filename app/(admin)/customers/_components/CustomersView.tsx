@@ -79,8 +79,8 @@ export default function CustomersView() {
                            (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
                            customer.tax_id?.includes(searchTerm);
       const matchesStatus = statusFilter === 'all' || customer.status === statusFilter;
-      const matchesSegment = !activeSegmentId || activeSegmentId === 0 || 
-                            (customer.segment_id && Number(customer.segment_id) === activeSegmentId);
+      const matchesSegment = !activeSegmentId || activeSegmentId === '0' || 
+                            (customer.segment_id && customer.segment_id === activeSegmentId);
       
       return matchesSearch && matchesStatus && matchesSegment;
     });
