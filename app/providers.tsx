@@ -1,6 +1,7 @@
 'use client';
 
 import { AppDataProvider } from '@/hooks/useAppData';
+import { PaymentMethodsProvider } from '@/contexts/PaymentMethodsContext';
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -8,8 +9,10 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <AppDataProvider>
-      {children}
-    </AppDataProvider>
+    <PaymentMethodsProvider>
+      <AppDataProvider>
+        {children}
+      </AppDataProvider>
+    </PaymentMethodsProvider>
   );
 }

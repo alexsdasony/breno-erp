@@ -319,6 +319,31 @@ class ApiService {
     return this.delete(`/segments/${id}`);
   }
 
+  // Payment Methods endpoints - Usando APENAS o backend
+  async getPaymentMethods(params: Record<string, any> = {}): Promise<ApiResponse> {
+    return this.get('/payment-methods', params);
+  }
+
+  async createPaymentMethod(data: any): Promise<ApiResponse> {
+    const payload = {
+      name: data.name,
+      nfe_code: data.nfe_code ?? data.nfeCode ?? null,
+    };
+    return this.post('/payment-methods', payload);
+  }
+
+  async updatePaymentMethod(id: string, data: any): Promise<ApiResponse> {
+    const payload = {
+      name: data.name ?? null,
+      nfe_code: data.nfe_code ?? data.nfeCode ?? null,
+    };
+    return this.put(`/payment-methods/${id}`, payload);
+  }
+
+  async deletePaymentMethod(id: string): Promise<ApiResponse> {
+    return this.delete(`/payment-methods/${id}`);
+  }
+
   // Transactions endpoints - Usando APENAS o backend
   async getTransactions(params: Record<string, any> = {}): Promise<ApiResponse> {
     return this.get('/transactions', params);
@@ -746,11 +771,40 @@ class ApiService {
   }
 
   async createFinancialDocument(docData: any): Promise<ApiResponse> {
-    return this.post('/financial-documents', docData);
+    // Map front-end fields to DB schema
+    const direction = docData.direction
+      ?? (docData.type === 'expense' ? 'payable' : docData.type === 'income' ? 'receivable' : undefined);
+    const statusOut = docData.status === 'pending' ? 'open' : docData.status ?? 'open';
+    const payload: Record<string, any> = {
+      direction,
+      description: docData.description ?? null,
+      amount: docData.amount != null ? Number(docData.amount) : 0,
+      issue_date: docData.issue_date ?? docData.date ?? null,
+      due_date: docData.due_date ?? null,
+      status: statusOut,
+      partner_id: docData.partner_id ?? null,
+      segment_id: docData.segment_id ?? docData.segmentId ?? null,
+    };
+    if (docData.payment_method_id) payload.payment_method_id = docData.payment_method_id;
+    return this.post('/financial-documents', payload);
   }
 
   async updateFinancialDocument(id: string, docData: any): Promise<ApiResponse> {
-    return this.put(`/financial-documents/${id}`, docData);
+    const direction = docData.direction
+      ?? (docData.type === 'expense' ? 'payable' : docData.type === 'income' ? 'receivable' : undefined);
+    const statusOut = docData.status === 'pending' ? 'open' : docData.status;
+    const payload: Record<string, any> = {
+      ...(direction ? { direction } : {}),
+      ...(docData.description !== undefined ? { description: docData.description } : {}),
+      ...(docData.amount !== undefined ? { amount: Number(docData.amount) } : {}),
+      ...(docData.issue_date !== undefined || docData.date !== undefined ? { issue_date: docData.issue_date ?? docData.date ?? null } : {}),
+      ...(docData.due_date !== undefined ? { due_date: docData.due_date } : {}),
+      ...(docData.status !== undefined ? { status: statusOut } : {}),
+      ...(docData.partner_id !== undefined ? { partner_id: docData.partner_id } : {}),
+      ...(docData.segment_id !== undefined || docData.segmentId !== undefined ? { segment_id: docData.segment_id ?? docData.segmentId } : {}),
+    };
+    if (docData.payment_method_id !== undefined) payload.payment_method_id = docData.payment_method_id;
+    return this.put(`/financial-documents/${id}`, payload);
   }
 
   async deleteFinancialDocument(id: string): Promise<ApiResponse> {

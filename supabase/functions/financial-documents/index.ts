@@ -17,11 +17,15 @@ serve(async (req) => {
 
     if (req.method === 'GET') {
       if (id && id !== 'financial-documents') {
-        const { data, error } = await supabase.from('financial_documents').select('*').eq('id', id).single();
+        const { data, error } = await supabase
+          .from('financial_documents')
+          .select('*, partner:partners(name)')
+          .eq('id', id)
+          .single();
         if (error) return notFound('Document not found');
         return ok({ document: data });
       }
-      let query = supabase.from('financial_documents').select('*');
+      let query = supabase.from('financial_documents').select('*, partner:partners(name)');
       if (direction) query = query.eq('direction', direction);
       query = query.order('created_at', { ascending: false });
       const { data, error } = await query;
@@ -31,14 +35,23 @@ serve(async (req) => {
 
     if (req.method === 'POST') {
       const body = await req.json();
-      const { data, error } = await supabase.from('financial_documents').insert(body).select('*').single();
+      const { data, error } = await supabase
+        .from('financial_documents')
+        .insert(body)
+        .select('*, partner:partners(name)')
+        .single();
       if (error) return badRequest(error.message);
       return ok({ document: data });
     }
 
     if (req.method === 'PUT' && id && id !== 'financial-documents') {
       const body = await req.json();
-      const { data, error } = await supabase.from('financial_documents').update(body).eq('id', id).select('*').single();
+      const { data, error } = await supabase
+        .from('financial_documents')
+        .update(body)
+        .eq('id', id)
+        .select('*, partner:partners(name)')
+        .single();
       if (error) return badRequest(error.message);
       return ok({ document: data });
     }

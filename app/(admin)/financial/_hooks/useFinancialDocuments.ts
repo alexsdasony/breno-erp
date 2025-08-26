@@ -13,6 +13,7 @@ export interface FinancialDocument {
   partner_id?: string | null;
   partner_name?: string | null;
   segment_id?: string | null;
+  payment_method_id?: string | null;
 }
 
 interface State {
@@ -32,13 +33,38 @@ interface Api {
 
 const PAGE_SIZE = 20;
 
+// Normalize backend row (DB schema) to frontend shape expected by UI
+function normalizeFinancialDocument(row: any): FinancialDocument {
+  const direction: string | undefined = row?.direction;
+  const mappedType =
+    row?.type ?? (direction === 'payable' ? 'expense' : direction === 'receivable' ? 'income' : null);
+  const partnerName =
+    (row.partner && typeof row.partner === 'object' ? row.partner.name : undefined)
+    ?? row.partner_name
+    ?? (typeof row.partner === 'string' ? row.partner : undefined)
+    ?? null;
+  return {
+    id: row.id,
+    type: mappedType,
+    description: row.description ?? null,
+    amount: row.amount != null ? Number(row.amount) : null,
+    date: row.date ?? row.issue_date ?? null,
+    due_date: row.due_date ?? null,
+    status: row.status === 'open' ? 'pending' : row.status ?? null,
+    partner_id: row.partner_id ?? null,
+    partner_name: partnerName,
+    segment_id: row.segment_id ?? null,
+    payment_method_id: row.payment_method_id ?? null,
+  };
+}
+
 export function useFinancialDocuments() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
     const res = await apiService.getFinancialDocuments({ page, pageSize: PAGE_SIZE });
     const list = (res as any).financialDocuments || (res as any).data || [];
-    return list as FinancialDocument[];
+    return (list as any[]).map(normalizeFinancialDocument);
   }, []);
 
   const load = useCallback(async (reset: boolean = false) => {
@@ -74,10 +100,11 @@ export function useFinancialDocuments() {
   const create = useCallback(async (data: Partial<FinancialDocument>) => {
     try {
       const res = await apiService.createFinancialDocument(data);
-      const item = (res as any).financialDocument || (res as any).data || res;
-      setState((s) => ({ ...s, items: [item as FinancialDocument, ...s.items] }));
-      toast({ title: 'Documento criado', description: (item as FinancialDocument)?.description || 'Registro criado.' });
-      return item as FinancialDocument;
+      const raw = (res as any).financialDocument || (res as any).data || res;
+      const item = normalizeFinancialDocument(raw);
+      setState((s) => ({ ...s, items: [item, ...s.items] }));
+      toast({ title: 'Documento criado', description: item?.description || 'Registro criado.' });
+      return item;
     } catch (e) {
       toast({ title: 'Erro ao criar documento', description: 'Verifique os dados informados.', variant: 'destructive' });
       return null;
@@ -87,13 +114,14 @@ export function useFinancialDocuments() {
   const update = useCallback(async (id: string, data: Partial<FinancialDocument>) => {
     try {
       const res = await apiService.updateFinancialDocument(id, data);
-      const item = (res as any).financialDocument || (res as any).data || res;
+      const raw = (res as any).financialDocument || (res as any).data || res;
+      const item = normalizeFinancialDocument(raw);
       setState((s) => ({
         ...s,
-        items: s.items.map((it) => (it.id === id ? (item as FinancialDocument) : it)),
+        items: s.items.map((it) => (it.id === id ? item : it)),
       }));
-      toast({ title: 'Documento atualizado', description: (item as FinancialDocument)?.description || 'Registro atualizado.' });
-      return item as FinancialDocument;
+      toast({ title: 'Documento atualizado', description: item?.description || 'Registro atualizado.' });
+      return item;
     } catch (e) {
       toast({ title: 'Erro ao atualizar documento', description: 'Tente novamente.', variant: 'destructive' });
       return null;

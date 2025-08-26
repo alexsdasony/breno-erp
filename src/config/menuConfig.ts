@@ -13,6 +13,7 @@ export const menuItems = [
   { id: 'costCenters', label: 'Centros de Custo', icon: Building },
   { id: 'chartOfAccounts', label: 'Plano de Contas', icon: BookOpen },
   { id: 'segments', label: 'Segmentos', icon: Briefcase },
+  { id: 'paymentMethods', label: 'Formas de Pagamento', icon: CreditCard },
   { id: 'nfe', label: 'Emissão NF-e', icon: FileSpreadsheet },
   // { id: 'integrations', label: 'Integrações', icon: Zap }, // REMOVED - causing issues
   { id: 'reports', label: 'Relatórios', icon: BarChart3 },
