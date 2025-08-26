@@ -38,9 +38,10 @@ export function useAccountsPayable() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
-    const res = await apiService.getAccountsPayable({ page, pageSize: PAGE_SIZE });
-    const list = (res as any).accountsPayable || (res as any).data || [];
-    return list as AccountPayableItem[];
+    const res: any = await apiService.getAccountsPayable({ page, pageSize: PAGE_SIZE });
+    // Edge Function returns { success, accounts_payable: [] }
+    const list = res.accounts_payable || res.accountsPayable || res.data || [];
+    return Array.isArray(list) ? (list as AccountPayableItem[]) : [];
   }, []);
 
   const load = useCallback(async (reset: boolean = false) => {
