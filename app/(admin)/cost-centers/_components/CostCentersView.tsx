@@ -48,6 +48,48 @@ export default function CostCentersView() {
   // Edit mode (reutiliza o formulário superior)
   const [editingId, setEditingId] = React.useState<string | null>(null);
 
+  // Ref do formulário para submit programático (atalho Enter)
+  const formRef = React.useRef<HTMLFormElement | null>(null);
+
+  // Ref para foco automático no campo Nome
+  const nameInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  // Atalhos de teclado quando modal/form estiver aberto
+  React.useEffect(() => {
+    if (!showForm) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelAndReset();
+        return;
+      }
+      if (e.key === 'Enter' && !e.shiftKey) {
+        const target = e.target as HTMLElement | null;
+        const tag = (target?.tagName || '').toUpperCase();
+        const isTextArea = tag === 'TEXTAREA';
+        const isButton = tag === 'BUTTON';
+        if (!isTextArea && !isButton) {
+          e.preventDefault();
+          formRef.current?.requestSubmit();
+        }
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [showForm]);
+
+  // Foco inicial no campo Nome ao abrir a modal
+  React.useEffect(() => {
+    if (!showForm) return;
+    const t = window.setTimeout(() => {
+      if (nameInputRef.current) {
+        nameInputRef.current.focus();
+        if (editingId) nameInputRef.current.select();
+      }
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, [showForm, editingId]);
+
   // Delete confirmation
   const [confirmId, setConfirmId] = React.useState<string | null>(null);
 
@@ -176,16 +218,32 @@ export default function CostCentersView() {
       <AnimatePresence>
         {showForm && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="glass-effect rounded-xl p-6 border"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            aria-modal="true"
+            role="dialog"
           >
-            <form className="grid grid-cols-1 md:grid-cols-12 gap-4" onSubmit={onSubmit} noValidate>
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/60" onClick={cancelAndReset} />
+            {/* Modal panel */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: 8 }}
+              className="relative glass-effect border rounded-xl w-[95vw] max-w-4xl max-h-[85vh] overflow-auto p-6"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">{editingId ? 'Editar Centro de Custo' : 'Novo Centro de Custo'}</h2>
+                <button aria-label="Fechar" className="px-2 py-1 rounded-md border border-white/10" onClick={cancelAndReset}>Esc</button>
+              </div>
+              <form ref={formRef} className="grid grid-cols-1 md:grid-cols-12 gap-4" onSubmit={onSubmit} noValidate>
               <div className="md:col-span-8">
                 <label htmlFor="costCenterName" className="block text-sm font-medium mb-1">Nome<span className="text-red-500">*</span></label>
                 <input
                   id="costCenterName"
+                  ref={nameInputRef}
                   className={`w-full p-3 bg-muted border rounded-lg focus:ring-2 focus:ring-primary ${nameError ? 'border-red-500 focus:ring-red-500' : 'border-border'}`}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -291,13 +349,14 @@ export default function CostCentersView() {
               </div>
               <div className="flex items-center gap-3 md:col-span-12">
                 <Button id="cost-centers-submit-button" type="submit" className="bg-gradient-to-r from-indigo-500 to-purple-600" disabled={loading || !!nameError || !!segmentError}>
-                  {loading ? 'Salvando...' : editingId ? 'Salvar Alterações' : 'Adicionar Centro de Custo'}
+                  {loading ? 'Salvando...' : editingId ? 'Salvar Alterações (Enter)' : 'Adicionar Centro de Custo (Enter)'}
                 </Button>
                 <Button id="cost-centers-cancel-button" type="button" variant="outline" onClick={cancelAndReset}>
-                  {editingId ? 'Cancelar Edição' : 'Cancelar'}
+                  {editingId ? 'Cancelar Edição (Esc)' : 'Cancelar (Esc)'}
                 </Button>
               </div>
             </form>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
