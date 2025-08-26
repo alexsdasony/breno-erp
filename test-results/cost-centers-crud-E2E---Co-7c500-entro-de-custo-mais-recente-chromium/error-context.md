@@ -1,0 +1,69 @@
+# Page snapshot
+
+```yaml
+- alert
+- img
+- heading "Breno ERP" [level=1]
+- navigation:
+  - button "Receita Federal":
+    - img
+    - text: Receita Federal
+  - button "Dashboard":
+    - img
+    - text: Dashboard
+  - button "Financeiro":
+    - img
+    - text: Financeiro
+  - button "Contas a Pagar":
+    - img
+    - text: Contas a Pagar
+  - button "Cobranças":
+    - img
+    - text: Cobranças
+  - button "Estoque":
+    - img
+    - text: Estoque
+  - button "Vendas":
+    - img
+    - text: Vendas
+  - button "Clientes":
+    - img
+    - text: Clientes
+  - button "Fornecedores":
+    - img
+    - text: Fornecedores
+  - button "Centros de Custo":
+    - img
+    - text: Centros de Custo
+  - button "Plano de Contas":
+    - img
+    - text: Plano de Contas
+  - button "Segmentos":
+    - img
+    - text: Segmentos
+  - button "Emissão NF-e":
+    - img
+    - text: Emissão NF-e
+  - button "Relatórios":
+    - img
+    - text: Relatórios
+  - button "Meu Perfil":
+    - img
+    - text: Meu Perfil
+- banner:
+  - heading "Dashboard" [level=2]
+  - paragraph: Receita Total
+  - paragraph: R$ 0
+  - paragraph: Despesas
+  - paragraph: R$ 0
+  - paragraph: Lucro
+  - paragraph: R$ 0
+  - button "Administrador Sistema admin@breno-erp.com":
+    - img
+    - paragraph: Administrador Sistema
+    - paragraph: admin@breno-erp.com
+- main:
+  - heading "Dashboard" [level=1]
+  - button "Atualizar"
+  - text: Sem métricas disponíveis.
+```

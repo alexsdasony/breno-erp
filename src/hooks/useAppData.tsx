@@ -27,13 +27,13 @@ interface AppDataContextType {
   data: AppData;
   loading: boolean;
   segments: any[];
-  activeSegmentId: number;
+  activeSegmentId: string | null;
   metrics: any;
   currentUser: any;
   authLoading: boolean;
-  setActiveSegmentId: (id: number) => void;
+  setActiveSegmentId: (id: string | null) => void;
   refreshData: () => Promise<void>;
-  reloadDashboardData: (segmentId?: number) => Promise<void>;
+  reloadDashboardData: (segmentId?: string | null) => Promise<void>;
   loginUser: (email: string, password: string) => Promise<boolean>;
   registerUser: (name: string, email: string, password: string, segmentId?: string | null) => Promise<boolean>;
   logoutUser: () => Promise<void>;
@@ -48,7 +48,7 @@ const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 // Cache em memória GLOBAL - sem localStorage
 const globalMemoryCache = {
   segments: [] as any[],
-  activeSegmentId: 0,
+  activeSegmentId: null as string | null,
   data: null as any,
   initialized: false
 };
@@ -89,14 +89,14 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
   const [data, setData] = useState<AppData>(defaultInitialData);
   const [loading, setLoading] = useState(true);
   const [segments, setSegments] = useState<any[]>(globalMemoryCache.segments);
-  const [activeSegmentId, setActiveSegmentId] = useState<number>(globalMemoryCache.activeSegmentId);
+  const [activeSegmentId, setActiveSegmentId] = useState<string | null>(globalMemoryCache.activeSegmentId);
 
   // Use the corrected hooks
   const { currentUser, loading: authLoading, loginUser, registerUser, logoutUser, updateUserProfile, changeUserPassword, requestPasswordReset, resetPassword } = useAuth();
 
   // Calculate metrics from local data
   const metrics = React.useMemo(() => {
-    return calculateMetrics(data, activeSegmentId || null);
+    return calculateMetrics(data, activeSegmentId !== null ? Number(activeSegmentId) : null);
   }, [data, activeSegmentId]);
 
   // Atualizar cache em memória quando dados mudarem
@@ -128,7 +128,15 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
             // Load segments for the user
             console.log('📋 Carregando segmentos...');
             const segmentsResponse = await apiService.getSegments();
-            setSegments(segmentsResponse.data?.segments || []);
+            setSegments((segmentsResponse as any).segments || segmentsResponse.data?.segments || []);
+            
+            // Load users immediately to hydrate selects (manager, etc.)
+            console.log('👥 Carregando usuários...');
+            const usersResponse = await apiService.getUsers({ segment_id: activeSegmentId ?? null });
+            setData(prev => ({
+              ...prev,
+              users: usersResponse.data?.users || []
+            }));
             
             console.log('✅ App initialization completed');
           } catch (error) {
@@ -143,7 +151,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
     };
 
     initializeApp();
-  }, [currentUser]);
+  }, [currentUser, activeSegmentId]);
 
   // Refresh data function
   const refreshData = useCallback(async () => {
@@ -167,18 +175,18 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         integrationsResponse,
         usersResponse
       ] = await Promise.all([
-        apiService.getTransactions({ segment_id: activeSegmentId }),
-        apiService.getProducts({ segment_id: activeSegmentId }),
-        apiService.getSales({ segment_id: activeSegmentId }),
-        apiService.getCustomers({ segment_id: activeSegmentId }),
-        apiService.getPartners({ segment_id: activeSegmentId }),
-        apiService.getNFes({ segment_id: activeSegmentId }),
-        apiService.getBillings({ segment_id: activeSegmentId }),
-        apiService.getCostCenters({ segment_id: activeSegmentId }),
-        apiService.getAccountsPayable({ segment_id: activeSegmentId }),
-        apiService.getFinancialDocuments({ segment_id: activeSegmentId }),
+        apiService.getTransactions({ segment_id: activeSegmentId ?? null }),
+        apiService.getProducts({ segment_id: activeSegmentId ?? null }),
+        apiService.getSales({ segment_id: activeSegmentId ?? null }),
+        apiService.getCustomers({ segment_id: activeSegmentId ?? null }),
+        apiService.getPartners({ segment_id: activeSegmentId ?? null }),
+        apiService.getNFes({ segment_id: activeSegmentId ?? null }),
+        apiService.getBillings({ segment_id: activeSegmentId ?? null }),
+        apiService.getCostCenters({ segment_id: activeSegmentId ?? null }),
+        apiService.getAccountsPayable({ segment_id: activeSegmentId ?? null }),
+        apiService.getFinancialDocuments({ segment_id: activeSegmentId ?? null }),
         apiService.getIntegrations(),
-        apiService.getUsers({ segment_id: activeSegmentId })
+        apiService.getUsers({ segment_id: activeSegmentId ?? null })
       ]);
 
       setData({
@@ -189,7 +197,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         partners: partnersResponse.data?.partners || [],
         nfeList: nfeResponse.data?.nfe || [],
         billings: billingsResponse.data?.billings || [],
-        costCenters: costCentersResponse.data?.cost_centers || [],
+        costCenters: (costCentersResponse as any).costCenters || costCentersResponse.data?.cost_centers || [],
         accountsPayable: accountsPayableResponse.data?.accounts_payable || [],
         financialDocuments: financialDocumentsResponse.data?.financial_documents || [],
         integrations: integrationsResponse.data?.integrations || { imobzi: { apiKey: '', enabled: false } },
@@ -220,9 +228,9 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
     }
   }, [activeSegmentId, currentUser, refreshData]);
 
-  const reloadDashboardData = useCallback(async (segmentId?: number) => {
+  const reloadDashboardData = useCallback(async (segmentId?: string | null) => {
     if (!currentUser) return;
-    const targetSegmentId = segmentId || activeSegmentId;
+    const targetSegmentId = segmentId ?? activeSegmentId;
     if (!targetSegmentId) return;
 
     try {
@@ -264,7 +272,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         partners: partnersResponse.data?.partners || [],
         nfeList: nfeResponse.data?.nfe || [],
         billings: billingsResponse.data?.billings || [],
-        costCenters: costCentersResponse.data?.cost_centers || [],
+        costCenters: (costCentersResponse as any).costCenters || costCentersResponse.data?.cost_centers || [],
         accountsPayable: accountsPayableResponse.data?.accounts_payable || [],
         financialDocuments: financialDocumentsResponse.data?.financial_documents || [],
         integrations: integrationsResponse.data?.integrations || { imobzi: { apiKey: '', enabled: false } },

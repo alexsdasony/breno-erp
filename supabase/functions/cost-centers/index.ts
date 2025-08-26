@@ -91,10 +91,24 @@ serve(async (req) => {
     if (req.method === 'POST') {
       const body = await req.json()
 
-      // Apenas colunas válidas no schema atual
-      const payload: { name?: string; segment_id?: string | null } = {
+      // Mapear e validar campos permitidos (schema extendido)
+      const allowedStatus = ['active', 'inactive'] as const
+      const isUuid = (v: any) => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)
+
+      const payload: {
+        name?: string
+        segment_id?: string | null
+        description?: string | null
+        budget?: number
+        status?: typeof allowedStatus[number]
+        manager_id?: string | null
+      } = {
         name: body?.name,
         segment_id: body?.segment_id ?? null,
+        description: body?.description ?? null,
+        budget: typeof body?.budget === 'number' ? body.budget : (body?.budget ? Number(body.budget) : 0),
+        status: allowedStatus.includes(body?.status) ? body.status : 'active',
+        manager_id: body?.manager_id ?? null,
       }
 
       // Validação básica
@@ -105,6 +119,25 @@ serve(async (req) => {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           }
+        )
+      }
+
+      if (payload.segment_id && !isUuid(payload.segment_id)) {
+        return new Response(
+          JSON.stringify({ error: 'segment_id inválido' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      if (payload.manager_id && !isUuid(payload.manager_id)) {
+        return new Response(
+          JSON.stringify({ error: 'manager_id inválido' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      if (payload.budget !== undefined && (isNaN(payload.budget) || payload.budget < 0)) {
+        return new Response(
+          JSON.stringify({ error: 'budget inválido' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
@@ -142,10 +175,49 @@ serve(async (req) => {
     if (req.method === 'PUT' && isSpecificId) {
       const body = await req.json()
 
+      const allowedStatus = ['active', 'inactive'] as const
+      const isUuid = (v: any) => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)
+
       // Apenas colunas válidas no schema atual
-      const payload: { name?: string; segment_id?: string | null } = {}
+      const payload: {
+        name?: string
+        segment_id?: string | null
+        description?: string | null
+        budget?: number
+        status?: typeof allowedStatus[number]
+        manager_id?: string | null
+      } = {}
       if (typeof body?.name === 'string') payload.name = body.name
       if (body?.segment_id !== undefined) payload.segment_id = body.segment_id ?? null
+      if (body?.description !== undefined) payload.description = body.description ?? null
+      if (body?.budget !== undefined) {
+        const b = typeof body.budget === 'number' ? body.budget : Number(body.budget)
+        if (isNaN(b) || b < 0) {
+          return new Response(
+            JSON.stringify({ error: 'budget inválido' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+        payload.budget = b
+      }
+      if (body?.status !== undefined) {
+        if (!allowedStatus.includes(body.status)) {
+          return new Response(
+            JSON.stringify({ error: 'status inválido. Use active|inactive' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+        payload.status = body.status
+      }
+      if (body?.manager_id !== undefined) {
+        if (body.manager_id !== null && !isUuid(body.manager_id)) {
+          return new Response(
+            JSON.stringify({ error: 'manager_id inválido' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+        payload.manager_id = body.manager_id
+      }
 
       if (Object.keys(payload).length === 0) {
         return new Response(

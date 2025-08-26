@@ -154,8 +154,8 @@ class ApiService {
         // Para Edge Functions do Supabase use as chaves de projeto.
         ...(this.supabaseAnonKey && { 'Authorization': `Bearer ${this.supabaseAnonKey}` }),
         ...(this.supabaseAnonKey && { 'apikey': this.supabaseAnonKey }),
-        // O header X-User-Token é apenas para nosso backend local. Evita CORS nos Edge Functions.
-        ...(!isEdgeFunctions && token ? { 'X-User-Token': token } : {}),
+        // Sempre envie X-User-Token quando houver token de usuário, inclusive para Edge Functions (CORS já permite este header)
+        ...(token ? { 'X-User-Token': token } : {}),
         ...options.headers,
       },
       ...options,
@@ -514,23 +514,38 @@ class ApiService {
   }
 
   async createCostCenter(costCenterData: any): Promise<ApiResponse> {
-    const payload = {
+    // Mapear novos campos com fallback camelCase -> snake_case
+    const seg = costCenterData.segment_id ?? costCenterData.segmentId ?? null;
+    const manager = costCenterData.manager_id ?? costCenterData.managerId ?? null;
+    const status = costCenterData.status ?? 'active';
+    const rawBudget = costCenterData.budget ?? costCenterData.budget_amount ?? null;
+    const budget = rawBudget === null || rawBudget === undefined ? 0 : parseFloat(String(rawBudget)) || 0;
+    const payload: Record<string, any> = {
       name: costCenterData.name,
-      description: costCenterData.description || null,
-      code: costCenterData.code || null,
-      budget: costCenterData.budget || 0,
-      status: costCenterData.status || 'active',
-      segment_id: costCenterData.segment_id || costCenterData.segmentId || null
+      segment_id: seg || null,
+      description: costCenterData.description ?? null,
+      budget,
+      status,
+      manager_id: manager || null,
     };
     return this.post('/cost-centers', payload);
   }
 
   async updateCostCenter(id: string, costCenterData: any): Promise<ApiResponse> {
-    const payload = {
-      name: costCenterData.name || null,
-      description: costCenterData.description || null,
-      segment_id: costCenterData.segment_id || costCenterData.segmentId || null,
-    };
+    // Enviar apenas campos permitidos e definidos com mapeamento correto
+    const payload: Record<string, any> = {};
+    if (typeof costCenterData.name === 'string') payload.name = costCenterData.name;
+    const seg = costCenterData.segment_id ?? costCenterData.segmentId;
+    if (seg !== undefined) payload.segment_id = seg || null;
+    if (costCenterData.description !== undefined) payload.description = costCenterData.description ?? null;
+    if (costCenterData.status !== undefined) payload.status = costCenterData.status;
+    if (costCenterData.manager_id !== undefined || costCenterData.managerId !== undefined) {
+      payload.manager_id = (costCenterData.manager_id ?? costCenterData.managerId) || null;
+    }
+    if (costCenterData.budget !== undefined || costCenterData.budget_amount !== undefined) {
+      const rawBudget = costCenterData.budget ?? costCenterData.budget_amount;
+      payload.budget = rawBudget === null || rawBudget === undefined ? 0 : parseFloat(String(rawBudget)) || 0;
+    }
     return this.put(`/cost-centers/${id}`, payload);
   }
 
@@ -728,7 +743,13 @@ class ApiService {
 
   // Users endpoints (admin only) - Usando APENAS o backend
   async getUsers(params: Record<string, any> = {}): Promise<ApiResponse> {
-    return this.get('/users', params);
+    const resp: any = await this.get('/users', params);
+    // Normalize shape to always have data.users while preserving original fields
+    if (!resp.data) resp.data = {};
+    if (Array.isArray(resp.users) && !Array.isArray(resp.data.users)) {
+      resp.data.users = resp.users;
+    }
+    return resp;
   }
 
   async getUserById(id: string): Promise<ApiResponse> {

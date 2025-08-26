@@ -2,17 +2,17 @@ import apiService from '@/services/api'
 
 export async function listCostCenters(params = {}) {
   const res = await apiService.getCostCenters(params)
-  return res.costCenters || res.data || []
+  return res.costCenters || res.cost_centers || res.data?.costCenters || res.data?.cost_centers || res.data || []
 }
 
 export async function createCostCenter(payload) {
   const res = await apiService.createCostCenter(payload)
-  return res.costCenter || res
+  return res.costCenter || res.cost_center || res.data || res
 }
 
 export async function updateCostCenter(id, payload) {
   const res = await apiService.updateCostCenter(id, payload)
-  return res.costCenter || res
+  return res.costCenter || res.cost_center || res.data || res
 }
 
 export async function deleteCostCenter(id) {
@@ -21,5 +21,5 @@ export async function deleteCostCenter(id) {
 
 export async function getCostCenterById(id) {
   const res = await apiService.getCostCenters({ id })
-  return res.costCenters?.[0] || res.costCenter || res
+  return res.costCenters?.[0] || res.cost_centers?.[0] || res.costCenter || res.cost_center || res.data || res
 }

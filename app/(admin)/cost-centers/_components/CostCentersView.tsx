@@ -9,17 +9,21 @@ import { Button } from '@/components/ui/button';
 
 export default function CostCentersView() {
   const { items, loading, hasMore, loadMore, create, update, remove } = useCostCenters();
-  const { segments } = useAppData();
+  const { segments, data } = useAppData();
+  const users = data?.users || [];
 
-  // Create form state
+  // Create form state (alinhado ao schema: name obrigatório, segment opcional)
   const [showForm, setShowForm] = React.useState(false);
   const [name, setName] = React.useState('');
   const [description, setDescription] = React.useState('');
-  const [budget, setBudget] = React.useState<string>('');
-  const [manager, setManager] = React.useState(''); // Somente visual (não persiste no backend)
-  const [code, setCode] = React.useState('');
-  const [status, setStatus] = React.useState<'active' | 'inactive'>('active');
   const [segmentId, setSegmentId] = React.useState<string>('');
+  const [budget, setBudget] = React.useState<string>('');
+  const [status, setStatus] = React.useState<'active' | 'inactive'>('active');
+  const [managerId, setManagerId] = React.useState<string>('');
+  const [nameError, setNameError] = React.useState<string | null>(null);
+  const [segmentError, setSegmentError] = React.useState<string | null>(null);
+  const [budgetError, setBudgetError] = React.useState<string | null>(null);
+  const [managerError, setManagerError] = React.useState<string | null>(null);
 
   // Search/filter
   const [query, setQuery] = React.useState('');
@@ -39,35 +43,69 @@ export default function CostCentersView() {
     return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
+  const isUuid = (v: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+
   // Edit inline state (opcional)
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [editName, setEditName] = React.useState('');
   const [editDescription, setEditDescription] = React.useState('');
-  const [editCode, setEditCode] = React.useState('');
   const [editBudget, setEditBudget] = React.useState<string>('');
   const [editStatus, setEditStatus] = React.useState<'active' | 'inactive'>('active');
+  const [editManagerId, setEditManagerId] = React.useState<string>('');
 
   // Delete confirmation
   const [confirmId, setConfirmId] = React.useState<string | null>(null);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return;
+    // Validações
+    const trimmed = name.trim();
+    let valid = true;
+    if (!trimmed || trimmed.length < 2) {
+      setNameError('Informe um nome com pelo menos 2 caracteres.');
+      valid = false;
+    } else {
+      setNameError(null);
+    }
+    if (segmentId && !isUuid(segmentId)) {
+      setSegmentError('Segmento inválido.');
+      valid = false;
+    } else {
+      setSegmentError(null);
+    }
+    if (budget) {
+      const b = parseFloat(budget);
+      if (isNaN(b) || b < 0) {
+        setBudgetError('Orçamento inválido.');
+        valid = false;
+      } else {
+        setBudgetError(null);
+      }
+    } else {
+      setBudgetError(null);
+    }
+    if (managerId && !isUuid(managerId)) {
+      setManagerError('Responsável inválido.');
+      valid = false;
+    } else {
+      setManagerError(null);
+    }
+    if (!valid) return;
+
     await create({
-      name,
-      description,
-      code: code || null,
+      name: trimmed,
+      description: description || null,
+      segment_id: segmentId || null,
       budget: budget ? parseFloat(budget) : 0,
       status,
-      segment_id: segmentId || null,
+      manager_id: managerId || null,
     });
     setName('');
     setDescription('');
-    setBudget('');
-    setManager('');
-    setCode('');
-    setStatus('active');
     setSegmentId('');
+    setBudget('');
+    setStatus('active');
+    setManagerId('');
     setShowForm(false);
   };
 
@@ -75,18 +113,18 @@ export default function CostCentersView() {
     setEditingId(cc.id);
     setEditName(cc.name || '');
     setEditDescription(cc.description || '');
-    setEditCode(cc.code || '');
     setEditBudget(cc.budget ? String(cc.budget) : '');
     setEditStatus((cc.status as any) || 'active');
+    setEditManagerId(cc.manager_id || '');
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditName('');
     setEditDescription('');
-    setEditCode('');
     setEditBudget('');
     setEditStatus('active');
+    setEditManagerId('');
   };
 
   const onSubmitEdit = async (e: React.FormEvent) => {
@@ -95,9 +133,9 @@ export default function CostCentersView() {
     await update(editingId, {
       name: editName,
       description: editDescription,
-      code: editCode || null,
       budget: editBudget ? parseFloat(editBudget) : 0,
       status: editStatus,
+      manager_id: editManagerId || null,
     });
     cancelEdit();
   };
@@ -136,56 +174,48 @@ export default function CostCentersView() {
             exit={{ opacity: 0, y: -10 }}
             className="glass-effect rounded-xl p-6 border"
           >
-            <form className="grid grid-cols-1 md:grid-cols-12 gap-4" onSubmit={onSubmit}>
-              <div className="md:col-span-4">
-                <label htmlFor="costCenterName" className="block text-sm font-medium mb-1">Nome</label>
+            <form className="grid grid-cols-1 md:grid-cols-12 gap-4" onSubmit={onSubmit} noValidate>
+              <div className="md:col-span-8">
+                <label htmlFor="costCenterName" className="block text-sm font-medium mb-1">Nome<span className="text-red-500">*</span></label>
                 <input
                   id="costCenterName"
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                  className={`w-full p-3 bg-muted border rounded-lg focus:ring-2 focus:ring-primary ${nameError ? 'border-red-500 focus:ring-red-500' : 'border-border'}`}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  onBlur={() => {
+                    const trimmed = name.trim();
+                    setNameError(!trimmed || trimmed.length < 2 ? 'Informe um nome com pelo menos 2 caracteres.' : null);
+                  }}
                   placeholder="Centro de Custo"
-                  required
+                  aria-invalid={!!nameError}
+                  aria-describedby="costCenterName-error"
                 />
+                {nameError && (
+                  <p id="costCenterName-error" className="mt-1 text-xs text-red-400">{nameError}</p>
+                )}
               </div>
-              <div>
-                <label htmlFor="costCenterManager" className="block text-sm font-medium mb-1">Responsável</label>
-                <input
-                  id="costCenterManager"
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  value={manager}
-                  onChange={(e) => setManager(e.target.value)}
-                  placeholder="Nome do responsável"
-                />
-              </div>
-              <div>
-                <label htmlFor="costCenterBudget" className="block text-sm font-medium mb-1">Orçamento</label>
-                <input
-                  id="costCenterBudget"
-                  type="number"
-                  step="0.01"
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
+              <div className="md:col-span-4">
                 <label htmlFor="costCenterSegment" className="block text-sm font-medium mb-1">Segmento</label>
                 <select
                   id="costCenterSegment"
                   value={segmentId}
                   onChange={(e) => setSegmentId(e.target.value)}
-                  className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                  onBlur={() => setSegmentError(segmentId && !isUuid(segmentId) ? 'Segmento inválido.' : null)}
+                  className={`w-full p-3 bg-muted border rounded-lg focus:ring-2 ${segmentError ? 'border-red-500 focus:ring-red-500' : 'border-border focus:ring-primary'}`}
+                  aria-invalid={!!segmentError}
+                  aria-describedby="costCenterSegment-error"
                 >
                   <option value="">Selecione...</option>
                   {segments.map((s: any) => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
+                {segmentError && (
+                  <p id="costCenterSegment-error" className="mt-1 text-xs text-red-400">{segmentError}</p>
+                )}
               </div>
               <div className="md:col-span-12">
-                <label htmlFor="costCenterDescription" className="block text-sm font-medium mb-1">Descrição</label>
+                <label htmlFor="costCenterDescription" className="block text-sm font-medium mb-1">Descrição <span className="text-xs text-muted-foreground">(opcional)</span></label>
                 <textarea
                   id="costCenterDescription"
                   value={description}
@@ -195,8 +225,64 @@ export default function CostCentersView() {
                   rows={3}
                 />
               </div>
+              <div className="md:col-span-4">
+                <label htmlFor="costCenterBudget" className="block text-sm font-medium mb-1">Orçamento (R$)</label>
+                <input
+                  id="costCenterBudget"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={budget}
+                  onChange={(e) => setBudget(e.target.value)}
+                  onBlur={() => {
+                    if (budget) {
+                      const b = parseFloat(budget);
+                      setBudgetError(isNaN(b) || b < 0 ? 'Orçamento inválido.' : null);
+                    } else setBudgetError(null);
+                  }}
+                  className={`w-full p-3 bg-muted border rounded-lg focus:ring-2 ${budgetError ? 'border-red-500 focus:ring-red-500' : 'border-border focus:ring-primary'}`}
+                  aria-invalid={!!budgetError}
+                  aria-describedby="costCenterBudget-error"
+                  placeholder="0,00"
+                />
+                {budgetError && (
+                  <p id="costCenterBudget-error" className="mt-1 text-xs text-red-400">{budgetError}</p>
+                )}
+              </div>
+              <div className="md:col-span-4">
+                <label htmlFor="costCenterStatus" className="block text-sm font-medium mb-1">Status</label>
+                <select
+                  id="costCenterStatus"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as any)}
+                  className="w-full p-3 bg-muted border rounded-lg focus:ring-2 border-border focus:ring-primary"
+                >
+                  <option value="active">Ativo</option>
+                  <option value="inactive">Inativo</option>
+                </select>
+              </div>
+              <div className="md:col-span-4">
+                <label htmlFor="costCenterManager" className="block text-sm font-medium mb-1">Responsável</label>
+                <select
+                  id="costCenterManager"
+                  value={managerId}
+                  onChange={(e) => setManagerId(e.target.value)}
+                  onBlur={() => setManagerError(managerId && !isUuid(managerId) ? 'Responsável inválido.' : null)}
+                  className={`w-full p-3 bg-muted border rounded-lg focus:ring-2 ${managerError ? 'border-red-500 focus:ring-red-500' : 'border-border focus:ring-primary'}`}
+                  aria-invalid={!!managerError}
+                  aria-describedby="costCenterManager-error"
+                >
+                  <option value="">Selecione...</option>
+                  {users.map((u: any) => (
+                    <option key={u.id} value={u.id}>{u.name || u.email}</option>
+                  ))}
+                </select>
+                {managerError && (
+                  <p id="costCenterManager-error" className="mt-1 text-xs text-red-400">{managerError}</p>
+                )}
+              </div>
               <div className="flex items-center gap-3 md:col-span-12">
-                <Button id="cost-centers-submit-button" type="submit" className="bg-gradient-to-r from-indigo-500 to-purple-600" disabled={loading}>
+                <Button id="cost-centers-submit-button" type="submit" className="bg-gradient-to-r from-indigo-500 to-purple-600" disabled={loading || !!nameError || !!segmentError}>
                   {loading ? 'Salvando...' : 'Adicionar Centro de Custo'}
                 </Button>
                 <Button id="cost-centers-cancel-button" type="button" variant="outline" onClick={() => setShowForm(false)}>
@@ -257,7 +343,7 @@ export default function CostCentersView() {
                   <td className="p-3">
                     <div className="flex items-center space-x-2">
                       <Users className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm">{(cc as any).manager || '-'}</span>
+                      <span className="text-sm">{users.find((u: any) => u.id === (cc as any).manager_id)?.name || '-'}</span>
                     </div>
                   </td>
                   <td className="p-3">

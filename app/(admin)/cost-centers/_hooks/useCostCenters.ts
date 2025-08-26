@@ -10,6 +10,7 @@ export interface CostCenter {
   budget?: number | null;
   status?: 'active' | 'inactive' | string;
   segment_id?: string | null;
+  manager_id?: string | null;
 }
 
 interface State {
@@ -42,7 +43,9 @@ export function useCostCenters() {
     const list = Array.isArray(anyRes)
       ? anyRes
       : anyRes.costCenters ||
+        anyRes.cost_centers ||
         anyRes.data?.costCenters ||
+        anyRes.data?.cost_centers ||
         anyRes.data ||
         anyRes.items ||
         anyRes.results ||
@@ -65,7 +68,7 @@ export function useCostCenters() {
         hasMore: list.length === PAGE_SIZE,
       }));
       // eslint-disable-next-line no-console
-      console.log('[useCostCenters] load items length after set:', reset ? list.length : (list.length + (state.items?.length || 0)));
+      console.log('[useCostCenters] load items length after set (page):', page, 'len:', list.length);
     } catch (e) {
       setState((s) => ({ ...s, loading: false }));
       toast({ title: 'Falha ao carregar centros de custo', description: 'Tente novamente em instantes.', variant: 'destructive' });
@@ -90,7 +93,8 @@ export function useCostCenters() {
   const create = useCallback(async (data: Partial<CostCenter>) => {
     try {
       const res = await apiService.createCostCenter(data);
-      const item = (res as any).costCenter || (res as any).data || res;
+      const anyRes: any = res ?? {};
+      const item = anyRes.costCenter || anyRes.cost_center || anyRes.data || res;
       setState((s) => ({ ...s, items: [item as CostCenter, ...s.items] }));
       toast({ title: 'Centro de custo criado', description: (item as CostCenter)?.name || 'Registro criado.' });
       return item as CostCenter;
@@ -103,7 +107,8 @@ export function useCostCenters() {
   const update = useCallback(async (id: string, data: Partial<CostCenter>) => {
     try {
       const res = await apiService.updateCostCenter(id, data);
-      const item = (res as any).costCenter || (res as any).data || res;
+      const anyRes: any = res ?? {};
+      const item = anyRes.costCenter || anyRes.cost_center || anyRes.data || res;
       setState((s) => ({
         ...s,
         items: s.items.map((it) => (it.id === id ? (item as CostCenter) : it)),
