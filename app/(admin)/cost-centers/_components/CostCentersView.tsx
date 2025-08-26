@@ -45,13 +45,8 @@ export default function CostCentersView() {
 
   const isUuid = (v: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 
-  // Edit inline state (opcional)
+  // Edit mode (reutiliza o formulário superior)
   const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [editName, setEditName] = React.useState('');
-  const [editDescription, setEditDescription] = React.useState('');
-  const [editBudget, setEditBudget] = React.useState<string>('');
-  const [editStatus, setEditStatus] = React.useState<'active' | 'inactive'>('active');
-  const [editManagerId, setEditManagerId] = React.useState<string>('');
 
   // Delete confirmation
   const [confirmId, setConfirmId] = React.useState<string | null>(null);
@@ -92,14 +87,27 @@ export default function CostCentersView() {
     }
     if (!valid) return;
 
-    await create({
-      name: trimmed,
-      description: description || null,
-      segment_id: segmentId || null,
-      budget: budget ? parseFloat(budget) : 0,
-      status,
-      manager_id: managerId || null,
-    });
+    if (editingId) {
+      await update(editingId, {
+        name: trimmed,
+        description: description || null,
+        // Não alterar segmento no update pelo formulário de edição
+        budget: budget ? parseFloat(budget) : 0,
+        status,
+        manager_id: managerId || null,
+      });
+    } else {
+      await create({
+        name: trimmed,
+        description: description || null,
+        segment_id: segmentId || null,
+        budget: budget ? parseFloat(budget) : 0,
+        status,
+        manager_id: managerId || null,
+      });
+    }
+    // Reset
+    setEditingId(null);
     setName('');
     setDescription('');
     setSegmentId('');
@@ -111,33 +119,25 @@ export default function CostCentersView() {
 
   const startEdit = (cc: any) => {
     setEditingId(cc.id);
-    setEditName(cc.name || '');
-    setEditDescription(cc.description || '');
-    setEditBudget(cc.budget ? String(cc.budget) : '');
-    setEditStatus((cc.status as any) || 'active');
-    setEditManagerId(cc.manager_id || '');
+    setName(cc.name || '');
+    setDescription(cc.description || '');
+    setSegmentId(cc.segment_id || '');
+    setBudget(cc.budget ? String(cc.budget) : '');
+    setStatus((cc.status as any) || 'active');
+    setManagerId(cc.manager_id || '');
+    setShowForm(true);
   };
 
-  const cancelEdit = () => {
+  // Função auxiliar para cancelar e limpar o formulário
+  const cancelAndReset = () => {
     setEditingId(null);
-    setEditName('');
-    setEditDescription('');
-    setEditBudget('');
-    setEditStatus('active');
-    setEditManagerId('');
-  };
-
-  const onSubmitEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingId || !editName) return;
-    await update(editingId, {
-      name: editName,
-      description: editDescription,
-      budget: editBudget ? parseFloat(editBudget) : 0,
-      status: editStatus,
-      manager_id: editManagerId || null,
-    });
-    cancelEdit();
+    setName('');
+    setDescription('');
+    setSegmentId('');
+    setBudget('');
+    setStatus('active');
+    setManagerId('');
+    setShowForm(false);
   };
 
   return (
@@ -159,9 +159,16 @@ export default function CostCentersView() {
             <Filter className="w-4 h-4 mr-2" />
             Filtros
           </Button>
-          <Button id="cost-centers-new-button" onClick={() => setShowForm((v) => !v)}>
+          <Button id="cost-centers-new-button" onClick={() => {
+            // Se estiver editando, apenas fecha e reseta. Caso contrário, abre/fecha formulário de criação.
+            if (editingId) {
+              cancelAndReset();
+            } else {
+              setShowForm((v) => !v);
+            }
+          }}>
             <Plus className="w-4 h-4 mr-2" />
-            {showForm ? 'Cancelar' : 'Novo'}
+            {editingId ? 'Cancelar Edição' : showForm ? 'Cancelar' : 'Novo'}
           </Button>
         </div>
       </div>
@@ -195,13 +202,14 @@ export default function CostCentersView() {
                 )}
               </div>
               <div className="md:col-span-4">
-                <label htmlFor="costCenterSegment" className="block text-sm font-medium mb-1">Segmento</label>
+                <label htmlFor="costCenterSegment" className="block text-sm font-medium mb-1">Segmento{editingId ? ' (não alterável na edição)' : ''}</label>
                 <select
                   id="costCenterSegment"
                   value={segmentId}
                   onChange={(e) => setSegmentId(e.target.value)}
                   onBlur={() => setSegmentError(segmentId && !isUuid(segmentId) ? 'Segmento inválido.' : null)}
                   className={`w-full p-3 bg-muted border rounded-lg focus:ring-2 ${segmentError ? 'border-red-500 focus:ring-red-500' : 'border-border focus:ring-primary'}`}
+                  disabled={!!editingId}
                   aria-invalid={!!segmentError}
                   aria-describedby="costCenterSegment-error"
                 >
@@ -283,10 +291,10 @@ export default function CostCentersView() {
               </div>
               <div className="flex items-center gap-3 md:col-span-12">
                 <Button id="cost-centers-submit-button" type="submit" className="bg-gradient-to-r from-indigo-500 to-purple-600" disabled={loading || !!nameError || !!segmentError}>
-                  {loading ? 'Salvando...' : 'Adicionar Centro de Custo'}
+                  {loading ? 'Salvando...' : editingId ? 'Salvar Alterações' : 'Adicionar Centro de Custo'}
                 </Button>
-                <Button id="cost-centers-cancel-button" type="button" variant="outline" onClick={() => setShowForm(false)}>
-                  Cancelar
+                <Button id="cost-centers-cancel-button" type="button" variant="outline" onClick={cancelAndReset}>
+                  {editingId ? 'Cancelar Edição' : 'Cancelar'}
                 </Button>
               </div>
             </form>
@@ -329,130 +337,48 @@ export default function CostCentersView() {
                   animate={{ opacity: 1 }}
                   className="border-b border-border hover:bg-muted/50 transition-colors"
                 >
-                  {editingId === cc.id ? (
-                    <>
-                      <td className="p-3 align-top">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center mt-1">
-                            <Building className="w-5 h-5 text-white" />
-                          </div>
-                          <div className="w-full space-y-2">
-                            <input
-                              id={`edit-name-${cc.id}`}
-                              className="w-full p-2 bg-muted border border-border rounded"
-                              value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
-                              placeholder="Nome do centro de custo"
-                            />
-                            <textarea
-                              id={`edit-description-${cc.id}`}
-                              className="w-full p-2 bg-muted border border-border rounded"
-                              rows={2}
-                              value={editDescription}
-                              onChange={(e) => setEditDescription(e.target.value)}
-                              placeholder="Descrição (opcional)"
-                            />
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-3 align-top">
-                        <select
-                          id={`edit-manager-${cc.id}`}
-                          className="w-full p-2 bg-muted border border-border rounded"
-                          value={editManagerId}
-                          onChange={(e) => setEditManagerId(e.target.value)}
-                        >
-                          <option value="">Selecione...</option>
-                          {users.map((u: any) => (
-                            <option key={u.id} value={u.id}>{u.name || u.email}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="p-3 align-top">
-                        <span className="text-sm text-muted-foreground">
-                          {segments.find((s: any) => s.id === cc.segment_id)?.name || 'N/A'}
-                        </span>
-                      </td>
-                      <td className="p-3 align-top">
-                        <input
-                          id={`edit-budget-${cc.id}`}
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          className="w-full p-2 bg-muted border border-border rounded"
-                          value={editBudget}
-                          onChange={(e) => setEditBudget(e.target.value)}
-                          placeholder="0,00"
-                        />
-                      </td>
-                      <td className="p-3 align-top">
-                        <select
-                          id={`edit-status-${cc.id}`}
-                          className="w-full p-2 bg-muted border border-border rounded"
-                          value={editStatus}
-                          onChange={(e) => setEditStatus(e.target.value as any)}
-                        >
-                          <option value="active">Ativo</option>
-                          <option value="inactive">Inativo</option>
-                        </select>
-                      </td>
-                      <td className="p-3 text-center align-top">
-                        <div className="flex justify-center space-x-1">
-                          <Button id={`cost-centers-save-${cc.id}`} size="sm" onClick={(e) => onSubmitEdit(e as any)}>
-                            Salvar
-                          </Button>
-                          <Button id={`cost-centers-cancel-${cc.id}`} variant="outline" size="sm" onClick={cancelEdit}>
-                            Cancelar
-                          </Button>
-                        </div>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="p-3">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
-                            <Building className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <p className="font-medium">{cc.name}</p>
-                            <p className="text-sm text-muted-foreground">{cc.description}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex items-center space-x-2">
-                          <Users className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">{users.find((u: any) => u.id === (cc as any).manager_id)?.name || '-'}</span>
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <span className="text-sm text-muted-foreground">
-                          {segments.find((s: any) => s.id === cc.segment_id)?.name || 'N/A'}
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        <p className="font-medium">{formatCurrency((cc as any).budget)}</p>
-                      </td>
-                      <td className="p-3">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          (cc as any).status === 'inactive' ? 'bg-gray-500/20 text-gray-400' : 'bg-green-500/20 text-green-400'
-                        }`}>
-                          {(cc as any).status === 'inactive' ? 'Inativo' : 'Ativo'}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center">
-                        <div className="flex justify-center space-x-1">
-                          <Button id={`cost-centers-edit-${cc.id}`} variant="ghost" size="sm" title="Editar" onClick={() => startEdit(cc)}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button id={`cost-centers-delete-${cc.id}`} variant="ghost" size="sm" title="Excluir" onClick={() => setConfirmId(cc.id)}>
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </td>
-                    </>
-                  )}
+                  <td className="p-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
+                        <Building className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{cc.name}</p>
+                        <p className="text-sm text-muted-foreground">{cc.description}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-3">
+                    <div className="flex items-center space-x-2">
+                      <Users className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm">{users.find((u: any) => u.id === (cc as any).manager_id)?.name || '-'}</span>
+                    </div>
+                  </td>
+                  <td className="p-3">
+                    <span className="text-sm text-muted-foreground">
+                      {segments.find((s: any) => s.id === cc.segment_id)?.name || 'N/A'}
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    <p className="font-medium">{formatCurrency((cc as any).budget)}</p>
+                  </td>
+                  <td className="p-3">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      (cc as any).status === 'inactive' ? 'bg-gray-500/20 text-gray-400' : 'bg-green-500/20 text-green-400'
+                    }`}>
+                      {(cc as any).status === 'inactive' ? 'Inativo' : 'Ativo'}
+                    </span>
+                  </td>
+                  <td className="p-3 text-center">
+                    <div className="flex justify-center space-x-1">
+                      <Button id={`cost-centers-edit-${cc.id}`} variant="ghost" size="sm" title="Editar" onClick={() => startEdit(cc)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button id={`cost-centers-delete-${cc.id}`} variant="ghost" size="sm" title="Excluir" onClick={() => setConfirmId(cc.id)}>
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </td>
                 </motion.tr>
               ))}
             </tbody>
