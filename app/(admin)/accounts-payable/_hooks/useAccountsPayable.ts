@@ -41,7 +41,23 @@ export function useAccountsPayable() {
     const res: any = await apiService.getAccountsPayable({ page, pageSize: PAGE_SIZE });
     // Edge Function returns { success, accounts_payable: [] }
     const list = res.accounts_payable || res.accountsPayable || res.data || [];
-    return Array.isArray(list) ? (list as AccountPayableItem[]) : [];
+    if (!Array.isArray(list)) return [];
+    // Normalizar campos do backend (pt_BR snake_case) para a interface esperada
+    const normalize = (it: any): AccountPayableItem => ({
+      id: it.id,
+      description: it.description ?? it.descricao ?? '',
+      amount: typeof it.amount !== 'undefined' ? Number(it.amount) : Number(it.valor ?? 0),
+      due_date: it.due_date ?? it.data_vencimento ?? null,
+      supplier_id: it.supplier_id ?? it.fornecedor_id ?? null,
+      supplier_name: it.supplier_name ?? it.fornecedor_nome ?? it.supplier ?? null,
+      category: it.category ?? it.categoria ?? null,
+      status: it.status ?? 'pending',
+      segment_id: it.segment_id ?? null,
+      notes: it.notes ?? it.observacoes ?? null,
+      payment_date: it.payment_date ?? it.data_pagamento ?? null,
+      payment_method: it.payment_method ?? it.metodo_pagamento ?? null,
+    });
+    return list.map(normalize);
   }, []);
 
   const load = useCallback(async (reset: boolean = false) => {
