@@ -159,7 +159,9 @@ export default function CostCentersView() {
     setShowForm(false);
   };
 
-  const startEdit = (cc: any) => {
+  const startEdit = (cc: any, ev?: React.MouseEvent) => {
+    ev?.preventDefault();
+    ev?.stopPropagation();
     setEditingId(cc.id);
     setName(cc.name || '');
     setDescription(cc.description || '');
@@ -167,7 +169,8 @@ export default function CostCentersView() {
     setBudget(cc.budget ? String(cc.budget) : '');
     setStatus((cc.status as any) || 'active');
     setManagerId(cc.manager_id || '');
-    setShowForm(true);
+    // Defer para evitar que o mesmo clique feche a modal via backdrop
+    window.setTimeout(() => setShowForm(true), 0);
   };
 
   // Função auxiliar para cancelar e limpar o formulário
@@ -430,7 +433,7 @@ export default function CostCentersView() {
                   </td>
                   <td className="p-3 text-center">
                     <div className="flex justify-center space-x-1">
-                      <Button id={`cost-centers-edit-${cc.id}`} variant="ghost" size="sm" title="Editar" onClick={() => startEdit(cc)}>
+                      <Button id={`cost-centers-edit-${cc.id}`} variant="ghost" size="sm" title="Editar" onClick={(e) => startEdit(cc, e)}>
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button id={`cost-centers-delete-${cc.id}`} variant="ghost" size="sm" title="Excluir" onClick={() => setConfirmId(cc.id)}>
