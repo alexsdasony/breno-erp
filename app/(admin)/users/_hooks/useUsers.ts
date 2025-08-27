@@ -7,7 +7,7 @@ export interface User {
   name: string;
   email: string;
   role: 'admin' | 'user';
-  status: 'active' | 'inactive';
+  status: 'ativo' | 'inativo';
   segment_id: string | null;
   created_at: string;
   updated_at: string;

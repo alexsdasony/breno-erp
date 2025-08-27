@@ -193,6 +193,99 @@ serve(async (req) => {
       )
     }
 
+    // PATCH - Ativar/Desativar usuários em massa
+    if (req.method === 'PATCH' && url.pathname.includes('/activate-all')) {
+      const body = await req.json()
+      const { status = 'ativo' } = body
+      
+      // Validar status
+      if (!['ativo', 'inativo'].includes(status)) {
+        return new Response(
+          JSON.stringify({ error: 'Status deve ser "ativo" ou "inativo"' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
+      const { data, error } = await supabase
+        .from('users')
+        .update({ status })
+        .neq('id', '00000000-0000-0000-0000-000000000000') // Atualizar todos exceto um ID fictício
+        .select('id, name, email, status')
+      
+      if (error) {
+        console.error('Erro ao atualizar status dos usuários:', error)
+        return new Response(
+          JSON.stringify({ error: 'Erro ao atualizar status dos usuários' }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `${data?.length || 0} usuários foram ${status === 'ativo' ? 'ativados' : 'desativados'}`,
+          updated_users: data || [],
+          total_updated: data?.length || 0
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // PATCH - Ativar/Desativar usuário específico
+    if (req.method === 'PATCH' && isSpecificId) {
+      const body = await req.json()
+      const { status } = body
+      
+      // Validar status
+      if (!status || !['ativo', 'inativo'].includes(status)) {
+        return new Response(
+          JSON.stringify({ error: 'Status deve ser "ativo" ou "inativo"' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
+      const { data, error } = await supabase
+        .from('users')
+        .update({ status })
+        .eq('id', lastSegment)
+        .select()
+        .single()
+      
+      if (error || !data) {
+        return new Response(
+          JSON.stringify({ error: 'Usuário não encontrado' }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          user: data,
+          message: `Usuário ${status === 'ativo' ? 'ativado' : 'desativado'} com sucesso`
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
     // DELETE - Deletar
     if (req.method === 'DELETE' && isSpecificId) {
       const { error } = await supabase

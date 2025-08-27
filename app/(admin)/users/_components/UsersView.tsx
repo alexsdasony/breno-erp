@@ -19,7 +19,9 @@ import {
   AlertCircle,
   Clock,
   Key,
-  User as UserIcon
+  User as UserIcon,
+  UserX,
+  UserCheck
 } from 'lucide-react';
 import { useUsers, User } from '../_hooks/useUsers';
 import { Button } from '@/components/ui/button';
@@ -48,7 +50,7 @@ export default function UsersView() {
     name: '',
     email: '',
     role: 'user' as 'admin' | 'user',
-    status: 'active' as 'active' | 'inactive'
+    status: 'ativo' as 'ativo' | 'inativo'
   });
 
   const segmentOptions = useMemo(() => (segments || []).map((s: any) => ({ value: String(s.id), label: s.name })), [segments]);
@@ -82,9 +84,9 @@ export default function UsersView() {
   // Calculate KPIs
   const kpis = useMemo(() => {
     const totalUsers = filteredUsers.length;
-    const activeUsers = filteredUsers.filter((u: User) => u.status === 'active').length;
+    const activeUsers = filteredUsers.filter((u: User) => u.status === 'ativo').length;
     const adminUsers = filteredUsers.filter((u: User) => u.role === 'admin').length;
-    const inactiveUsers = filteredUsers.filter((u: User) => u.status === 'inactive').length;
+    const inactiveUsers = filteredUsers.filter((u: User) => u.status === 'inativo').length;
     
     return {
       totalUsers,
@@ -101,7 +103,7 @@ export default function UsersView() {
       name: '',
       email: '',
       role: 'user',
-      status: 'active'
+      status: 'ativo'
     });
     setIsEditing(false);
     setSelectedUser(null);
@@ -169,10 +171,23 @@ export default function UsersView() {
     }
   };
 
+  const handleToggleUserStatus = async (userId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'ativo' ? 'inativo' : 'ativo';
+    const action = newStatus === 'ativo' ? 'ativar' : 'desativar';
+    
+    if (window.confirm(`Tem certeza que deseja ${action} este usuário?`)) {
+      try {
+        await update(userId, { status: newStatus });
+      } catch (error) {
+        console.error('Erro ao atualizar status do usuário:', error);
+      }
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'active': return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'inactive': return <AlertCircle className="w-4 h-4 text-red-500" />;
+      case 'ativo': return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'inativo': return <AlertCircle className="w-4 h-4 text-red-500" />;
       default: return <Clock className="w-4 h-4 text-yellow-500" />;
     }
   };
@@ -308,8 +323,8 @@ export default function UsersView() {
                 className="px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
               >
                 <option value="all">Todos os Status</option>
-                <option value="active">Ativo</option>
-                <option value="inactive">Inativo</option>
+                <option value="ativo">Ativo</option>
+                <option value="inativo">Inativo</option>
               </select>
               <select
                 value={roleFilter}
@@ -390,11 +405,11 @@ export default function UsersView() {
                         <div className="flex items-center gap-2">
                           {getStatusIcon(user.status)}
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            user.status === 'active' 
+                            user.status === 'ativo' 
                               ? 'bg-green-100 text-green-800' 
                               : 'bg-red-100 text-red-800'
                           }`}>
-                            {user.status === 'active' ? 'Ativo' : 'Inativo'}
+                            {user.status === 'ativo' ? 'Ativo' : 'Inativo'}
                           </span>
                         </div>
                       </td>
@@ -421,6 +436,19 @@ export default function UsersView() {
                             className="text-green-600 hover:text-green-800"
                           >
                             <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleUserStatus(user.id, user.status)}
+                             className={user.status === 'ativo' ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'}
+                             title={user.status === 'ativo' ? 'Desativar usuário' : 'Ativar usuário'}
+                           >
+                             {user.status === 'ativo' ? (
+                               <UserX className="w-4 h-4" />
+                             ) : (
+                               <UserCheck className="w-4 h-4" />
+                             )}
                           </Button>
                           <Button
                             variant="ghost"
@@ -541,11 +569,11 @@ export default function UsersView() {
                   <select
                     id="status"
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as 'ativo' | 'inativo' })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="active">Ativo</option>
-                    <option value="inactive">Inativo</option>
+                    <option value="ativo">Ativo</option>
+                    <option value="inativo">Inativo</option>
                   </select>
                 </div>
 
@@ -640,7 +668,7 @@ export default function UsersView() {
                     <div className="flex items-center gap-2 mt-1">
                       {getStatusIcon(selectedUser.status)}
                       <span className="text-sm">
-                        {selectedUser.status === 'active' ? 'Ativo' : 'Inativo'}
+                        {selectedUser.status === 'ativo' ? 'Ativo' : 'Inativo'}
                       </span>
                     </div>
                   </div>
