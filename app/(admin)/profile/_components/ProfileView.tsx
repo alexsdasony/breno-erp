@@ -22,7 +22,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { useAppData } from '@/hooks/useAppData';
 import apiService from '@/services/api';
@@ -39,13 +38,7 @@ export default function ProfileView() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Alias JS components to any to avoid TS prop typing issues
-  const DialogRoot = Dialog as any;
-  const DialogC = DialogContent as any;
-  const DialogH = DialogHeader as any;
-  const DialogT = DialogTitle as any;
-  const DialogD = DialogDescription as any;
-  const DialogF = DialogFooter as any;
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   const [profileData, setProfileData] = useState({
     name: currentUser?.name || '',
@@ -67,6 +60,16 @@ export default function ProfileView() {
       });
     }
   }, [currentUser]);
+
+  // Check for unsaved changes
+  React.useEffect(() => {
+    if (currentUser) {
+      const hasChanges = 
+        profileData.name !== (currentUser.name || '') ||
+        profileData.email !== (currentUser.email || '');
+      setHasUnsavedChanges(hasChanges);
+    }
+  }, [profileData, currentUser]);
 
   if (authLoading) {
     return (
@@ -100,6 +103,11 @@ export default function ProfileView() {
       return;
     }
 
+    // Show password confirmation modal before saving
+    setShowPasswordModal(true);
+  };
+
+  const handleSaveProfile = async () => {
     setLoading(true);
     try {
       await updateUserProfile(
@@ -113,6 +121,8 @@ export default function ProfileView() {
       });
       
       setIsEditing(false);
+      setShowPasswordModal(false);
+      setConfirmPassword('');
     } catch (error) {
       toast({
         title: 'Erro ao atualizar perfil',
@@ -192,7 +202,7 @@ export default function ProfileView() {
   };
 
   const handleEditClick = () => {
-    setShowPasswordModal(true);
+    setIsEditing(true);
   };
 
   const handlePasswordConfirm = async () => {
@@ -217,13 +227,7 @@ export default function ProfileView() {
       });
 
       if (response.ok) {
-        setShowPasswordModal(false);
-        setConfirmPassword('');
-        setIsEditing(true);
-        toast({
-          title: 'Senha confirmada',
-          description: 'Agora você pode editar seu perfil.'
-        });
+        await handleSaveProfile();
       } else {
         toast({
           title: 'Erro',
@@ -354,7 +358,7 @@ export default function ProfileView() {
                     <input
                       type="text"
                       value={profileData.name}
-                      onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
                       disabled={!isEditing}
                       className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="Seu nome completo"
@@ -369,7 +373,7 @@ export default function ProfileView() {
                     <input
                       type="email"
                       value={profileData.email}
-                      onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
                       disabled={!isEditing}
                       className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="seu@email.com"
@@ -390,8 +394,8 @@ export default function ProfileView() {
                     </Button>
                     <Button
                       type="submit"
-                      disabled={loading}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                      disabled={loading || !hasUnsavedChanges}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
                     >
                       {loading ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -444,7 +448,7 @@ export default function ProfileView() {
                     <input
                       type={showCurrentPassword ? 'text' : 'password'}
                       value={passwordData.currentPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
                       className="w-full pl-10 pr-12 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Digite sua senha atual"
                     />
@@ -465,7 +469,7 @@ export default function ProfileView() {
                     <input
                       type={showNewPassword ? 'text' : 'password'}
                       value={passwordData.newPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
                       className="w-full pl-10 pr-12 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Digite sua nova senha"
                     />
@@ -486,7 +490,7 @@ export default function ProfileView() {
                     <input
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={passwordData.confirmPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                       className="w-full pl-10 pr-12 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Confirme sua nova senha"
                     />
@@ -588,27 +592,27 @@ export default function ProfileView() {
       </motion.div>
 
       {/* Modal de Confirmação de Senha */}
-      <DialogRoot open={showPasswordModal} onOpenChange={setShowPasswordModal}>
-        <DialogC className="sm:max-w-[425px] bg-gray-800 border-gray-700">
-          <DialogH>
-            <DialogT className="text-white">Confirmar Identidade</DialogT>
-            <DialogD className="text-gray-400">
-              Para sua segurança, digite sua senha atual para editar o perfil.
-            </DialogD>
-          </DialogH>
+      <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+        <DialogContent className="sm:max-w-[425px] bg-gray-800 border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">Confirmar Identidade</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Para sua segurança, digite sua senha atual para salvar as alterações.
+            </DialogDescription>
+          </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="confirm-password" className="text-right text-gray-300">
                 Senha
               </Label>
-              <Input
+              <input
                 id="confirm-password"
                 type="password"
                 value={confirmPassword}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
-                className="col-span-3 bg-gray-700 border-gray-600 text-white"
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="col-span-3 w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Digite sua senha atual"
-                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     handlePasswordConfirm();
                   }
@@ -616,7 +620,7 @@ export default function ProfileView() {
               />
             </div>
           </div>
-          <DialogF>
+          <DialogFooter>
             <Button
               type="button"
               variant="outline"
@@ -628,12 +632,20 @@ export default function ProfileView() {
             >
               Cancelar
             </Button>
-            <Button type="button" onClick={handlePasswordConfirm} className="bg-blue-600 hover:bg-blue-700">
+            <Button 
+              type="button" 
+              onClick={handlePasswordConfirm} 
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {loading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              ) : null}
               Confirmar
             </Button>
-          </DialogF>
-        </DialogC>
-      </DialogRoot>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
