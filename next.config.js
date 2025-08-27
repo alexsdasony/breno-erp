@@ -36,13 +36,7 @@ const nextConfig = {
   async rewrites() {
     const rewrites = [];
     
-    // Se estiver usando banco local, não fazer proxy
-    if (process.env.USE_LOCAL_DATABASE === 'true') {
-      console.log('🔧 Modo local: sem proxy de API');
-      return rewrites;
-    }
-    
-    // Rewrite para API externa (Edge Functions) em desenvolvimento e produção
+    // Rewrite para Supabase Edge Functions
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (apiUrl) {
       rewrites.push({

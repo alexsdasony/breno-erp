@@ -21,15 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-// Aliases para evitar problemas de tipagem
-const DialogComponent = Dialog as any;
-const DialogContentComponent = DialogContent as any;
-const DialogHeaderComponent = DialogHeader as any;
-const DialogTitleComponent = DialogTitle as any;
-const DialogDescriptionComponent = DialogDescription as any;
-const DialogFooterComponent = DialogFooter as any;
 import { toast } from '@/components/ui/use-toast';
 import { useAppData } from '@/hooks/useAppData';
 import apiService from '@/services/api';
@@ -42,8 +34,7 @@ export default function ProfileView() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [confirmPassword, setConfirmPassword] = useState('');
+
   const [loading, setLoading] = useState(false);
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -111,8 +102,7 @@ export default function ProfileView() {
       return;
     }
 
-    // Show password confirmation modal before saving
-    setShowPasswordModal(true);
+    await handleSaveProfile();
   };
 
   const handleSaveProfile = async () => {
@@ -129,8 +119,6 @@ export default function ProfileView() {
       });
       
       setIsEditing(false);
-      setShowPasswordModal(false);
-      setConfirmPassword('');
     } catch (error) {
       toast({
         title: 'Erro ao atualizar perfil',
@@ -211,46 +199,6 @@ export default function ProfileView() {
 
   const handleEditClick = () => {
     setIsEditing(true);
-  };
-
-  const handlePasswordConfirm = async () => {
-    if (!confirmPassword.trim()) {
-      toast({
-        title: 'Erro',
-        description: 'Digite sua senha atual para continuar.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    try {
-      // Verificar a senha atual fazendo uma tentativa de login
-      const response = await fetch('/api/auth/verify-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ password: confirmPassword })
-      });
-
-      if (response.ok) {
-        await handleSaveProfile();
-      } else {
-        toast({
-          title: 'Erro',
-          description: 'Senha incorreta.',
-          variant: 'destructive'
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao verificar senha:', error);
-      toast({
-        title: 'Erro',
-        description: 'Erro ao verificar senha.',
-        variant: 'destructive'
-      });
-    }
   };
 
   const handleCancelPassword = () => {
@@ -368,6 +316,7 @@ export default function ProfileView() {
                       value={profileData.name}
                       onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
                       disabled={!isEditing}
+                      autoComplete="name"
                       className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="Seu nome completo"
                     />
@@ -383,6 +332,7 @@ export default function ProfileView() {
                       value={profileData.email}
                       onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
                       disabled={!isEditing}
+                      autoComplete="email"
                       className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="seu@email.com"
                     />
@@ -457,6 +407,7 @@ export default function ProfileView() {
                       type={showCurrentPassword ? 'text' : 'password'}
                       value={passwordData.currentPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      autoComplete="current-password"
                       className="w-full pl-10 pr-12 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Digite sua senha atual"
                     />
@@ -478,6 +429,7 @@ export default function ProfileView() {
                       type={showNewPassword ? 'text' : 'password'}
                       value={passwordData.newPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                      autoComplete="new-password"
                       className="w-full pl-10 pr-12 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Digite sua nova senha"
                     />
@@ -499,6 +451,7 @@ export default function ProfileView() {
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={passwordData.confirmPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      autoComplete="new-password"
                       className="w-full pl-10 pr-12 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Confirme sua nova senha"
                     />
@@ -599,61 +552,7 @@ export default function ProfileView() {
         </Card>
       </motion.div>
 
-      {/* Modal de Confirmação de Senha */}
-      <DialogComponent open={showPasswordModal} onOpenChange={setShowPasswordModal}>
-        <DialogContentComponent className="sm:max-w-[425px] bg-gray-800 border-gray-700">
-          <DialogHeaderComponent>
-            <DialogTitleComponent className="text-white">Confirmar Identidade</DialogTitleComponent>
-            <DialogDescriptionComponent className="text-gray-400">
-              Para sua segurança, digite sua senha atual para salvar as alterações.
-            </DialogDescriptionComponent>
-          </DialogHeaderComponent>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="confirm-password" className="text-right text-gray-300">
-                Senha
-              </Label>
-              <input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="col-span-3 w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Digite sua senha atual"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handlePasswordConfirm();
-                  }
-                }}
-              />
-            </div>
-          </div>
-          <DialogFooterComponent>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShowPasswordModal(false);
-                setConfirmPassword('');
-              }}
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
-            >
-              Cancelar
-            </Button>
-            <Button 
-              type="button" 
-              onClick={handlePasswordConfirm} 
-              disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              ) : null}
-              Confirmar
-            </Button>
-          </DialogFooterComponent>
-        </DialogContentComponent>
-      </DialogComponent>
+
     </div>
   );
 }

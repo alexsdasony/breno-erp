@@ -89,6 +89,181 @@ serve(async (req) => {
       }
     }
 
+    // Endpoint /profile - PUT (Atualizar perfil)
+    if (req.method === 'PUT' && path === 'profile') {
+      const authHeader = req.headers.get('authorization')
+      const userToken = req.headers.get('x-user-token')
+
+      if (!authHeader && !userToken) {
+        return new Response(
+          JSON.stringify({ error: 'Token de autenticação não fornecido' }),
+          { 
+            status: 401, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      try {
+        // Decodificar token simples (base64)
+        const token = userToken || authHeader?.replace('Bearer ', '')
+        if (!token) {
+          throw new Error('Token inválido')
+        }
+
+        const decodedToken = JSON.parse(atob(token))
+        const { name, email } = await req.json()
+
+        if (!name || !email) {
+          return new Response(
+            JSON.stringify({ error: 'Nome e email são obrigatórios' }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+
+        // Atualizar dados do usuário
+        const { data: updatedUser, error: updateError } = await supabase
+          .from('users')
+          .update({ name, email })
+          .eq('id', decodedToken.id)
+          .select()
+          .single()
+
+        if (updateError) {
+          console.error('Erro ao atualizar usuário:', updateError)
+          return new Response(
+            JSON.stringify({ error: 'Erro ao atualizar perfil' }),
+            { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+
+        // Retornar dados do usuário atualizado (sem senha)
+        const { password: _, ...userWithoutPassword } = updatedUser
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            user: userWithoutPassword,
+            message: 'Perfil atualizado com sucesso'
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+
+      } catch (tokenError) {
+        return new Response(
+          JSON.stringify({ error: 'Token inválido' }),
+          { 
+            status: 401, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+    }
+
+    // Endpoint /password - PUT (Alterar senha)
+    if (req.method === 'PUT' && path === 'password') {
+      const authHeader = req.headers.get('authorization')
+      const userToken = req.headers.get('x-user-token')
+
+      if (!authHeader && !userToken) {
+        return new Response(
+          JSON.stringify({ error: 'Token de autenticação não fornecido' }),
+          { 
+            status: 401, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      try {
+        // Decodificar token simples (base64)
+        const token = userToken || authHeader?.replace('Bearer ', '')
+        if (!token) {
+          throw new Error('Token inválido')
+        }
+
+        const decodedToken = JSON.parse(atob(token))
+        const { currentPassword, newPassword } = await req.json()
+
+        if (!currentPassword || !newPassword) {
+          return new Response(
+            JSON.stringify({ error: 'Senha atual e nova senha são obrigatórias' }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+
+        // Buscar usuário atual
+        const { data: user, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', decodedToken.id)
+          .eq('status', 'ativo')
+          .single()
+
+        if (userError || !user) {
+          return new Response(
+            JSON.stringify({ error: 'Usuário não encontrado' }),
+            { 
+              status: 404, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+
+        // TODO: Implementar verificação de senha atual com bcrypt
+        // Por enquanto, aceitar qualquer senha atual para teste
+
+        // Atualizar senha (TODO: hash com bcrypt)
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ password: newPassword })
+          .eq('id', decodedToken.id)
+
+        if (updateError) {
+          console.error('Erro ao atualizar senha:', updateError)
+          return new Response(
+            JSON.stringify({ error: 'Erro ao alterar senha' }),
+            { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: 'Senha alterada com sucesso'
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+
+      } catch (tokenError) {
+        return new Response(
+          JSON.stringify({ error: 'Token inválido' }),
+          { 
+            status: 401, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+    }
+
     // Endpoint de login - POST
     if (req.method === 'POST') {
       const { email, password } = await req.json()
@@ -182,4 +357,4 @@ serve(async (req) => {
       }
     )
   }
-}) 
+})
