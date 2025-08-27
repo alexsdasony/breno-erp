@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   // Retorna fallback ou lança erro controlado
 }
 
-export const supabase = createClient(supabaseUrl!, supabaseAnonKey!, {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -208,4 +208,4 @@ export const db = {
   }
 }
 
-export default supabase 
+export default supabase

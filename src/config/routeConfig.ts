@@ -14,6 +14,7 @@ const routeMapping: Record<string, string> = {
   costCenters: '/cost-centers',
   chartOfAccounts: '/chart-of-accounts',
   segments: '/segments',
+  users: '/users',
   paymentMethods: '/payment-methods',
   nfe: '/nfe',
   reports: '/reports',

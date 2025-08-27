@@ -1,4 +1,4 @@
-import { LayoutDashboard, DollarSign, Package, ShoppingCart, BarChart3, Users, FileSpreadsheet, Zap, CreditCard, Building, Database, ListChecks, Briefcase, BookOpen, Search, Factory } from 'lucide-react';
+import { LayoutDashboard, DollarSign, Package, ShoppingCart, BarChart3, Users, FileSpreadsheet, Zap, CreditCard, Building, Database, ListChecks, Briefcase, BookOpen, Search, Factory, UserCog } from 'lucide-react';
 
 export const menuItems = [
   { id: 'receita', label: 'Receita Federal', icon: Search },
@@ -13,6 +13,7 @@ export const menuItems = [
   { id: 'costCenters', label: 'Centros de Custo', icon: Building },
   { id: 'chartOfAccounts', label: 'Plano de Contas', icon: BookOpen },
   { id: 'segments', label: 'Segmentos', icon: Briefcase },
+  { id: 'users', label: 'Usuários', icon: UserCog },
   { id: 'paymentMethods', label: 'Formas de Pagamento', icon: CreditCard },
   { id: 'nfe', label: 'Emissão NF-e', icon: FileSpreadsheet },
   // { id: 'integrations', label: 'Integrações', icon: Zap }, // REMOVED - causing issues
