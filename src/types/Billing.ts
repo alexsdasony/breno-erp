@@ -3,30 +3,22 @@ import type { ID, Timestamped } from './common'
 export interface Billing extends Timestamped {
   id: ID
   customer_id: ID | null
-  customer_name: string
-  invoice_number: string
-  issue_date: string
-  due_date: string
+  customer_name?: string | null
   amount: number
-  tax_amount: number
-  total_amount: number
-  payment_method?: string | null
+  due_date: string
   status: string
-  notes?: string | null
+  payment_date?: string | null
   segment_id?: ID | null
+  deleted_at?: string | null
+  is_deleted?: boolean
 }
 
 export interface BillingPayload {
   customer_id?: ID | null
-  customer_name?: string
-  invoice_number?: string
-  issue_date?: string
-  due_date?: string
-  amount?: number
-  tax_amount?: number
-  total_amount?: number
-  payment_method?: string | null
+  customer_name?: string | null
+  amount: number
+  due_date: string
   status?: string
-  notes?: string | null
+  payment_date?: string | null
   segment_id?: ID | null
 }

@@ -1,32 +1,47 @@
 import { ID, Timestamped } from './common'
 
+// Interface baseada no schema real do banco financial_documents
 export interface FinancialDocument extends Timestamped {
   id: ID
-  document_number: string
-  document_type: string
-  issue_date: string
-  due_date: string
+  partner_id?: ID
+  direction: 'receivable' | 'payable'
+  doc_no?: string
+  issue_date?: string
+  due_date?: string
   amount: number
-  status: string
-  entity_id?: ID
-  entity_name?: string
-  entity_type?: string
-  notes?: string
+  balance: number
+  status: 'draft' | 'open' | 'partially_paid' | 'paid' | 'canceled'
+  category_id?: ID
+  segment_id?: ID
+  description?: string
   payment_method?: string
-  category?: string
+  payment_method_id?: ID
+  notes?: string
+  deleted_at?: string
+  is_deleted?: boolean
+  // Campos relacionais do backend
+  partner?: {
+    name: string
+  }
+  // Campos mapeados para compatibilidade com o frontend
+  type?: string // mapeado de direction
+  date?: string // mapeado de issue_date
+  partner_name?: string // mapeado de partner.name
 }
 
 export interface FinancialDocumentPayload {
-  document_number?: string
-  document_type?: string
+  partner_id?: ID
+  direction?: 'receivable' | 'payable'
+  doc_no?: string
   issue_date?: string
   due_date?: string
   amount?: number
-  status?: string
-  entity_id?: ID
-  entity_name?: string
-  entity_type?: string
-  notes?: string
+  balance?: number
+  status?: 'draft' | 'open' | 'partially_paid' | 'paid' | 'canceled'
+  category_id?: ID
+  segment_id?: ID
+  description?: string
   payment_method?: string
-  category?: string
+  payment_method_id?: ID
+  notes?: string
 }

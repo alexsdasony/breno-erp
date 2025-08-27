@@ -76,8 +76,8 @@ export default function CustomerFormView({ id }: CustomerFormViewProps) {
         setFormData({
           name: customer.name || '',
           tipoPessoa: customer.tipo_pessoa || 'pf',
-          cpf: customer.cpf || '',
-          cnpj: customer.cnpj || '',
+          cpf: customer.tax_id && customer.tipo_pessoa === 'pf' ? customer.tax_id : '',
+          cnpj: customer.tax_id && customer.tipo_pessoa === 'pj' ? customer.tax_id : '',
           rg: customer.rg || '',
           dataNascimento: customer.data_nascimento || '',
           estadoCivil: customer.estado_civil || '',

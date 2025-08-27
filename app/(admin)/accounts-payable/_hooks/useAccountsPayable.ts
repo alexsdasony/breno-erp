@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { listAccountsPayable, createAccountPayable, updateAccountPayable, deleteAccountPayable } from '@/services/accountsPayableService';
-import { AccountPayable, AccountPayablePayload } from '@/types';
+import { AccountsPayable, AccountsPayablePayload } from '@/types';
 
-export type AccountPayableItem = AccountPayable;
+export type AccountPayableItem = AccountsPayable;
 
 interface State {
   items: AccountPayableItem[];
@@ -73,28 +73,28 @@ export function useAccountsPayable() {
   const create = useCallback(async (data: Partial<AccountPayableItem>) => {
     try {
       // Validar campos obrigatórios
-      if (!data.description) {
+      if (!data.descricao) {
         toast({ title: 'Erro ao criar conta a pagar', description: 'A descrição é obrigatória.', variant: 'destructive' });
         return null;
       }
       
-      if (!data.amount && data.amount !== 0) {
+      if (!data.valor && data.valor !== 0) {
         toast({ title: 'Erro ao criar conta a pagar', description: 'O valor é obrigatório.', variant: 'destructive' });
         return null;
       }
       
       // Criar payload com campos obrigatórios
-      const payload: AccountPayablePayload = {
-        description: data.description,
-        amount: typeof data.amount === 'string' ? parseFloat(data.amount) : data.amount,
-        due_date: data.due_date,
+      const payload: AccountsPayablePayload = {
+        descricao: data.descricao || '',
+        valor: typeof data.valor === 'string' ? parseFloat(data.valor) : data.valor || 0,
+        data_vencimento: data.data_vencimento || new Date().toISOString().split('T')[0],
         supplier_id: data.supplier_id,
-        category: data.category,
+        categoria_id: data.categoria_id,
         status: data.status,
         segment_id: data.segment_id,
-        notes: data.notes,
-        payment_date: data.payment_date,
-        payment_method: data.payment_method
+        observacoes: data.observacoes,
+        data_pagamento: data.data_pagamento,
+        forma_pagamento: data.forma_pagamento
       };
       
       const response = await createAccountPayable(payload);
@@ -102,7 +102,7 @@ export function useAccountsPayable() {
       
       if (item) {
         setState((s) => ({ ...s, items: [item, ...s.items] }));
-        toast({ title: 'Conta a pagar criada', description: item.description || 'Registro criado.' });
+        toast({ title: 'Conta a pagar criada', description: item.descricao || 'Registro criado.' });
         return item;
       }
       
@@ -117,24 +117,24 @@ export function useAccountsPayable() {
   const update = useCallback(async (id: string, data: Partial<AccountPayableItem>) => {
     try {
       // Validar campos obrigatórios se estiverem presentes no payload
-      if (data.description === '') {
+      if (data.descricao === '') {
         toast({ title: 'Erro ao atualizar conta a pagar', description: 'A descrição não pode ser vazia.', variant: 'destructive' });
         return null;
       }
       
       // Criar payload com os campos fornecidos
-      const payload: Partial<AccountPayablePayload> = {};
+      const payload: Partial<AccountsPayablePayload> = {};
       
-      if (data.description !== undefined) payload.description = data.description;
-      if (data.amount !== undefined) payload.amount = typeof data.amount === 'string' ? parseFloat(data.amount) : data.amount;
-      if (data.due_date !== undefined) payload.due_date = data.due_date;
+      if (data.descricao !== undefined) payload.descricao = data.descricao;
+      if (data.valor !== undefined) payload.valor = typeof data.valor === 'string' ? parseFloat(data.valor) : data.valor;
+      if (data.data_vencimento !== undefined) payload.data_vencimento = data.data_vencimento;
       if (data.supplier_id !== undefined) payload.supplier_id = data.supplier_id;
-      if (data.category !== undefined) payload.category = data.category;
+      if (data.categoria_id !== undefined) payload.categoria_id = data.categoria_id;
       if (data.status !== undefined) payload.status = data.status;
       if (data.segment_id !== undefined) payload.segment_id = data.segment_id;
-      if (data.notes !== undefined) payload.notes = data.notes;
-      if (data.payment_date !== undefined) payload.payment_date = data.payment_date;
-      if (data.payment_method !== undefined) payload.payment_method = data.payment_method;
+      if (data.observacoes !== undefined) payload.observacoes = data.observacoes;
+      if (data.data_pagamento !== undefined) payload.data_pagamento = data.data_pagamento;
+      if (data.forma_pagamento !== undefined) payload.forma_pagamento = data.forma_pagamento;
       
       const response = await updateAccountPayable(id, payload);
       const item = response.data?.account_payable;
@@ -144,7 +144,7 @@ export function useAccountsPayable() {
           ...s,
           items: s.items.map((it) => (it.id === id ? item : it)),
         }));
-        toast({ title: 'Conta a pagar atualizada', description: item.description || 'Registro atualizado.' });
+        toast({ title: 'Conta a pagar atualizada', description: item.descricao || 'Registro atualizado.' });
         return item;
       }
       

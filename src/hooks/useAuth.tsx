@@ -132,13 +132,14 @@ export const useAuth = (): AuthContextType => {
       const response = await authService.login({ email, password }) as any;
       
       // Verificar se a resposta tem sucesso e dados do usuário
-      if (response.success && response.user) {
-        setCurrentUser(response.user);
+      // O authService retorna { success, data } onde data contém a resposta do backend
+      if (response.success && response.data && response.data.user) {
+        setCurrentUser(response.data.user);
         // Cache do usuário para persistência
-        localStorage.setItem('cached_user', JSON.stringify(response.user));
+        localStorage.setItem('cached_user', JSON.stringify(response.data.user));
         // Salvar token se fornecido
-        if (response.token) {
-          apiService.setToken(response.token);
+        if (response.data.token) {
+          apiService.setToken(response.data.token);
         }
         toast({
           title: "Login realizado!",

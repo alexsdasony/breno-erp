@@ -7,7 +7,7 @@ import {
   User, Mail, Phone, MapPin, X, AlertCircle, FileText, Building
 } from 'lucide-react';
 import { useSuppliers } from '../_hooks/useSuppliers';
-import { SupplierExtended as Supplier } from '@/services/suppliersService';
+import { Supplier } from '@/types';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData';
 
@@ -123,13 +123,13 @@ export default function SuppliersView() {
     setFormData({
       name: supplier.name,
       email: supplier.email || '',
-      phone: supplier.phone || '',
-      city: supplier.city || '',
-      state: supplier.state || '',
-      address: supplier.address || '',
-      tax_id: supplier.tax_id || '',
-      person_type: supplier.person_type || 'pf',
-      doc: supplier.doc || '',
+      phone: supplier.telefone || '',
+      city: supplier.cidade || '',
+      state: supplier.estado || '',
+      address: supplier.endereco || '',
+      tax_id: supplier.cnpj || supplier.cpf || '',
+      person_type: supplier.cnpj ? 'pj' : 'pf',
+      doc: supplier.cnpj || supplier.cpf || '',
       segment_id: supplier.segment_id || ''
     });
     setSelectedSupplier(supplier);
@@ -318,7 +318,7 @@ export default function SuppliersView() {
                         </div>
                         <div>
                           <p className="font-medium">{supplier.name}</p>
-                          <p className="text-sm text-muted-foreground">{supplier.tax_id}</p>
+                          <p className="text-sm text-muted-foreground">{supplier.cnpj || supplier.cpf}</p>
                         </div>
                       </div>
                     </td>
@@ -337,7 +337,7 @@ export default function SuppliersView() {
                     <td className="p-3">
                       <div className="flex items-center space-x-2">
                         <MapPin className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm">{supplier.city && supplier.state ? `${supplier.city}, ${supplier.state}` : 'N/A'}</span>
+                        <span className="text-sm">{supplier.cidade && supplier.estado ? `${supplier.cidade}, ${supplier.estado}` : 'N/A'}</span>
                       </div>
                     </td>
                     <td className="p-3">
@@ -584,7 +584,7 @@ export default function SuppliersView() {
                         <span className="font-medium">Nome:</span> {selectedSupplier.name}
                       </div>
                       <div>
-                        <span className="font-medium">CPF/CNPJ:</span> {selectedSupplier.tax_id || 'N/A'}
+                        <span className="font-medium">CPF/CNPJ:</span> {selectedSupplier.cnpj || selectedSupplier.cpf || 'N/A'}
                       </div>
                       <div>
                         <span className="font-medium">Segmento:</span> {segments.find((s: any) => s.id === selectedSupplier.segment_id)?.name || 'N/A'}
@@ -608,11 +608,11 @@ export default function SuppliersView() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <Phone className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">Telefone:</span> {selectedSupplier.phone || 'N/A'}
+                        <span className="font-medium">Telefone:</span> {selectedSupplier.telefone || 'N/A'}
                       </div>
                       <div className="flex items-center space-x-2">
                         <MapPin className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">Endereço:</span> {selectedSupplier.address || 'N/A'}
+                        <span className="font-medium">Endereço:</span> {selectedSupplier.endereco || 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -623,18 +623,18 @@ export default function SuppliersView() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-muted/50 rounded-lg p-4 text-center">
                       <DollarSign className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                      <p className="text-xl font-bold text-green-600">{formatCurrency(selectedSupplier.total_value || 0)}</p>
+                      <p className="text-xl font-bold text-green-600">{formatCurrency(0)}</p>
                       <p className="text-sm text-muted-foreground">Valor Total</p>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-4 text-center">
                       <FileText className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                      <p className="text-xl font-bold text-blue-600">{selectedSupplier.orders_count || 0}</p>
+                      <p className="text-xl font-bold text-blue-600">0</p>
                       <p className="text-sm text-muted-foreground">Pedidos</p>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-4 text-center">
                       <Clock className="w-8 h-8 text-purple-500 mx-auto mb-2" />
                       <p className="text-xl font-bold text-purple-600">
-                        {selectedSupplier.last_order_date ? formatDate(selectedSupplier.last_order_date) : 'N/A'}
+                        N/A
                       </p>
                       <p className="text-sm text-muted-foreground">Último Pedido</p>
                     </div>

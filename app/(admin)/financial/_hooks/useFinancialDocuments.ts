@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
-import { getFinancialDocuments, createFinancialDocument, updateFinancialDocument, deleteFinancialDocument } from '@/services/financialDocumentsService';
+import { getFinancialDocuments, createFinancialDocument, updateFinancialDocument, deleteFinancialDocument, normalizeFinancialDocument } from '@/services/financialDocumentsService';
 import type { FinancialDocument } from '@/types/FinancialDocument';
 
 // Usando a interface FinancialDocument importada de @/types
@@ -22,35 +22,7 @@ interface Api {
 
 const PAGE_SIZE = 20;
 
-// Normalize backend row (DB schema) to frontend shape expected by UI
-function normalizeFinancialDocument(row: any): FinancialDocument {
-  const direction: string | undefined = row?.direction;
-  const documentType =
-    row?.document_type ?? row?.type ?? (direction === 'payable' ? 'expense' : direction === 'receivable' ? 'income' : 'other');
-  const entityName =
-    (row.partner && typeof row.partner === 'object' ? row.partner.name : undefined)
-    ?? row.entity_name
-    ?? row.partner_name
-    ?? (typeof row.partner === 'string' ? row.partner : undefined)
-    ?? '';
-  return {
-    id: row.id,
-    document_number: row.doc_no ?? row.document_number ?? '',
-    document_type: documentType,
-    issue_date: row.issue_date ?? row.date ?? '',
-    due_date: row.due_date ?? '',
-    amount: row.amount != null ? Number(row.amount) : 0,
-    status: row.status === 'open' ? 'pending' : row.status ?? '',
-    entity_id: row.partner_id ?? row.entity_id,
-    entity_name: entityName,
-    entity_type: row.entity_type ?? 'customer',
-    notes: row.notes ?? row.description,
-    payment_method: row.payment_method,
-    category: row.category,
-    created_at: row.created_at,
-    updated_at: row.updated_at
-  };
-}
+// Usando a função normalizeFinancialDocument do service
 
 export function useFinancialDocuments() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });

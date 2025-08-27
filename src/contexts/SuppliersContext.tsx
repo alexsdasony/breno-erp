@@ -1,9 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getSuppliers, Supplier } from '@/services/suppliersService';
-
-// Usando a interface Supplier importada de suppliersService.ts
+import { getSuppliers } from '@/services/suppliersService';
+import { Supplier } from '@/types';
 
 export type SuppliersContextValue = {
   suppliers: Supplier[];

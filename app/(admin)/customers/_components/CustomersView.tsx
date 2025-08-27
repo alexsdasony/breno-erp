@@ -26,24 +26,7 @@ import {
 import { usePartners } from '../_hooks/usePartners';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData';
-
-interface Customer {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  city?: string;
-  state?: string;
-  tax_id?: string;
-  status: 'active' | 'inactive' | 'suspended';
-  segment_id?: string | null;
-  total_value?: number;
-  orders_count?: number;
-  last_order_date?: string;
-  address?: string;
-  person_type?: 'pf' | 'pj';
-  doc?: string;
-}
+import type { Customer } from '@/types';
 
 export default function CustomersView() {
   const { items, loading, hasMore, loadMore, create, update, remove } = usePartners();
@@ -61,8 +44,8 @@ export default function CustomersView() {
   const [formData, setFormData] = useState({
     segment_id: '',
     name: '',
-    person_type: 'pf',
-    doc: '',
+    tipo_pessoa: 'pf',
+    tax_id: '',
     email: '',
     phone: '',
     address: '',
@@ -148,8 +131,8 @@ export default function CustomersView() {
     setFormData({
       segment_id: '',
       name: '',
-      person_type: 'pf',
-      doc: '',
+      tipo_pessoa: 'pf',
+      tax_id: '',
       email: '',
       phone: '',
       address: '',
@@ -165,8 +148,8 @@ export default function CustomersView() {
     setFormData({
       segment_id: customer.segment_id?.toString() || '',
       name: customer.name || '',
-      person_type: 'pf',
-      doc: customer.tax_id || '',
+      tipo_pessoa: customer.tipo_pessoa || 'pf',
+      tax_id: customer.tax_id || '',
       email: customer.email || '',
       phone: customer.phone || '',
       address: customer.address || '',
@@ -218,9 +201,9 @@ export default function CustomersView() {
         address: formData.address || null,
         city: formData.city || null,
         state: formData.state || null,
-        segmentId: formData.segment_id ? Number(formData.segment_id) : null,
-        taxId: formData.doc || null,
-        personType: formData.person_type,
+        segment_id: formData.segment_id ? formData.segment_id : null,
+        tax_id: formData.tax_id || null,
+        tipo_pessoa: formData.tipo_pessoa,
         status: 'active',
         roles: ['customer']
       };
@@ -235,8 +218,8 @@ export default function CustomersView() {
       setFormData({
         segment_id: '',
         name: '',
-        person_type: 'pf',
-        doc: '',
+        tipo_pessoa: 'pf',
+        tax_id: '',
         email: '',
         phone: '',
         address: '',
@@ -552,8 +535,8 @@ export default function CustomersView() {
                     <label className="block text-sm font-medium mb-1">Tipo de Pessoa</label>
                     <select
                       id="customers-person-type-select"
-                      value={formData.person_type}
-                      onChange={(e) => setFormData(prev => ({ ...prev, person_type: e.target.value }))}
+                      value={formData.tipo_pessoa}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tipo_pessoa: e.target.value }))}
                       className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                     >
                       <option value="pf">Pessoa Física</option>
@@ -566,8 +549,8 @@ export default function CustomersView() {
                     <input
                       id="customers-doc-input"
                       type="text"
-                      value={formData.doc}
-                      onChange={(e) => setFormData(prev => ({ ...prev, doc: e.target.value }))}
+                      value={formData.tax_id || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tax_id: e.target.value }))}
                       className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                       placeholder="000.000.000-00"
                     />
@@ -675,9 +658,9 @@ export default function CustomersView() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <span className="font-medium">Status:</span>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedCustomer.status)}`}>
-                          {getStatusIcon(selectedCustomer.status)}
-                          <span className="ml-1 capitalize">{selectedCustomer.status}</span>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedCustomer.status || 'pendente')}`}>
+                          {getStatusIcon(selectedCustomer.status || 'pendente')}
+                          <span className="ml-1 capitalize">{selectedCustomer.status || 'pendente'}</span>
                         </span>
                       </div>
                     </div>
@@ -707,18 +690,18 @@ export default function CustomersView() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-muted/50 rounded-lg p-4 text-center">
                       <DollarSign className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                      <p className="text-xl font-bold text-green-600">{formatCurrency(selectedCustomer.total_value || 0)}</p>
+                      <p className="text-xl font-bold text-green-600">{formatCurrency(0)}</p>
                       <p className="text-sm text-muted-foreground">Valor Total</p>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-4 text-center">
                       <FileText className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                      <p className="text-xl font-bold text-blue-600">{selectedCustomer.orders_count || 0}</p>
+                      <p className="text-xl font-bold text-blue-600">0</p>
                       <p className="text-sm text-muted-foreground">Pedidos</p>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-4 text-center">
                       <Clock className="w-8 h-8 text-purple-500 mx-auto mb-2" />
                       <p className="text-xl font-bold text-purple-600">
-                        {selectedCustomer.last_order_date ? formatDate(selectedCustomer.last_order_date) : 'N/A'}
+                        N/A
                       </p>
                       <p className="text-sm text-muted-foreground">Último Pedido</p>
                     </div>

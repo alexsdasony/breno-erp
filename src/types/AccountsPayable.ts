@@ -3,36 +3,37 @@ import type { ID, Timestamped } from './common'
 export interface AccountsPayable extends Timestamped {
   id: ID
   supplier_id?: ID | null
-  supplier_name?: string | null
+  numero_nota_fiscal?: string | null
   descricao: string
   valor: number
-  data_vencimento?: string | null
+  data_vencimento: string
   data_pagamento?: string | null
   status: string
   categoria_id?: ID | null
   forma_pagamento?: string | null
   observacoes?: string | null
-  numero_documento?: string | null
+  responsavel_pagamento?: string | null
   numero_parcela?: number
   total_parcelas?: number
-  responsavel_pagamento?: string | null
   segment_id?: ID | null
+  deleted_at?: string | null
+  is_deleted?: boolean
 }
 
 export interface AccountsPayablePayload {
   supplier_id?: ID | null
-  descricao?: string
-  valor?: number
-  data_vencimento?: string | null
+  numero_nota_fiscal?: string | null
+  descricao: string
+  valor: number
+  data_vencimento: string
   data_pagamento?: string | null
   status?: string
   categoria_id?: ID | null
   forma_pagamento?: string | null
   observacoes?: string | null
-  numero_documento?: string | null
+  responsavel_pagamento?: string | null
   numero_parcela?: number
   total_parcelas?: number
-  responsavel_pagamento?: string | null
   segment_id?: ID | null
 }
 

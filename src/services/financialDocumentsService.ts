@@ -1,57 +1,37 @@
 import apiService from '@/services/api';
 import type { ApiResponse } from '@/services/api';
 import { ID } from '@/types/common';
-
-export interface FinancialDocument {
-  id: string;
-  type?: string | null; // invoice, receipt, payment, etc.
-  description?: string | null;
-  amount?: number | null;
-  date?: string | null;
-  due_date?: string | null;
-  status?: string | null; // pending, paid, canceled
-  partner_id?: string | null;
-  partner_name?: string | null;
-  segment_id?: string | null;
-  payment_method_id?: string | null;
-}
-
-export interface FinancialDocumentPayload {
-  type?: string | null;
-  description?: string | null;
-  amount?: number | null;
-  date?: string | null;
-  due_date?: string | null;
-  status?: string | null;
-  partner_id?: string | null;
-  segment_id?: string | null;
-  payment_method_id?: string | null;
-}
+import type { FinancialDocument, FinancialDocumentPayload } from '@/types/FinancialDocument';
 
 /**
  * Normaliza um documento financeiro do formato do backend para o formato esperado pelo frontend
  */
 export function normalizeFinancialDocument(row: any): FinancialDocument {
-  const direction: string | undefined = row?.direction;
-  const mappedType =
-    row?.type ?? (direction === 'payable' ? 'expense' : direction === 'receivable' ? 'income' : null);
-  const partnerName =
-    (row.partner && typeof row.partner === 'object' ? row.partner.name : undefined)
-    ?? row.partner_name
-    ?? (typeof row.partner === 'string' ? row.partner : undefined)
-    ?? null;
   return {
     id: row.id,
-    type: mappedType,
-    description: row.description ?? null,
-    amount: row.amount != null ? Number(row.amount) : null,
-    date: row.date ?? row.issue_date ?? null,
-    due_date: row.due_date ?? null,
-    status: row.status === 'open' ? 'pending' : row.status ?? null,
-    partner_id: row.partner_id ?? null,
-    partner_name: partnerName,
-    segment_id: row.segment_id ?? null,
-    payment_method_id: row.payment_method_id ?? null,
+    partner_id: row.partner_id,
+    direction: row.direction,
+    doc_no: row.doc_no,
+    issue_date: row.issue_date,
+    due_date: row.due_date,
+    amount: row.amount || 0,
+    balance: row.balance || row.amount || 0,
+    status: row.status,
+    category_id: row.category_id,
+    segment_id: row.segment_id,
+    description: row.description,
+    payment_method: row.payment_method,
+    payment_method_id: row.payment_method_id,
+    notes: row.notes,
+    deleted_at: row.deleted_at,
+    is_deleted: row.is_deleted,
+    partner: row.partner,
+    // Campos mapeados para compatibilidade
+    type: row.direction,
+    date: row.issue_date,
+    partner_name: row.partner?.name || row.partner_name,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
   };
 }
 

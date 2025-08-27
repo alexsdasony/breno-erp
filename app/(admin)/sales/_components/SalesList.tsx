@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, Users, Eye, Edit, Trash2, ShoppingCart, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SalesListProps } from './types';
-import { Sale } from '../_hooks/useSales';
+import { Sale } from '@/types';
 
 // Funções auxiliares
 const formatCurrency = (value: number): string => {

@@ -71,7 +71,7 @@ export function useBillings() {
       const item = response.data?.billing;
       if (item) {
         setState((s) => ({ ...s, items: [item, ...s.items] }));
-        toast({ title: 'Cobrança criada', description: item.invoice_number || 'Registro criado.' });
+        toast({ title: 'Cobrança criada', description: `Cobrança de ${item.customer_name || 'cliente'} criada.` });
         return item;
       }
       return null;
@@ -94,7 +94,7 @@ export function useBillings() {
           ...s,
           items: s.items.map((it) => (it.id === id ? item : it)),
         }));
-        toast({ title: 'Cobrança atualizada', description: item.invoice_number || 'Registro atualizado.' });
+        toast({ title: 'Cobrança atualizada', description: `Cobrança de ${item.customer_name || 'cliente'} atualizada.` });
         return item;
       }
       return null;

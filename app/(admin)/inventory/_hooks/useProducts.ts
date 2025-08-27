@@ -1,20 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { listProducts, createProduct, updateProduct, deleteProduct } from '@/services/productsService';
-
-export interface Product {
-  id: string;
-  name: string;
-  price: number;
-  category?: string | null;
-  stock?: number;
-  min_stock?: number;
-  segment_id?: string | null;
-  code?: string | null;
-  description?: string | null;
-  cost_price?: number | null;
-  supplier?: string | null;
-}
+import type { Product } from '@/types';
 
 interface State {
   items: Product[];

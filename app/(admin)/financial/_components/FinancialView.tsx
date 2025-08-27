@@ -121,8 +121,8 @@ export default function FinancialView() {
   const filtered = React.useMemo(() => {
     const p = partner.trim().toLowerCase();
     return items.filter((it) => {
-      const matchesPartner = !p || `${it.entity_name || ''}`.toLowerCase().includes(p) || `${it.entity_id || ''}`.toLowerCase().includes(p);
-      const matchesType = !type || (it.document_type || '') === type;
+      const matchesPartner = !p || `${it.partner_name || it.partner?.name || ''}`.toLowerCase().includes(p) || `${it.partner_id || ''}`.toLowerCase().includes(p);
+      const matchesType = !type || (it.direction || '') === type;
       const matchesStatus = !status || (it.status || '') === status;
       // Datas/segment como UI por enquanto (não aplicados)
       return matchesPartner && matchesType && matchesStatus;

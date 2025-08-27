@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useSales, Sale } from '../_hooks/useSales';
+import { useSales } from '../_hooks/useSales';
+import { Sale } from '@/types';
 import { SalesKPIs } from './SalesKPIs';
 import { SalesForm } from './SalesForm';
 import { SalesList } from './SalesList';
@@ -56,9 +57,12 @@ export default function SalesView() {
         status: formData.status,
         total_amount: saleItems.reduce((acc, item) => acc + item.totalPrice, 0),
         items: saleItems.map(item => ({
+          id: item.id,
+          sale_id: '',
           product_id: item.product_id,
           quantity: item.quantity,
           unit_price: item.unit_price,
+          total: item.totalPrice,
         })),
       };
 

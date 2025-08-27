@@ -22,17 +22,17 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
   const isEditing = !!editingDoc;
 
   // Form state
-  const [fType, setFType] = React.useState<string>('');
+  const [fDirection, setFDirection] = React.useState<string>('');
   const [fDescription, setFDescription] = React.useState<string>('');
   const [fAmount, setFAmount] = React.useState<string>('');
-  const [fDate, setFDate] = React.useState<string>('');
+  const [fIssueDate, setFIssueDate] = React.useState<string>('');
   const [fDueDate, setFDueDate] = React.useState<string>('');
-  const [fStatus, setFStatus] = React.useState<string>('pending');
+  const [fStatus, setFStatus] = React.useState<string>('draft');
   const [fPartnerId, setFPartnerId] = React.useState<string>('');
   const [fSegmentId, setFSegmentId] = React.useState<string>('');
   const [fPaymentMethodId, setFPaymentMethodId] = React.useState<string>('');
   const [fNotes, setFNotes] = React.useState<string>('');
-  const [fDocumentNumber, setFDocumentNumber] = React.useState<string>('');
+  const [fDocNo, setFDocNo] = React.useState<string>('');
 
   const [descError, setDescError] = React.useState<string | null>(null);
   const [amountError, setAmountError] = React.useState<string | null>(null);
@@ -51,32 +51,32 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
   React.useEffect(() => {
     if (!open) return;
     if (isEditing && editingDoc) {
-      setFType(editingDoc.type || '');
+      setFDirection(editingDoc.direction || '');
       setFDescription(editingDoc.description || '');
       setFAmount(editingDoc.amount != null ? String(editingDoc.amount) : '');
-      setFDate(editingDoc.date || '');
+      setFIssueDate(editingDoc.issue_date || '');
       setFDueDate(editingDoc.due_date || '');
-      setFStatus(editingDoc.status || 'pending');
+      setFStatus(editingDoc.status || 'draft');
       setFPartnerId(editingDoc.partner_id || '');
-      setPartnerQuery(editingDoc.partner_name || '');
+      setPartnerQuery(editingDoc.partner?.name || editingDoc.partner_name || '');
       setFSegmentId(editingDoc.segment_id || '');
       setFPaymentMethodId(editingDoc.payment_method_id || '');
-      setFNotes('');
-      setFDocumentNumber('');
+      setFNotes(editingDoc.notes || '');
+      setFDocNo(editingDoc.doc_no || '');
     } else {
       // defaults for new
-      setFType('');
+      setFDirection('');
       setFDescription('');
       setFAmount('');
-      setFDate('');
+      setFIssueDate('');
       setFDueDate('');
-      setFStatus('pending');
+      setFStatus('draft');
       setFPartnerId('');
       setPartnerQuery('');
       setFSegmentId('');
       setFPaymentMethodId('');
       setFNotes('');
-      setFDocumentNumber('');
+      setFDocNo('');
     }
     setDescError(null);
     setAmountError(null);
@@ -155,15 +155,17 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
     if (!valid) return;
 
     const payload = {
-      type: fType || null,
+      direction: fDirection || null,
       description: fDescription || null,
       amount: amountNum,
-      date: fDate || null,
+      issue_date: fIssueDate || null,
       due_date: fDueDate || null,
       status: fStatus || null,
       partner_id: fPartnerId || null,
       segment_id: fSegmentId || null,
       payment_method_id: fPaymentMethodId || null,
+      doc_no: fDocNo || null,
+      notes: fNotes || null,
     } as any;
 
     if (isEditing && editingDoc?.id) {
@@ -186,12 +188,11 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
             </div>
             <form ref={formRef} onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-12 gap-4" noValidate>
               <div className="md:col-span-2">
-                <label className="block text-sm mb-1">Tipo</label>
-                <select className="w-full bg-muted border rounded-lg p-2" value={fType} onChange={(e) => setFType(e.target.value)}>
+                <label className="block text-sm mb-1">Direção</label>
+                <select className="w-full bg-muted border rounded-lg p-2" value={fDirection} onChange={(e) => setFDirection(e.target.value)}>
                   <option value="">Selecione...</option>
-                  <option value="receipt">Receita</option>
-                  <option value="expense">Despesa</option>
-                  <option value="transfer">Transferência</option>
+                  <option value="receivable">Recebível</option>
+                  <option value="payable">Pagável</option>
                 </select>
               </div>
               <div className="md:col-span-6">
@@ -207,15 +208,17 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
               <div className="md:col-span-2">
                 <label className="block text-sm mb-1">Status</label>
                 <select className="w-full bg-muted border rounded-lg p-2" value={fStatus} onChange={(e) => setFStatus(e.target.value)}>
-                  <option value="pending">Pendente</option>
+                  <option value="draft">Rascunho</option>
+                  <option value="open">Aberto</option>
+                  <option value="partially_paid">Parcialmente Pago</option>
                   <option value="paid">Pago</option>
                   <option value="canceled">Cancelado</option>
                 </select>
               </div>
 
               <div className="md:col-span-3">
-                <label className="block text-sm mb-1">Data</label>
-                <input type="date" className="w-full bg-muted border rounded-lg p-2" value={fDate} onChange={(e) => setFDate(e.target.value)} />
+                <label className="block text-sm mb-1">Data Emissão</label>
+                <input type="date" className="w-full bg-muted border rounded-lg p-2" value={fIssueDate} onChange={(e) => setFIssueDate(e.target.value)} />
               </div>
               <div className="md:col-span-3">
                 <label className="block text-sm mb-1">Vencimento</label>
@@ -284,7 +287,7 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
               </div>
               <div className="md:col-span-4">
                 <label className="block text-sm mb-1">Nº Documento</label>
-                <input className="w-full bg-muted border rounded-lg p-2" value={fDocumentNumber} onChange={(e) => setFDocumentNumber(e.target.value)} placeholder="ex: NF 123" />
+                <input className="w-full bg-muted border rounded-lg p-2" value={fDocNo} onChange={(e) => setFDocNo(e.target.value)} placeholder="ex: NF 123" />
               </div>
               <div className="md:col-span-12">
                 <label className="block text-sm mb-1">Observações</label>

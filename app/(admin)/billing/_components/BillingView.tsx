@@ -69,7 +69,7 @@ export default function BillingView() {
     const matchesSearch = !searchTerm || 
         (billing.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (billing.status || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (billing.invoice_number || '').toLowerCase().includes(searchTerm.toLowerCase());
+        billing.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || billing.status?.toLowerCase() === filterStatus.toLowerCase();
     return matchesSearch && matchesStatus;
   });
@@ -80,7 +80,7 @@ export default function BillingView() {
   const defaultRate = totalBillings > 0 ? (overdueBillings / totalBillings) * 100 : 0;
   const totalPendingAmount = itemsWithStatus
     .filter(b => ['pendente', 'vencida'].includes(b.status?.toLowerCase() || ''))
-    .reduce((sum, b) => sum + Number(b.total_amount || b.amount || 0), 0);
+    .reduce((sum, b) => sum + Number(b.amount || 0), 0);
 
   // Formatação de moeda
   const formatCurrency = (value: number) => {
@@ -102,10 +102,10 @@ export default function BillingView() {
     setFormData({
       customerId: billing.customerId || '',
       customerName: billing.customer_name || '',
-      amount: billing.total_amount || billing.amount || '',
+      amount: billing.amount || '',
       dueDate: billing.due_date || '',
       status: billing.status || 'Pendente',
-      description: billing.notes || billing.description || ''
+      description: ''
     });
     setShowForm(true);
   };
@@ -349,11 +349,11 @@ export default function BillingView() {
                   <td className="p-3">
                     <div className="font-medium">{billing.customer_name || 'Cliente'}</div>
                     <div className="text-sm text-muted-foreground">
-                       NF #{billing.invoice_number || '-'}
+                       ID: {billing.id.slice(0, 8)}
                      </div>
                   </td>
                   <td className="p-3 text-right font-medium">
-                    {formatCurrency(Number(billing.total_amount || billing.amount || 0))}
+                    {formatCurrency(Number(billing.amount || 0))}
                   </td>
                   <td className="p-3 text-center text-sm">
                     {formatDate(billing.due_date || new Date().toISOString())}

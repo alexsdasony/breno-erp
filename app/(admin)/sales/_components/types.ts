@@ -1,4 +1,4 @@
-import { Sale, SaleItem } from '../_hooks/useSales';
+import { Sale, SaleItem, Product, Customer } from '@/types';
 
 export interface SaleItemUI extends SaleItem {
   id: string;
@@ -15,18 +15,9 @@ export interface FormData {
   notes: string;
 }
 
-export interface Customer {
-  id: string;
-  name: string;
-  [key: string]: any;
-}
 
-export interface Product {
-  id: string;
-  name: string;
-  price: number;
-  [key: string]: any;
-}
+
+
 
 export interface PaymentMethod {
   id: string;

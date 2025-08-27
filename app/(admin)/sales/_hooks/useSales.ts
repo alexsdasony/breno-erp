@@ -1,24 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { listSales, createSale, updateSale, deleteSale } from '@/services/salesService';
-
-export interface SaleItem {
-  product_id: string;
-  quantity: number;
-  unit_price: number;
-}
-
-export interface Sale {
-  id: string;
-  customer_id?: string | null;
-  customer_name?: string | null;
-  date?: string | null;
-  status?: string | null; // draft, confirmed, canceled
-  total_amount?: number | null;
-  notes?: string | null;
-  segment_id?: string | null;
-  items?: SaleItem[];
-}
+import { Sale, SaleItem } from '@/types';
 
 interface State {
   items: Sale[];

@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getSuppliers, getSupplier, createSupplier, updateSupplier, deleteSupplier, Supplier } from '@/services/suppliersService';
+import { getSuppliers, getSupplier, createSupplier, updateSupplier, deleteSupplier } from '@/services/suppliersService';
+import { Supplier } from '@/types';
 import { toast } from '@/components/ui/use-toast';
-
-// Usando a interface Supplier importada de suppliersService.ts
 
 export interface UseSuppliersState {
   items: Supplier[];

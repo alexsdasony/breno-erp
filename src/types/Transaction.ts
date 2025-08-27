@@ -2,31 +2,23 @@ import type { ID, Timestamped } from './common'
 
 export interface Transaction extends Timestamped {
   id: ID
-  type: 'income' | 'expense'
+  type: string
+  description?: string | null
   amount: number
-  description: string
   date: string
   category?: string | null
-  account_id?: ID | null
-  reference_id?: ID | null
-  reference_type?: string | null
-  status: 'pending' | 'completed' | 'cancelled'
-  payment_method?: string | null
-  notes?: string | null
+  cost_center?: string | null
   segment_id?: ID | null
+  deleted_at?: string | null
+  is_deleted?: boolean | null
 }
 
 export interface TransactionPayload {
-  type?: 'income' | 'expense'
+  type?: string
+  description?: string | null
   amount?: number
-  description?: string
   date?: string
   category?: string | null
-  account_id?: ID | null
-  reference_id?: ID | null
-  reference_type?: string | null
-  status?: 'pending' | 'completed' | 'cancelled'
-  payment_method?: string | null
-  notes?: string | null
+  cost_center?: string | null
   segment_id?: ID | null
 }
