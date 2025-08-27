@@ -26,3 +26,11 @@ export async function getAccountPayableById(id: string): Promise<ApiResponse<{ a
   const response = await apiService.get<{ account_payable: AccountPayable }>(`/accounts-payable/${id}`)
   return response as ApiResponse<{ account_payable: AccountPayable }>
 }
+
+export default {
+  listAccountsPayable,
+  createAccountPayable,
+  updateAccountPayable,
+  deleteAccountPayable,
+  getAccountPayableById
+}

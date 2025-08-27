@@ -26,3 +26,11 @@ export async function getBillingById(id: string): Promise<ApiResponse<{ billing:
   const response = await apiService.get<{ billing: Billing }>(`/billings/${id}`)
   return response as ApiResponse<{ billing: Billing }>
 }
+
+export default {
+  listBillings,
+  createBilling,
+  updateBilling,
+  deleteBilling,
+  getBillingById
+}

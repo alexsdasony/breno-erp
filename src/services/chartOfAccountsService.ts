@@ -26,3 +26,11 @@ export async function getChartOfAccountById(id: string): Promise<ApiResponse<{ c
   const response = await apiService.get<{ chartOfAccount: ChartOfAccount }>(`/chart-of-accounts/${id}`)
   return response as ApiResponse<{ chartOfAccount: ChartOfAccount }>
 }
+
+export default {
+  listChartOfAccounts,
+  createChartOfAccount,
+  updateChartOfAccount,
+  deleteChartOfAccount,
+  getChartOfAccountById
+}

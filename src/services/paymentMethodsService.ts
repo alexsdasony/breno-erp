@@ -21,3 +21,10 @@ export async function deletePaymentMethod(id: string): Promise<ApiResponse<void>
   const response = await apiService.delete<ApiResponse<void>>(`/payment-methods/${id}`);
   return response;
 }
+
+export default {
+  listPaymentMethods,
+  createPaymentMethod,
+  updatePaymentMethod,
+  deletePaymentMethod
+}

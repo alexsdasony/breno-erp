@@ -94,3 +94,12 @@ export async function deleteFinancialDocument(id: ID): Promise<ApiResponse<void>
   const response = await apiService.delete<ApiResponse<void>>(`/financial-documents/${id}`);
   return response;
 }
+
+export default {
+  getFinancialDocuments,
+  getFinancialDocumentById,
+  createFinancialDocument,
+  updateFinancialDocument,
+  deleteFinancialDocument,
+  normalizeFinancialDocument
+}
