@@ -18,8 +18,11 @@ export async function updateChartOfAccount(id: string, payload: ChartOfAccountPa
 }
 
 export async function deleteChartOfAccount(id: string): Promise<ApiResponse<void>> {
-  const response = await apiService.delete<ApiResponse<void>>(`/chart-of-accounts/${id}`)
-  return response
+  const response = await apiService.delete<{ success: boolean; message?: string }>(`/chart-of-accounts/${id}`);
+  return {
+    success: response.success,
+    data: undefined
+  };
 }
 
 export async function getChartOfAccountById(id: string): Promise<ApiResponse<{ chartOfAccount: ChartOfAccount }>> {

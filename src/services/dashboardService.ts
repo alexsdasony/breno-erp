@@ -22,8 +22,14 @@ export interface DashboardMetrics {
 }
 
 export async function getDashboardMetrics(params: Record<string, any> = {}): Promise<ApiResponse<{ metrics: DashboardMetrics }>> {
-  const response = await apiService.get<{ metrics: DashboardMetrics }>('/metrics', params)
-  return response as ApiResponse<{ metrics: DashboardMetrics }>
+  const response = await apiService.get<{ success: boolean; metrics: DashboardMetrics }>('/metrics', params)
+  // A Edge Function retorna { success: true, metrics }, então precisamos adaptar para o formato ApiResponse
+  return {
+    data: {
+      metrics: response.metrics || {}
+    },
+    success: response.success || false
+  } as ApiResponse<{ metrics: DashboardMetrics }>
 }
 
 export default {

@@ -17,9 +17,12 @@ export async function updateFinancialDocument(id: string, payload: FinancialDocu
   return response as ApiResponse<{ financialDocument: FinancialDocument }>;
 }
 
-export async function deleteFinancialDocument(id: string): Promise<ApiResponse<void>> {
-  const response = await apiService.delete<ApiResponse<void>>(`/financial-documents/${id}`);
-  return response;
+export async function deleteTransaction(id: string): Promise<ApiResponse<void>> {
+  const response = await apiService.delete<{ success: boolean; message?: string }>(`/financial/transactions/${id}`);
+  return {
+    success: response.success,
+    data: undefined
+  };
 }
 
 export async function getFinancialDocumentById(id: string): Promise<ApiResponse<{ financialDocument: FinancialDocument }>> {

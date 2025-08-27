@@ -60,7 +60,10 @@ export function normalizeFinancialDocument(row: any): FinancialDocument {
  */
 export async function getFinancialDocuments(params: Record<string, any> = {}): Promise<ApiResponse<{ financialDocuments: FinancialDocument[] }>> {
   const response = await apiService.get<{ financialDocuments: FinancialDocument[] }>('/financial-documents', params);
-  return response as ApiResponse<{ financialDocuments: FinancialDocument[] }>;
+  return {
+    success: true,
+    data: response
+  } as ApiResponse<{ financialDocuments: FinancialDocument[] }>;
 }
 
 /**
@@ -91,8 +94,11 @@ export async function updateFinancialDocument(id: ID, data: Partial<FinancialDoc
  * Remove um documento financeiro
  */
 export async function deleteFinancialDocument(id: ID): Promise<ApiResponse<void>> {
-  const response = await apiService.delete<ApiResponse<void>>(`/financial-documents/${id}`);
-  return response;
+  const response = await apiService.delete<{ success: boolean; message?: string }>(`/financial-documents/${id}`);
+  return {
+    success: response.success,
+    data: undefined
+  };
 }
 
 export default {

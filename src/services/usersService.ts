@@ -54,8 +54,11 @@ export async function updateUser(id: string, userData: UserPayload): Promise<Api
  * @returns Resposta da API
  */
 export async function deleteUser(id: string): Promise<ApiResponse<void>> {
-  const response = await apiService.delete<ApiResponse<void>>(`/users/${id}`);
-  return response;
+  const response = await apiService.delete<{ success: boolean; message?: string }>(`/users/${id}`);
+  return {
+    success: response.success,
+    data: undefined
+  };
 }
 
 /**

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
-import { listFinancialDocuments, createFinancialDocument, updateFinancialDocument, deleteFinancialDocument } from '@/services/financialService';
-import type { FinancialDocument } from '@/types';
+import { getFinancialDocuments, createFinancialDocument, updateFinancialDocument, deleteFinancialDocument } from '@/services/financialDocumentsService';
+import type { FinancialDocument } from '@/types/FinancialDocument';
 
 // Usando a interface FinancialDocument importada de @/types
 
@@ -28,25 +28,27 @@ function normalizeFinancialDocument(row: any): FinancialDocument {
   const documentType =
     row?.document_type ?? row?.type ?? (direction === 'payable' ? 'expense' : direction === 'receivable' ? 'income' : 'other');
   const entityName =
-    (row.entity && typeof row.entity === 'object' ? row.entity.name : undefined)
+    (row.partner && typeof row.partner === 'object' ? row.partner.name : undefined)
     ?? row.entity_name
-    ?? (typeof row.entity === 'string' ? row.entity : undefined)
     ?? row.partner_name
-    ?? null;
+    ?? (typeof row.partner === 'string' ? row.partner : undefined)
+    ?? '';
   return {
     id: row.id,
-    document_number: row.document_number ?? '',
+    document_number: row.doc_no ?? row.document_number ?? '',
     document_type: documentType,
     issue_date: row.issue_date ?? row.date ?? '',
     due_date: row.due_date ?? '',
     amount: row.amount != null ? Number(row.amount) : 0,
     status: row.status === 'open' ? 'pending' : row.status ?? '',
-    entity_id: row.entity_id ?? row.partner_id ?? null,
+    entity_id: row.partner_id ?? row.entity_id,
     entity_name: entityName,
     entity_type: row.entity_type ?? 'customer',
-    notes: row.notes ?? row.description ?? null,
-    payment_method: row.payment_method ?? null,
-    category: row.category ?? null
+    notes: row.notes ?? row.description,
+    payment_method: row.payment_method,
+    category: row.category,
+    created_at: row.created_at,
+    updated_at: row.updated_at
   };
 }
 
@@ -54,8 +56,14 @@ export function useFinancialDocuments() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
-    const response = await listFinancialDocuments({ page, pageSize: PAGE_SIZE });
+    const response = await getFinancialDocuments({ page, pageSize: PAGE_SIZE });
     const list = response.data?.financialDocuments || [];
+    console.log('📊 Dados financeiros recebidos do backend:', {
+      page,
+      total: list.length,
+      response: response.data,
+      rawData: list
+    });
     return list.map(normalizeFinancialDocument);
   }, []);
 

@@ -18,8 +18,11 @@ export async function updatePaymentMethod(id: string, payload: PaymentMethodPayl
 }
 
 export async function deletePaymentMethod(id: string): Promise<ApiResponse<void>> {
-  const response = await apiService.delete<ApiResponse<void>>(`/payment-methods/${id}`);
-  return response;
+  const response = await apiService.delete<{ success: boolean; message?: string }>(`/payment-methods/${id}`);
+  return {
+    success: response.success,
+    data: undefined
+  };
 }
 
 export default {

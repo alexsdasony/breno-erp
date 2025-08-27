@@ -2,18 +2,24 @@ import apiService from '@/services/api'
 import type { ApiResponse } from '@/services/api'
 
 export async function register(userData: any): Promise<ApiResponse> {
-  const response = await apiService.post('/auth/register', userData);
-  return response as ApiResponse;
+  const response = await apiService.post<{ success: boolean; user?: any; message?: string }>('/auth/register', userData);
+  return {
+    success: response.success,
+    data: response
+  };
 }
 
 export async function login(credentials: any): Promise<ApiResponse> {
-  const response = await apiService.post<ApiResponse>('/auth', credentials);
+  const response = await apiService.post<{ success: boolean; token?: string; user?: any; message?: string }>('/auth', credentials);
   
-  if (response.data?.token) {
-    apiService.setToken(response.data.token);
+  if (response.token) {
+    apiService.setToken(response.token);
   }
   
-  return response as ApiResponse;
+  return {
+    success: response.success,
+    data: response
+  };
 }
 
 export async function logout(): Promise<ApiResponse> {
@@ -32,8 +38,11 @@ export async function getProfile(): Promise<ApiResponse> {
   if (!apiService.getToken()) {
     throw { message: 'Not authenticated', status: 401 };
   }
-  const response = await apiService.get('/auth/profile');
-  return response as ApiResponse;
+  const response = await apiService.get<{ success: boolean; user?: any }>('/auth/profile');
+  return {
+    success: response.success,
+    data: response
+  };
 }
 
 export async function checkAuth(): Promise<boolean> {
@@ -49,21 +58,33 @@ export async function checkAuth(): Promise<boolean> {
 }
 
 export async function updateProfile(userData: any): Promise<ApiResponse> {
-  const response = await apiService.put('/auth/profile', userData);
-  return response as ApiResponse;
+  const response = await apiService.put<{ success: boolean; user?: any; message?: string }>('/auth/profile', userData);
+  return {
+    success: response.success,
+    data: response
+  };
 }
 
 export async function changePassword(passwordData: any): Promise<ApiResponse> {
-  const response = await apiService.put('/auth/password', passwordData);
-  return response as ApiResponse;
+  const response = await apiService.put<{ success: boolean; message?: string }>('/auth/password', passwordData);
+  return {
+    success: response.success,
+    data: response
+  };
 }
 
 export async function requestPasswordReset(data: any): Promise<ApiResponse> {
-  const response = await apiService.post('/auth/forgot-password', data);
-  return response as ApiResponse;
+  const response = await apiService.post<{ success: boolean; message?: string }>('/auth/forgot-password', data);
+  return {
+    success: response.success,
+    data: response
+  };
 }
 
 export async function resetPassword(data: any): Promise<ApiResponse> {
-  const response = await apiService.post('/auth/reset-password', data);
-  return response as ApiResponse;
+  const response = await apiService.post<{ success: boolean; message?: string }>('/auth/reset-password', data);
+  return {
+    success: response.success,
+    data: response
+  };
 }

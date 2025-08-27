@@ -38,26 +38,49 @@ export interface CustomerDataPayload extends CustomerPayload {
 }
 
 export async function getCustomers(params: Record<string, any> = {}): Promise<ApiResponse<{ customers: CustomerExtended[] }>> {
-  const response = await apiService.get<{ customers: CustomerExtended[] }>('/customers', params);
-  return response as ApiResponse<{ customers: CustomerExtended[] }>;
+  const response = await apiService.get<{ success: boolean; customers: CustomerExtended[] }>('/customers', params);
+  return {
+    data: {
+      customers: response.customers || []
+    },
+    success: response.success || false
+  } as ApiResponse<{ customers: CustomerExtended[] }>;
 }
 
 export async function getCustomerById(id: string): Promise<ApiResponse<{ customer: CustomerExtended }>> {
-  const response = await apiService.get<{ customer: CustomerExtended }>(`/customers/${id}`);
-  return response as ApiResponse<{ customer: CustomerExtended }>;
+  const response = await apiService.get<{ success: boolean; customers: CustomerExtended }>(`/customers/${id}`);
+  return {
+    data: {
+      customer: response.customers
+    },
+    success: response.success || false
+  } as ApiResponse<{ customer: CustomerExtended }>;
 }
 
 export async function createCustomer(customerData: CustomerDataPayload): Promise<ApiResponse<{ customer: CustomerExtended }>> {
-  const response = await apiService.post<{ customer: CustomerExtended }>('/customers', customerData);
-  return response as ApiResponse<{ customer: CustomerExtended }>;
+  const response = await apiService.post<{ success: boolean; customers: CustomerExtended }>('/customers', customerData);
+  return {
+    data: {
+      customer: response.customers
+    },
+    success: response.success || false
+  } as ApiResponse<{ customer: CustomerExtended }>;
 }
 
 export async function updateCustomer(id: string, customerData: CustomerDataPayload): Promise<ApiResponse<{ customer: CustomerExtended }>> {
-  const response = await apiService.put<{ customer: CustomerExtended }>(`/customers/${id}`, customerData);
-  return response as ApiResponse<{ customer: CustomerExtended }>;
+  const response = await apiService.put<{ success: boolean; customers: CustomerExtended }>(`/customers/${id}`, customerData);
+  return {
+    data: {
+      customer: response.customers
+    },
+    success: response.success || false
+  } as ApiResponse<{ customer: CustomerExtended }>;
 }
 
 export async function deleteCustomer(id: string): Promise<ApiResponse<void>> {
-  const response = await apiService.delete<ApiResponse<void>>(`/customers/${id}`);
-  return response;
+  const response = await apiService.delete<{ success: boolean; message?: string }>(`/customers/${id}`);
+  return {
+    success: response.success,
+    data: undefined
+  };
 }

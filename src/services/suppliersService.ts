@@ -24,8 +24,13 @@ export interface SupplierExtended extends Supplier {
  * @returns Lista de fornecedores
  */
 export async function getSuppliers(params: Record<string, any> = {}): Promise<ApiResponse<{ suppliers: SupplierExtended[] }>> {
-  const response = await apiService.get<{ suppliers: SupplierExtended[] }>('/suppliers', params);
-  return response as ApiResponse<{ suppliers: SupplierExtended[] }>;
+  const response = await apiService.get<{ success: boolean; suppliers: SupplierExtended[] }>('/suppliers', params);
+  return {
+    data: {
+      suppliers: response.suppliers || []
+    },
+    success: response.success || false
+  } as ApiResponse<{ suppliers: SupplierExtended[] }>;
 }
 
 /**
@@ -34,8 +39,13 @@ export async function getSuppliers(params: Record<string, any> = {}): Promise<Ap
  * @returns Dados do fornecedor
  */
 export async function getSupplier(id: string): Promise<ApiResponse<{ supplier: SupplierExtended }>> {
-  const response = await apiService.get<{ supplier: SupplierExtended }>(`/suppliers/${id}`);
-  return response as ApiResponse<{ supplier: SupplierExtended }>;
+  const response = await apiService.get<{ success: boolean; supplier: SupplierExtended }>(`/suppliers/${id}`);
+  return {
+    data: {
+      supplier: response.supplier
+    },
+    success: response.success || false
+  } as ApiResponse<{ supplier: SupplierExtended }>;
 }
 
 /**
@@ -44,8 +54,13 @@ export async function getSupplier(id: string): Promise<ApiResponse<{ supplier: S
  * @returns Fornecedor criado
  */
 export async function createSupplier(supplierData: SupplierPayload): Promise<ApiResponse<{ supplier: SupplierExtended }>> {
-  const response = await apiService.post<{ supplier: SupplierExtended }>('/suppliers', supplierData);
-  return response as ApiResponse<{ supplier: SupplierExtended }>;
+  const response = await apiService.post<{ success: boolean; supplier: SupplierExtended }>('/suppliers', supplierData);
+  return {
+    data: {
+      supplier: response.supplier
+    },
+    success: response.success || false
+  } as ApiResponse<{ supplier: SupplierExtended }>;
 }
 
 /**
@@ -55,8 +70,13 @@ export async function createSupplier(supplierData: SupplierPayload): Promise<Api
  * @returns Fornecedor atualizado
  */
 export async function updateSupplier(id: string, supplierData: SupplierPayload): Promise<ApiResponse<{ supplier: SupplierExtended }>> {
-  const response = await apiService.put<{ supplier: SupplierExtended }>(`/suppliers/${id}`, supplierData);
-  return response as ApiResponse<{ supplier: SupplierExtended }>;
+  const response = await apiService.put<{ success: boolean; supplier: SupplierExtended }>(`/suppliers/${id}`, supplierData);
+  return {
+    data: {
+      supplier: response.supplier
+    },
+    success: response.success || false
+  } as ApiResponse<{ supplier: SupplierExtended }>;
 }
 
 /**
@@ -65,5 +85,9 @@ export async function updateSupplier(id: string, supplierData: SupplierPayload):
  * @returns Resposta da API
  */
 export async function deleteSupplier(id: string): Promise<ApiResponse<void>> {
-  return await apiService.delete<ApiResponse<void>>(`/suppliers/${id}`);
+  const response = await apiService.delete<{ success: boolean; message?: string }>(`/suppliers/${id}`);
+  return {
+    success: response.success,
+    data: undefined
+  };
 }

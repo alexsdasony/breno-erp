@@ -18,8 +18,11 @@ export async function updateCostCenter(id: string, payload: CostCenterPayload): 
 }
 
 export async function deleteCostCenter(id: string): Promise<ApiResponse<void>> {
-  const response = await apiService.delete<ApiResponse<void>>(`/cost-centers/${id}`);
-  return response;
+  const response = await apiService.delete<{ success: boolean; message?: string }>(`/cost-centers/${id}`);
+  return {
+    success: response.success,
+    data: undefined
+  };
 }
 
 export async function getCostCenterById(id: string): Promise<ApiResponse<{ costCenter: CostCenter }>> {

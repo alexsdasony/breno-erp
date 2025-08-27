@@ -67,8 +67,11 @@ export async function updateNFe(id: string, payload: Partial<NFe> | NFePayload):
 }
 
 export async function deleteNFe(id: string): Promise<ApiResponse<void>> {
-  const response = await apiService.delete<ApiResponse<void>>(`/nfes/${id}`)
-  return response
+  const response = await apiService.delete<{ success: boolean; message?: string }>(`/nfe/${id}`);
+  return {
+    success: response.success,
+    data: undefined
+  };
 }
 
 export async function getNFeById(id: string): Promise<ApiResponse<{ nfe: NFe }>> {

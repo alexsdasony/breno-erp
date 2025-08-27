@@ -39,8 +39,11 @@ export async function updateIntegration(id: string, payload: IntegrationPayload)
 }
 
 export async function deleteIntegration(id: string): Promise<ApiResponse<void>> {
-  const response = await apiService.delete<ApiResponse<void>>(`/integrations/${id}`)
-  return response
+  const response = await apiService.delete<{ success: boolean; message?: string }>(`/integrations/${id}`);
+  return {
+    success: response.success,
+    data: undefined
+  };
 }
 
 export async function getIntegrationById(id: string): Promise<ApiResponse<{ integration: Integration }>> {

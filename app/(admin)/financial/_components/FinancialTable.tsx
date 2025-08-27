@@ -44,12 +44,12 @@ export default function FinancialTable({ items, currency, pmMap, onDetails, onEd
           <tbody>
             {items.map((d) => (
               <tr key={d.id} className="border-b border-border hover:bg-muted/30">
-                <td className="p-3">{d.date || '-'}</td>
+                <td className="p-3">{d.issue_date || '-'}</td>
                 <td className="p-3">{d.due_date || '-'}</td>
-                <td className="p-3">{typeLabel(d.type)}</td>
-                <td className="p-3">{d.partner_id ? (d.partner_name || d.partner_id) : '-'}</td>
+                <td className="p-3">{typeLabel(d.document_type)}</td>
+                <td className="p-3">{d.entity_id ? (d.entity_name || d.entity_id) : '-'}</td>
                 <td className="p-3 text-right">{currency(Number(d.amount || 0))}</td>
-                <td className="p-3">{d.payment_method_id ? (pmMap[d.payment_method_id] || d.payment_method_id) : '-'}</td>
+                <td className="p-3">{d.payment_method ? (pmMap[d.payment_method] || d.payment_method) : '-'}</td>
                 <td className="p-3">
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                     d.status === 'paid' ? 'bg-green-500/20 text-green-400' : d.status === 'canceled' ? 'bg-gray-500/20 text-gray-400' : 'bg-amber-500/20 text-amber-400'
