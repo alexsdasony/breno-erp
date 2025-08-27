@@ -13,8 +13,11 @@ export interface UserExtended extends User {
  * @returns Lista de usuários
  */
 export async function getUsers(params: Record<string, any> = {}): Promise<ApiResponse<{ users: UserExtended[] }>> {
-  const response = await apiService.get<{ users: UserExtended[] }>('/users', params);
-  return response as ApiResponse<{ users: UserExtended[] }>;
+  const response = await apiService.get<{ success: boolean; users: UserExtended[] }>('/users', params);
+  return {
+    success: response.success,
+    data: { users: response.users || [] }
+  };
 }
 
 /**
@@ -23,8 +26,11 @@ export async function getUsers(params: Record<string, any> = {}): Promise<ApiRes
  * @returns Dados do usuário
  */
 export async function getUser(id: string): Promise<ApiResponse<{ user: UserExtended }>> {
-  const response = await apiService.get<{ user: UserExtended }>(`/users/${id}`);
-  return response as ApiResponse<{ user: UserExtended }>;
+  const response = await apiService.get<{ success: boolean; user: UserExtended }>(`/users/${id}`);
+  return {
+    success: response.success,
+    data: { user: response.user }
+  };
 }
 
 /**
@@ -33,8 +39,11 @@ export async function getUser(id: string): Promise<ApiResponse<{ user: UserExten
  * @returns Usuário criado
  */
 export async function createUser(userData: UserPayload): Promise<ApiResponse<{ user: UserExtended }>> {
-  const response = await apiService.post<{ user: UserExtended }>('/users', userData);
-  return response as ApiResponse<{ user: UserExtended }>;
+  const response = await apiService.post<{ success: boolean; user: UserExtended }>('/users', userData);
+  return {
+    success: response.success,
+    data: { user: response.user }
+  };
 }
 
 /**
@@ -44,8 +53,11 @@ export async function createUser(userData: UserPayload): Promise<ApiResponse<{ u
  * @returns Usuário atualizado
  */
 export async function updateUser(id: string, userData: UserPayload): Promise<ApiResponse<{ user: UserExtended }>> {
-  const response = await apiService.put<{ user: UserExtended }>(`/users/${id}`, userData);
-  return response as ApiResponse<{ user: UserExtended }>;
+  const response = await apiService.put<{ success: boolean; user: UserExtended }>(`/users/${id}`, userData);
+  return {
+    success: response.success,
+    data: { user: response.user }
+  };
 }
 
 /**
