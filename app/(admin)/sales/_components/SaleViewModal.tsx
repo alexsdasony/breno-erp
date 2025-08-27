@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SaleViewModalProps } from './types';
-import { Sale } from '../_hooks/useSales';
+import { Sale } from '@/types';
 
 // Funções auxiliares
 const formatCurrency = (value: number): string => {

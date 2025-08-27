@@ -29,14 +29,14 @@ export default function AccountsPayableView() {
   // Estado para formulário
   const [formData, setFormData] = useState({
     supplier_id: '',
-    description: '',
-    amount: '',
-    due_date: '',
-    payment_date: '',
+    descricao: '',
+    valor: '',
+    data_vencimento: '',
+    data_pagamento: '',
     status: 'pending',
-    category: '',
-    payment_method: 'boleto',
-    notes: '',
+    categoria_id: '',
+    forma_pagamento: 'boleto',
+    observacoes: '',
     segment_id: activeSegmentId
   });
   
@@ -49,14 +49,14 @@ export default function AccountsPayableView() {
   const resetForm = () => {
     setFormData({
       supplier_id: '',
-      description: '',
-      amount: '',
-      due_date: '',
-      payment_date: '',
+      descricao: '',
+      valor: '',
+      data_vencimento: '',
+      data_pagamento: '',
       status: 'pending',
-      category: '',
-      payment_method: 'boleto',
-      notes: '',
+      categoria_id: '',
+      forma_pagamento: 'boleto',
+      observacoes: '',
       segment_id: activeSegmentId
     });
     setCurrentAccount(null);
@@ -109,8 +109,8 @@ export default function AccountsPayableView() {
     .filter(item => {
       // Filtro por termo de busca
       const searchMatch = !searchTerm || 
-        item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.supplier_name?.toLowerCase().includes(searchTerm.toLowerCase());
+        item.descricao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.numero_nota_fiscal?.toLowerCase().includes(searchTerm.toLowerCase());
       
       // Filtro por status
       const statusMatch = filterStatus === 'all' || item.status === filterStatus;
@@ -120,9 +120,9 @@ export default function AccountsPayableView() {
     .filter(isWithinPeriod);
 
   // Consolidado de valores por status
-  const totalPaid = filteredItems.filter(a => a.status === 'paid').reduce((sum, a) => sum + Number(a.amount || 0), 0);
-  const totalOverdue = filteredItems.filter(a => a.status === 'overdue').reduce((sum, a) => sum + Number(a.amount || 0), 0);
-  const totalPending = filteredItems.filter(a => a.status === 'pending').reduce((sum, a) => sum + Number(a.amount || 0), 0);
+  const totalPaid = filteredItems.filter(a => a.status === 'paid').reduce((sum, a) => sum + Number(a.valor || 0), 0);
+  const totalOverdue = filteredItems.filter(a => a.status === 'overdue').reduce((sum, a) => sum + Number(a.valor || 0), 0);
+  const totalPending = filteredItems.filter(a => a.status === 'pending').reduce((sum, a) => sum + Number(a.valor || 0), 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -299,21 +299,21 @@ export default function AccountsPayableView() {
                   {filteredItems.map((item) => (
                     <tr key={item.id} className="hover:bg-muted/50 transition-colors">
                       <td className="px-6 py-4 text-sm font-medium">
-                        {item.supplier_name || 'N/A'}
+                        {item.supplier_id || 'N/A'}
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">
-                        <div className="max-w-xs truncate" title={item.description}>
-                          {item.description}
+                        <div className="max-w-xs truncate" title={item.descricao}>
+                          {item.descricao}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">
-                        {item.category || 'N/A'}
+                        {item.categoria_id || 'N/A'}
                       </td>
                       <td className="px-6 py-4 text-sm font-semibold">
-                        {formatCurrency(item.amount)}
+                        {formatCurrency(item.valor)}
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">
-                        {formatDate(item.due_date)}
+                        {formatDate(item.data_vencimento)}
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
@@ -343,14 +343,14 @@ export default function AccountsPayableView() {
                               setCurrentAccount(item);
                               setFormData({
                                 supplier_id: item.supplier_id || '',
-                                description: item.description || '',
-                                amount: item.amount?.toString() || '',
-                                due_date: item.due_date || '',
-                                payment_date: item.payment_date || '',
+                                descricao: item.descricao || '',
+                                valor: item.valor?.toString() || '',
+                                data_vencimento: item.data_vencimento || '',
+                                data_pagamento: item.data_pagamento || '',
                                 status: item.status || 'pending',
-                                category: item.category || '',
-                                payment_method: item.payment_method || 'boleto',
-                                notes: item.notes || '',
+                                categoria_id: item.categoria_id || '',
+                                forma_pagamento: item.forma_pagamento || 'boleto',
+                                observacoes: item.observacoes || '',
                                 segment_id: item.segment_id || activeSegmentId
                               });
                               setShowEditModal(true);

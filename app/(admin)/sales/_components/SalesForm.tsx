@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
 import apiService from '@/services/api';
-import { SalesFormProps, FormData, SaleItemUI, Customer, Product, PaymentMethod } from './types';
-import { Sale, SaleItem } from '../_hooks/useSales';
+import { SalesFormProps, FormData, SaleItemUI } from './types';
+import { Sale, SaleItem, Customer, Product } from '@/types';
 import { useCustomersContext } from '@/contexts/CustomersContext';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { usePaymentMethodsContext } from '@/contexts/PaymentMethodsContext';
@@ -37,10 +37,12 @@ export function SalesForm({ editingSale, onSubmit, onCancel }: SalesFormProps) {
   const [saleItems, setSaleItems] = useState<SaleItemUI[]>([]);
   const [newItem, setNewItem] = useState<SaleItemUI>({
     id: '',
+    sale_id: '',
     product_id: '',
     productName: '',
     quantity: 1,
     unit_price: 0,
+    total: 0,
     totalPrice: 0,
   });
 
@@ -84,10 +86,12 @@ export function SalesForm({ editingSale, onSubmit, onCancel }: SalesFormProps) {
       if (editingSale.items && editingSale.items.length > 0) {
         const mappedItems = editingSale.items.map((item, index) => ({
           id: `existing-${index}`,
+          sale_id: item.sale_id,
           product_id: item.product_id,
           productName: `Produto ${index + 1}`, // Idealmente, buscar o nome do produto
           quantity: item.quantity,
           unit_price: item.unit_price,
+          total: item.total,
           totalPrice: item.quantity * item.unit_price,
         }));
         setSaleItems(mappedItems);
@@ -226,10 +230,12 @@ export function SalesForm({ editingSale, onSubmit, onCancel }: SalesFormProps) {
     setSaleItems(prev => [...prev, newItemWithId]);
     setNewItem({
       id: '',
+      sale_id: '',
       product_id: '',
       productName: '',
       quantity: 1,
       unit_price: 0,
+      total: 0,
       totalPrice: 0,
     });
   };

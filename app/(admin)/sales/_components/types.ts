@@ -1,9 +1,13 @@
 import { Sale, SaleItem, Product, Customer } from '@/types';
 
+export type { Product, Customer };
+
 export interface SaleItemUI extends SaleItem {
   id: string;
+  sale_id: string;
   productName: string;
   totalPrice: number;
+  total: number;
 }
 
 export interface FormData {
