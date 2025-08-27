@@ -67,13 +67,20 @@ const globalMemoryCache = {
   initialized: false
 };
 
-// Função para limpar localStorage completamente
-const forceClearStorage = () => {
-  try {
-    sessionStorage.clear();
-    console.log('🧹 Storage forçadamente limpo');
-  } catch (error) {
-    console.error('Erro ao limpar storage:', error);
+// Função para limpar apenas dados específicos do app (não o token de auth)
+const clearAppData = () => {
+  if (typeof window !== 'undefined') {
+    try {
+      // Remove apenas dados específicos do app, mantendo o token de autenticação
+      const keysToRemove = ['cached_user', 'app_data_cache'];
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      });
+      console.log('Dados do app limpos com sucesso');
+    } catch (error) {
+      console.error('Erro ao limpar dados do app:', error);
+    }
   }
 };
 
@@ -119,10 +126,9 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
     globalMemoryCache.activeSegmentId = activeSegmentId;
   }, [segments, activeSegmentId]);
 
-  // Limpar storage na inicialização
+  // Inicializar cache na primeira execução
   useEffect(() => {
     if (!globalMemoryCache.initialized) {
-      forceClearStorage();
       globalMemoryCache.initialized = true;
     }
   }, []);

@@ -33,55 +33,55 @@ class ApiService {
   }
 
   /**
-   * Define o token de autenticação e o armazena no sessionStorage
+   * Define o token de autenticação e o armazena no localStorage
    * @param token Token de autenticação
    */
   setToken(token: string): void {
     this.token = token;
     tokenCache = token;
-    // Usar sessionStorage para persistir durante a sessão
+    // Usar localStorage para persistir até logout explícito ou fechamento do browser
     if (typeof window !== 'undefined') {
       try {
-        sessionStorage.setItem('auth_token', token);
+        localStorage.setItem('auth_token', token);
       } catch (error) {
-        console.warn('Erro ao salvar token no sessionStorage:', error);
+        console.warn('Erro ao salvar token no localStorage:', error);
       }
     }
   }
 
   /**
-   * Obtém o token de autenticação do cache ou do sessionStorage
+   * Obtém o token de autenticação do cache ou do localStorage
    * @returns Token de autenticação ou null se não existir
    */
   getToken(): string | null {
     if (tokenCache) return tokenCache;
     
-    // Tentar recuperar do sessionStorage
+    // Tentar recuperar do localStorage
     if (typeof window !== 'undefined') {
       try {
-        const storedToken = sessionStorage.getItem('auth_token');
+        const storedToken = localStorage.getItem('auth_token');
         if (storedToken) {
           tokenCache = storedToken;
           return storedToken;
         }
       } catch (error) {
-        console.warn('Erro ao ler token do sessionStorage:', error);
+        console.warn('Erro ao ler token do localStorage:', error);
       }
     }
     return null;
   }
 
   /**
-   * Remove o token de autenticação do cache e do sessionStorage
+   * Remove o token de autenticação do cache e do localStorage
    */
   clearToken(): void {
     this.token = null;
     tokenCache = null;
     if (typeof window !== 'undefined') {
       try {
-        sessionStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_token');
       } catch (error) {
-        console.warn('Erro ao remover token do sessionStorage:', error);
+        console.warn('Erro ao remover token do localStorage:', error);
       }
     }
   }

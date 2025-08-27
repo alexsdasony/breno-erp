@@ -38,72 +38,60 @@ export const useAuth = (): AuthContextType => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Verificar autenticação na inicialização
+  // Inicialização: tentar restaurar usuário autenticado
   useEffect(() => {
-    const checkAuth = async () => {
+    const initializeAuth = async () => {
       try {
         const token = apiService.getToken();
         if (token) {
-          // Verificar se o token é válido
-          const isValid = await authService.checkAuth();
-          if (isValid) {
-            // Tentar obter o perfil do usuário
-            try {
-                const profile = await authService.getProfile();
-                if (profile.data && profile.data.user) {
-                  setCurrentUser(profile.data.user);
-                  sessionStorage.setItem('cached_user', JSON.stringify(profile.data.user));
-                  console.log('✅ Usuário autenticado restaurado:', profile.data.user.name);
-                } else {
-                  console.warn('Profile response invalid, but token is valid');
-                // Se não conseguimos obter o perfil mas o token é válido,
-                // vamos tentar fazer login novamente com dados em cache
-                const cachedUser = sessionStorage.getItem('cached_user');
+          try {
+            // Verificar se o token ainda é válido fazendo uma chamada de teste
+            const isValidToken = await authService.checkAuth();
+            if (isValidToken) {
+              // Token válido, tentar obter perfil
+              const profile = await authService.getProfile();
+              if (profile.data && profile.data.user) {
+                setCurrentUser(profile.data.user);
+                localStorage.setItem('cached_user', JSON.stringify(profile.data.user));
+                console.log('✅ Usuário autenticado restaurado:', profile.data.user.name);
+              } else {
+                // Fallback para usuário em cache se perfil não disponível
+                const cachedUser = localStorage.getItem('cached_user');
                 if (cachedUser) {
                   try {
                     const user = JSON.parse(cachedUser);
                     setCurrentUser(user);
                     console.log('✅ Usuário restaurado do cache:', user.name);
-                  } catch (e) {
-                    console.warn('Failed to parse cached user:', e);
+                  } catch (parseError) {
+                    console.error('Erro ao fazer parse do usuário em cache:', parseError);
+                    apiService.clearToken();
+                    localStorage.removeItem('cached_user');
                   }
+                } else {
+                  apiService.clearToken();
                 }
               }
-            } catch (profileError) {
-              console.warn('Failed to get profile, but token is valid:', profileError);
-              // Token é válido mas não conseguimos obter o perfil
-              // Vamos tentar restaurar do cache
-              const cachedUser = sessionStorage.getItem('cached_user');
-              if (cachedUser) {
-                try {
-                  const user = JSON.parse(cachedUser);
-                  setCurrentUser(user);
-                  console.log('✅ Usuário restaurado do cache após erro de perfil:', user.name);
-                } catch (e) {
-                  console.warn('Failed to parse cached user:', e);
-                }
-              }
+            } else {
+              // Token inválido ou expirado
+              console.warn('Token inválido ou expirado, limpando dados de autenticação');
+              apiService.clearToken();
+              localStorage.removeItem('cached_user');
             }
-          } else {
-            console.warn('Token invalid, clearing token');
+          } catch (error: any) {
+            console.error('Erro ao verificar autenticação:', error);
+            // Em caso de erro, limpar dados de autenticação
             apiService.clearToken();
-            sessionStorage.removeItem('cached_user');
+            localStorage.removeItem('cached_user');
           }
         }
       } catch (error: any) {
-        console.error('Auth check failed:', error);
-        // Não limpar o token automaticamente em caso de erro de rede
-        // Apenas limpar se for um erro de autenticação específico
-        if (error && error.status === 401) {
-          apiService.clearToken();
-          sessionStorage.removeItem('cached_user');
-        }
+        console.error('Erro na inicialização da autenticação:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    checkAuth();
+    initializeAuth();
   }, []);
 
   const registerUser = async (name: string, email: string, password: string, segmentId: string | null = null): Promise<boolean> => {
@@ -114,7 +102,7 @@ export const useAuth = (): AuthContextType => {
       if (response.data?.success && response.data?.user) {
         setCurrentUser(response.data.user);
         // Cache do usuário para persistência
-        sessionStorage.setItem('cached_user', JSON.stringify(response.data.user));
+        localStorage.setItem('cached_user', JSON.stringify(response.data.user));
         if (response.data.token) {
           apiService.setToken(response.data.token);
         }
@@ -147,7 +135,7 @@ export const useAuth = (): AuthContextType => {
       if (response.success && response.user) {
         setCurrentUser(response.user);
         // Cache do usuário para persistência
-        sessionStorage.setItem('cached_user', JSON.stringify(response.user));
+        localStorage.setItem('cached_user', JSON.stringify(response.user));
         // Salvar token se fornecido
         if (response.token) {
           apiService.setToken(response.token);
@@ -180,7 +168,7 @@ export const useAuth = (): AuthContextType => {
     } finally {
       setCurrentUser(null);
       apiService.clearToken();
-      sessionStorage.removeItem('cached_user');
+      localStorage.removeItem('cached_user');
       toast({
         title: "Logout realizado",
         description: "Você foi desconectado com sucesso."
@@ -196,7 +184,7 @@ export const useAuth = (): AuthContextType => {
       if (response.data?.success && response.data?.user) {
         setCurrentUser(response.data.user);
         // Atualizar cache
-        sessionStorage.setItem('cached_user', JSON.stringify(response.data.user));
+        localStorage.setItem('cached_user', JSON.stringify(response.data.user));
         toast({
           title: "Perfil atualizado!",
           description: "Suas informações foram atualizadas com sucesso."
