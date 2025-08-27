@@ -22,7 +22,7 @@ export interface DashboardMetrics {
 }
 
 export async function getDashboardMetrics(params: Record<string, any> = {}): Promise<ApiResponse<{ metrics: DashboardMetrics }>> {
-  const response = await apiService.get<{ metrics: DashboardMetrics }>('/dashboard/metrics', params)
+  const response = await apiService.get<{ metrics: DashboardMetrics }>('/metrics', params)
   return response as ApiResponse<{ metrics: DashboardMetrics }>
 }
 
