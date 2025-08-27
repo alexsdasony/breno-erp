@@ -21,6 +21,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { useAppData } from '@/hooks/useAppData';
 import apiService from '@/services/api';
@@ -33,6 +35,8 @@ export default function ProfileView() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   
   const [profileData, setProfileData] = useState({
@@ -179,6 +183,56 @@ export default function ProfileView() {
     setIsEditing(false);
   };
 
+  const handleEditClick = () => {
+    setShowPasswordModal(true);
+  };
+
+  const handlePasswordConfirm = async () => {
+    if (!confirmPassword.trim()) {
+      toast({
+        title: 'Erro',
+        description: 'Digite sua senha atual para continuar.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      // Verificar a senha atual fazendo uma tentativa de login
+      const response = await fetch('/api/auth/verify-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ password: confirmPassword })
+      });
+
+      if (response.ok) {
+        setShowPasswordModal(false);
+        setConfirmPassword('');
+        setIsEditing(true);
+        toast({
+          title: 'Senha confirmada',
+          description: 'Agora você pode editar seu perfil.'
+        });
+      } else {
+        toast({
+          title: 'Erro',
+          description: 'Senha incorreta.',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao verificar senha:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao verificar senha.',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const handleCancelPassword = () => {
     setPasswordData({
       currentPassword: '',
@@ -272,7 +326,7 @@ export default function ProfileView() {
                 </div>
                 {!isEditing && (
                   <Button
-                    onClick={() => setIsEditing(true)}
+                    onClick={handleEditClick}
                     variant="outline"
                     size="sm"
                     className="border-gray-600 text-gray-300 hover:bg-gray-700"
@@ -524,6 +578,54 @@ export default function ProfileView() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Modal de Confirmação de Senha */}
+      <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+        <DialogContent className="sm:max-w-[425px] bg-gray-800 border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">Confirmar Identidade</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Para sua segurança, digite sua senha atual para editar o perfil.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="confirm-password" className="text-right text-gray-300">
+                Senha
+              </Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="col-span-3 bg-gray-700 border-gray-600 text-white"
+                placeholder="Digite sua senha atual"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePasswordConfirm();
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowPasswordModal(false);
+                setConfirmPassword('');
+              }}
+              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+            >
+              Cancelar
+            </Button>
+            <Button type="button" onClick={handlePasswordConfirm} className="bg-blue-600 hover:bg-blue-700">
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
