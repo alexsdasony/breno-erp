@@ -262,7 +262,7 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
                 <label className="block text-sm mb-1">Segmento</label>
                 <select className="w-full bg-muted border rounded-lg p-2" value={fSegmentId} onChange={(e) => setFSegmentId(e.target.value)}>
                   <option value="">Sem segmento</option>
-                  {segments.map((s) => (
+                  {Array.isArray(segments) && segments.map((s) => (
                     <option key={s.id} value={s.id}>{s.code ? `${s.code} - ` : ''}{s.name || s.id}</option>
                   ))}
                 </select>

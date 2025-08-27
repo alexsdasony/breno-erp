@@ -72,7 +72,7 @@ export default function FinancialFilters({
           <label className="block text-sm mb-1">Segmento</label>
           <select className="w-full bg-muted border rounded-lg p-2" value={segment} onChange={(e) => setSegment(e.target.value)}>
             <option value="">Todos os Segmentos</option>
-            {segments.map((s) => (
+            {Array.isArray(segments) && segments.map((s) => (
               <option key={s.id} value={s.id}>{s.code ? `${s.code} - ` : ''}{s.name || s.id}</option>
             ))}
           </select>

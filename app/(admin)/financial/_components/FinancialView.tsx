@@ -90,8 +90,10 @@ export default function FinancialView() {
     let active = true;
     (async () => {
       try {
-        const segs = await listSegments({ page: 1, pageSize: 100 });
-        if (active) setSegments(segs as any);
+        const response = await listSegments({ page: 1, pageSize: 100 });
+        if (active && response.data?.segments) {
+          setSegments(response.data.segments);
+        }
       } catch {
         // silencioso
       }
