@@ -141,16 +141,16 @@ export const useAuth = (): AuthContextType => {
   const loginUser = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      const response = await authService.login({ email, password });
+      const response = await authService.login({ email, password }) as any;
       
       // Verificar se a resposta tem sucesso e dados do usuário
-      if (response.data?.success && response.data?.user) {
-        setCurrentUser(response.data.user);
+      if (response.success && response.user) {
+        setCurrentUser(response.user);
         // Cache do usuário para persistência
-        sessionStorage.setItem('cached_user', JSON.stringify(response.data.user));
+        sessionStorage.setItem('cached_user', JSON.stringify(response.user));
         // Salvar token se fornecido
-        if (response.data.token) {
-          apiService.setToken(response.data.token);
+        if (response.token) {
+          apiService.setToken(response.token);
         }
         toast({
           title: "Login realizado!",
