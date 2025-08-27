@@ -38,6 +38,14 @@ export default function ProfileView() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Alias JS components to any to avoid TS prop typing issues
+  const DialogRoot = Dialog as any;
+  const DialogC = DialogContent as any;
+  const DialogH = DialogHeader as any;
+  const DialogT = DialogTitle as any;
+  const DialogD = DialogDescription as any;
+  const DialogF = DialogFooter as any;
   
   const [profileData, setProfileData] = useState({
     name: currentUser?.name || '',
@@ -580,14 +588,14 @@ export default function ProfileView() {
       </motion.div>
 
       {/* Modal de Confirmação de Senha */}
-      <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
-        <DialogContent className="sm:max-w-[425px] bg-gray-800 border-gray-700">
-          <DialogHeader>
-            <DialogTitle className="text-white">Confirmar Identidade</DialogTitle>
-            <DialogDescription className="text-gray-400">
+      <DialogRoot open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+        <DialogC className="sm:max-w-[425px] bg-gray-800 border-gray-700">
+          <DialogH>
+            <DialogT className="text-white">Confirmar Identidade</DialogT>
+            <DialogD className="text-gray-400">
               Para sua segurança, digite sua senha atual para editar o perfil.
-            </DialogDescription>
-          </DialogHeader>
+            </DialogD>
+          </DialogH>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="confirm-password" className="text-right text-gray-300">
@@ -597,10 +605,10 @@ export default function ProfileView() {
                 id="confirm-password"
                 type="password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
                 className="col-span-3 bg-gray-700 border-gray-600 text-white"
                 placeholder="Digite sua senha atual"
-                onKeyDown={(e) => {
+                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                   if (e.key === 'Enter') {
                     handlePasswordConfirm();
                   }
@@ -608,7 +616,7 @@ export default function ProfileView() {
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogF>
             <Button
               type="button"
               variant="outline"
@@ -623,9 +631,9 @@ export default function ProfileView() {
             <Button type="button" onClick={handlePasswordConfirm} className="bg-blue-600 hover:bg-blue-700">
               Confirmar
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DialogF>
+        </DialogC>
+      </DialogRoot>
     </div>
   );
 }
