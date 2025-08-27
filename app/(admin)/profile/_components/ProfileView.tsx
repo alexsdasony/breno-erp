@@ -22,6 +22,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
+// Aliases para evitar problemas de tipagem
+const DialogComponent = Dialog as any;
+const DialogContentComponent = DialogContent as any;
+const DialogHeaderComponent = DialogHeader as any;
+const DialogTitleComponent = DialogTitle as any;
+const DialogDescriptionComponent = DialogDescription as any;
+const DialogFooterComponent = DialogFooter as any;
 import { toast } from '@/components/ui/use-toast';
 import { useAppData } from '@/hooks/useAppData';
 import apiService from '@/services/api';
@@ -592,14 +600,14 @@ export default function ProfileView() {
       </motion.div>
 
       {/* Modal de Confirmação de Senha */}
-      <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
-        <DialogContent className="sm:max-w-[425px] bg-gray-800 border-gray-700">
-          <DialogHeader>
-            <DialogTitle className="text-white">Confirmar Identidade</DialogTitle>
-            <DialogDescription className="text-gray-400">
+      <DialogComponent open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+        <DialogContentComponent className="sm:max-w-[425px] bg-gray-800 border-gray-700">
+          <DialogHeaderComponent>
+            <DialogTitleComponent className="text-white">Confirmar Identidade</DialogTitleComponent>
+            <DialogDescriptionComponent className="text-gray-400">
               Para sua segurança, digite sua senha atual para salvar as alterações.
-            </DialogDescription>
-          </DialogHeader>
+            </DialogDescriptionComponent>
+          </DialogHeaderComponent>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="confirm-password" className="text-right text-gray-300">
@@ -620,7 +628,7 @@ export default function ProfileView() {
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooterComponent>
             <Button
               type="button"
               variant="outline"
@@ -643,9 +651,9 @@ export default function ProfileView() {
               ) : null}
               Confirmar
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DialogFooterComponent>
+        </DialogContentComponent>
+      </DialogComponent>
     </div>
   );
 }
