@@ -1,23 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import apiService from '@/services/api';
+import { getSuppliers, getSupplier, createSupplier, updateSupplier, deleteSupplier, Supplier } from '@/services/suppliersService';
 import { toast } from '@/components/ui/use-toast';
 
-export interface Partner {
-  id: string;
-  name: string;
-  tax_id?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zip_code?: string;
-  status?: string;
-  segment_id?: string | null;
-}
+// Usando a interface Supplier importada de suppliersService.ts
 
 export interface UseSuppliersState {
-  items: Partner[];
+  items: Supplier[];
   loading: boolean;
   page: number;
   hasMore: boolean;
@@ -26,8 +14,8 @@ export interface UseSuppliersState {
 export interface UseSuppliersApi {
   load: (reset?: boolean) => Promise<void>;
   loadMore: () => Promise<void>;
-  create: (data: Partial<Partner>) => Promise<Partner | null>;
-  update: (id: string, data: Partial<Partner>) => Promise<Partner | null>;
+  create: (data: Partial<Supplier>) => Promise<Supplier | null>;
+  update: (id: string, data: Partial<Supplier>) => Promise<Supplier | null>;
   remove: (id: string) => Promise<boolean>;
 }
 
@@ -37,9 +25,9 @@ export function useSuppliers() {
   const [state, setState] = useState<UseSuppliersState>({ items: [], loading: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
-    const res = await apiService.getPartners({ role: 'supplier', page, pageSize: PAGE_SIZE });
-    const partners = (res as any).partners || (res as any).data || [];
-    return partners as Partner[];
+    const res = await getSuppliers({ page, pageSize: PAGE_SIZE });
+    const suppliers = res.data?.suppliers || [];
+    return suppliers as Supplier[];
   }, []);
 
   const load = useCallback(async (reset: boolean = false) => {
@@ -72,29 +60,37 @@ export function useSuppliers() {
     }));
   }, [state.loading, state.hasMore, state.page, fetchPage]);
 
-  const create = useCallback(async (data: Partial<Partner>) => {
+  const create = useCallback(async (data: Partial<Supplier>) => {
     try {
-      const res = await apiService.createPartner({ ...data, role: 'supplier' });
-      const partner = (res as any).partner || (res as any).data || res;
-      setState((s) => ({ ...s, items: [partner as Partner, ...s.items] }));
-      toast({ title: 'Fornecedor criado', description: (partner as Partner)?.name || 'Registro criado.' });
-      return partner as Partner;
+      const res = await createSupplier(data);
+      const supplier = res.data?.supplier;
+      if (supplier) {
+        setState((s) => ({ ...s, items: [supplier, ...s.items] }));
+        toast({ title: 'Fornecedor criado', description: supplier.name || 'Registro criado.' });
+        return supplier;
+      }
+      toast({ title: 'Fornecedor criado', description: 'Registro criado.' });
+      return null;
     } catch (e) {
       toast({ title: 'Erro ao criar fornecedor', description: 'Verifique os dados informados.', variant: 'destructive' });
       return null;
     }
   }, []);
 
-  const update = useCallback(async (id: string, data: Partial<Partner>) => {
+  const update = useCallback(async (id: string, data: Partial<Supplier>) => {
     try {
-      const res = await apiService.updatePartner(id, data);
-      const partner = (res as any).partner || (res as any).data || res;
-      setState((s) => ({
-        ...s,
-        items: s.items.map((it) => (it.id === id ? (partner as Partner) : it)),
-      }));
-      toast({ title: 'Fornecedor atualizado', description: (partner as Partner)?.name || 'Registro atualizado.' });
-      return partner as Partner;
+      const res = await updateSupplier(id, data);
+      const supplier = res.data?.supplier;
+      if (supplier) {
+        setState((s) => ({
+          ...s,
+          items: s.items.map((it) => (it.id === id ? supplier : it)),
+        }));
+        toast({ title: 'Fornecedor atualizado', description: supplier.name || 'Registro atualizado.' });
+        return supplier;
+      }
+      toast({ title: 'Fornecedor atualizado', description: 'Registro atualizado.' });
+      return null;
     } catch (e) {
       toast({ title: 'Erro ao atualizar fornecedor', description: 'Tente novamente.', variant: 'destructive' });
       return null;
@@ -103,7 +99,7 @@ export function useSuppliers() {
 
   const remove = useCallback(async (id: string) => {
     try {
-      await apiService.deletePartner(id);
+      await deleteSupplier(id);
       setState((s) => ({ ...s, items: s.items.filter((it) => it.id !== id) }));
       toast({ title: 'Fornecedor removido', description: 'Registro excluído com sucesso.' });
       return true;
@@ -111,7 +107,7 @@ export function useSuppliers() {
       toast({ title: 'Erro ao remover fornecedor', description: 'Tente novamente.', variant: 'destructive' });
       return false;
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
     void load(true);

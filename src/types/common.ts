@@ -1,8 +1,8 @@
 export type ID = string
 
 export type Timestamped = {
-  createdAt?: string
-  updatedAt?: string
+  created_at?: string
+  updated_at?: string
 }
 
 export type PaginationParams = {

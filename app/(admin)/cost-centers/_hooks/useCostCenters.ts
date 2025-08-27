@@ -1,17 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import apiService from '@/services/api';
 import { toast } from '@/components/ui/use-toast';
-
-export interface CostCenter {
-  id: string;
-  name: string;
-  description?: string | null;
-  code?: string | null;
-  budget?: number | null;
-  status?: 'active' | 'inactive' | string;
-  segment_id?: string | null;
-  manager_id?: string | null;
-}
+import { listCostCenters, createCostCenter, updateCostCenter, deleteCostCenter } from '@/services/costCentersService';
+import type { CostCenter, CostCenterPayload } from '@/types';
 
 interface State {
   items: CostCenter[];
@@ -34,26 +24,16 @@ export function useCostCenters() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
-    const res = await apiService.getCostCenters({ page, pageSize: PAGE_SIZE });
+    const response = await listCostCenters({ page, pageSize: PAGE_SIZE });
     // Debug: inspecionar resposta bruta
     // eslint-disable-next-line no-console
-    console.log('[useCostCenters] fetchPage raw response:', res);
-    // Normalizar possíveis formatos de retorno
-    const anyRes: any = res ?? {};
-    const list = Array.isArray(anyRes)
-      ? anyRes
-      : anyRes.costCenters ||
-        anyRes.cost_centers ||
-        anyRes.data?.costCenters ||
-        anyRes.data?.cost_centers ||
-        anyRes.data ||
-        anyRes.items ||
-        anyRes.results ||
-        [];
-    const normalized = list as CostCenter[];
+    console.log('[useCostCenters] fetchPage raw response:', response);
+    
+    const costCenters = response.data?.costCenters || [];
+    
     // eslint-disable-next-line no-console
-    console.log('[useCostCenters] fetchPage normalized length:', normalized?.length);
-    return normalized;
+    console.log('[useCostCenters] fetchPage normalized length:', costCenters?.length);
+    return costCenters;
   }, []);
 
   const load = useCallback(async (reset: boolean = false) => {
@@ -92,12 +72,30 @@ export function useCostCenters() {
 
   const create = useCallback(async (data: Partial<CostCenter>) => {
     try {
-      const res = await apiService.createCostCenter(data);
-      const anyRes: any = res ?? {};
-      const item = anyRes.costCenter || anyRes.cost_center || anyRes.data || res;
-      setState((s) => ({ ...s, items: [item as CostCenter, ...s.items] }));
-      toast({ title: 'Centro de custo criado', description: (item as CostCenter)?.name || 'Registro criado.' });
-      return item as CostCenter;
+      // Garantir que o campo name seja fornecido
+      if (!data.name) {
+        toast({ title: 'Erro ao criar centro de custo', description: 'O nome é obrigatório.', variant: 'destructive' });
+        return null;
+      }
+      
+      const payload: CostCenterPayload = {
+        name: data.name,
+        description: data.description,
+        is_active: data.is_active,
+        segment_id: data.segment_id
+      };
+      
+      const response = await createCostCenter(payload);
+      const item = response.data?.costCenter;
+      
+      if (item) {
+        setState((s) => ({ ...s, items: [item, ...s.items] }));
+        toast({ title: 'Centro de custo criado', description: item.name || 'Registro criado.' });
+        return item;
+      }
+      
+      toast({ title: 'Aviso', description: 'Centro de custo criado, mas não foi possível atualizar a lista' });
+      return null;
     } catch (e) {
       toast({ title: 'Erro ao criar centro de custo', description: 'Verifique os dados informados.', variant: 'destructive' });
       return null;
@@ -106,15 +104,33 @@ export function useCostCenters() {
 
   const update = useCallback(async (id: string, data: Partial<CostCenter>) => {
     try {
-      const res = await apiService.updateCostCenter(id, data);
-      const anyRes: any = res ?? {};
-      const item = anyRes.costCenter || anyRes.cost_center || anyRes.data || res;
-      setState((s) => ({
-        ...s,
-        items: s.items.map((it) => (it.id === id ? (item as CostCenter) : it)),
-      }));
-      toast({ title: 'Centro de custo atualizado', description: (item as CostCenter)?.name || 'Registro atualizado.' });
-      return item as CostCenter;
+      // Garantir que o campo name seja fornecido
+      if (!data.name) {
+        toast({ title: 'Erro ao atualizar centro de custo', description: 'O nome é obrigatório.', variant: 'destructive' });
+        return null;
+      }
+      
+      const payload: CostCenterPayload = {
+        name: data.name,
+        description: data.description,
+        is_active: data.is_active,
+        segment_id: data.segment_id
+      };
+      
+      const response = await updateCostCenter(id, payload);
+      const item = response.data?.costCenter;
+      
+      if (item) {
+        setState((s) => ({
+          ...s,
+          items: s.items.map((it) => (it.id === id ? item : it)),
+        }));
+        toast({ title: 'Centro de custo atualizado', description: item.name || 'Registro atualizado.' });
+        return item;
+      }
+      
+      toast({ title: 'Aviso', description: 'Centro de custo atualizado, mas não foi possível atualizar a lista' });
+      return null;
     } catch (e) {
       toast({ title: 'Erro ao atualizar centro de custo', description: 'Tente novamente.', variant: 'destructive' });
       return null;
@@ -123,7 +139,7 @@ export function useCostCenters() {
 
   const remove = useCallback(async (id: string) => {
     try {
-      await apiService.deleteCostCenter(id);
+      await deleteCostCenter(id);
       setState((s) => ({ ...s, items: s.items.filter((it) => it.id !== id) }));
       toast({ title: 'Centro de custo removido', description: 'Registro excluído com sucesso.' });
       return true;

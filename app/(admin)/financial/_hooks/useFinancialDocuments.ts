@@ -1,20 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import apiService from '@/services/api';
 import { toast } from '@/components/ui/use-toast';
+import { listFinancialDocuments, createFinancialDocument, updateFinancialDocument, deleteFinancialDocument } from '@/services/financialService';
+import type { FinancialDocument } from '@/types';
 
-export interface FinancialDocument {
-  id: string;
-  type?: string | null; // invoice, receipt, payment, etc.
-  description?: string | null;
-  amount?: number | null;
-  date?: string | null;
-  due_date?: string | null;
-  status?: string | null; // pending, paid, canceled
-  partner_id?: string | null;
-  partner_name?: string | null;
-  segment_id?: string | null;
-  payment_method_id?: string | null;
-}
+// Usando a interface FinancialDocument importada de @/types
 
 interface State {
   items: FinancialDocument[];
@@ -36,25 +25,28 @@ const PAGE_SIZE = 20;
 // Normalize backend row (DB schema) to frontend shape expected by UI
 function normalizeFinancialDocument(row: any): FinancialDocument {
   const direction: string | undefined = row?.direction;
-  const mappedType =
-    row?.type ?? (direction === 'payable' ? 'expense' : direction === 'receivable' ? 'income' : null);
-  const partnerName =
-    (row.partner && typeof row.partner === 'object' ? row.partner.name : undefined)
+  const documentType =
+    row?.document_type ?? row?.type ?? (direction === 'payable' ? 'expense' : direction === 'receivable' ? 'income' : 'other');
+  const entityName =
+    (row.entity && typeof row.entity === 'object' ? row.entity.name : undefined)
+    ?? row.entity_name
+    ?? (typeof row.entity === 'string' ? row.entity : undefined)
     ?? row.partner_name
-    ?? (typeof row.partner === 'string' ? row.partner : undefined)
     ?? null;
   return {
     id: row.id,
-    type: mappedType,
-    description: row.description ?? null,
-    amount: row.amount != null ? Number(row.amount) : null,
-    date: row.date ?? row.issue_date ?? null,
-    due_date: row.due_date ?? null,
-    status: row.status === 'open' ? 'pending' : row.status ?? null,
-    partner_id: row.partner_id ?? null,
-    partner_name: partnerName,
-    segment_id: row.segment_id ?? null,
-    payment_method_id: row.payment_method_id ?? null,
+    document_number: row.document_number ?? '',
+    document_type: documentType,
+    issue_date: row.issue_date ?? row.date ?? '',
+    due_date: row.due_date ?? '',
+    amount: row.amount != null ? Number(row.amount) : 0,
+    status: row.status === 'open' ? 'pending' : row.status ?? '',
+    entity_id: row.entity_id ?? row.partner_id ?? null,
+    entity_name: entityName,
+    entity_type: row.entity_type ?? 'customer',
+    notes: row.notes ?? row.description ?? null,
+    payment_method: row.payment_method ?? null,
+    category: row.category ?? null
   };
 }
 
@@ -62,9 +54,9 @@ export function useFinancialDocuments() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
-    const res = await apiService.getFinancialDocuments({ page, pageSize: PAGE_SIZE });
-    const list = (res as any).financialDocuments || (res as any).data || [];
-    return (list as any[]).map(normalizeFinancialDocument);
+    const response = await listFinancialDocuments({ page, pageSize: PAGE_SIZE });
+    const list = response.data?.financialDocuments || [];
+    return list.map(normalizeFinancialDocument);
   }, []);
 
   const load = useCallback(async (reset: boolean = false) => {
@@ -99,11 +91,14 @@ export function useFinancialDocuments() {
 
   const create = useCallback(async (data: Partial<FinancialDocument>) => {
     try {
-      const res = await apiService.createFinancialDocument(data);
-      const raw = (res as any).financialDocument || (res as any).data || res;
-      const item = normalizeFinancialDocument(raw);
+      const response = await createFinancialDocument(data);
+      if (!response.data?.financialDocument) {
+        toast({ title: 'Erro ao criar documento', description: 'Dados não retornados pelo servidor.', variant: 'destructive' });
+        return null;
+      }
+      const item = normalizeFinancialDocument(response.data.financialDocument);
       setState((s) => ({ ...s, items: [item, ...s.items] }));
-      toast({ title: 'Documento criado', description: item?.description || 'Registro criado.' });
+      toast({ title: 'Documento criado', description: item?.notes || 'Registro criado.' });
       return item;
     } catch (e) {
       toast({ title: 'Erro ao criar documento', description: 'Verifique os dados informados.', variant: 'destructive' });
@@ -113,14 +108,17 @@ export function useFinancialDocuments() {
 
   const update = useCallback(async (id: string, data: Partial<FinancialDocument>) => {
     try {
-      const res = await apiService.updateFinancialDocument(id, data);
-      const raw = (res as any).financialDocument || (res as any).data || res;
-      const item = normalizeFinancialDocument(raw);
+      const response = await updateFinancialDocument(id, data);
+      if (!response.data?.financialDocument) {
+        toast({ title: 'Erro ao atualizar documento', description: 'Dados não retornados pelo servidor.', variant: 'destructive' });
+        return null;
+      }
+      const item = normalizeFinancialDocument(response.data.financialDocument);
       setState((s) => ({
         ...s,
         items: s.items.map((it) => (it.id === id ? item : it)),
       }));
-      toast({ title: 'Documento atualizado', description: item?.description || 'Registro atualizado.' });
+      toast({ title: 'Documento atualizado', description: item?.notes || 'Registro atualizado.' });
       return item;
     } catch (e) {
       toast({ title: 'Erro ao atualizar documento', description: 'Tente novamente.', variant: 'destructive' });
@@ -130,7 +128,10 @@ export function useFinancialDocuments() {
 
   const remove = useCallback(async (id: string) => {
     try {
-      await apiService.deleteFinancialDocument(id);
+      const response = await deleteFinancialDocument(id);
+      if (response.error) {
+        throw new Error(typeof response.error === 'string' ? response.error : 'Erro ao excluir');
+      }
       setState((s) => ({ ...s, items: s.items.filter((it) => it.id !== id) }));
       toast({ title: 'Documento removido', description: 'Registro excluído com sucesso.' });
       return true;

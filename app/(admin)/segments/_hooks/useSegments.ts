@@ -29,7 +29,8 @@ export function useSegments({ pageSize = 20 }: UseSegmentsOptions = {}): UseSegm
     setLoading(true)
     try {
       const params = { page: pageNum, limit: pageSize }
-      const data: Segment[] = await listSegments(params)
+      const response = await listSegments(params)
+      const data = response.data?.segments || []
 
       setSegments((prev) => (append ? [...prev, ...data] : data))
       setHasMore(data.length === pageSize)
@@ -50,10 +51,15 @@ export function useSegments({ pageSize = 20 }: UseSegmentsOptions = {}): UseSegm
 
   const create = useCallback(async (payload: SegmentPayload) => {
     try {
-      const segment = await createSegment(payload)
-      setSegments((prev) => [...prev, segment])
-      toast({ title: 'Sucesso', description: 'Segmento criado com sucesso' })
-      return segment as Segment
+      const response = await createSegment(payload)
+      const segment = response.data?.segment
+      if (segment) {
+        setSegments((prev) => [...prev, segment])
+        toast({ title: 'Sucesso', description: 'Segmento criado com sucesso' })
+        return segment
+      }
+      toast({ title: 'Aviso', description: 'Segmento criado, mas não foi possível obter os detalhes' })
+      return {} as Segment
     } catch (err) {
       console.error('Erro ao criar segmento:', err)
       toast({ title: 'Erro', description: 'Falha ao criar segmento', variant: 'destructive' })
@@ -63,10 +69,15 @@ export function useSegments({ pageSize = 20 }: UseSegmentsOptions = {}): UseSegm
 
   const update = useCallback(async (id: string, payload: SegmentPayload) => {
     try {
-      const updated = await updateSegment(id, payload)
-      setSegments((prev) => prev.map((s) => (s.id === id ? (updated as Segment) : s)))
-      toast({ title: 'Sucesso', description: 'Segmento atualizado com sucesso' })
-      return updated as Segment
+      const response = await updateSegment(id, payload)
+      const segment = response.data?.segment
+      if (segment) {
+        setSegments((prev) => prev.map((s) => (s.id === id ? segment : s)))
+        toast({ title: 'Sucesso', description: 'Segmento atualizado com sucesso' })
+        return segment
+      }
+      toast({ title: 'Aviso', description: 'Segmento atualizado, mas não foi possível obter os detalhes' })
+      return {} as Segment
     } catch (err) {
       console.error('Erro ao atualizar segmento:', err)
       toast({ title: 'Erro', description: 'Falha ao atualizar segmento', variant: 'destructive' })

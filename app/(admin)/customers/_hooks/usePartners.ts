@@ -1,25 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import apiService from '@/services/api';
 import { toast } from '@/components/ui/use-toast';
+import { listPartners, createPartner, updatePartner, deletePartner } from '@/services/partnersService';
+import type { Partner } from '@/types';
 
-// Minimal Customer type aligned to apiService.getCustomers mapping
-export interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  cep: string;
-  cpf: string;
-  cnpj: string;
-  status: string;
-  segment_id: string | null;
-}
+// Usando a interface Partner importada de @/types
 
 export interface UsePartnersState {
-  items: Customer[];
+  items: Partner[];
   loading: boolean;
   page: number;
   hasMore: boolean;
@@ -28,8 +15,8 @@ export interface UsePartnersState {
 export interface UsePartnersApi {
   load: (reset?: boolean) => Promise<void>;
   loadMore: () => Promise<void>;
-  create: (data: Partial<Customer>) => Promise<Customer | null>;
-  update: (id: string, data: Partial<Customer>) => Promise<Customer | null>;
+  create: (data: Partial<Partner>) => Promise<Partner | null>;
+  update: (id: string, data: Partial<Partner>) => Promise<Partner | null>;
   remove: (id: string) => Promise<boolean>;
 }
 
@@ -42,16 +29,20 @@ export function usePartners() {
     setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
     try {
       const page = reset ? 1 : state.page;
-      const { customers } = await apiService.getCustomers({ page, pageSize: PAGE_SIZE });
+      const response = await listPartners({ page, pageSize: PAGE_SIZE });
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      const partners = response.data?.partners || [];
       setState((s) => ({
-        items: reset ? customers : [...s.items, ...customers],
+        items: reset ? partners : [...s.items, ...partners],
         loading: false,
         page,
-        hasMore: customers.length === PAGE_SIZE,
+        hasMore: partners.length === PAGE_SIZE,
       }));
     } catch (e) {
       setState((s) => ({ ...s, loading: false }));
-      toast({ title: 'Falha ao carregar clientes', description: 'Tente novamente em instantes.', variant: 'destructive' });
+      toast({ title: 'Falha ao carregar parceiros', description: 'Tente novamente em instantes.', variant: 'destructive' });
     }
   }, [state.page]);
 
@@ -60,50 +51,76 @@ export function usePartners() {
     const nextPage = state.page + 1;
     setState((s) => ({ ...s, page: nextPage }));
     // After updating page, trigger load for next page
-    const { customers } = await apiService.getCustomers({ page: nextPage, pageSize: PAGE_SIZE });
-    setState((s) => ({
-      ...s,
-      items: [...s.items, ...customers],
-      hasMore: customers.length === PAGE_SIZE,
-      loading: false,
-    }));
+    try {
+      const response = await listPartners({ page: nextPage, pageSize: PAGE_SIZE });
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      const partners = response.data?.partners || [];
+      setState((s) => ({
+        ...s,
+        items: [...s.items, ...partners],
+        hasMore: partners.length === PAGE_SIZE,
+        loading: false,
+      }));
+    } catch (e) {
+      setState((s) => ({ ...s, loading: false }));
+      toast({ title: 'Falha ao carregar mais parceiros', description: 'Tente novamente em instantes.', variant: 'destructive' });
+    }
   }, [state.loading, state.hasMore, state.page]);
 
-  const create = useCallback(async (data: Partial<Customer>) => {
+  const create = useCallback(async (data: Partial<Partner>) => {
     try {
-      const { customer } = await apiService.createCustomer(data);
-      setState((s) => ({ ...s, items: [customer, ...s.items] }));
-      toast({ title: 'Cliente criado', description: customer?.name || 'Registro criado.' });
-      return customer as Customer;
+      const response = await createPartner(data);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      const partner = response.data?.partner;
+      if (partner) {
+        setState((s) => ({ ...s, items: [partner, ...s.items] }));
+        toast({ title: 'Parceiro criado', description: partner.name || 'Registro criado.' });
+        return partner;
+      }
+      return null;
     } catch (e) {
-      toast({ title: 'Erro ao criar cliente', description: 'Verifique os dados informados.', variant: 'destructive' });
+      toast({ title: 'Erro ao criar parceiro', description: 'Verifique os dados informados.', variant: 'destructive' });
       return null;
     }
   }, []);
 
-  const update = useCallback(async (id: string, data: Partial<Customer>) => {
+  const update = useCallback(async (id: string, data: Partial<Partner>) => {
     try {
-      const { customer } = await apiService.updateCustomer(id, data);
-      setState((s) => ({
-        ...s,
-        items: s.items.map((it) => (it.id === id ? customer : it)),
-      }));
-      toast({ title: 'Cliente atualizado', description: customer?.name || 'Registro atualizado.' });
-      return customer as Customer;
+      const response = await updatePartner(id, data);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      const partner = response.data?.partner;
+      if (partner) {
+        setState((s) => ({
+          ...s,
+          items: s.items.map((it) => (it.id === id ? partner : it)),
+        }));
+        toast({ title: 'Parceiro atualizado', description: partner.name || 'Registro atualizado.' });
+        return partner;
+      }
+      return null;
     } catch (e) {
-      toast({ title: 'Erro ao atualizar cliente', description: 'Tente novamente.', variant: 'destructive' });
+      toast({ title: 'Erro ao atualizar parceiro', description: 'Tente novamente.', variant: 'destructive' });
       return null;
     }
   }, []);
 
   const remove = useCallback(async (id: string) => {
     try {
-      await apiService.deleteCustomer(id);
+      const response = await deletePartner(id);
+      if (response.error) {
+        throw new Error(response.error);
+      }
       setState((s) => ({ ...s, items: s.items.filter((it) => it.id !== id) }));
-      toast({ title: 'Cliente removido', description: 'Registro excluído com sucesso.' });
+      toast({ title: 'Parceiro removido', description: 'Registro excluído com sucesso.' });
       return true;
     } catch (e) {
-      toast({ title: 'Erro ao remover cliente', description: 'Tente novamente.', variant: 'destructive' });
+      toast({ title: 'Erro ao remover parceiro', description: 'Tente novamente.', variant: 'destructive' });
       return false;
     }
   }, []);

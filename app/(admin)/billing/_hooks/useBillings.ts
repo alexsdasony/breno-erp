@@ -1,22 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import apiService from '@/services/api';
 import { toast } from '@/components/ui/use-toast';
+import { listBillings, createBilling, updateBilling, deleteBilling } from '@/services/billingService';
+import type { Billing, BillingPayload } from '@/types';
 
-export interface BillingItem {
-  id: string;
-  customer_id?: string | null;
-  customer_name?: string;
-  invoice_number?: string;
-  issue_date?: string;
-  due_date?: string;
-  amount?: number;
-  tax_amount?: number;
-  total_amount?: number;
-  status?: string;
-  payment_method?: string | null;
-  notes?: string | null;
-  segment_id?: string | null;
-}
+// Usando a interface Billing do sistema para manter consistência
+export type BillingItem = Billing;
 
 interface State {
   items: BillingItem[];
@@ -28,8 +16,8 @@ interface State {
 interface Api {
   load: (reset?: boolean) => Promise<void>;
   loadMore: () => Promise<void>;
-  create: (data: Partial<BillingItem>) => Promise<BillingItem | null>;
-  update: (id: string, data: Partial<BillingItem>) => Promise<BillingItem | null>;
+  create: (data: BillingPayload) => Promise<BillingItem | null>;
+  update: (id: string, data: BillingPayload) => Promise<BillingItem | null>;
   remove: (id: string) => Promise<boolean>;
 }
 
@@ -39,8 +27,8 @@ export function useBillings() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
-    const res = await apiService.getBillings({ page, pageSize: PAGE_SIZE });
-    const list = (res as any).billings || (res as any).data || [];
+    const response = await listBillings({ page, pageSize: PAGE_SIZE });
+    const list = response.data?.billings || [];
     return list as BillingItem[];
   }, []);
 
@@ -74,43 +62,61 @@ export function useBillings() {
     }));
   }, [state.loading, state.hasMore, state.page, fetchPage]);
 
-  const create = useCallback(async (data: Partial<BillingItem>) => {
+  const create = useCallback(async (data: BillingPayload) => {
     try {
-      const res = await apiService.createBilling(data);
-      const item = (res as any).billing || (res as any).data || res;
-      setState((s) => ({ ...s, items: [item as BillingItem, ...s.items] }));
-      toast({ title: 'Cobrança criada', description: (item as BillingItem)?.invoice_number || 'Registro criado.' });
-      return item as BillingItem;
+      const response = await createBilling(data);
+      if (response.error) {
+        throw new Error(typeof response.error === 'string' ? response.error : 'Erro ao criar cobrança');
+      }
+      const item = response.data?.billing;
+      if (item) {
+        setState((s) => ({ ...s, items: [item, ...s.items] }));
+        toast({ title: 'Cobrança criada', description: item.invoice_number || 'Registro criado.' });
+        return item;
+      }
+      return null;
     } catch (e) {
-      toast({ title: 'Erro ao criar cobrança', description: 'Verifique os dados informados.', variant: 'destructive' });
+      const errorMessage = e instanceof Error ? e.message : 'Verifique os dados informados.';
+      toast({ title: 'Erro ao criar cobrança', description: errorMessage, variant: 'destructive' });
       return null;
     }
   }, []);
 
-  const update = useCallback(async (id: string, data: Partial<BillingItem>) => {
+  const update = useCallback(async (id: string, data: BillingPayload) => {
     try {
-      const res = await apiService.updateBilling(id, data);
-      const item = (res as any).billing || (res as any).data || res;
-      setState((s) => ({
-        ...s,
-        items: s.items.map((it) => (it.id === id ? (item as BillingItem) : it)),
-      }));
-      toast({ title: 'Cobrança atualizada', description: (item as BillingItem)?.invoice_number || 'Registro atualizado.' });
-      return item as BillingItem;
+      const response = await updateBilling(id, data);
+      if (response.error) {
+        throw new Error(typeof response.error === 'string' ? response.error : 'Erro ao atualizar cobrança');
+      }
+      const item = response.data?.billing;
+      if (item) {
+        setState((s) => ({
+          ...s,
+          items: s.items.map((it) => (it.id === id ? item : it)),
+        }));
+        toast({ title: 'Cobrança atualizada', description: item.invoice_number || 'Registro atualizado.' });
+        return item;
+      }
+      return null;
     } catch (e) {
-      toast({ title: 'Erro ao atualizar cobrança', description: 'Tente novamente.', variant: 'destructive' });
+      const errorMessage = e instanceof Error ? e.message : 'Tente novamente.';
+      toast({ title: 'Erro ao atualizar cobrança', description: errorMessage, variant: 'destructive' });
       return null;
     }
   }, []);
 
   const remove = useCallback(async (id: string) => {
     try {
-      await apiService.deleteBilling(id);
+      const response = await deleteBilling(id);
+      if (response.error) {
+        throw new Error(typeof response.error === 'string' ? response.error : 'Erro ao remover cobrança');
+      }
       setState((s) => ({ ...s, items: s.items.filter((it) => it.id !== id) }));
       toast({ title: 'Cobrança removida', description: 'Registro excluído com sucesso.' });
       return true;
     } catch (e) {
-      toast({ title: 'Erro ao remover cobrança', description: 'Tente novamente.', variant: 'destructive' });
+      const errorMessage = e instanceof Error ? e.message : 'Tente novamente.';
+      toast({ title: 'Erro ao remover cobrança', description: errorMessage, variant: 'destructive' });
       return false;
     }
   }, []);

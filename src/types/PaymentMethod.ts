@@ -1,12 +1,12 @@
-export type PaymentMethod = {
-  id: string
+import type { ID, Timestamped } from './common'
+
+export interface PaymentMethod extends Timestamped {
+  id: ID
   name: string
   nfe_code?: string | null
-  created_at?: string
-  updated_at?: string
 }
 
-export type PaymentMethodPayload = {
-  name: string
+export interface PaymentMethodPayload {
+  name?: string
   nfe_code?: string | null
 }

@@ -94,15 +94,11 @@ export default function CostCentersView() {
     const totalCostCenters = filteredCostCenters.length;
     const activeCostCenters = filteredCostCenters.filter((cc: any) => cc.status === 'active').length;
     const inactiveCostCenters = filteredCostCenters.filter((cc: any) => cc.status === 'inactive').length;
-    const totalBudget = filteredCostCenters.reduce((sum: number, cc: any) => sum + (cc.budget || 0), 0);
-    const averageBudget = totalCostCenters > 0 ? totalBudget / totalCostCenters : 0;
     
     return {
       totalCostCenters,
       activeCostCenters,
-      inactiveCostCenters,
-      totalBudget,
-      averageBudget
+      inactiveCostCenters
     };
   }, [filteredCostCenters]);
 
@@ -294,18 +290,12 @@ export default function CostCentersView() {
         name: trimmed,
         description: description || null,
         // Não alterar segmento no update pelo formulário de edição
-        budget: budget ? parseFloat(budget) : 0,
-        status,
-        manager_id: managerId || null,
       });
     } else {
       await create({
         name: trimmed,
         description: description || null,
         segment_id: segmentId || null,
-        budget: budget ? parseFloat(budget) : 0,
-        status,
-        manager_id: managerId || null,
       });
     }
     // Reset
@@ -374,7 +364,7 @@ export default function CostCentersView() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
           <motion.div 
             whileHover={{ scale: 1.02 }}
@@ -415,31 +405,7 @@ export default function CostCentersView() {
             </div>
           </motion.div>
 
-          <motion.div 
-            whileHover={{ scale: 1.02 }}
-            className="bg-gray-800 p-6 rounded-xl border border-gray-700 hover:border-purple-500/50 transition-all duration-200"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Orçamento Total</p>
-                <p className="text-2xl font-bold text-purple-400">{formatCurrency(kpis.totalBudget)}</p>
-              </div>
-              <DollarSign className="w-8 h-8 text-purple-400" />
-            </div>
-          </motion.div>
 
-          <motion.div 
-            whileHover={{ scale: 1.02 }}
-            className="bg-gray-800 p-6 rounded-xl border border-gray-700 hover:border-indigo-500/50 transition-all duration-200"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Orçamento Médio</p>
-                <p className="text-2xl font-bold text-indigo-400">{formatCurrency(kpis.averageBudget)}</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-indigo-400" />
-            </div>
-          </motion.div>
         </motion.div>
 
         {/* Filters and Search */}
@@ -518,7 +484,7 @@ export default function CostCentersView() {
                   <p id="costCenterName-error" className="mt-1 text-xs text-red-400">{nameError}</p>
                 )}
               </div>
-              <div className="md:col-span-4">
+              <div className="md:col-span-6">
                 <label htmlFor="costCenterSegment" className="block text-sm font-medium mb-1">Segmento{editingId ? ' (não alterável na edição)' : ''}</label>
                 <select
                   id="costCenterSegment"
@@ -550,31 +516,8 @@ export default function CostCentersView() {
                   rows={3}
                 />
               </div>
-              <div className="md:col-span-4">
-                <label htmlFor="costCenterBudget" className="block text-sm font-medium mb-1">Orçamento (R$)</label>
-                <input
-                  id="costCenterBudget"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  onBlur={() => {
-                    if (budget) {
-                      const b = parseFloat(budget);
-                      setBudgetError(isNaN(b) || b < 0 ? 'Orçamento inválido.' : null);
-                    } else setBudgetError(null);
-                  }}
-                  className={`w-full p-3 bg-muted border rounded-lg focus:ring-2 ${budgetError ? 'border-red-500 focus:ring-red-500' : 'border-border focus:ring-primary'}`}
-                  aria-invalid={!!budgetError}
-                  aria-describedby="costCenterBudget-error"
-                  placeholder="0,00"
-                />
-                {budgetError && (
-                  <p id="costCenterBudget-error" className="mt-1 text-xs text-red-400">{budgetError}</p>
-                )}
-              </div>
-              <div className="md:col-span-4">
+
+              <div className="md:col-span-6">
                 <label htmlFor="costCenterStatus" className="block text-sm font-medium mb-1">Status</label>
                 <select
                   id="costCenterStatus"
@@ -635,7 +578,7 @@ export default function CostCentersView() {
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Descrição</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Gestor</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Segmento</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Orçamento</th>
+
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Status</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Ações</th>
                 </tr>
@@ -684,12 +627,7 @@ export default function CostCentersView() {
                         ) : '-'}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-green-400" />
-                        <span className="font-semibold text-green-400">{formatCurrency(cc.budget)}</span>
-                      </div>
-                    </td>
+
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {getStatusIcon(cc.status)}

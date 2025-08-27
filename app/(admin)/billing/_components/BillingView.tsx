@@ -48,7 +48,7 @@ export default function BillingView() {
   const getStatusWithDueDate = (billing: any) => {
     const status = billing.status?.toLowerCase() || 'pendente';
     if (status === 'pendente') {
-      const dueDate = new Date(billing.due_date || billing.dueDate);
+      const dueDate = new Date(billing.due_date);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       if (dueDate < today) {
@@ -67,8 +67,9 @@ export default function BillingView() {
   // Filtros
   const filteredItems = itemsWithStatus.filter(billing => {
     const matchesSearch = !searchTerm || 
-      (billing.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (billing.status || '').toLowerCase().includes(searchTerm.toLowerCase());
+        (billing.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (billing.status || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (billing.invoice_number || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || billing.status?.toLowerCase() === filterStatus.toLowerCase();
     return matchesSearch && matchesStatus;
   });
@@ -99,12 +100,12 @@ export default function BillingView() {
   const handleEdit = (billing: any) => {
     setEditingBilling(billing);
     setFormData({
-      customerId: billing.customer_id || '',
+      customerId: billing.customerId || '',
       customerName: billing.customer_name || '',
       amount: billing.total_amount || billing.amount || '',
       dueDate: billing.due_date || '',
       status: billing.status || 'Pendente',
-      description: billing.description || ''
+      description: billing.notes || billing.description || ''
     });
     setShowForm(true);
   };
@@ -355,7 +356,7 @@ export default function BillingView() {
                     {formatCurrency(Number(billing.total_amount || billing.amount || 0))}
                   </td>
                   <td className="p-3 text-center text-sm">
-                    {formatDate(billing?.due_date ?? Date.now().toString())}
+                    {formatDate(billing.due_date || new Date().toISOString())}
                   </td>
                   <td className="p-3 text-center">
                     <div className={`flex items-center justify-center ${getStatusColor(billing.status)}`}>

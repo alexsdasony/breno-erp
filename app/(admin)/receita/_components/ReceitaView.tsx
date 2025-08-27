@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import apiService from '@/services/api';
+import receitaService from '@/services/receitaService';
 
 export default function ReceitaView() {
   const [cpf, setCpf] = useState('');
@@ -13,8 +13,8 @@ export default function ReceitaView() {
   const consultarCPF = async () => {
     setLoading(true);
     try {
-      const res = await apiService.consultarReceita(cpf);
-      setResult((res as any).data || res);
+      const res = await receitaService.consultarCPF(cpf);
+      setResult(res);
     } catch (e) {
       setResult({ error: 'Falha na consulta CPF' });
     } finally {
@@ -25,8 +25,8 @@ export default function ReceitaView() {
   const consultarCNPJ = async () => {
     setLoading(true);
     try {
-      const res = await apiService.consultarReceitaCNPJ(cnpj);
-      setResult((res as any).data || res);
+      const res = await receitaService.consultarCNPJ(cnpj);
+      setResult(res);
     } catch (e) {
       setResult({ error: 'Falha na consulta CNPJ' });
     } finally {

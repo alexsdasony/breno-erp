@@ -32,7 +32,8 @@ export function useNFe({ pageSize = 20, segmentId = null }: UseNFeOptions = {}):
       const params: Record<string, any> = { page: pageNum, limit: pageSize }
       if (segmentId) params.segment_id = segmentId
 
-      const data: NFe[] = await listNFes(params)
+      const response = await listNFes(params)
+      const data = response.data?.nfes || []
       setNfes((prev) => (append ? [...prev, ...data] : data))
       setHasMore(data.length === pageSize)
       setPage(pageNum)
@@ -52,9 +53,14 @@ export function useNFe({ pageSize = 20, segmentId = null }: UseNFeOptions = {}):
 
   const create = useCallback(async (payload: NFePayload) => {
     try {
-      const nfe = await createNFe(payload)
+      const response = await createNFe(payload)
+      if (!response.data?.nfe) {
+        toast({ title: 'Erro ao criar NF-e', description: 'Dados não retornados pelo servidor.', variant: 'destructive' })
+        return null
+      }
+      const nfe = response.data.nfe
       setNfes((prev) => [...prev, nfe])
-      toast({ title: 'NF-e criada', description: nfe.invoiceNumber || 'Registro criado.' })
+      toast({ title: 'NF-e criada', description: nfe.invoice_number || 'Registro criado.' })
       return nfe
     } catch (err) {
       console.error('Erro ao criar NF-e:', err)
@@ -65,9 +71,14 @@ export function useNFe({ pageSize = 20, segmentId = null }: UseNFeOptions = {}):
 
   const update = useCallback(async (id: string, payload: NFePayload) => {
     try {
-      const updated = await updateNFe(id, payload)
+      const response = await updateNFe(id, payload)
+      if (!response.data?.nfe) {
+        toast({ title: 'Erro ao atualizar NF-e', description: 'Dados não retornados pelo servidor.', variant: 'destructive' })
+        return null
+      }
+      const updated = response.data.nfe
       setNfes((prev) => prev.map((item) => (item.id === id ? updated : item)))
-      toast({ title: 'NF-e atualizada', description: updated.invoiceNumber || 'Registro atualizado.' })
+      toast({ title: 'NF-e atualizada', description: updated.invoice_number || 'Registro atualizado.' })
       return updated
     } catch (err) {
       console.error('Erro ao atualizar NF-e:', err)
@@ -78,7 +89,10 @@ export function useNFe({ pageSize = 20, segmentId = null }: UseNFeOptions = {}):
 
   const remove = useCallback(async (id: string) => {
     try {
-      await deleteNFe(id)
+      const response = await deleteNFe(id)
+      if (response.error) {
+        throw new Error(typeof response.error === 'string' ? response.error : 'Erro ao excluir')
+      }
       setNfes((prev) => prev.filter((item) => item.id !== id))
       toast({ title: 'NF-e removida', description: 'Registro excluído com sucesso.' })
       return true

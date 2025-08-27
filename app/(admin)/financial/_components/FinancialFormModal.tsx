@@ -128,9 +128,9 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
     setLoadingPartners(true);
     const t = window.setTimeout(async () => {
       try {
-        const res: any = await apiService.getPartners({ q, page: 1, pageSize: 10 });
-        const list = (res.partners || res.data || []) as Array<any>;
-        setPartnerOptions(list.map((p) => ({ id: p.id, name: p.name })));
+        const response = await import('@/services/partnersService').then(module => module.listPartners({ q, page: 1, pageSize: 10 }));
+        const partners = response.data?.partners || [];
+        setPartnerOptions(partners.map((p) => ({ id: p.id, name: p.name })));
       } catch {
         setPartnerOptions([]);
       } finally {

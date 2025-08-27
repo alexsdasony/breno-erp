@@ -28,18 +28,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
 import { useAppData } from '@/hooks/useAppData';
-import apiService from '@/services/api';
+import { getUsers, createUser, updateUser, deleteUser, resetPassword as resetUserPassword, UserExtended as UserType } from '@/services/usersService';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'user';
-  status: 'ativo' | 'inativo';
-  segment_id: string | null;
-  created_at: string;
-  updated_at: string;
-  last_login?: string;
+// Usando a interface User importada do serviço como UserType
+interface User extends UserType {
   segment?: {
     id: string;
     name: string;
@@ -76,7 +68,7 @@ function useUsers(): UseUsersState & UseUsersApi {
     setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
     try {
       const page = reset ? 1 : state.page;
-      const response = await apiService.getUsers({ page, pageSize: PAGE_SIZE });
+      const response = await getUsers({ page, pageSize: PAGE_SIZE });
       const users = response.data?.users || [];
       setState((s) => ({
         items: reset ? users : [...s.items, ...users],
@@ -99,7 +91,7 @@ function useUsers(): UseUsersState & UseUsersApi {
     const nextPage = state.page + 1;
     setState((s) => ({ ...s, page: nextPage }));
     try {
-      const response = await apiService.getUsers({ page: nextPage, pageSize: PAGE_SIZE });
+      const response = await getUsers({ page: nextPage, pageSize: PAGE_SIZE });
       const users = response.data?.users || [];
       setState((s) => ({
         ...s,
@@ -119,12 +111,14 @@ function useUsers(): UseUsersState & UseUsersApi {
 
   const create = React.useCallback(async (data: Partial<User>) => {
     try {
-      const response = await apiService.createUser(data);
-      const user = response.data?.user || response.data;
-      setState((s) => ({ ...s, items: [user, ...s.items] }));
+      const response = await createUser(data);
+      const user = response.data?.user;
+      if (user) {
+        setState((s) => ({ ...s, items: [user, ...s.items] }));
+      }
       toast({
         title: 'Usuário criado',
-        description: user?.name || 'Registro criado com sucesso.'
+        description: user ? user.name || 'Registro criado com sucesso.' : 'Registro criado com sucesso.'
       });
       return user as User;
     } catch (e) {
@@ -139,15 +133,17 @@ function useUsers(): UseUsersState & UseUsersApi {
 
   const update = React.useCallback(async (id: string, data: Partial<User>) => {
     try {
-      const response = await apiService.updateUser(id, data);
-      const user = response.data?.user || response.data;
-      setState((s) => ({
-        ...s,
-        items: s.items.map((item) => (item.id === id ? user : item)),
-      }));
+      const response = await updateUser(id, data);
+      const user = response.data?.user;
+      if (user) {
+        setState((s) => ({
+          ...s,
+          items: s.items.map((item) => (item.id === id ? user : item)),
+        }));
+      }
       toast({
         title: 'Usuário atualizado',
-        description: user?.name || 'Registro atualizado com sucesso.'
+        description: user ? user.name || 'Registro atualizado com sucesso.' : 'Registro atualizado com sucesso.'
       });
       return user as User;
     } catch (e) {
@@ -162,7 +158,7 @@ function useUsers(): UseUsersState & UseUsersApi {
 
   const remove = React.useCallback(async (id: string) => {
     try {
-      await apiService.deleteUser(id);
+      await deleteUser(id);
       setState((s) => ({
         ...s,
         items: s.items.filter((item) => item.id !== id),
@@ -184,7 +180,7 @@ function useUsers(): UseUsersState & UseUsersApi {
 
   const resetPassword = React.useCallback(async (id: string) => {
     try {
-      await apiService.updateUser(id, { password: 'senha123' });
+      await resetUserPassword(id);
       toast({
         title: 'Senha resetada',
         description: 'A senha foi resetada para "senha123".'
@@ -268,10 +264,11 @@ export default function UserManagement() {
   // Filtered users
   const filteredUsers = useMemo(() => {
     return items.filter((user: User) => {
-      const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           user.email.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-      const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+      const matchesSearch = (user.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (user.email || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const userStatus = user.is_active ? 'ativo' : 'inativo';
+      const matchesStatus = statusFilter === 'all' || userStatus === statusFilter;
+      const matchesRole = roleFilter === 'all' || (user.role || 'user') === roleFilter;
       return matchesSearch && matchesStatus && matchesRole;
     });
   }, [items, searchTerm, statusFilter, roleFilter]);
@@ -279,9 +276,9 @@ export default function UserManagement() {
   // KPIs
   const kpis = useMemo(() => {
     const totalUsers = items.length;
-    const activeUsers = items.filter(u => u.status === 'ativo').length;
-    const adminUsers = items.filter(u => u.role === 'admin').length;
-    const inactiveUsers = items.filter(u => u.status === 'inativo').length;
+    const activeUsers = items.filter(u => u.is_active).length;
+    const adminUsers = items.filter(u => (u.role || 'user') === 'admin').length;
+    const inactiveUsers = items.filter(u => !u.is_active).length;
     
     return {
       totalUsers,
@@ -322,11 +319,11 @@ export default function UserManagement() {
     setSelectedUser(user);
     setFormData({
       segment_id: user.segment_id || '',
-      name: user.name,
-      email: user.email,
+      name: user.name || '',
+      email: user.email || '',
       password: '',
-      role: user.role,
-      status: user.status
+      role: (user.role as 'user' | 'admin') || 'user',
+      status: (user.is_active ? 'ativo' : 'inativo') as 'ativo' | 'inativo'
     });
     setIsEditing(true);
     setShowForm(true);
@@ -351,7 +348,7 @@ export default function UserManagement() {
   };
 
   const handleResetPassword = async (user: User) => {
-    if (window.confirm(`Resetar senha do usuário ${user.name}?`)) {
+    if (window.confirm(`Resetar senha do usuário ${user.name || 'Sem nome'}?`)) {
       await resetPassword(user.id);
     }
   };
@@ -553,7 +550,7 @@ export default function UserManagement() {
                             <UserIcon className="w-4 h-4 text-white" />
                           </div>
                           <div>
-                            <p className="font-medium text-white">{user.name}</p>
+                            <p className="font-medium text-white">{user.name || 'Sem nome'}</p>
                           </div>
                         </div>
                       </td>
@@ -565,7 +562,7 @@ export default function UserManagement() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          {getRoleIcon(user.role)}
+                          {getRoleIcon(user.role || 'user')}
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             user.role === 'admin' 
                               ? 'bg-indigo-600 text-white' 
@@ -582,13 +579,13 @@ export default function UserManagement() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          {getStatusIcon(user.status)}
+                          {getStatusIcon(user.is_active ? 'ativo' : 'inativo')}
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            user.status === 'ativo' 
+                            user.is_active 
                               ? 'bg-green-600 text-white' 
                               : 'bg-red-600 text-white'
                           }`}>
-                            {user.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                            {user.is_active ? 'Ativo' : 'Inativo'}
                           </span>
                         </div>
                       </td>
@@ -596,7 +593,7 @@ export default function UserManagement() {
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-gray-400" />
                           <span className="text-gray-300">
-                            {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                            {user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : 'N/A'}
                           </span>
                         </div>
                       </td>
@@ -828,8 +825,8 @@ export default function UserManagement() {
                     <UserIcon className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-white">{selectedUser.name}</h4>
-                    <p className="text-sm text-gray-500">{selectedUser.email}</p>
+                    <h4 className="font-medium text-white">{selectedUser.name || 'Sem nome'}</h4>
+                    <p className="text-sm text-gray-500">{selectedUser.email || 'Sem email'}</p>
                   </div>
                 </div>
 
@@ -837,7 +834,7 @@ export default function UserManagement() {
                   <div>
                     <Label>Perfil</Label>
                     <div className="flex items-center gap-2 mt-1">
-                      {getRoleIcon(selectedUser.role)}
+                      {getRoleIcon(selectedUser.role || 'user')}
                       <span className="text-sm">
                         {selectedUser.role === 'admin' ? 'Administrador' : 'Usuário'}
                       </span>
@@ -846,7 +843,7 @@ export default function UserManagement() {
                   <div>
                     <Label>Status</Label>
                     <div className="flex items-center gap-2 mt-1">
-                      {getStatusIcon(selectedUser.status)}
+                      {getStatusIcon(selectedUser.is_active ? 'ativo' : 'inativo')}
                       <span className="text-sm">
                         {selectedUser.status === 'ativo' ? 'Ativo' : 'Inativo'}
                       </span>
@@ -861,7 +858,7 @@ export default function UserManagement() {
                   <div>
                     <Label>Criado em</Label>
                     <p className="text-sm text-gray-300 mt-1">
-                      {new Date(selectedUser.created_at).toLocaleDateString('pt-BR')}
+                      {selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleDateString('pt-BR') : 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -894,7 +891,7 @@ export default function UserManagement() {
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2">Confirmar Exclusão</h3>
                 <p className="text-gray-400 mb-6">
-                  Tem certeza que deseja excluir o usuário <strong>{selectedUser.name}</strong>?
+                  Tem certeza que deseja excluir o usuário <strong>{selectedUser.name || 'Sem nome'}</strong>?
                   Esta ação não pode ser desfeita.
                 </p>
                 <div className="flex gap-3">

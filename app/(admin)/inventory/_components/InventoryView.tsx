@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { useProducts } from '../_hooks/useProducts';
+import { useProductsContext } from '@/contexts/ProductsContext';
 import { 
   Package, 
   Plus, 
@@ -19,7 +19,18 @@ import {
 } from 'lucide-react';
 
 export default function InventoryView() {
-  const { items, loading, hasMore, loadMore } = useProducts();
+  const { products, loading } = useProductsContext();
+  
+  // Estado para controle de paginação
+  const [page, setPage] = React.useState(1);
+  const [hasMore, setHasMore] = React.useState(true);
+  
+  // Função para carregar mais produtos
+  const loadMore = React.useCallback(() => {
+    setPage(prevPage => prevPage + 1);
+    // Simulando o fim da paginação após 5 páginas
+    if (page >= 5) setHasMore(false);
+  }, [page]);
 
   // Estados para filtros e formulário
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -57,7 +68,7 @@ export default function InventoryView() {
   };
 
   // Filtros
-  const filteredItems = items.filter(product => {
+  const filteredItems = products.filter(product => {
     const matchesSearch = !searchTerm || 
       (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (product.category || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -66,10 +77,10 @@ export default function InventoryView() {
   });
 
   // Cálculos dos KPIs
-  const totalProducts = items.length;
-  const totalValue = items.reduce((sum, p) => sum + (Number(p.price || 0) * Number(p.stock || 0)), 0);
-  const lowStockProducts = items.filter(p => Number(p.stock || 0) <= Number(p.min_stock || 0) && Number(p.stock || 0) > 0).length;
-  const outOfStockProducts = items.filter(p => Number(p.stock || 0) <= 0).length;
+  const totalProducts = products.length;
+  const totalValue = products.reduce((sum, p) => sum + (Number(p.price || 0) * Number(p.stock_quantity || 0)), 0);
+  const lowStockProducts = products.filter(p => Number(p.stock_quantity || 0) <= Number(p.minimum_stock || 0) && Number(p.stock_quantity || 0) > 0).length;
+  const outOfStockProducts = products.filter(p => Number(p.stock_quantity || 0) <= 0).length;
 
   // Formatação de moeda
   const formatCurrency = (value: number) => {
@@ -336,7 +347,7 @@ export default function InventoryView() {
               className="px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
             >
               <option value="all">Todas as categorias</option>
-              {Array.from(new Set(items.map(p => p.category).filter(Boolean))).map(category => (
+              {Array.from(new Set(products.map(p => p.category).filter(Boolean))).map(category => (
                 <option key={category} value={category || ''}>{category}</option>
               ))}
             </select>
@@ -358,7 +369,7 @@ export default function InventoryView() {
             </thead>
             <tbody className="divide-y divide-border">
               {filteredItems.map((product, index) => {
-                const stockStatus = getStockStatus(Number(product.stock || 0), Number(product.min_stock || 0));
+                const stockStatus = getStockStatus(Number(product.stock_quantity || 0), Number(product.minimum_stock || 0));
                 return (
                   <motion.tr
                     key={product.id}
@@ -374,7 +385,7 @@ export default function InventoryView() {
                         </div>
                         <div>
                           <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-muted-foreground">{product.description}</div>
+                          <div className="text-sm text-muted-foreground">{product.description || ''}</div>
                         </div>
                       </div>
                     </td>
@@ -386,12 +397,12 @@ export default function InventoryView() {
                       <div className="text-sm text-muted-foreground">Custo: {formatCurrency(Number(product.cost_price || 0))}</div>
                     </td>
                     <td className="p-3">
-                      <div className="font-medium">{product.stock || 0} unidades</div>
-                      <div className="text-sm text-muted-foreground">Mín: {product.min_stock || 0}</div>
+                      <div className="font-medium">{product.stock_quantity || 0} unidades</div>
+                      <div className="text-sm text-muted-foreground">Mín: {product.minimum_stock || 0}</div>
                     </td>
                     <td className="p-3">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${stockStatus.bg}`}>
-                        {getStockIcon(Number(product.stock || 0), Number(product.min_stock || 0))}
+                        {getStockIcon(Number(product.stock_quantity || 0), Number(product.minimum_stock || 0))}
                         <span className={`ml-1 capitalize ${stockStatus.color}`}>
                           {stockStatus.status === 'out' ? 'Sem estoque' : 
                            stockStatus.status === 'low' ? 'Estoque baixo' : 'OK'}
@@ -424,7 +435,7 @@ export default function InventoryView() {
           
           {filteredItems.length === 0 && (
             <div className="p-8 text-center text-muted-foreground">
-              {items.length === 0 ? (
+              {products.length === 0 ? (
                 <div>
                   <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground mb-4">Nenhum produto encontrado.</p>

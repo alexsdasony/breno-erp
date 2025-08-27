@@ -4,6 +4,20 @@ import apiService from '@/services/api';
 import { calculateMetrics } from '@/utils/metrics';
 import { useAuth } from './useAuth';
 
+// Importar serviços específicos
+import { listTransactions } from '@/services/transactionsService';
+import { listProducts } from '@/services/productsService';
+import { listSales } from '@/services/salesService';
+import { getCustomers } from '@/services/customersService';
+import { listPartners } from '@/services/partnersService';
+import { listNFes } from '@/services/nfeService';
+import { listBillings } from '@/services/billingService';
+import { listCostCenters } from '@/services/costCentersService';
+import { listAccountsPayable } from '@/services/accountsPayableService';
+import { listFinancialDocuments } from '@/services/financialService';
+import { listIntegrations, type Integration } from '@/services/integrationsService';
+import { getUsers } from '@/services/usersService';
+
 interface AppData {
   transactions: any[];
   products: any[];
@@ -15,7 +29,7 @@ interface AppData {
   costCenters: any[];
   accountsPayable: any[];
   financialDocuments: any[];
-  integrations: {
+  integrations: Integration[] | {
     imobzi: { apiKey: string; enabled: boolean };
   };
   users: any[];
@@ -127,12 +141,12 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
             
             // Load segments for the user
             console.log('📋 Carregando segmentos...');
-            const segmentsResponse = await apiService.getSegments();
+            const segmentsResponse = await apiService.get('/segments');
             setSegments((segmentsResponse as any).segments || segmentsResponse.data?.segments || []);
             
             // Load users immediately to hydrate selects (manager, etc.)
             console.log('👥 Carregando usuários...');
-            const usersResponse = await apiService.getUsers({ segment_id: activeSegmentId ?? null });
+            const usersResponse = await getUsers({ segment_id: activeSegmentId ?? null });
             setData(prev => ({
               ...prev,
               users: usersResponse.data?.users || []
@@ -175,31 +189,31 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         integrationsResponse,
         usersResponse
       ] = await Promise.all([
-        apiService.getTransactions({ segment_id: activeSegmentId ?? null }),
-        apiService.getProducts({ segment_id: activeSegmentId ?? null }),
-        apiService.getSales({ segment_id: activeSegmentId ?? null }),
-        apiService.getCustomers({ segment_id: activeSegmentId ?? null }),
-        apiService.getPartners({ segment_id: activeSegmentId ?? null }),
-        apiService.getNFes({ segment_id: activeSegmentId ?? null }),
-        apiService.getBillings({ segment_id: activeSegmentId ?? null }),
-        apiService.getCostCenters({ segment_id: activeSegmentId ?? null }),
-        apiService.getAccountsPayable({ segment_id: activeSegmentId ?? null }),
-        apiService.getFinancialDocuments({ segment_id: activeSegmentId ?? null }),
-        apiService.getIntegrations(),
-        apiService.getUsers({ segment_id: activeSegmentId ?? null })
+        listTransactions({ segment_id: activeSegmentId ?? null }),
+        listProducts({ segment_id: activeSegmentId ?? null }),
+        listSales({ segment_id: activeSegmentId ?? null }),
+        getCustomers({ segment_id: activeSegmentId ?? null }),
+        listPartners({ segment_id: activeSegmentId ?? null }),
+        listNFes({ segment_id: activeSegmentId ?? null }),
+        listBillings({ segment_id: activeSegmentId ?? null }),
+        listCostCenters({ segment_id: activeSegmentId ?? null }),
+        listAccountsPayable({ segment_id: activeSegmentId ?? null }),
+        listFinancialDocuments({ segment_id: activeSegmentId ?? null }),
+        listIntegrations(),
+        getUsers({ segment_id: activeSegmentId ?? null })
       ]);
 
       setData({
         transactions: transactionsResponse.data?.transactions || [],
         products: productsResponse.data?.products || [],
         sales: salesResponse.data?.sales || [],
-        customers: customersResponse.customers || [],
+        customers: customersResponse.data?.customers || [],
         partners: partnersResponse.data?.partners || [],
-        nfeList: nfeResponse.data?.nfe || [],
+        nfeList: nfeResponse.data?.nfes || [],
         billings: billingsResponse.data?.billings || [],
-        costCenters: (costCentersResponse as any).costCenters || costCentersResponse.data?.cost_centers || [],
+        costCenters: costCentersResponse.data?.costCenters || [],
         accountsPayable: accountsPayableResponse.data?.accounts_payable || [],
-        financialDocuments: financialDocumentsResponse.data?.financial_documents || [],
+        financialDocuments: financialDocumentsResponse.data?.financialDocuments || [],
         integrations: integrationsResponse.data?.integrations || { imobzi: { apiKey: '', enabled: false } },
         users: usersResponse.data?.users || [],
         segments: segments // Use the existing segments state
@@ -249,18 +263,18 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         integrationsResponse,
         usersResponse
       ] = await Promise.all([
-        apiService.getTransactions({ segment_id: targetSegmentId }),
-        apiService.getProducts({ segment_id: targetSegmentId }),
-        apiService.getSales({ segment_id: targetSegmentId }),
-        apiService.getCustomers({ segment_id: targetSegmentId }),
-        apiService.getPartners({ segment_id: targetSegmentId }),
-        apiService.getNFes({ segment_id: targetSegmentId }),
-        apiService.getBillings({ segment_id: targetSegmentId }),
-        apiService.getCostCenters({ segment_id: targetSegmentId }),
-        apiService.getAccountsPayable({ segment_id: targetSegmentId }),
-        apiService.getFinancialDocuments({ segment_id: targetSegmentId }),
-        apiService.getIntegrations(),
-        apiService.getUsers({ segment_id: targetSegmentId })
+        listTransactions({ segment_id: targetSegmentId }),
+        listProducts({ segment_id: targetSegmentId }),
+        listSales({ segment_id: targetSegmentId }),
+        getCustomers({ segment_id: targetSegmentId }),
+        listPartners({ segment_id: targetSegmentId }),
+        listNFes({ segment_id: targetSegmentId }),
+        listBillings({ segment_id: targetSegmentId }),
+        listCostCenters({ segment_id: targetSegmentId }),
+        listAccountsPayable({ segment_id: targetSegmentId }),
+        listFinancialDocuments({ segment_id: targetSegmentId }),
+        listIntegrations(),
+        getUsers({ segment_id: targetSegmentId })
       ]);
 
       setData(prev => ({
@@ -268,13 +282,13 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         transactions: transactionsResponse.data?.transactions || [],
         products: productsResponse.data?.products || [],
         sales: salesResponse.data?.sales || [],
-        customers: customersResponse.customers || [],
+        customers: customersResponse.data?.customers || [],
         partners: partnersResponse.data?.partners || [],
-        nfeList: nfeResponse.data?.nfe || [],
+        nfeList: nfeResponse.data?.nfes || [],
         billings: billingsResponse.data?.billings || [],
-        costCenters: (costCentersResponse as any).costCenters || costCentersResponse.data?.cost_centers || [],
+        costCenters: costCentersResponse.data?.costCenters || [],
         accountsPayable: accountsPayableResponse.data?.accounts_payable || [],
-        financialDocuments: financialDocumentsResponse.data?.financial_documents || [],
+        financialDocuments: financialDocumentsResponse.data?.financialDocuments || [],
         integrations: integrationsResponse.data?.integrations || { imobzi: { apiKey: '', enabled: false } },
         users: usersResponse.data?.users || []
       }));

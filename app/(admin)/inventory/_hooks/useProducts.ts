@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import apiService from '@/services/api';
 import { toast } from '@/components/ui/use-toast';
+import { listProducts, createProduct, updateProduct, deleteProduct } from '@/services/productsService';
 
 export interface Product {
   id: string;
@@ -37,9 +37,8 @@ export function useProducts() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
-    const res = await apiService.getProducts({ page, pageSize: PAGE_SIZE });
-    const list = (res as any).products || (res as any).data || [];
-    return list as Product[];
+    const response = await listProducts({ page, pageSize: PAGE_SIZE });
+    return response.data?.products || [];
   }, []);
 
   const load = useCallback(async (reset: boolean = false) => {
@@ -78,11 +77,17 @@ export function useProducts() {
 
   const create = useCallback(async (data: Partial<Product>) => {
     try {
-      const res = await apiService.createProduct(data);
-      const item = (res as any).product || (res as any).data || res;
-      setState((s) => ({ ...s, items: [item as Product, ...s.items] }));
-      toast({ title: 'Produto criado', description: (item as Product)?.name || 'Registro adicionado.' });
-      return item as Product;
+      const response = await createProduct(data);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      const item = response.data?.product;
+      if (item) {
+        setState((s) => ({ ...s, items: [item, ...s.items] }));
+        toast({ title: 'Produto criado', description: item.name || 'Registro adicionado.' });
+        return item;
+      }
+      return null;
     } catch (e) {
       toast({ title: 'Erro ao criar produto', description: 'Verifique os dados informados.', variant: 'destructive' });
       return null;
@@ -91,14 +96,20 @@ export function useProducts() {
 
   const update = useCallback(async (id: string, data: Partial<Product>) => {
     try {
-      const res = await apiService.updateProduct(id, data);
-      const item = (res as any).product || (res as any).data || res;
-      setState((s) => ({
-        ...s,
-        items: s.items.map((it) => (it.id === id ? (item as Product) : it)),
-      }));
-      toast({ title: 'Produto atualizado', description: (item as Product)?.name || 'Registro atualizado.' });
-      return item as Product;
+      const response = await updateProduct(id, data);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      const item = response.data?.product;
+      if (item) {
+        setState((s) => ({
+          ...s,
+          items: s.items.map((it) => (it.id === id ? item : it)),
+        }));
+        toast({ title: 'Produto atualizado', description: item.name || 'Registro atualizado.' });
+        return item;
+      }
+      return null;
     } catch (e) {
       toast({ title: 'Erro ao atualizar produto', description: 'Tente novamente.', variant: 'destructive' });
       return null;
@@ -107,7 +118,10 @@ export function useProducts() {
 
   const remove = useCallback(async (id: string) => {
     try {
-      await apiService.deleteProduct(id);
+      const response = await deleteProduct(id);
+      if (response.error) {
+        throw new Error(response.error);
+      }
       setState((s) => ({ ...s, items: s.items.filter((it) => it.id !== id) }));
       toast({ title: 'Produto removido', description: 'Registro excluído com sucesso.' });
       return true;

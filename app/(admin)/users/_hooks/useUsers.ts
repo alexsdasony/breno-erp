@@ -1,18 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import apiService from '@/services/api';
 import { toast } from '@/components/ui/use-toast';
+import { getUsers, createUser, updateUser, deleteUser, resetPassword as resetUserPassword, UserExtended as User } from '@/services/usersService';
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'user';
-  status: 'ativo' | 'inativo';
-  segment_id: string | null;
-  created_at: string;
-  updated_at: string;
-  last_login?: string;
-}
+// Usando a interface User importada do serviço
 
 export interface UseUsersState {
   items: User[];
@@ -44,7 +34,7 @@ export function useUsers(): UseUsersState & UseUsersApi {
     setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
     try {
       const page = reset ? 1 : state.page;
-      const response = await apiService.getUsers({ page, pageSize: PAGE_SIZE });
+      const response = await getUsers({ page, pageSize: PAGE_SIZE });
       const users = response.data?.users || [];
       setState((s) => ({
         items: reset ? users : [...s.items, ...users],
@@ -67,7 +57,7 @@ export function useUsers(): UseUsersState & UseUsersApi {
     const nextPage = state.page + 1;
     setState((s) => ({ ...s, page: nextPage }));
     try {
-      const response = await apiService.getUsers({ page: nextPage, pageSize: PAGE_SIZE });
+      const response = await getUsers({ page: nextPage, pageSize: PAGE_SIZE });
       const users = response.data?.users || [];
       setState((s) => ({
         ...s,
@@ -87,9 +77,11 @@ export function useUsers(): UseUsersState & UseUsersApi {
 
   const create = useCallback(async (data: Partial<User>) => {
     try {
-      const response = await apiService.createUser(data);
-      const user = response.data?.user || response.data;
-      setState((s) => ({ ...s, items: [user, ...s.items] }));
+      const response = await createUser(data);
+      const user = response.data?.user;
+      if (user) {
+        setState((s) => ({ ...s, items: [user, ...s.items] }));
+      }
       toast({
         title: 'Usuário criado',
         description: user?.name || 'Registro criado com sucesso.'
@@ -107,12 +99,14 @@ export function useUsers(): UseUsersState & UseUsersApi {
 
   const update = useCallback(async (id: string, data: Partial<User>) => {
     try {
-      const response = await apiService.updateUser(id, data);
-      const user = response.data?.user || response.data;
-      setState((s) => ({
-        ...s,
-        items: s.items.map((item) => (item.id === id ? user : item)),
-      }));
+      const response = await updateUser(id, data);
+      const user = response.data?.user;
+      if (user) {
+        setState((s) => ({
+          ...s,
+          items: s.items.map((item) => (item.id === id ? user : item)),
+        }));
+      }
       toast({
         title: 'Usuário atualizado',
         description: user?.name || 'Registro atualizado com sucesso.'
@@ -130,7 +124,7 @@ export function useUsers(): UseUsersState & UseUsersApi {
 
   const remove = useCallback(async (id: string) => {
     try {
-      await apiService.deleteUser(id);
+      await deleteUser(id);
       setState((s) => ({
         ...s,
         items: s.items.filter((item) => item.id !== id),
@@ -152,8 +146,7 @@ export function useUsers(): UseUsersState & UseUsersApi {
 
   const resetPassword = useCallback(async (id: string) => {
     try {
-      // Implementar reset de senha para senha padrão
-      await apiService.updateUser(id, { password: 'senha123' });
+      await resetUserPassword(id);
       toast({
         title: 'Senha resetada',
         description: 'A senha foi resetada para "senha123".'

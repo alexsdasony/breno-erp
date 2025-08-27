@@ -7,27 +7,9 @@ import {
   User, Mail, Phone, MapPin, X, AlertCircle, FileText, Building
 } from 'lucide-react';
 import { useSuppliers } from '../_hooks/useSuppliers';
+import { SupplierExtended as Supplier } from '@/services/suppliersService';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData';
-
-// Supplier interface
-interface Supplier {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  city?: string;
-  state?: string;
-  address?: string;
-  tax_id?: string;
-  status: 'active' | 'inactive' | 'suspended';
-  total_value?: number;
-  orders_count?: number;
-  last_order_date?: string;
-  segment_id?: string;
-  person_type: 'pf' | 'pj';
-  doc?: string;
-}
 
 export default function SuppliersView() {
   const { items: suppliers, loading, hasMore, loadMore } = useSuppliers();
@@ -146,7 +128,7 @@ export default function SuppliersView() {
       state: supplier.state || '',
       address: supplier.address || '',
       tax_id: supplier.tax_id || '',
-      person_type: supplier.person_type,
+      person_type: supplier.person_type || 'pf',
       doc: supplier.doc || '',
       segment_id: supplier.segment_id || ''
     });
@@ -609,8 +591,8 @@ export default function SuppliersView() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <span className="font-medium">Status:</span>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedSupplier.status)}`}>
-                          {getStatusIcon(selectedSupplier.status)}
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedSupplier.status || 'inactive')}`}>
+                          {getStatusIcon(selectedSupplier.status || 'inactive')}
                           <span className="ml-1 capitalize">{selectedSupplier.status}</span>
                         </span>
                       </div>

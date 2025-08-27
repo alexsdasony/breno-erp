@@ -1,26 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import apiService from '@/services/api';
 import { toast } from '@/components/ui/use-toast';
+import { getDashboardMetrics, DashboardMetrics } from '@/services/dashboardService';
 
-export interface DashboardMetrics {
-  total_sales?: number;
-  total_revenue?: number;
-  avg_ticket?: number;
-  total_customers?: number;
-  low_stock_count?: number;
-  pending_invoices?: number;
-  pending_payables?: number;
-  series_days?: Array<{
-    date: string;
-    sales?: number;
-    revenue?: number;
-    payables?: number;
-    receivables?: number;
-    cash_in?: number;
-    cash_out?: number;
-  }>;
-  [key: string]: any;
-}
+// Usando a interface DashboardMetrics importada do serviço
 
 interface State {
   metrics: DashboardMetrics | null;
@@ -90,8 +72,8 @@ export function useDashboard() {
     setState((s) => ({ ...s, loading: true }));
     try {
       const params = computeRange(period, customStart, customEnd);
-      const res = await apiService.getDashboardMetrics(params);
-      const metrics = (res as any).metrics || (res as any).data || res || {};
+      const response = await getDashboardMetrics(params);
+      const metrics = response.data?.metrics || {};
       setState({ metrics, loading: false });
     } catch (err) {
       setState({ metrics: null, loading: false });

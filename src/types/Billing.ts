@@ -1,22 +1,22 @@
 import type { ID, Timestamped } from './common'
 
-export type Billing = Timestamped & {
+export interface Billing extends Timestamped {
   id: ID
-  customerId: ID | null
-  customerName: string
-  invoiceNumber: string
-  issueDate: string
-  dueDate: string
+  customer_id: ID | null
+  customer_name: string
+  invoice_number: string
+  issue_date: string
+  due_date: string
   amount: number
-  taxAmount: number
-  totalAmount: number
-  paymentMethod?: string | null
+  tax_amount: number
+  total_amount: number
+  payment_method?: string | null
   status: string
   notes?: string | null
-  segmentId?: ID | null
+  segment_id?: ID | null
 }
 
-export type BillingPayload = {
+export interface BillingPayload {
   customer_id?: ID | null
   customer_name?: string
   invoice_number?: string

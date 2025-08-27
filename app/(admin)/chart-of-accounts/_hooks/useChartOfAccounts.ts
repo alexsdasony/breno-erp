@@ -1,19 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listChartOfAccounts, createChartOfAccount, updateChartOfAccount, deleteChartOfAccount } from '@/services/chartOfAccountsService';
 import { toast } from '@/components/ui/use-toast';
-
-export interface ChartAccount {
-  id: string;
-  code?: string | null;
-  name?: string | null;
-  description?: string | null;
-  type?: string | null; // asset, liability, equity, revenue, expense
-  parent_id?: string | null;
-  segment_id?: string | null;
-}
+import type { ChartOfAccount, ChartOfAccountPayload } from '@/types';
 
 interface State {
-  items: ChartAccount[];
+  items: ChartOfAccount[];
   loading: boolean;
   page: number;
   hasMore: boolean;
@@ -22,8 +13,8 @@ interface State {
 interface Api {
   load: (reset?: boolean) => Promise<void>;
   loadMore: () => Promise<void>;
-  create: (data: Partial<ChartAccount>) => Promise<ChartAccount | null>;
-  update: (id: string, data: Partial<ChartAccount>) => Promise<ChartAccount | null>;
+  create: (data: Partial<ChartOfAccount>) => Promise<ChartOfAccount | null>;
+  update: (id: string, data: Partial<ChartOfAccount>) => Promise<ChartOfAccount | null>;
   remove: (id: string) => Promise<boolean>;
 }
 
@@ -33,9 +24,8 @@ export function useChartOfAccounts() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
-    const res = await listChartOfAccounts({ page, limit: PAGE_SIZE });
-    const list = (res as any).chartOfAccounts || (res as any).data || res || [];
-    return list as ChartAccount[];
+    const response = await listChartOfAccounts({ page, limit: PAGE_SIZE });
+    return response.data?.chartOfAccounts || [];
   }, []);
 
   const load = useCallback(async (reset: boolean = false) => {
@@ -68,29 +58,69 @@ export function useChartOfAccounts() {
     }));
   }, [state.loading, state.hasMore, state.page, fetchPage]);
 
-  const create = useCallback(async (data: Partial<ChartAccount>) => {
+  const create = useCallback(async (data: Partial<ChartOfAccount>) => {
     try {
-      const res = await createChartOfAccount(data);
-      const item = (res as any).chartOfAccount || (res as any).data || res;
-      setState((s) => ({ ...s, items: [item as ChartAccount, ...s.items] }));
-      toast({ title: 'Conta criada', description: (item as ChartAccount)?.name || 'Registro criado.' });
-      return item as ChartAccount;
+      // Garantir que o campo code seja uma string válida
+      if (data.code === null) {
+        data.code = '';
+      }
+      
+      const payload: ChartOfAccountPayload = {
+        code: data.code,
+        name: data.name,
+        type: data.type,
+        parent_id: data.parent_id,
+        description: data.description,
+        is_active: data.is_active !== undefined ? data.is_active : true
+      };
+      
+      const response = await createChartOfAccount(payload);
+      const item = response.data?.chartOfAccount;
+      
+      if (item) {
+        setState((s) => ({ ...s, items: [item, ...s.items] }));
+        toast({ title: 'Conta criada', description: item.name || 'Registro criado.' });
+        return item;
+      }
+      
+      toast({ title: 'Aviso', description: 'Conta criada, mas não foi possível atualizar a lista' });
+      return null;
     } catch (e) {
       toast({ title: 'Erro ao criar conta', description: 'Verifique os dados informados.', variant: 'destructive' });
       return null;
     }
   }, []);
 
-  const update = useCallback(async (id: string, data: Partial<ChartAccount>) => {
+  const update = useCallback(async (id: string, data: Partial<ChartOfAccount>) => {
     try {
-      const res = await updateChartOfAccount(id, data);
-      const item = (res as any).chartOfAccount || (res as any).data || res;
-      setState((s) => ({
-        ...s,
-        items: s.items.map((it) => (it.id === id ? (item as ChartAccount) : it)),
-      }));
-      toast({ title: 'Conta atualizada', description: (item as ChartAccount)?.name || 'Registro atualizado.' });
-      return item as ChartAccount;
+      // Garantir que o campo code seja uma string válida
+      if (data.code === null) {
+        data.code = '';
+      }
+      
+      const payload: ChartOfAccountPayload = {
+        code: data.code,
+        name: data.name,
+        type: data.type,
+        parent_id: data.parent_id,
+        description: data.description,
+        is_active: data.is_active
+      };
+      
+      const response = await updateChartOfAccount(id, payload);
+      const item = response.data?.chartOfAccount;
+      
+      if (item) {
+        setState((s) => ({
+          ...s,
+          items: s.items.map((it) => (it.id === id ? item : it)),
+        }));
+        toast({ title: 'Conta atualizada', description: item.name || 'Registro atualizado.' });
+        return item;
+      }
+      
+      toast({ title: 'Aviso', description: 'Conta atualizada, mas não foi possível atualizar a lista' });
+      return null;
     } catch (e) {
       toast({ title: 'Erro ao atualizar conta', description: 'Tente novamente.', variant: 'destructive' });
       return null;

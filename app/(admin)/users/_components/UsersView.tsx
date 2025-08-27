@@ -23,7 +23,8 @@ import {
   UserX,
   UserCheck
 } from 'lucide-react';
-import { useUsers, User } from '../_hooks/useUsers';
+import { useUsers } from '../_hooks/useUsers';
+import { UserExtended as User } from '@/services/usersService';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 // import { Input } from '@/components/ui/input'; // Usando input nativo como outros módulos
@@ -70,8 +71,8 @@ export default function UsersView() {
   // Filtered users
   const filteredUsers = useMemo(() => {
     return items.filter((user: User) => {
-      const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = (user.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (user.email || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
       const matchesRole = roleFilter === 'all' || user.role === roleFilter;
       const matchesSegment = !activeSegmentId || activeSegmentId === '0' || 
@@ -138,10 +139,10 @@ export default function UsersView() {
     setSelectedUser(user);
     setFormData({
       segment_id: user.segment_id || '',
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      status: user.status
+      name: user.name || '',
+      email: user.email || '',
+      role: (user.role as 'user' | 'admin') || 'user',
+      status: (user.status as 'ativo' | 'inativo') || 'ativo'
     });
     setIsEditing(true);
     setShowForm(true);
@@ -391,7 +392,7 @@ export default function UsersView() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          {getRoleIcon(user.role)}
+                          {getRoleIcon(user.role || 'user')}
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             user.role === 'admin' 
                               ? 'bg-indigo-600 text-white' 
@@ -403,7 +404,7 @@ export default function UsersView() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          {getStatusIcon(user.status)}
+                          {getStatusIcon(user.status || 'ativo')}
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             user.status === 'ativo' 
                               ? 'bg-green-100 text-green-800' 
@@ -416,7 +417,7 @@ export default function UsersView() {
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-gray-400" />
-                          <span className="text-gray-300">{formatDate(user.created_at)}</span>
+                          <span className="text-gray-300">{formatDate(user.created_at || new Date().toISOString())}</span>
                         </div>
                       </td>
                       <td className="py-3 px-4">
@@ -440,11 +441,11 @@ export default function UsersView() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleToggleUserStatus(user.id, user.status)}
-                             className={user.status === 'ativo' ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'}
-                             title={user.status === 'ativo' ? 'Desativar usuário' : 'Ativar usuário'}
+                            onClick={() => handleToggleUserStatus(user.id, user.status || 'ativo')}
+                             className={(user.status || 'ativo') === 'ativo' ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'}
+                             title={(user.status || 'ativo') === 'ativo' ? 'Desativar usuário' : 'Ativar usuário'}
                            >
-                             {user.status === 'ativo' ? (
+                             {(user.status || 'ativo') === 'ativo' ? (
                                <UserX className="w-4 h-4" />
                              ) : (
                                <UserCheck className="w-4 h-4" />
@@ -648,8 +649,8 @@ export default function UsersView() {
                     <UserIcon className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-white">{selectedUser.name}</h4>
-                    <p className="text-sm text-gray-500">{selectedUser.email}</p>
+                    <h4 className="font-medium text-white">{selectedUser.name || 'Nome não informado'}</h4>
+                    <p className="text-sm text-gray-500">{selectedUser.email || 'Email não informado'}</p>
                   </div>
                 </div>
 
@@ -657,18 +658,18 @@ export default function UsersView() {
                   <div>
                     <Label>Perfil</Label>
                     <div className="flex items-center gap-2 mt-1">
-                      {getRoleIcon(selectedUser.role)}
+                      {getRoleIcon(selectedUser.role || 'user')}
                       <span className="text-sm">
-                        {selectedUser.role === 'admin' ? 'Administrador' : 'Usuário'}
+                        {(selectedUser.role || 'user') === 'admin' ? 'Administrador' : 'Usuário'}
                       </span>
                     </div>
                   </div>
                   <div>
                     <Label>Status</Label>
                     <div className="flex items-center gap-2 mt-1">
-                      {getStatusIcon(selectedUser.status)}
+                      {getStatusIcon(selectedUser.status || 'ativo')}
                       <span className="text-sm">
-                        {selectedUser.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                        {(selectedUser.status || 'ativo') === 'ativo' ? 'Ativo' : 'Inativo'}
                       </span>
                     </div>
                   </div>
@@ -676,7 +677,7 @@ export default function UsersView() {
 
                 <div>
                   <Label>Criado em</Label>
-                  <p className="text-sm text-gray-400 mt-1">{formatDate(selectedUser.created_at)}</p>
+                  <p className="text-sm text-gray-400 mt-1">{formatDate(selectedUser.created_at || new Date().toISOString())}</p>
                 </div>
 
                 {selectedUser.last_login && (
@@ -725,7 +726,7 @@ export default function UsersView() {
               </div>
 
               <p className="text-gray-300 mb-6">
-                Tem certeza que deseja excluir o usuário <strong>{selectedUser.name}</strong>?
+                Tem certeza que deseja excluir o usuário <strong>{selectedUser.name || 'Nome não informado'}</strong>?
               </p>
 
               <div className="flex justify-end gap-3">

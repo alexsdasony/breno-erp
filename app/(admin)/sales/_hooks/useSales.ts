@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import apiService from '@/services/api';
 import { toast } from '@/components/ui/use-toast';
+import { listSales, createSale, updateSale, deleteSale } from '@/services/salesService';
 
 export interface SaleItem {
   product_id: string;
@@ -41,8 +41,9 @@ export function useSales() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
-    const res = await apiService.getSales({ page, pageSize: PAGE_SIZE });
-    const list = (res as any).sales || (res as any).data || [];
+    const response = await listSales({ page, pageSize: PAGE_SIZE });
+    console.log('API Response:', response); // Log para debug
+    const list = response.data?.sales || [];
     return list as Sale[];
   }, []);
 
@@ -82,11 +83,15 @@ export function useSales() {
 
   const create = useCallback(async (data: Partial<Sale>) => {
     try {
-      const res = await apiService.createSale(data);
-      const item = (res as any).sale || (res as any).data || res;
-      setState((s) => ({ ...s, items: [item as Sale, ...s.items] }));
-      toast({ title: 'Venda criada', description: `ID: ${(item as Sale)?.id || ''}` });
-      return item as Sale;
+      const response = await createSale(data as any);
+      const sale = response.data?.sale;
+      if (sale) {
+        setState((s) => ({ ...s, items: [sale, ...s.items] }));
+        toast({ title: 'Venda criada', description: `ID: ${sale.id || ''}` });
+        return sale;
+      }
+      toast({ title: 'Aviso', description: 'Venda criada, mas não foi possível obter os detalhes' });
+      return null;
     } catch (e) {
       toast({ title: 'Erro ao criar venda', description: 'Verifique os dados informados.', variant: 'destructive' });
       return null;
@@ -95,14 +100,18 @@ export function useSales() {
 
   const update = useCallback(async (id: string, data: Partial<Sale>) => {
     try {
-      const res = await apiService.updateSale(id, data);
-      const item = (res as any).sale || (res as any).data || res;
-      setState((s) => ({
-        ...s,
-        items: s.items.map((it) => (it.id === id ? (item as Sale) : it)),
-      }));
-      toast({ title: 'Venda atualizada', description: `ID: ${(item as Sale)?.id || ''}` });
-      return item as Sale;
+      const response = await updateSale(id, data as any);
+      const sale = response.data?.sale;
+      if (sale) {
+        setState((s) => ({
+          ...s,
+          items: s.items.map((it) => (it.id === id ? sale : it)),
+        }));
+        toast({ title: 'Venda atualizada', description: `ID: ${sale.id || ''}` });
+        return sale;
+      }
+      toast({ title: 'Aviso', description: 'Venda atualizada, mas não foi possível obter os detalhes' });
+      return null;
     } catch (e) {
       toast({ title: 'Erro ao atualizar venda', description: 'Tente novamente.', variant: 'destructive' });
       return null;
@@ -111,7 +120,7 @@ export function useSales() {
 
   const remove = useCallback(async (id: string) => {
     try {
-      await apiService.deleteSale(id);
+      await deleteSale(id);
       setState((s) => ({ ...s, items: s.items.filter((it) => it.id !== id) }));
       toast({ title: 'Venda removida', description: `ID: ${id}` });
       return true;

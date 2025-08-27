@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import apiService from '@/services/api';
+import * as authService from '@/services/authService';
 import { toast } from '@/components/ui/use-toast';
 
 interface ApiResponse<T = any> {
@@ -44,16 +45,17 @@ export const useAuth = (): AuthContextType => {
         const token = apiService.getToken();
         if (token) {
           // Verificar se o token é válido
-          const isValid = await apiService.checkAuth();
+          const isValid = await authService.checkAuth();
           if (isValid) {
             // Tentar obter o perfil do usuário
             try {
-              const profile = await apiService.getProfile() as any;
-              if (profile && profile.user) {
-                setCurrentUser(profile.user);
-                console.log('✅ Usuário autenticado restaurado:', profile.user.name);
-              } else {
-                console.warn('Profile response invalid, but token is valid');
+                const profile = await authService.getProfile();
+                if (profile.data && profile.data.user) {
+                  setCurrentUser(profile.data.user);
+                  sessionStorage.setItem('cached_user', JSON.stringify(profile.data.user));
+                  console.log('✅ Usuário autenticado restaurado:', profile.data.user.name);
+                } else {
+                  console.warn('Profile response invalid, but token is valid');
                 // Se não conseguimos obter o perfil mas o token é válido,
                 // vamos tentar fazer login novamente com dados em cache
                 const cachedUser = sessionStorage.getItem('cached_user');
@@ -107,14 +109,14 @@ export const useAuth = (): AuthContextType => {
   const registerUser = async (name: string, email: string, password: string, segmentId: string | null = null): Promise<boolean> => {
     try {
       setLoading(true);
-      const response = await apiService.register({ name, email, password, segmentId }) as any;
+      const response = await authService.register({ name, email, password, segmentId });
       
-      if (response.success && response.user) {
-        setCurrentUser(response.user);
+      if (response.data?.success && response.data?.user) {
+        setCurrentUser(response.data.user);
         // Cache do usuário para persistência
-        sessionStorage.setItem('cached_user', JSON.stringify(response.user));
-        if (response.token) {
-          apiService.setToken(response.token);
+        sessionStorage.setItem('cached_user', JSON.stringify(response.data.user));
+        if (response.data.token) {
+          apiService.setToken(response.data.token);
         }
         toast({
           title: "Conta criada!",
@@ -139,16 +141,16 @@ export const useAuth = (): AuthContextType => {
   const loginUser = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      const response = await apiService.login({ email, password }) as any;
+      const response = await authService.login({ email, password });
       
       // Verificar se a resposta tem sucesso e dados do usuário
-      if (response.success && response.user) {
-        setCurrentUser(response.user);
+      if (response.data?.success && response.data?.user) {
+        setCurrentUser(response.data.user);
         // Cache do usuário para persistência
-        sessionStorage.setItem('cached_user', JSON.stringify(response.user));
+        sessionStorage.setItem('cached_user', JSON.stringify(response.data.user));
         // Salvar token se fornecido
-        if (response.token) {
-          apiService.setToken(response.token);
+        if (response.data.token) {
+          apiService.setToken(response.data.token);
         }
         toast({
           title: "Login realizado!",
@@ -172,7 +174,7 @@ export const useAuth = (): AuthContextType => {
 
   const logoutUser = async (): Promise<void> => {
     try {
-      await apiService.logout();
+      await authService.logout();
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
@@ -189,12 +191,12 @@ export const useAuth = (): AuthContextType => {
   const updateUserProfile = async (name: string, email: string): Promise<boolean> => {
     try {
       setLoading(true);
-      const response = await apiService.updateProfile({ name, email }) as any;
+      const response = await authService.updateProfile({ name, email });
       
-      if (response.success && response.user) {
-        setCurrentUser(response.user);
+      if (response.data?.success && response.data?.user) {
+        setCurrentUser(response.data.user);
         // Atualizar cache
-        sessionStorage.setItem('cached_user', JSON.stringify(response.user));
+        sessionStorage.setItem('cached_user', JSON.stringify(response.data.user));
         toast({
           title: "Perfil atualizado!",
           description: "Suas informações foram atualizadas com sucesso."
@@ -218,7 +220,7 @@ export const useAuth = (): AuthContextType => {
   const changeUserPassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
     try {
       setLoading(true);
-      const response = await apiService.changePassword({ currentPassword, newPassword });
+      const response = await authService.changePassword({ currentPassword, newPassword });
       
       if (response.data?.success) {
         toast({
@@ -244,7 +246,7 @@ export const useAuth = (): AuthContextType => {
   const requestPasswordReset = async (email: string, phone: string | null = null) => {
     try {
       setLoading(true);
-      const response = await apiService.requestPasswordReset({ email, phone });
+      const response = await authService.requestPasswordReset({ email, phone });
       
       toast({
         title: "Solicitação enviada!",
@@ -268,7 +270,7 @@ export const useAuth = (): AuthContextType => {
   const resetPassword = async (email: string, phone: string, resetCode: string, newPassword: string) => {
     try {
       setLoading(true);
-      const response = await apiService.resetPassword({ email, phone, resetCode, newPassword });
+      const response = await authService.resetPassword({ email, phone, resetCode, newPassword });
       
       toast({
         title: "Senha redefinida!",

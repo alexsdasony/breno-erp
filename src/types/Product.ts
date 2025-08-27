@@ -1,17 +1,19 @@
 import type { ID, Timestamped } from './common'
 
-export type Product = Timestamped & {
+export interface Product extends Timestamped {
   id: ID
   name: string
   sku?: string | null
   price: number
-  costPrice?: number | null
-  stockQuantity?: number | null
-  minimumStock?: number | null
-  segmentId?: ID | null
+  cost_price?: number | null
+  stock_quantity?: number | null
+  minimum_stock?: number | null
+  segment_id?: ID | null
+  category?: string | null
+  description?: string | null
 }
 
-export type ProductPayload = {
+export interface ProductPayload {
   name?: string
   sku?: string | null
   price?: number
@@ -19,4 +21,6 @@ export type ProductPayload = {
   stock_quantity?: number | null
   minimum_stock?: number | null
   segment_id?: ID | null
+  category?: string | null
+  description?: string | null
 }

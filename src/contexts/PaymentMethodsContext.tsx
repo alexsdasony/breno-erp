@@ -19,8 +19,8 @@ export function PaymentMethodsProvider({ children }: { children: React.ReactNode
   const load = async () => {
     setLoading(true);
     try {
-      const data = await listPaymentMethods({ page: 1, limit: 100 });
-      setPaymentMethods(data);
+      const response = await listPaymentMethods({ page: 1, limit: 100 });
+      setPaymentMethods(response?.data?.payment_methods || []);
     } catch (e) {
       // silencioso
       setPaymentMethods([]);

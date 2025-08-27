@@ -1,27 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import apiService from '@/services/api';
 import { toast } from '@/components/ui/use-toast';
+import { listAccountsPayable, createAccountPayable, updateAccountPayable, deleteAccountPayable } from '@/services/accountsPayableService';
+import { AccountPayable, AccountPayablePayload } from '@/types';
 
-export interface AccountPayableItem {
-  id: string;
-  description: string;
-  amount: number;
-  due_date?: string | null;
-  supplier_id?: string | null;
-  supplier_name?: string | null;
-  category?: string | null;
-  status?: string;
-  segment_id?: string | null;
-  notes?: string | null;
-  payment_date?: string | null;
-  payment_method?: string | null;
-}
+export type AccountPayableItem = AccountPayable;
 
 interface State {
   items: AccountPayableItem[];
   loading: boolean;
   page: number;
   hasMore: boolean;
+}
+
+interface UseAccountsPayableReturn {
+  items: AccountPayableItem[];
+  loading: boolean;
+  hasMore: boolean;
+  loadMore: () => Promise<void>;
+  create: (data: Partial<AccountPayableItem>) => Promise<AccountPayableItem | null>;
+  update: (id: string, data: Partial<AccountPayableItem>) => Promise<AccountPayableItem | null>;
+  remove: (id: string) => Promise<boolean>;
 }
 
 interface Api {
@@ -38,26 +36,8 @@ export function useAccountsPayable() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
-    const res: any = await apiService.getAccountsPayable({ page, pageSize: PAGE_SIZE });
-    // Edge Function returns { success, accounts_payable: [] }
-    const list = res.accounts_payable || res.accountsPayable || res.data || [];
-    if (!Array.isArray(list)) return [];
-    // Normalizar campos do backend (pt_BR snake_case) para a interface esperada
-    const normalize = (it: any): AccountPayableItem => ({
-      id: it.id,
-      description: it.description ?? it.descricao ?? '',
-      amount: typeof it.amount !== 'undefined' ? Number(it.amount) : Number(it.valor ?? 0),
-      due_date: it.due_date ?? it.data_vencimento ?? null,
-      supplier_id: it.supplier_id ?? it.fornecedor_id ?? null,
-      supplier_name: it.supplier_name ?? it.fornecedor_nome ?? it.supplier ?? null,
-      category: it.category ?? it.categoria ?? null,
-      status: it.status ?? 'pending',
-      segment_id: it.segment_id ?? null,
-      notes: it.notes ?? it.observacoes ?? null,
-      payment_date: it.payment_date ?? it.data_pagamento ?? null,
-      payment_method: it.payment_method ?? it.metodo_pagamento ?? null,
-    });
-    return list.map(normalize);
+    const response = await listAccountsPayable({ page, pageSize: PAGE_SIZE });
+    return response.data?.accounts_payable || [];
   }, []);
 
   const load = useCallback(async (reset: boolean = false) => {
@@ -92,11 +72,42 @@ export function useAccountsPayable() {
 
   const create = useCallback(async (data: Partial<AccountPayableItem>) => {
     try {
-      const res = await apiService.createAccountPayable(data);
-      const item = (res as any).account || (res as any).data || res;
-      setState((s) => ({ ...s, items: [item as AccountPayableItem, ...s.items] }));
-      toast({ title: 'Conta a pagar criada', description: (item as AccountPayableItem)?.description || 'Registro criado.' });
-      return item as AccountPayableItem;
+      // Validar campos obrigatórios
+      if (!data.description) {
+        toast({ title: 'Erro ao criar conta a pagar', description: 'A descrição é obrigatória.', variant: 'destructive' });
+        return null;
+      }
+      
+      if (!data.amount && data.amount !== 0) {
+        toast({ title: 'Erro ao criar conta a pagar', description: 'O valor é obrigatório.', variant: 'destructive' });
+        return null;
+      }
+      
+      // Criar payload com campos obrigatórios
+      const payload: AccountPayablePayload = {
+        description: data.description,
+        amount: typeof data.amount === 'string' ? parseFloat(data.amount) : data.amount,
+        due_date: data.due_date,
+        supplier_id: data.supplier_id,
+        category: data.category,
+        status: data.status,
+        segment_id: data.segment_id,
+        notes: data.notes,
+        payment_date: data.payment_date,
+        payment_method: data.payment_method
+      };
+      
+      const response = await createAccountPayable(payload);
+      const item = response.data?.account_payable;
+      
+      if (item) {
+        setState((s) => ({ ...s, items: [item, ...s.items] }));
+        toast({ title: 'Conta a pagar criada', description: item.description || 'Registro criado.' });
+        return item;
+      }
+      
+      toast({ title: 'Aviso', description: 'Conta a pagar criada, mas não foi possível atualizar a lista' });
+      return null;
     } catch (e) {
       toast({ title: 'Erro ao criar conta a pagar', description: 'Verifique os dados informados.', variant: 'destructive' });
       return null;
@@ -105,14 +116,40 @@ export function useAccountsPayable() {
 
   const update = useCallback(async (id: string, data: Partial<AccountPayableItem>) => {
     try {
-      const res = await apiService.updateAccountPayable(id, data);
-      const item = (res as any).account || (res as any).data || res;
-      setState((s) => ({
-        ...s,
-        items: s.items.map((it) => (it.id === id ? (item as AccountPayableItem) : it)),
-      }));
-      toast({ title: 'Conta a pagar atualizada', description: (item as AccountPayableItem)?.description || 'Registro atualizado.' });
-      return item as AccountPayableItem;
+      // Validar campos obrigatórios se estiverem presentes no payload
+      if (data.description === '') {
+        toast({ title: 'Erro ao atualizar conta a pagar', description: 'A descrição não pode ser vazia.', variant: 'destructive' });
+        return null;
+      }
+      
+      // Criar payload com os campos fornecidos
+      const payload: Partial<AccountPayablePayload> = {};
+      
+      if (data.description !== undefined) payload.description = data.description;
+      if (data.amount !== undefined) payload.amount = typeof data.amount === 'string' ? parseFloat(data.amount) : data.amount;
+      if (data.due_date !== undefined) payload.due_date = data.due_date;
+      if (data.supplier_id !== undefined) payload.supplier_id = data.supplier_id;
+      if (data.category !== undefined) payload.category = data.category;
+      if (data.status !== undefined) payload.status = data.status;
+      if (data.segment_id !== undefined) payload.segment_id = data.segment_id;
+      if (data.notes !== undefined) payload.notes = data.notes;
+      if (data.payment_date !== undefined) payload.payment_date = data.payment_date;
+      if (data.payment_method !== undefined) payload.payment_method = data.payment_method;
+      
+      const response = await updateAccountPayable(id, payload);
+      const item = response.data?.account_payable;
+      
+      if (item) {
+        setState((s) => ({
+          ...s,
+          items: s.items.map((it) => (it.id === id ? item : it)),
+        }));
+        toast({ title: 'Conta a pagar atualizada', description: item.description || 'Registro atualizado.' });
+        return item;
+      }
+      
+      toast({ title: 'Aviso', description: 'Conta a pagar atualizada, mas não foi possível atualizar a lista' });
+      return null;
     } catch (e) {
       toast({ title: 'Erro ao atualizar conta a pagar', description: 'Tente novamente.', variant: 'destructive' });
       return null;
@@ -121,7 +158,7 @@ export function useAccountsPayable() {
 
   const remove = useCallback(async (id: string) => {
     try {
-      await apiService.deleteAccountPayable(id);
+      await deleteAccountPayable(id);
       setState((s) => ({ ...s, items: s.items.filter((it) => it.id !== id) }));
       toast({ title: 'Conta a pagar removida', description: 'Registro excluído com sucesso.' });
       return true;

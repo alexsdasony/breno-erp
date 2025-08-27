@@ -11,8 +11,8 @@ export type UsePaymentMethodsReturn = {
   page: number
   load: (pageNum?: number, append?: boolean) => Promise<void>
   loadMore: () => Promise<void>
-  create: (payload: PaymentMethodPayload) => Promise<PaymentMethod>
-  update: (id: string, payload: PaymentMethodPayload) => Promise<PaymentMethod>
+  create: (payload: PaymentMethodPayload) => Promise<PaymentMethod | null>
+  update: (id: string, payload: PaymentMethodPayload) => Promise<PaymentMethod | null>
   remove: (id: string) => Promise<void>
 }
 
@@ -26,7 +26,8 @@ export function usePaymentMethods({ pageSize = 20 }: UsePaymentMethodsOptions = 
     setLoading(true)
     try {
       const params = { page: pageNum, limit: pageSize }
-      const data: PaymentMethod[] = await listPaymentMethods(params)
+      const response = await listPaymentMethods(params)
+      const data = response.data?.payment_methods || []
 
       setMethods((prev) => (append ? [...prev, ...data] : data))
       setHasMore(data.length === pageSize)
@@ -47,10 +48,17 @@ export function usePaymentMethods({ pageSize = 20 }: UsePaymentMethodsOptions = 
 
   const create = useCallback(async (payload: PaymentMethodPayload) => {
     try {
-      const method = await createPaymentMethod(payload)
-      setMethods((prev) => [...prev, method])
-      toast({ title: 'Sucesso', description: 'Forma de pagamento criada com sucesso' })
-      return method as PaymentMethod
+      const response = await createPaymentMethod(payload)
+      const method = response.data?.payment_method
+      
+      if (method) {
+        setMethods((prev) => [...prev, method])
+        toast({ title: 'Sucesso', description: 'Forma de pagamento criada com sucesso' })
+        return method
+      }
+      
+      toast({ title: 'Aviso', description: 'Forma de pagamento criada, mas não foi possível atualizar a lista' })
+      return null
     } catch (err) {
       console.error('Erro ao criar forma de pagamento:', err)
       toast({ title: 'Erro', description: 'Falha ao criar forma de pagamento', variant: 'destructive' })
@@ -60,10 +68,17 @@ export function usePaymentMethods({ pageSize = 20 }: UsePaymentMethodsOptions = 
 
   const update = useCallback(async (id: string, payload: PaymentMethodPayload) => {
     try {
-      const updated = await updatePaymentMethod(id, payload)
-      setMethods((prev) => prev.map((m) => (m.id === id ? (updated as PaymentMethod) : m)))
-      toast({ title: 'Sucesso', description: 'Forma de pagamento atualizada com sucesso' })
-      return updated as PaymentMethod
+      const response = await updatePaymentMethod(id, payload)
+      const updated = response.data?.payment_method
+      
+      if (updated) {
+        setMethods((prev) => prev.map((m) => (m.id === id ? updated : m)))
+        toast({ title: 'Sucesso', description: 'Forma de pagamento atualizada com sucesso' })
+        return updated
+      }
+      
+      toast({ title: 'Aviso', description: 'Forma de pagamento atualizada, mas não foi possível atualizar a lista' })
+      return null
     } catch (err) {
       console.error('Erro ao atualizar forma de pagamento:', err)
       toast({ title: 'Erro', description: 'Falha ao atualizar forma de pagamento', variant: 'destructive' })

@@ -1,12 +1,12 @@
 import type { ID, Timestamped } from './common'
 
-export type Segment = Timestamped & {
+export interface Segment extends Timestamped {
   id: ID
   name: string
   description?: string | null
 }
 
-export type SegmentPayload = {
+export interface SegmentPayload {
   name?: string
   description?: string | null
 }

@@ -1,16 +1,16 @@
 import type { ID, Timestamped } from './common'
 
-export type Partner = Timestamped & {
+export interface Partner extends Timestamped {
   id: ID
   name: string
   document?: string | null
   email?: string | null
   phone?: string | null
   address?: string | null
-  segmentId?: ID | null
+  segment_id?: ID | null
 }
 
-export type PartnerPayload = {
+export interface PartnerPayload {
   name?: string
   document?: string | null
   email?: string | null
