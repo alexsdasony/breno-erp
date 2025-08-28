@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Edit, Plus, X, TrendingUp, TrendingDown, FileText, Unlock, Clock, CheckCircle, XCircle, Search, Check, Save, Loader2 } from 'lucide-react';
 import apiService from '@/services/api';
 
 type Segment = { id: string; name?: string; code?: string };
@@ -24,9 +25,9 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
   // Console log para abertura e fechamento do modal
   React.useEffect(() => {
     if (open) {
-      console.log('🔵 Modal financeiro aberto:', { isEditing, editingDoc });
+      console.log('Modal financeiro aberto:', { isEditing, editingDoc });
     } else {
-      console.log('🔴 Modal financeiro fechado');
+      console.log('Modal financeiro fechado');
     }
   }, [open, isEditing, editingDoc]);
 
@@ -178,13 +179,13 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
     } as any;
 
     if (isEditing && editingDoc?.id) {
-      console.log('📝 Editando documento financeiro:', { id: editingDoc.id, payload });
+      console.log('Editando documento financeiro:', { id: editingDoc.id, payload });
       const result = await onUpdate(editingDoc.id, payload);
-      console.log('✅ Resposta do backend (update):', result);
+      console.log('Resposta do backend (update):', result);
     } else {
-      console.log('➕ Criando novo documento financeiro:', payload);
+      console.log('Criando novo documento financeiro:', payload);
       const result = await onCreate(payload);
-      console.log('✅ Resposta do backend (create):', result);
+      console.log('Resposta do backend (create):', result);
     }
     onClose();
   };
@@ -198,7 +199,7 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
             <div className="flex items-center justify-between p-6 pb-4 border-b border-border/20">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
-                  {isEditing ? '📝' : '➕'}
+                  {isEditing ? <Edit className="w-5 h-5 text-white" /> : <Plus className="w-5 h-5 text-white" />}
                 </div>
                 <div>
                   <h2 className="text-xl font-semibold text-foreground">{isEditing ? 'Editar Documento' : 'Novo Documento'}</h2>
@@ -209,7 +210,7 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
                 className="p-2 rounded-lg border border-border/50 hover:bg-muted/50 transition-all text-muted-foreground hover:text-foreground" 
                 onClick={onClose}
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
             <div className="p-6">
@@ -220,8 +221,8 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
                   <label className="block text-sm font-medium mb-2 text-foreground">Tipo de Movimentação *</label>
                   <select className="w-full bg-muted/50 border border-border/50 rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" value={fDirection} onChange={(e) => setFDirection(e.target.value)}>
                     <option value="">Selecione...</option>
-                    <option value="receivable">💰 Entrada (Recebível)</option>
-                    <option value="payable">💸 Saída (Pagável)</option>
+                    <option value="receivable"><span className="flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Entrada (Recebível)</span></option>
+                    <option value="payable"><span className="flex items-center gap-2"><TrendingDown className="w-4 h-4" /> Saída (Pagável)</span></option>
                   </select>
                 </div>
                 <div>
@@ -239,11 +240,11 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
                 <div>
                   <label className="block text-sm font-medium mb-2 text-foreground">Status</label>
                   <select className="w-full bg-muted/50 border border-border/50 rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" value={fStatus} onChange={(e) => setFStatus(e.target.value)}>
-                    <option value="draft">📝 Rascunho</option>
-                    <option value="open">🔓 Aberto</option>
-                    <option value="partially_paid">⏳ Parcialmente Pago</option>
-                    <option value="paid">✅ Pago</option>
-                    <option value="canceled">❌ Cancelado</option>
+                    <option value="draft"><span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Rascunho</span></option>
+                    <option value="open"><span className="flex items-center gap-2"><Unlock className="w-4 h-4" /> Aberto</span></option>
+                    <option value="partially_paid"><span className="flex items-center gap-2"><Clock className="w-4 h-4" /> Parcialmente Pago</span></option>
+                    <option value="paid"><span className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Pago</span></option>
+                    <option value="canceled"><span className="flex items-center gap-2"><XCircle className="w-4 h-4" /> Cancelado</span></option>
                   </select>
                 </div>
               </div>
@@ -295,7 +296,10 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
                     {showPartnerList && (partnerOptions.length > 0 || loadingPartners) && (
                       <div className="absolute z-10 mt-1 w-full max-h-52 overflow-auto rounded-lg border border-border/50 bg-background/95 backdrop-blur-sm shadow-lg">
                         {loadingPartners && (
-                          <div className="px-3 py-2 text-sm text-muted-foreground">🔍 Buscando...</div>
+                          <div className="px-3 py-2 text-sm text-muted-foreground flex items-center gap-2">
+                            <Search className="w-4 h-4" />
+                            Buscando...
+                          </div>
                         )}
                         {!loadingPartners && partnerOptions.map((opt) => (
                           <button
@@ -315,7 +319,10 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
                     )}
                   </div>
                   {fPartnerId && (
-                    <p className="mt-1 text-xs text-muted-foreground">✓ Selecionado: {partnerQuery}</p>
+                    <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
+                      <Check className="w-3 h-3" />
+                      Selecionado: {partnerQuery}
+                    </p>
                   )}
                 </div>
               </div>
@@ -375,14 +382,30 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
                   onClick={onClose}
                   className="px-6 py-2.5 border-border/50 hover:bg-muted/50 transition-all"
                 >
-                  {isEditing ? '❌ Cancelar Edição (Esc)' : '❌ Cancelar (Esc)'}
+                  <X className="w-4 h-4 mr-2" />
+                  {isEditing ? 'Cancelar Edição (Esc)' : 'Cancelar (Esc)'}
                 </Button>
                 <Button 
                   type="submit" 
                   className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 px-6 py-2.5 shadow-lg hover:shadow-xl transition-all" 
                   disabled={loading}
                 >
-                  {loading ? '⏳ Salvando...' : isEditing ? '💾 Salvar Alterações (Enter)' : '➕ Adicionar Documento (Enter)'}
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : isEditing ? (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Salvar Alterações (Enter)
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Adicionar Documento (Enter)
+                    </>
+                  )}
                 </Button>
                </div>
              </form>

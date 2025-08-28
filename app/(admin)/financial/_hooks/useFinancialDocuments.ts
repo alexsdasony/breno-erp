@@ -33,7 +33,7 @@ export function useFinancialDocuments() {
   const fetchPage = useCallback(async (page: number) => {
     const response = await getFinancialDocuments({ page, pageSize: PAGE_SIZE });
     const list = response.data?.financialDocuments || [];
-    console.log('📊 Dados financeiros recebidos do backend:', {
+    console.log('Dados financeiros recebidos do backend:', {
       page,
       total: list.length,
       response: response.data,
@@ -140,15 +140,15 @@ export function useFinancialDocuments() {
   const update = useCallback(async (id: string, data: Partial<FinancialDocument>) => {
     try {
       const response = await updateFinancialDocument(id, data);
-      console.log('📡 PUT /financial-documents/' + id + ' - Resposta recebida', response);
+      console.log('PUT /financial-documents/' + id + ' - Resposta recebida', response);
       const documentData = response.data?.financialDocument;
       if (!documentData) {
-        console.log('📡 PUT /financial-documents/' + id + ' - Dados não retornados pelo servidor', response);
+        console.log('PUT /financial-documents/' + id + ' - Dados não retornados pelo servidor', response);
         toast({ title: 'Erro ao atualizar documento', description: 'Dados não retornados pelo servidor.', variant: 'destructive' });
         return null;
       }
       const item = normalizeFinancialDocument(documentData);
-      console.log('📡 PUT /financial-documents/' + id + ' - Dados normalizados', item);
+      console.log('PUT /financial-documents/' + id + ' - Dados normalizados', item);
       // Atualizar estado local diretamente (padrão cost-centers)
       if (item) {
         setState((s) => ({
@@ -159,7 +159,7 @@ export function useFinancialDocuments() {
       
       toast({ title: 'Documento atualizado', description: item?.description || 'Registro atualizado.' });
       // Refetch
-      console.log('📡 PUT /financial-documents/' + id + ' - Forçando refresh completo dos dados financeiros');
+      console.log('PUT /financial-documents/' + id + ' - Forçando refresh completo dos dados financeiros');
       await refetch();
       return item;
     } catch (e) {
@@ -170,7 +170,7 @@ export function useFinancialDocuments() {
   }, [refetch]);
 
   const forceRefresh = useCallback(async () => {
-    console.log('🔄 Forçando refresh completo dos dados financeiros');
+    console.log('Forçando refresh completo dos dados financeiros');
     await refetch();
   }, [refetch]);
 

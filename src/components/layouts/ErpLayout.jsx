@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Briefcase, LogOut, UserCircle, ShieldAlert, ChevronsUpDown } from 'lucide-react';
+import { Menu, X, Briefcase, LogOut, UserCircle, ShieldAlert, ChevronsUpDown, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -42,7 +42,7 @@ const ErpLayout = ({ children }) => {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mb-4 mx-auto">
-            <div className="w-8 h-8 text-white">🚀</div>
+            <Rocket className="w-8 h-8 text-white" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Breno ERP</h2>
           <p className="text-gray-400">Carregando...</p>
@@ -59,7 +59,7 @@ const ErpLayout = ({ children }) => {
   }
 
   const handleSegmentChange = async (segmentId) => {
-    console.log('🔄 Mudando segmento para:', segmentId);
+    console.log('Mudando segmento para:', segmentId);
     setActiveSegmentId(segmentId);
   };
 
@@ -86,7 +86,7 @@ const ErpLayout = ({ children }) => {
     
     // Usar o mapeamento de rotas correto
     const route = getRouteFromMenuId(moduleId);
-    console.log(`🔄 Navegando para: ${moduleId} -> ${route}`);
+    console.log(`Navegando para: ${moduleId} -> ${route}`);
     
     // Navegar para a rota correta
     router.push(route);

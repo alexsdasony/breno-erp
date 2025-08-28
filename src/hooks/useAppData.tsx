@@ -137,34 +137,34 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        console.log('🚀 Iniciando aplicação...');
+        console.log('Iniciando aplicação...');
         setLoading(true);
         
         // Check if user is authenticated
         if (currentUser) {
           try {
-            console.log('👤 Usuário autenticado:', currentUser.name);
+            console.log('Usuário autenticado:', currentUser.name);
             
             // Load segments for the user
-            console.log('📋 Carregando segmentos...');
+            console.log('Carregando segmentos...');
             const segmentsResponse = await apiService.get('/segments');
             setSegments((segmentsResponse as any).segments || segmentsResponse.data?.segments || []);
             
             // Load users immediately to hydrate selects (manager, etc.)
-            console.log('👥 Carregando usuários...');
+            console.log('Carregando usuários...');
             const usersResponse = await getUsers({ segment_id: activeSegmentId ?? null });
             setData(prev => ({
               ...prev,
               users: usersResponse.data?.users || []
             }));
             
-            console.log('✅ App initialization completed');
+            console.log('App initialization completed');
           } catch (error) {
-            console.error('❌ Error loading segments:', error);
+            console.error('Error loading segments:', error);
           }
         }
       } catch (error) {
-        console.error('❌ App initialization error:', error);
+        console.error('App initialization error:', error);
       } finally {
         setLoading(false);
       }

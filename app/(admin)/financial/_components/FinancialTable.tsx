@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit, Eye, Trash2 } from 'lucide-react';
+import { Edit, Eye, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
 
 export type FinancialDoc = any;
 
@@ -18,8 +18,18 @@ type Props = {
 export default function FinancialTable({ items, currency, pmMap, onDetails, onEdit, onAskDelete }: Props) {
   const typeLabel = (direction?: string | null) => {
     switch (direction) {
-      case 'receivable': return '💰 Entrada';
-      case 'payable': return '💸 Saída';
+      case 'receivable': return (
+        <span className="flex items-center gap-1">
+          <TrendingUp className="w-4 h-4 text-green-600" />
+          Entrada
+        </span>
+      );
+      case 'payable': return (
+        <span className="flex items-center gap-1">
+          <TrendingDown className="w-4 h-4 text-red-600" />
+          Saída
+        </span>
+      );
       default: return '-';
     }
   };

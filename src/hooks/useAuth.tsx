@@ -53,7 +53,7 @@ export const useAuth = (): AuthContextType => {
               if (profile.data && profile.data.user) {
                 setCurrentUser(profile.data.user);
                 localStorage.setItem('cached_user', JSON.stringify(profile.data.user));
-                console.log('✅ Usuário autenticado restaurado:', profile.data.user.name);
+                console.log('Usuário autenticado restaurado:', profile.data.user.name);
               } else {
                 // Fallback para usuário em cache se perfil não disponível
                 const cachedUser = localStorage.getItem('cached_user');
@@ -61,7 +61,7 @@ export const useAuth = (): AuthContextType => {
                   try {
                     const user = JSON.parse(cachedUser);
                     setCurrentUser(user);
-                    console.log('✅ Usuário restaurado do cache:', user.name);
+                    console.log('Usuário restaurado do cache:', user.name);
                   } catch (parseError) {
                     console.error('Erro ao fazer parse do usuário em cache:', parseError);
                     apiService.clearToken();
