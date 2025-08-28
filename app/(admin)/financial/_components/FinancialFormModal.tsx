@@ -14,8 +14,8 @@ type Props = {
   editingDoc: any | null;
   segments: Segment[];
   paymentMethods: Array<{ id: string; name: string }>;
-  onCreate: (payload: any) => Promise<void> | void;
-  onUpdate: (id: string, payload: any) => Promise<void> | void;
+  onCreate: (payload: any) => Promise<any> | any;
+  onUpdate: (id: string, payload: any) => Promise<any> | any;
 };
 
 export default function FinancialFormModal({ open, onClose, loading, editingDoc, segments, paymentMethods, onCreate, onUpdate }: Props) {

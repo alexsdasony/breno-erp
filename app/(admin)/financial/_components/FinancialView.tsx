@@ -214,8 +214,8 @@ export default function FinancialView() {
         editingDoc={editingDoc}
         segments={segments}
         paymentMethods={paymentMethods}
-        onCreate={async (payload) => { await create(payload); }}
-        onUpdate={async (id, payload) => { await update(id, payload); }}
+        onCreate={async (payload) => { return await create(payload); }}
+        onUpdate={async (id, payload) => { return await update(id, payload); }}
       />
 
       {/* Confirmação de exclusão */}
