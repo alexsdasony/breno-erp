@@ -1,8 +1,9 @@
 import type { ID, Timestamped } from './common'
+import type { TransactionType } from './enums'
 
 export interface Transaction extends Timestamped {
   id: ID
-  type: string
+  type: TransactionType
   description?: string | null
   amount: number
   date: string
@@ -14,7 +15,7 @@ export interface Transaction extends Timestamped {
 }
 
 export interface TransactionPayload {
-  type?: string
+  type?: TransactionType
   description?: string | null
   amount?: number
   date?: string

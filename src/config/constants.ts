@@ -17,90 +17,107 @@ export const SUPABASE_CONFIG = {
   anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlcnViaml0ZXRxd2ZxcXlkaHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwMDU5NDUsImV4cCI6MjA2OTU4MTk0NX0.eP6QxQI1oerd5HxPxYpHF8mhKLK6bwnuIyw_aKFjuwU',
 };
 
-// Status de transações
+// DEPRECATED: Use enums centralizados em src/types/enums.ts
+// Mantido apenas para compatibilidade legada
+import {
+  TransactionStatus,
+  TransactionType,
+  ProductStatus,
+  SaleStatus,
+  PaymentMethod,
+  BillingStatus,
+  AccountsPayableStatus,
+  NFeStatus,
+  UserStatus,
+  UserRole,
+  CustomerStatus,
+  PartnerRole
+} from '@/types/enums';
+
+// @deprecated - Use TransactionStatus do enums.ts
 export const TRANSACTION_STATUS = {
-  PENDING: 'pending',
-  COMPLETED: 'completed',
-  CANCELLED: 'cancelled',
+  PENDING: TransactionStatus.PENDING,
+  COMPLETED: TransactionStatus.COMPLETED,
+  CANCELLED: TransactionStatus.CANCELLED,
 };
 
-// Tipos de transação
+// @deprecated - Use TransactionType do enums.ts
 export const TRANSACTION_TYPES = {
-  INCOME: 'income',
-  EXPENSE: 'expense',
+  INCOME: TransactionType.INCOME,
+  EXPENSE: TransactionType.EXPENSE,
 };
 
-// Status de produtos
+// @deprecated - Use ProductStatus do enums.ts
 export const PRODUCT_STATUS = {
-  ACTIVE: 'active',
-  INACTIVE: 'inactive',
-  OUT_OF_STOCK: 'out_of_stock',
+  ACTIVE: ProductStatus.ACTIVE,
+  INACTIVE: ProductStatus.INACTIVE,
+  OUT_OF_STOCK: ProductStatus.OUT_OF_STOCK,
 };
 
-// Status de vendas
+// @deprecated - Use SaleStatus do enums.ts
 export const SALE_STATUS = {
-  PENDING: 'Pendente',
-  COMPLETED: 'Concluída',
-  CANCELLED: 'Cancelada',
+  PENDING: SaleStatus.PENDENTE,
+  COMPLETED: SaleStatus.CONCLUIDA,
+  CANCELLED: SaleStatus.CANCELADA,
 };
 
-// Métodos de pagamento
+// @deprecated - Use PaymentMethod do enums.ts
 export const PAYMENT_METHODS = {
-  CASH: 'dinheiro',
-  CREDIT_CARD: 'cartão de crédito',
-  DEBIT_CARD: 'cartão de débito',
-  PIX: 'pix',
-  BANK_TRANSFER: 'transferência bancária',
+  CASH: PaymentMethod.CASH,
+  CREDIT_CARD: PaymentMethod.CREDIT_CARD,
+  DEBIT_CARD: PaymentMethod.DEBIT_CARD,
+  PIX: PaymentMethod.PIX,
+  BANK_TRANSFER: PaymentMethod.BANK_TRANSFER,
 };
 
-// Status de faturas
+// @deprecated - Use BillingStatus do enums.ts
 export const BILLING_STATUS = {
-  PENDING: 'pending',
-  PAID: 'paid',
-  OVERDUE: 'overdue',
-  CANCELLED: 'cancelled',
+  PENDING: BillingStatus.PENDING,
+  PAID: BillingStatus.PAID,
+  OVERDUE: BillingStatus.OVERDUE,
+  CANCELLED: BillingStatus.CANCELLED,
 };
 
-// Status de contas a pagar
+// @deprecated - Use AccountsPayableStatus do enums.ts
 export const ACCOUNTS_PAYABLE_STATUS = {
-  PENDING: 'pending',
-  PAID: 'paid',
-  OVERDUE: 'overdue',
-  CANCELLED: 'cancelled',
+  PENDING: AccountsPayableStatus.PENDING,
+  PAID: AccountsPayableStatus.PAID,
+  OVERDUE: AccountsPayableStatus.OVERDUE,
+  CANCELLED: AccountsPayableStatus.CANCELLED,
 };
 
-// Status de NFe
+// @deprecated - Use NFeStatus do enums.ts
 export const NFE_STATUS = {
-  PENDING: 'pending',
-  ISSUED: 'issued',
-  CANCELLED: 'cancelled',
+  PENDING: NFeStatus.PENDING,
+  ISSUED: NFeStatus.ISSUED,
+  CANCELLED: NFeStatus.CANCELLED,
 };
 
-// Status de usuários
+// @deprecated - Use UserStatus do enums.ts
 export const USER_STATUS = {
-  ACTIVE: 'ativo',
-  INACTIVE: 'inativo',
-  SUSPENDED: 'suspenso',
+  ACTIVE: UserStatus.ATIVO,
+  INACTIVE: UserStatus.INATIVO,
+  SUSPENDED: UserStatus.SUSPENSO,
 };
 
-// Roles de usuários
+// @deprecated - Use UserRole do enums.ts
 export const USER_ROLES = {
-  ADMIN: 'admin',
-  USER: 'user',
-  MANAGER: 'manager',
+  ADMIN: UserRole.ADMIN,
+  USER: UserRole.USER,
+  MANAGER: UserRole.MANAGER,
 };
 
-// Status de parceiros
+// @deprecated - Use CustomerStatus do enums.ts
 export const PARTNER_STATUS = {
-  ACTIVE: 'active',
-  INACTIVE: 'inactive',
-  PENDING: 'pendente',
+  ACTIVE: CustomerStatus.ATIVO,
+  INACTIVE: CustomerStatus.INATIVO,
+  PENDING: CustomerStatus.PENDENTE,
 };
 
-// Roles de parceiros
+// @deprecated - Use PartnerRole do enums.ts
 export const PARTNER_ROLES = {
-  CUSTOMER: 'customer',
-  SUPPLIER: 'supplier',
+  CUSTOMER: PartnerRole.CUSTOMER,
+  SUPPLIER: PartnerRole.SUPPLIER,
 };
 
 // Configurações de paginação

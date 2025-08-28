@@ -1,4 +1,5 @@
 import type { ID, Timestamped } from './common'
+import type { CustomerStatus, PersonType } from './enums'
 
 export interface Customer extends Timestamped {
   id: ID
@@ -11,9 +12,9 @@ export interface Customer extends Timestamped {
   state?: string | null
   zip_code?: string | null
   notes?: string | null
-  status?: 'active' | 'inactive' | 'suspended' | null
+  status?: CustomerStatus | null
   segment_id?: ID | null
-  tipo_pessoa?: 'pf' | 'pj' | null
+  tipo_pessoa?: PersonType | null
   rg?: string | null
   data_nascimento?: string | null
   estado_civil?: string | null
@@ -53,9 +54,9 @@ export interface CustomerPayload {
   state?: string | null
   zip_code?: string | null
   notes?: string | null
-  status?: 'active' | 'inactive' | 'suspended' | null
+  status?: CustomerStatus | null
   segment_id?: ID | null
-  tipo_pessoa?: 'pf' | 'pj' | null
+  tipo_pessoa?: PersonType | null
   rg?: string | null
   data_nascimento?: string | null
   estado_civil?: string | null

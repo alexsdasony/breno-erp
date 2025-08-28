@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSales } from '../_hooks/useSales';
 import { Sale } from '@/types';
+import { SaleStatus } from '@/types/enums';
 import { SalesKPIs } from './SalesKPIs';
 import { SalesForm } from './SalesForm';
 import { SalesList } from './SalesList';
@@ -54,7 +55,7 @@ export default function SalesView() {
         customer_id: formData.customer_id,
         customer_name: formData.customer_name,
         date: formData.sale_date,
-        status: formData.status,
+        status: formData.status as SaleStatus,
         total_amount: saleItems.reduce((acc, item) => acc + item.totalPrice, 0),
         items: saleItems.map(item => ({
           id: item.id,

@@ -1,4 +1,5 @@
 import type { ID, Timestamped } from './common'
+import type { ProductStatus } from './enums'
 
 export interface Product extends Timestamped {
   id: ID
@@ -14,6 +15,7 @@ export interface Product extends Timestamped {
   category?: string | null
   description?: string | null
   supplier?: string | null
+  status?: ProductStatus | null
   deleted_at?: string | null
   is_deleted?: boolean | null
 }

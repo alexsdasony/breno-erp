@@ -1,4 +1,5 @@
 import type { ID, Timestamped } from './common'
+import type { BillingStatus } from './enums'
 
 export interface Billing extends Timestamped {
   id: ID
@@ -6,7 +7,7 @@ export interface Billing extends Timestamped {
   customer_name?: string | null
   amount: number
   due_date: string
-  status: string
+  status: BillingStatus
   payment_date?: string | null
   segment_id?: ID | null
   deleted_at?: string | null
@@ -18,7 +19,7 @@ export interface BillingPayload {
   customer_name?: string | null
   amount: number
   due_date: string
-  status?: string
+  status?: BillingStatus
   payment_date?: string | null
   segment_id?: ID | null
 }

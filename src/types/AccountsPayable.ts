@@ -1,4 +1,5 @@
 import type { ID, Timestamped } from './common'
+import type { AccountsPayableStatus, PaymentMethod } from './enums'
 
 export interface AccountsPayable extends Timestamped {
   id: ID
@@ -8,9 +9,9 @@ export interface AccountsPayable extends Timestamped {
   valor: number
   data_vencimento: string
   data_pagamento?: string | null
-  status: string
+  status: AccountsPayableStatus
   categoria_id?: ID | null
-  forma_pagamento?: string | null
+  forma_pagamento?: PaymentMethod | null
   observacoes?: string | null
   responsavel_pagamento?: string | null
   numero_parcela?: number
@@ -27,9 +28,9 @@ export interface AccountsPayablePayload {
   valor: number
   data_vencimento: string
   data_pagamento?: string | null
-  status?: string
+  status?: AccountsPayableStatus
   categoria_id?: ID | null
-  forma_pagamento?: string | null
+  forma_pagamento?: PaymentMethod | null
   observacoes?: string | null
   responsavel_pagamento?: string | null
   numero_parcela?: number
@@ -46,11 +47,11 @@ export interface AccountPayable {
   supplier_id?: string | null
   supplier_name?: string | null
   category?: string | null
-  status?: string
+  status?: AccountsPayableStatus
   segment_id?: string | null
   notes?: string | null
   payment_date?: string | null
-  payment_method?: string | null
+  payment_method?: PaymentMethod | null
 }
 
 export interface AccountPayablePayload {
@@ -59,9 +60,9 @@ export interface AccountPayablePayload {
   due_date?: string | null
   supplier_id?: string | null
   category?: string | null
-  status?: string
+  status?: AccountsPayableStatus
   segment_id?: string | null
   notes?: string | null
   payment_date?: string | null
-  payment_method?: string | null
+  payment_method?: PaymentMethod | null
 }

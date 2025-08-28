@@ -1,10 +1,11 @@
 import type { ID, Timestamped } from './common'
+import type { UserRole } from './enums'
 
 export interface User extends Timestamped {
   id: ID
   email: string
   name?: string | null
-  role?: string | null
+  role?: UserRole | null
   is_active?: boolean
   last_login?: string | null
   segment_id?: ID | null
@@ -13,7 +14,7 @@ export interface User extends Timestamped {
 export interface UserPayload {
   email?: string
   name?: string | null
-  role?: string | null
+  role?: UserRole | null
   is_active?: boolean
   segment_id?: ID | null
 }

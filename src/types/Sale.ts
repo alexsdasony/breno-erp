@@ -1,6 +1,7 @@
 import { ID, Timestamped } from './common'
 import { Customer } from './Customer'
 import { Product } from './Product'
+import type { SaleStatus, PaymentMethod } from './enums'
 
 export interface SaleItem {
   id: ID
@@ -23,8 +24,8 @@ export interface Sale extends Timestamped {
   sale_date?: string | null
   total: number
   total_amount?: number | null
-  status: string
-  payment_method: string
+  status: SaleStatus
+  payment_method: PaymentMethod
   notes?: string | null
   segment_id?: ID | null
   deleted_at?: string | null
@@ -41,8 +42,8 @@ export interface SalePayload {
   sale_date?: string | null
   total?: number
   total_amount?: number | null
-  status?: string
-  payment_method?: string
+  status?: SaleStatus
+  payment_method?: PaymentMethod
   notes?: string | null
   segment_id?: ID | null
   items?: Omit<SaleItem, 'id' | 'sale_id'>[] 

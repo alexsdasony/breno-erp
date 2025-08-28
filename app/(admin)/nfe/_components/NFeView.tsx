@@ -6,6 +6,7 @@ import { useNFe } from '../_hooks/useNFe'
 import { useENotas } from '../_hooks/useENotas'
 import { enotasService } from '@/services/enotasService'
 import type { NFePayload } from '@/types'
+import { NFeStatus } from '@/types/enums'
 import { Button } from '@/components/ui/button'
 import { 
   FileText, 
@@ -29,9 +30,12 @@ import {
 } from 'lucide-react'
 
 const statusConfig = {
-  pending: { label: 'Pendente', color: 'text-yellow-400', bgColor: 'bg-yellow-400/10', icon: Clock },
-  issued: { label: 'Emitida', color: 'text-green-400', bgColor: 'bg-green-400/10', icon: CheckCircle },
-  cancelled: { label: 'Cancelada', color: 'text-red-400', bgColor: 'bg-red-400/10', icon: XCircle }
+  [NFeStatus.PENDING]: { label: 'Pendente', color: 'text-yellow-400', bgColor: 'bg-yellow-400/10', icon: Clock },
+  [NFeStatus.EMITIDA]: { label: 'Emitida', color: 'text-green-400', bgColor: 'bg-green-400/10', icon: CheckCircle },
+  [NFeStatus.CANCELADA]: { label: 'Cancelada', color: 'text-red-400', bgColor: 'bg-red-400/10', icon: XCircle },
+  // Compatibilidade legada
+  [NFeStatus.ISSUED]: { label: 'Emitida', color: 'text-green-400', bgColor: 'bg-green-400/10', icon: CheckCircle },
+  [NFeStatus.CANCELLED]: { label: 'Cancelada', color: 'text-red-400', bgColor: 'bg-red-400/10', icon: XCircle }
 }
 
 export default function NFeView() {
@@ -421,11 +425,11 @@ export default function NFeView() {
                     <select 
                       className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50" 
                       value={form.status || ''} 
-                      onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+                      onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as NFeStatus }))}
                     >
-                      <option value="pending">Pendente</option>
-                      <option value="issued">Emitida</option>
-                      <option value="cancelled">Cancelada</option>
+                      <option value={NFeStatus.PENDENTE}>Pendente</option>
+                      <option value={NFeStatus.EMITIDA}>Emitida</option>
+                      <option value={NFeStatus.CANCELADA}>Cancelada</option>
                     </select>
                   </div>
                   <div>

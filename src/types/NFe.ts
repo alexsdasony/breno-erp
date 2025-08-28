@@ -1,4 +1,5 @@
 import type { ID, Timestamped } from './common'
+import type { NFeStatus } from './enums'
 
 export interface NFe extends Timestamped {
   id: ID
@@ -8,7 +9,7 @@ export interface NFe extends Timestamped {
   issue_date: string
   total_amount: number
   tax_amount: number
-  status: string
+  status: NFeStatus
   xml_content?: string | null
   access_key?: string | null
   segment_id?: ID | null
@@ -22,7 +23,7 @@ export interface NFePayload {
   issue_date?: string
   total_amount?: number
   tax_amount?: number
-  status?: string
+  status?: NFeStatus
   xml_content?: string | null
   access_key?: string | null
   segment_id?: ID | null
