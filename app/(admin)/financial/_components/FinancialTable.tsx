@@ -16,14 +16,16 @@ type Props = {
 };
 
 export default function FinancialTable({ items, currency, pmMap, onDetails, onEdit, onAskDelete }: Props) {
-  const typeLabel = (t?: string | null) => {
-    switch (t) {
-      case 'expense': return 'Despesa';
-      case 'receipt': return 'Receita';
-      case 'income': return 'Receita';
-      case 'transfer': return 'Transferência';
+  const typeLabel = (direction?: string | null) => {
+    switch (direction) {
+      case 'receivable': return '💰 Entrada';
+      case 'payable': return '💸 Saída';
       default: return '-';
     }
+  };
+
+  const getPartnerName = (doc: FinancialDoc) => {
+    return doc.partner_name || doc.partner?.name || (doc.entity_name || doc.entity_id) || '-';
   };
   return (
     <div className="glass-effect rounded-xl p-0 border overflow-hidden">
@@ -46,8 +48,8 @@ export default function FinancialTable({ items, currency, pmMap, onDetails, onEd
               <tr key={d.id} className="border-b border-border hover:bg-muted/30">
                 <td className="p-3">{d.issue_date || '-'}</td>
                 <td className="p-3">{d.due_date || '-'}</td>
-                <td className="p-3">{typeLabel(d.document_type)}</td>
-                <td className="p-3">{d.entity_id ? (d.entity_name || d.entity_id) : '-'}</td>
+                <td className="p-3">{typeLabel(d.direction)}</td>
+                <td className="p-3">{getPartnerName(d)}</td>
                 <td className="p-3 text-right">{currency(Number(d.amount || 0))}</td>
                 <td className="p-3">{d.payment_method ? (pmMap[d.payment_method] || d.payment_method) : '-'}</td>
                 <td className="p-3">

@@ -204,11 +204,11 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
               {/* Primeira linha - Informações principais */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-foreground">Direção *</label>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Tipo de Movimentação *</label>
                   <select className="w-full bg-muted/50 border border-border/50 rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" value={fDirection} onChange={(e) => setFDirection(e.target.value)}>
                     <option value="">Selecione...</option>
-                    <option value="receivable">💰 Recebível</option>
-                    <option value="payable">💸 Pagável</option>
+                    <option value="receivable">💰 Entrada (Recebível)</option>
+                    <option value="payable">💸 Saída (Pagável)</option>
                   </select>
                 </div>
                 <div>

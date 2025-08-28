@@ -7,6 +7,9 @@ import type { FinancialDocument, FinancialDocumentPayload } from '@/types/Financ
  * Normaliza um documento financeiro do formato do backend para o formato esperado pelo frontend
  */
 export function normalizeFinancialDocument(row: any): FinancialDocument {
+  // Garantir que partner_name seja extraído corretamente
+  const partnerName = row.partner?.name || row.partner_name || null;
+  
   return {
     id: row.id,
     partner_id: row.partner_id,
@@ -29,7 +32,7 @@ export function normalizeFinancialDocument(row: any): FinancialDocument {
     // Campos mapeados para compatibilidade
     type: row.direction,
     date: row.issue_date,
-    partner_name: row.partner?.name || row.partner_name,
+    partner_name: partnerName,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
