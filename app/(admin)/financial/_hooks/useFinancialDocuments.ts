@@ -141,12 +141,13 @@ export function useFinancialDocuments() {
     try {
       const response = await updateFinancialDocument(id, data);
       console.log('📡 PUT /financial-documents/' + id + ' - Resposta recebida', response);
-      if (!response.data?.financialDocument) {
+      const documentData = response.data?.financialDocument;
+      if (!documentData) {
         console.log('📡 PUT /financial-documents/' + id + ' - Dados não retornados pelo servidor', response);
         toast({ title: 'Erro ao atualizar documento', description: 'Dados não retornados pelo servidor.', variant: 'destructive' });
         return null;
       }
-      const item = normalizeFinancialDocument(response.data.financialDocument);
+      const item = normalizeFinancialDocument(documentData);
       console.log('📡 PUT /financial-documents/' + id + ' - Dados normalizados', item);
       // Atualizar estado local diretamente (padrão cost-centers)
       if (item) {

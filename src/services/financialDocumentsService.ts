@@ -64,8 +64,12 @@ export async function getFinancialDocumentById(id: ID): Promise<ApiResponse<{ fi
  * Cria um novo documento financeiro
  */
 export async function createFinancialDocument(data: FinancialDocumentPayload): Promise<ApiResponse<{ financialDocument: FinancialDocument }>> {
-  const response = await apiService.post<{ financialDocument: FinancialDocument }>('/financial-documents', data);
-  return response as ApiResponse<{ financialDocument: FinancialDocument }>;
+  const response = await apiService.post<{ document: FinancialDocument }>('/financial-documents', data);
+  // Mapear a resposta da edge function {document: data} para o formato esperado {data: {financialDocument: data}}
+  return {
+    success: true,
+    data: { financialDocument: response.document }
+  };
 }
 
 /**
@@ -73,8 +77,12 @@ export async function createFinancialDocument(data: FinancialDocumentPayload): P
  */
 // TODO: Analise humana
 export async function updateFinancialDocument(id: ID, data: Partial<FinancialDocumentPayload>): Promise<ApiResponse<{ financialDocument: FinancialDocument }>> {
-  const response = await apiService.put<{ financialDocument: FinancialDocument }>(`/financial-documents/${id}`, data);
-  return response as ApiResponse<{ financialDocument: FinancialDocument }>;
+  const response = await apiService.put<{ document: FinancialDocument }>(`/financial-documents/${id}`, data);
+  // Mapear a resposta da edge function {document: data} para o formato esperado {data: {financialDocument: data}}
+  return {
+    success: true,
+    data: { financialDocument: response.document }
+  };
 }
 
 /**
