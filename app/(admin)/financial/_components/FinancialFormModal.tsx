@@ -181,127 +181,200 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
       {open && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center" aria-modal="true" role="dialog">
           <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-          <motion.div initial={{ opacity: 0, scale: 0.98, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: 8 }} className="relative glass-effect border rounded-xl w-[95vw] max-w-3xl max-h-[85vh] overflow-auto p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">{isEditing ? 'Editar Documento' : 'Novo Documento'}</h2>
-              <button className="px-2 py-1 rounded-md border border-white/10" onClick={onClose}>Esc</button>
-            </div>
-            <form ref={formRef} onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-12 gap-4" noValidate>
-              <div className="md:col-span-2">
-                <label className="block text-sm mb-1">Direção</label>
-                <select className="w-full bg-muted border rounded-lg p-2" value={fDirection} onChange={(e) => setFDirection(e.target.value)}>
-                  <option value="">Selecione...</option>
-                  <option value="receivable">Recebível</option>
-                  <option value="payable">Pagável</option>
-                </select>
+          <motion.div initial={{ opacity: 0, scale: 0.98, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: 8 }} className="relative glass-effect border border-border/30 rounded-xl w-[95vw] max-w-4xl max-h-[90vh] overflow-auto">
+            <div className="flex items-center justify-between p-6 pb-4 border-b border-border/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+                  {isEditing ? '📝' : '➕'}
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground">{isEditing ? 'Editar Documento' : 'Novo Documento'}</h2>
+                  <p className="text-sm text-muted-foreground">{isEditing ? 'Modifique as informações do documento financeiro' : 'Preencha os dados do novo documento financeiro'}</p>
+                </div>
               </div>
-              <div className="md:col-span-6">
-                <label className="block text-sm mb-1">Descrição</label>
-                <input ref={firstInputRef} className={`w-full bg-muted border rounded-lg p-2 ${descError ? 'border-red-500' : ''}`} value={fDescription} onChange={(e) => setFDescription(e.target.value)} placeholder="Descrição" />
+              <button 
+                className="p-2 rounded-lg border border-border/50 hover:bg-muted/50 transition-all text-muted-foreground hover:text-foreground" 
+                onClick={onClose}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6">
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-6" noValidate>
+              {/* Primeira linha - Informações principais */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Direção *</label>
+                  <select className="w-full bg-muted/50 border border-border/50 rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" value={fDirection} onChange={(e) => setFDirection(e.target.value)}>
+                    <option value="">Selecione...</option>
+                    <option value="receivable">💰 Recebível</option>
+                    <option value="payable">💸 Pagável</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Valor *</label>
+                  <input 
+                    type="number" 
+                    step="0.01" 
+                    className={`w-full bg-muted/50 border rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${amountError ? 'border-red-500 focus:ring-red-500/20' : 'border-border/50'}`} 
+                    value={fAmount} 
+                    onChange={(e) => setFAmount(e.target.value)} 
+                    placeholder="0,00" 
+                  />
+                  {amountError && <p className="mt-1 text-xs text-red-400">{amountError}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Status</label>
+                  <select className="w-full bg-muted/50 border border-border/50 rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" value={fStatus} onChange={(e) => setFStatus(e.target.value)}>
+                    <option value="draft">📝 Rascunho</option>
+                    <option value="open">🔓 Aberto</option>
+                    <option value="partially_paid">⏳ Parcialmente Pago</option>
+                    <option value="paid">✅ Pago</option>
+                    <option value="canceled">❌ Cancelado</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Segunda linha - Descrição */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-foreground">Descrição *</label>
+                <input 
+                  ref={firstInputRef} 
+                  className={`w-full bg-muted/50 border rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${descError ? 'border-red-500 focus:ring-red-500/20' : 'border-border/50'}`} 
+                  value={fDescription} 
+                  onChange={(e) => setFDescription(e.target.value)} 
+                  placeholder="Descrição do documento financeiro" 
+                />
                 {descError && <p className="mt-1 text-xs text-red-400">{descError}</p>}
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm mb-1">Valor</label>
-                <input type="number" step="0.01" className={`w-full bg-muted border rounded-lg p-2 ${amountError ? 'border-red-500' : ''}`} value={fAmount} onChange={(e) => setFAmount(e.target.value)} placeholder="0,00" />
-                {amountError && <p className="mt-1 text-xs text-red-400">{amountError}</p>}
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm mb-1">Status</label>
-                <select className="w-full bg-muted border rounded-lg p-2" value={fStatus} onChange={(e) => setFStatus(e.target.value)}>
-                  <option value="draft">Rascunho</option>
-                  <option value="open">Aberto</option>
-                  <option value="partially_paid">Parcialmente Pago</option>
-                  <option value="paid">Pago</option>
-                  <option value="canceled">Cancelado</option>
-                </select>
-              </div>
 
-              <div className="md:col-span-3">
-                <label className="block text-sm mb-1">Data Emissão</label>
-                <input type="date" className="w-full bg-muted border rounded-lg p-2" value={fIssueDate} onChange={(e) => setFIssueDate(e.target.value)} />
-              </div>
-              <div className="md:col-span-3">
-                <label className="block text-sm mb-1">Vencimento</label>
-                <input type="date" className="w-full bg-muted border rounded-lg p-2" value={fDueDate} onChange={(e) => setFDueDate(e.target.value)} />
-              </div>
-              <div className="md:col-span-6">
-                <label className="block text-sm mb-1">Cliente/Fornecedor</label>
-                <div className="relative">
-                  <input
-                    ref={partnerInputRef}
-                    className="w-full bg-muted border rounded-lg p-2"
-                    value={partnerQuery}
-                    onChange={(e) => { setPartnerQuery(e.target.value); setShowPartnerList(true); }}
-                    onFocus={() => setShowPartnerList(true)}
-                    placeholder="Digite para buscar..."
+              {/* Terceira linha - Datas e Cliente/Fornecedor */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Data Emissão</label>
+                  <input 
+                    type="date" 
+                    className="w-full bg-muted/50 border border-border/50 rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
+                    value={fIssueDate} 
+                    onChange={(e) => setFIssueDate(e.target.value)} 
                   />
-                  {showPartnerList && (partnerOptions.length > 0 || loadingPartners) && (
-                    <div className="absolute z-10 mt-1 w-full max-h-52 overflow-auto rounded-md border bg-background shadow">
-                      {loadingPartners && (
-                        <div className="px-3 py-2 text-sm text-muted-foreground">Buscando...</div>
-                      )}
-                      {!loadingPartners && partnerOptions.map((opt) => (
-                        <button
-                          type="button"
-                          key={opt.id}
-                          className={`flex w-full items-center justify-between px-3 py-2 text-left hover:bg-muted/50 ${fPartnerId === opt.id ? 'bg-muted/30' : ''}`}
-                          onClick={() => {
-                            setFPartnerId(opt.id);
-                            setPartnerQuery(opt.name);
-                            setShowPartnerList(false);
-                          }}
-                        >
-                          <span className="text-sm">{opt.name}</span>
-                        </button>
-                      ))}
-                    </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Vencimento</label>
+                  <input 
+                    type="date" 
+                    className="w-full bg-muted/50 border border-border/50 rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
+                    value={fDueDate} 
+                    onChange={(e) => setFDueDate(e.target.value)} 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Cliente/Fornecedor</label>
+                  <div className="relative">
+                    <input
+                      ref={partnerInputRef}
+                      className="w-full bg-muted/50 border border-border/50 rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      value={partnerQuery}
+                      onChange={(e) => { setPartnerQuery(e.target.value); setShowPartnerList(true); }}
+                      onFocus={() => setShowPartnerList(true)}
+                      placeholder="Digite para buscar..."
+                    />
+                    {showPartnerList && (partnerOptions.length > 0 || loadingPartners) && (
+                      <div className="absolute z-10 mt-1 w-full max-h-52 overflow-auto rounded-lg border border-border/50 bg-background/95 backdrop-blur-sm shadow-lg">
+                        {loadingPartners && (
+                          <div className="px-3 py-2 text-sm text-muted-foreground">🔍 Buscando...</div>
+                        )}
+                        {!loadingPartners && partnerOptions.map((opt) => (
+                          <button
+                            type="button"
+                            key={opt.id}
+                            className={`flex w-full items-center justify-between px-3 py-2 text-left hover:bg-muted/50 transition-colors ${fPartnerId === opt.id ? 'bg-primary/10 text-primary' : ''}`}
+                            onClick={() => {
+                              setFPartnerId(opt.id);
+                              setPartnerQuery(opt.name);
+                              setShowPartnerList(false);
+                            }}
+                          >
+                            <span className="text-sm">{opt.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {fPartnerId && (
+                    <p className="mt-1 text-xs text-muted-foreground">✓ Selecionado: {partnerQuery}</p>
                   )}
                 </div>
-                {fPartnerId && (
-                  <p className="mt-1 text-xs text-muted-foreground">Selecionado: {partnerQuery} ({fPartnerId})</p>
-                )}
-              </div>
-              <div className="md:col-span-6">
-                <label className="block text-sm mb-1">Segmento</label>
-                <select className="w-full bg-muted border rounded-lg p-2" value={fSegmentId} onChange={(e) => setFSegmentId(e.target.value)}>
-                  <option value="">Sem segmento</option>
-                  {Array.isArray(segments) && segments.map((s) => (
-                    <option key={s.id} value={s.id}>{s.code ? `${s.code} - ` : ''}{s.name || s.id}</option>
-                  ))}
-                </select>
               </div>
 
-              {/* Método de Pagamento */}
-              <div className="md:col-span-4">
-                <label className="block text-sm mb-1">Método de Pagamento</label>
-                <select
-                  className="w-full bg-muted border rounded-lg p-2"
-                  value={fPaymentMethodId}
-                  onChange={(e) => setFPaymentMethodId(e.target.value)}
+              {/* Quarta linha - Segmento, Método de Pagamento e Nº Documento */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Segmento</label>
+                  <select className="w-full bg-muted/50 border border-border/50 rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" value={fSegmentId} onChange={(e) => setFSegmentId(e.target.value)}>
+                    <option value="">Sem segmento</option>
+                    {Array.isArray(segments) && segments.map((s) => (
+                      <option key={s.id} value={s.id}>{s.code ? `${s.code} - ` : ''}{s.name || s.id}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Método de Pagamento</label>
+                  <select
+                    className="w-full bg-muted/50 border border-border/50 rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    value={fPaymentMethodId}
+                    onChange={(e) => setFPaymentMethodId(e.target.value)}
+                  >
+                    <option value="">Sem método</option>
+                    {paymentMethods.map((pm) => (
+                      <option key={pm.id} value={pm.id}>{pm.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Nº Documento</label>
+                  <input 
+                    className="w-full bg-muted/50 border border-border/50 rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
+                    value={fDocNo} 
+                    onChange={(e) => setFDocNo(e.target.value)} 
+                    placeholder="ex: NF 123" 
+                  />
+                </div>
+              </div>
+
+              {/* Quinta linha - Observações */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-foreground">Observações</label>
+                <textarea 
+                  className="w-full bg-muted/50 border border-border/50 rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none" 
+                  rows={3} 
+                  value={fNotes} 
+                  onChange={(e) => setFNotes(e.target.value)} 
+                  placeholder="Notas internas sobre o documento..." 
+                />
+              </div>
+
+              {/* Botões de ação */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/20">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={onClose}
+                  className="px-6 py-2.5 border-border/50 hover:bg-muted/50 transition-all"
                 >
-                  <option value="">Sem método</option>
-                  {paymentMethods.map((pm) => (
-                    <option key={pm.id} value={pm.id}>{pm.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="md:col-span-4">
-                <label className="block text-sm mb-1">Nº Documento</label>
-                <input className="w-full bg-muted border rounded-lg p-2" value={fDocNo} onChange={(e) => setFDocNo(e.target.value)} placeholder="ex: NF 123" />
-              </div>
-              <div className="md:col-span-12">
-                <label className="block text-sm mb-1">Observações</label>
-                <textarea className="w-full bg-muted border rounded-lg p-2" rows={3} value={fNotes} onChange={(e) => setFNotes(e.target.value)} placeholder="Notas internas (UI-only)" />
-              </div>
-
-              <div className="md:col-span-12 flex items-center gap-3">
-                <Button type="submit" className="bg-gradient-to-r from-indigo-500 to-purple-600" disabled={loading}>
-                  {loading ? 'Salvando...' : isEditing ? 'Salvar Alterações (Enter)' : 'Adicionar Documento (Enter)'}
+                  {isEditing ? '❌ Cancelar Edição (Esc)' : '❌ Cancelar (Esc)'}
                 </Button>
-                <Button type="button" variant="outline" onClick={onClose}>{isEditing ? 'Cancelar Edição (Esc)' : 'Cancelar (Esc)'}</Button>
-              </div>
-            </form>
-          </motion.div>
+                <Button 
+                  type="submit" 
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 px-6 py-2.5 shadow-lg hover:shadow-xl transition-all" 
+                  disabled={loading}
+                >
+                  {loading ? '⏳ Salvando...' : isEditing ? '💾 Salvar Alterações (Enter)' : '➕ Adicionar Documento (Enter)'}
+                </Button>
+               </div>
+             </form>
+             </div>
+           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
