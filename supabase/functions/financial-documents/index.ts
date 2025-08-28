@@ -19,13 +19,13 @@ serve(async (req) => {
       if (id && id !== 'financial-documents') {
         const { data, error } = await supabase
           .from('financial_documents')
-          .select('*, partner:partners(name)')
+          .select('*, partner:partners(name), payment_method_data:payment_methods(name)')
           .eq('id', id)
           .single();
         if (error) return notFound('Document not found');
         return ok({ document: data });
       }
-      let query = supabase.from('financial_documents').select('*, partner:partners(name)');
+      let query = supabase.from('financial_documents').select('*, partner:partners(name), payment_method_data:payment_methods(name)');
       if (direction) query = query.eq('direction', direction);
       query = query.order('created_at', { ascending: false });
       const { data, error } = await query;
@@ -38,7 +38,7 @@ serve(async (req) => {
       const { data, error } = await supabase
         .from('financial_documents')
         .insert(body)
-        .select('*, partner:partners(name)')
+        .select('*, partner:partners(name), payment_method_data:payment_methods(name)')
         .single();
       if (error) return badRequest(error.message);
       return ok({ document: data });
@@ -50,7 +50,7 @@ serve(async (req) => {
         .from('financial_documents')
         .update(body)
         .eq('id', id)
-        .select('*, partner:partners(name)')
+        .select('*, partner:partners(name), payment_method_data:payment_methods(name)')
         .single();
       if (error) return badRequest(error.message);
       return ok({ document: data });

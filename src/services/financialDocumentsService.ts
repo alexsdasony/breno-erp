@@ -10,6 +10,9 @@ export function normalizeFinancialDocument(row: any): FinancialDocument {
   // Garantir que partner_name seja extraído corretamente
   const partnerName = row.partner?.name || row.partner_name || null;
   
+  // Garantir que payment_method seja extraído corretamente
+  const paymentMethod = row.payment_method_data?.name || row.payment_method || null;
+  
   return {
     id: row.id,
     partner_id: row.partner_id,
@@ -23,7 +26,7 @@ export function normalizeFinancialDocument(row: any): FinancialDocument {
     category_id: row.category_id,
     segment_id: row.segment_id,
     description: row.description,
-    payment_method: row.payment_method,
+    payment_method: paymentMethod,
     payment_method_id: row.payment_method_id,
     notes: row.notes,
     deleted_at: row.deleted_at,
