@@ -136,15 +136,18 @@ export function useFinancialDocuments() {
     }
   }, []);
 
+  // TODO: Analise humana
   const update = useCallback(async (id: string, data: Partial<FinancialDocument>) => {
     try {
       const response = await updateFinancialDocument(id, data);
+      console.log('📡 PUT /financial-documents/' + id + ' - Resposta recebida', response);
       if (!response.data?.financialDocument) {
+        console.log('📡 PUT /financial-documents/' + id + ' - Dados não retornados pelo servidor', response);
         toast({ title: 'Erro ao atualizar documento', description: 'Dados não retornados pelo servidor.', variant: 'destructive' });
         return null;
       }
       const item = normalizeFinancialDocument(response.data.financialDocument);
-      
+      console.log('📡 PUT /financial-documents/' + id + ' - Dados normalizados', item);
       // Atualizar estado local diretamente (padrão cost-centers)
       if (item) {
         setState((s) => ({
@@ -154,13 +157,16 @@ export function useFinancialDocuments() {
       }
       
       toast({ title: 'Documento atualizado', description: item?.description || 'Registro atualizado.' });
+      // Refetch
+      console.log('📡 PUT /financial-documents/' + id + ' - Forçando refresh completo dos dados financeiros');
+      await refetch();
       return item;
     } catch (e) {
       console.error('Erro ao atualizar documento:', e);
       toast({ title: 'Erro ao atualizar documento', description: 'Tente novamente.', variant: 'destructive' });
       return null;
     }
-  }, []);
+  }, [refetch]);
 
   const forceRefresh = useCallback(async () => {
     console.log('🔄 Forçando refresh completo dos dados financeiros');

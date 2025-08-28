@@ -71,6 +71,7 @@ export async function createFinancialDocument(data: FinancialDocumentPayload): P
 /**
  * Atualiza um documento financeiro existente
  */
+// TODO: Analise humana
 export async function updateFinancialDocument(id: ID, data: Partial<FinancialDocumentPayload>): Promise<ApiResponse<{ financialDocument: FinancialDocument }>> {
   const response = await apiService.put<{ financialDocument: FinancialDocument }>(`/financial-documents/${id}`, data);
   return response as ApiResponse<{ financialDocument: FinancialDocument }>;
