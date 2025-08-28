@@ -17,6 +17,7 @@ interface Api {
   load: (reset?: boolean) => Promise<void>;
   loadMore: () => Promise<void>;
   refetch: () => Promise<void>;
+  forceRefresh: () => Promise<void>;
   create: (data: Partial<FinancialDocument>) => Promise<FinancialDocument | null>;
   update: (id: string, data: Partial<FinancialDocument>) => Promise<FinancialDocument | null>;
   remove: (id: string) => Promise<boolean>;
@@ -44,33 +45,50 @@ export function useFinancialDocuments() {
   const load = useCallback(async (reset: boolean = false) => {
     setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
     try {
-      const page = reset ? 1 : state.page;
-      const list = await fetchPage(page);
+      let currentPage: number;
+      setState((s) => {
+        currentPage = reset ? 1 : s.page;
+        return s;
+      });
+      const list = await fetchPage(currentPage!);
       setState((s) => ({
+        ...s,
         items: reset ? list : [...s.items, ...list],
         loading: false,
         refetching: false,
-        page,
+        page: currentPage!,
         hasMore: list.length === PAGE_SIZE,
       }));
     } catch (e) {
       setState((s) => ({ ...s, loading: false, refetching: false }));
       toast({ title: 'Falha ao carregar documentos financeiros', description: 'Tente novamente em instantes.', variant: 'destructive' });
     }
-  }, [state.page, fetchPage]);
+  }, [fetchPage]);
 
   const loadMore = useCallback(async () => {
-    if (state.loading || !state.hasMore) return;
-    const nextPage = state.page + 1;
-    setState((s) => ({ ...s, page: nextPage }));
-    const list = await fetchPage(nextPage);
-    setState((s) => ({
-      ...s,
-      items: [...s.items, ...list],
-      hasMore: list.length === PAGE_SIZE,
-      loading: false,
-    }));
-  }, [state.loading, state.hasMore, state.page, fetchPage]);
+    let canLoad = false;
+    let nextPage: number;
+    setState((s) => {
+      canLoad = !s.loading && s.hasMore;
+      nextPage = s.page + 1;
+      return canLoad ? { ...s, page: nextPage, loading: true } : s;
+    });
+    
+    if (!canLoad) return;
+    
+    try {
+      const list = await fetchPage(nextPage!);
+      setState((s) => ({
+        ...s,
+        items: [...s.items, ...list],
+        hasMore: list.length === PAGE_SIZE,
+        loading: false,
+      }));
+    } catch (e) {
+      setState((s) => ({ ...s, loading: false }));
+      toast({ title: 'Falha ao carregar mais documentos', description: 'Tente novamente.', variant: 'destructive' });
+    }
+  }, [fetchPage]);
 
   const refetch = useCallback(async () => {
     setState((s) => ({ ...s, refetching: true }));
@@ -103,15 +121,20 @@ export function useFinancialDocuments() {
         return null;
       }
       const item = normalizeFinancialDocument(response.data.financialDocument);
-      toast({ title: 'Documento criado', description: item?.notes || 'Registro criado.' });
-      // Refetch automático após criação
-      await refetch();
+      
+      // Atualizar estado local diretamente (padrão cost-centers)
+      if (item) {
+        setState((s) => ({ ...s, items: [item, ...s.items] }));
+      }
+      
+      toast({ title: 'Documento criado', description: item?.description || 'Registro criado.' });
       return item;
     } catch (e) {
+      console.error('Erro ao criar documento:', e);
       toast({ title: 'Erro ao criar documento', description: 'Verifique os dados informados.', variant: 'destructive' });
       return null;
     }
-  }, [refetch]);
+  }, []);
 
   const update = useCallback(async (id: string, data: Partial<FinancialDocument>) => {
     try {
@@ -121,14 +144,27 @@ export function useFinancialDocuments() {
         return null;
       }
       const item = normalizeFinancialDocument(response.data.financialDocument);
-      toast({ title: 'Documento atualizado', description: item?.notes || 'Registro atualizado.' });
-      // Refetch automático após atualização
-      await refetch();
+      
+      // Atualizar estado local diretamente (padrão cost-centers)
+      if (item) {
+        setState((s) => ({
+          ...s,
+          items: s.items.map((it) => (it.id === id ? item : it)),
+        }));
+      }
+      
+      toast({ title: 'Documento atualizado', description: item?.description || 'Registro atualizado.' });
       return item;
     } catch (e) {
+      console.error('Erro ao atualizar documento:', e);
       toast({ title: 'Erro ao atualizar documento', description: 'Tente novamente.', variant: 'destructive' });
       return null;
     }
+  }, []);
+
+  const forceRefresh = useCallback(async () => {
+    console.log('🔄 Forçando refresh completo dos dados financeiros');
+    await refetch();
   }, [refetch]);
 
   const remove = useCallback(async (id: string) => {
@@ -141,6 +177,7 @@ export function useFinancialDocuments() {
       toast({ title: 'Documento removido', description: 'Registro excluído com sucesso.' });
       return true;
     } catch (e) {
+      console.error('Erro ao remover documento:', e);
       toast({ title: 'Erro ao remover documento', description: 'Tente novamente.', variant: 'destructive' });
       return false;
     }
@@ -151,7 +188,7 @@ export function useFinancialDocuments() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const api: Api = useMemo(() => ({ load, loadMore, refetch, create, update, remove }), [load, loadMore, refetch, create, update, remove]);
+  const api: Api = useMemo(() => ({ load, loadMore, refetch, forceRefresh, create, update, remove }), [load, loadMore, refetch, forceRefresh, create, update, remove]);
 
   return { ...state, ...api };
 }

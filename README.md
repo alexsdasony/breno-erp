@@ -225,7 +225,7 @@ Serviços ficam em `src/services/*.ts` e usam `apiService` (`src/services/api.ts
 ### Serviços Compartilhados
 - `api.js`: Cliente HTTP base
 - `supabase.js`: Cliente Supabase
-- Serviços específicos por domínio (ex: `financialService.js`, `salesService.js`)
+- Serviços específicos por domínio (ex: `financialDocumentsService.ts`, `salesService.ts`)
 
 ## 📊 Módulos do Sistema
 

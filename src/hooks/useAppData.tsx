@@ -14,7 +14,7 @@ import { listNFes } from '@/services/nfeService';
 import { listBillings } from '@/services/billingService';
 import { listCostCenters } from '@/services/costCentersService';
 import { listAccountsPayable } from '@/services/accountsPayableService';
-import { listFinancialDocuments } from '@/services/financialService';
+import { getFinancialDocuments } from '@/services/financialDocumentsService';
 import { listIntegrations, type Integration } from '@/services/integrationsService';
 import { getUsers } from '@/services/usersService';
 
@@ -204,7 +204,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         listBillings({ segment_id: activeSegmentId ?? null }),
         listCostCenters({ segment_id: activeSegmentId ?? null }),
         listAccountsPayable({ segment_id: activeSegmentId ?? null }),
-        listFinancialDocuments({ segment_id: activeSegmentId ?? null }),
+        getFinancialDocuments({ segment_id: activeSegmentId ?? null }),
         listIntegrations(),
         getUsers({ segment_id: activeSegmentId ?? null })
       ]);
@@ -278,7 +278,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         listBillings({ segment_id: targetSegmentId }),
         listCostCenters({ segment_id: targetSegmentId }),
         listAccountsPayable({ segment_id: targetSegmentId }),
-        listFinancialDocuments({ segment_id: targetSegmentId }),
+        getFinancialDocuments({ segment_id: targetSegmentId }),
         listIntegrations(),
         getUsers({ segment_id: targetSegmentId })
       ]);

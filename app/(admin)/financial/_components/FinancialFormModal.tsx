@@ -21,6 +21,15 @@ type Props = {
 export default function FinancialFormModal({ open, onClose, loading, editingDoc, segments, paymentMethods, onCreate, onUpdate }: Props) {
   const isEditing = !!editingDoc;
 
+  // Console log para abertura e fechamento do modal
+  React.useEffect(() => {
+    if (open) {
+      console.log('🔵 Modal financeiro aberto:', { isEditing, editingDoc });
+    } else {
+      console.log('🔴 Modal financeiro fechado');
+    }
+  }, [open, isEditing, editingDoc]);
+
   // Form state
   const [fDirection, setFDirection] = React.useState<string>('');
   const [fDescription, setFDescription] = React.useState<string>('');
@@ -169,9 +178,13 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
     } as any;
 
     if (isEditing && editingDoc?.id) {
-      await onUpdate(editingDoc.id, payload);
+      console.log('📝 Editando documento financeiro:', { id: editingDoc.id, payload });
+      const result = await onUpdate(editingDoc.id, payload);
+      console.log('✅ Resposta do backend (update):', result);
     } else {
-      await onCreate(payload);
+      console.log('➕ Criando novo documento financeiro:', payload);
+      const result = await onCreate(payload);
+      console.log('✅ Resposta do backend (create):', result);
     }
     onClose();
   };
