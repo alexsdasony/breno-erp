@@ -14,7 +14,7 @@ import FinancialTable from './FinancialTable';
 import FinancialFormModal from './FinancialFormModal';
 
 export default function FinancialView() {
-  const { items, loading, hasMore, loadMore, create, update, remove } = useFinancialDocuments();
+  const { items, loading, refetching, hasMore, loadMore, create, update, remove } = useFinancialDocuments();
   const { paymentMethods } = usePaymentMethodsContext();
 
   // UI state - filtros (somente UI por enquanto)
@@ -188,6 +188,16 @@ export default function FinancialView() {
           />
         </motion.div>
       </AnimatePresence>
+
+      {/* Loading durante refetch */}
+      {refetching && (
+        <div className="flex items-center justify-center py-4">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <span>Atualizando dados...</span>
+          </div>
+        </div>
+      )}
 
       {/* Paginação */}
       <div className="flex gap-2">

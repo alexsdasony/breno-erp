@@ -8,6 +8,7 @@ import type { FinancialDocument } from '@/types/FinancialDocument';
 interface State {
   items: FinancialDocument[];
   loading: boolean;
+  refetching: boolean;
   page: number;
   hasMore: boolean;
 }
@@ -15,6 +16,7 @@ interface State {
 interface Api {
   load: (reset?: boolean) => Promise<void>;
   loadMore: () => Promise<void>;
+  refetch: () => Promise<void>;
   create: (data: Partial<FinancialDocument>) => Promise<FinancialDocument | null>;
   update: (id: string, data: Partial<FinancialDocument>) => Promise<FinancialDocument | null>;
   remove: (id: string) => Promise<boolean>;
@@ -25,7 +27,7 @@ const PAGE_SIZE = 20;
 // Usando a função normalizeFinancialDocument do service
 
 export function useFinancialDocuments() {
-  const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
+  const [state, setState] = useState<State>({ items: [], loading: false, refetching: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
     const response = await getFinancialDocuments({ page, pageSize: PAGE_SIZE });
@@ -47,11 +49,12 @@ export function useFinancialDocuments() {
       setState((s) => ({
         items: reset ? list : [...s.items, ...list],
         loading: false,
+        refetching: false,
         page,
         hasMore: list.length === PAGE_SIZE,
       }));
     } catch (e) {
-      setState((s) => ({ ...s, loading: false }));
+      setState((s) => ({ ...s, loading: false, refetching: false }));
       toast({ title: 'Falha ao carregar documentos financeiros', description: 'Tente novamente em instantes.', variant: 'destructive' });
     }
   }, [state.page, fetchPage]);
@@ -69,6 +72,29 @@ export function useFinancialDocuments() {
     }));
   }, [state.loading, state.hasMore, state.page, fetchPage]);
 
+  const refetch = useCallback(async () => {
+    setState((s) => ({ ...s, refetching: true }));
+    try {
+      const list = await fetchPage(1);
+      // Ordenar por data de criação decrescente
+      const sortedList = list.sort((a, b) => {
+        const dateA = new Date(a.created_at || 0).getTime();
+        const dateB = new Date(b.created_at || 0).getTime();
+        return dateB - dateA;
+      });
+      setState((s) => ({
+        ...s,
+        items: sortedList,
+        refetching: false,
+        page: 1,
+        hasMore: list.length === PAGE_SIZE,
+      }));
+    } catch (e) {
+      setState((s) => ({ ...s, refetching: false }));
+      toast({ title: 'Falha ao recarregar dados', description: 'Tente novamente em instantes.', variant: 'destructive' });
+    }
+  }, [fetchPage]);
+
   const create = useCallback(async (data: Partial<FinancialDocument>) => {
     try {
       const response = await createFinancialDocument(data);
@@ -77,14 +103,15 @@ export function useFinancialDocuments() {
         return null;
       }
       const item = normalizeFinancialDocument(response.data.financialDocument);
-      setState((s) => ({ ...s, items: [item, ...s.items] }));
       toast({ title: 'Documento criado', description: item?.notes || 'Registro criado.' });
+      // Refetch automático após criação
+      await refetch();
       return item;
     } catch (e) {
       toast({ title: 'Erro ao criar documento', description: 'Verifique os dados informados.', variant: 'destructive' });
       return null;
     }
-  }, []);
+  }, [refetch]);
 
   const update = useCallback(async (id: string, data: Partial<FinancialDocument>) => {
     try {
@@ -94,17 +121,15 @@ export function useFinancialDocuments() {
         return null;
       }
       const item = normalizeFinancialDocument(response.data.financialDocument);
-      setState((s) => ({
-        ...s,
-        items: s.items.map((it) => (it.id === id ? item : it)),
-      }));
       toast({ title: 'Documento atualizado', description: item?.notes || 'Registro atualizado.' });
+      // Refetch automático após atualização
+      await refetch();
       return item;
     } catch (e) {
       toast({ title: 'Erro ao atualizar documento', description: 'Tente novamente.', variant: 'destructive' });
       return null;
     }
-  }, []);
+  }, [refetch]);
 
   const remove = useCallback(async (id: string) => {
     try {
@@ -126,7 +151,7 @@ export function useFinancialDocuments() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const api: Api = useMemo(() => ({ load, loadMore, create, update, remove }), [load, loadMore, create, update, remove]);
+  const api: Api = useMemo(() => ({ load, loadMore, refetch, create, update, remove }), [load, loadMore, refetch, create, update, remove]);
 
   return { ...state, ...api };
 }
