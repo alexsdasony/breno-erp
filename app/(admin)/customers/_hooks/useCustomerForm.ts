@@ -120,7 +120,7 @@ export function useCustomerForm(customerId?: string) {
     const errors: Record<string, string> = {};
     const warnings: Record<string, string> = {};
 
-    // Validações obrigatórias
+    // === ABA DADOS PESSOAIS ===
     if (!data.name?.trim()) {
       errors.name = 'Nome é obrigatório';
     }
@@ -136,23 +136,52 @@ export function useCustomerForm(customerId?: string) {
       }
     }
 
-    // Validação de email
+    if (data.tipo_pessoa === 'pf' && !data.rg?.trim()) {
+      warnings.rg = 'RG não informado';
+    }
+
+    // === ABA CONTATO ===
     if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
       errors.email = 'Email inválido';
     }
 
-    // Validação de CEP
+    if (!data.phone?.trim() && !data.celular?.trim()) {
+      warnings.phone = 'Pelo menos um telefone deve ser informado';
+    }
+
+    // === ABA ENDEREÇO ===
     if (data.zip_code && !/^\d{5}-?\d{3}$/.test(data.zip_code)) {
       errors.zip_code = 'CEP inválido';
     }
 
-    // Validações condicionais
+    if (!data.address?.trim()) {
+      warnings.address = 'Endereço não informado';
+    }
+
+    if (!data.city?.trim()) {
+      warnings.city = 'Cidade não informada';
+    }
+
+    if (!data.state?.trim()) {
+      warnings.state = 'Estado não informado';
+    }
+
+    // === ABA PATRIMÔNIO ===
     if (data.possui_patrimonio && !data.valor_patrimonio) {
       warnings.valor_patrimonio = 'Valor do patrimônio não informado';
     }
 
-    if (data.tipo_pessoa === 'pf' && !data.rg?.trim()) {
-      warnings.rg = 'RG não informado';
+    if (data.possui_patrimonio && !data.descricao_patrimonio?.trim()) {
+      warnings.descricao_patrimonio = 'Descrição do patrimônio não informada';
+    }
+
+    // === ABA PROFISSIONAL ===
+    if (data.tipo_pessoa === 'pf' && !data.profissao?.trim()) {
+      warnings.profissao = 'Profissão não informada';
+    }
+
+    if (data.tipo_pessoa === 'pj' && !data.profissao?.trim()) {
+      warnings.profissao = 'Atividade principal não informada';
     }
 
     return {

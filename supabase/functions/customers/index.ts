@@ -139,9 +139,17 @@ serve(async (req) => {
         )
       }
       
+      // Tratar campos de data vazios
+      const sanitizedBody = {
+        ...body,
+        data_nascimento: body.data_nascimento?.trim() || null,
+        data_admissao: body.data_admissao?.trim() || null,
+        data_cadastro: body.data_cadastro?.trim() || null
+      }
+      
       const { data, error } = await supabase
         .from('partners')
-        .insert(body)
+        .insert(sanitizedBody)
         .select('*')
         .single()
 
