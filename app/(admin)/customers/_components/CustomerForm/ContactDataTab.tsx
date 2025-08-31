@@ -1,6 +1,6 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { CustomerTabProps } from '../../../../../src/types/CustomerForm';
+import { CustomerTabProps, PREFERENCIA_CONTATO_OPTIONS, HORARIO_CONTATO_OPTIONS } from '../../../../../src/types/CustomerForm';
 
 export const ContactDataTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
   const handleInputChange = (field: string, value: string) => {
@@ -64,74 +64,43 @@ export const ContactDataTab: React.FC<CustomerTabProps> = ({ data, onChange }) =
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label>Preferência de Contato</Label>
-        <div className="flex flex-wrap gap-4">
-          <label className="flex items-center space-x-2">
-            <input
-              type="radio"
-              name="preferencia_contato"
-              value="email"
-              className="text-primary focus:ring-ring"
-            />
-            <span>E-mail</span>
-          </label>
-          <label className="flex items-center space-x-2">
-            <input
-              type="radio"
-              name="preferencia_contato"
-              value="telefone"
-              className="text-primary focus:ring-ring"
-            />
-            <span>Telefone</span>
-          </label>
-          <label className="flex items-center space-x-2">
-            <input
-              type="radio"
-              name="preferencia_contato"
-              value="celular"
-              className="text-primary focus:ring-ring"
-            />
-            <span>Celular</span>
-          </label>
-          <label className="flex items-center space-x-2">
-            <input
-              type="radio"
-              name="preferencia_contato"
-              value="whatsapp"
-              className="text-primary focus:ring-ring"
-            />
-            <span>WhatsApp</span>
-          </label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="preferencia_contato">Preferência de Contato</Label>
+          <select
+            id="preferencia_contato"
+            value={data.preferencia_contato || ''}
+            onChange={(e) => handleInputChange('preferencia_contato', e.target.value)}
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+          >
+            <option value="">Selecione uma opção</option>
+            {PREFERENCIA_CONTATO_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="melhor_horario_contato">Melhor Horário para Contato</Label>
+          <select
+            id="melhor_horario_contato"
+            value={data.melhor_horario_contato || ''}
+            onChange={(e) => handleInputChange('melhor_horario_contato', e.target.value)}
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+          >
+            <option value="">Selecione um horário</option>
+            {HORARIO_CONTATO_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label>Melhor Horário para Contato</Label>
-        <div className="flex flex-wrap gap-4">
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              className="text-primary focus:ring-ring"
-            />
-            <span>Manhã (8h-12h)</span>
-          </label>
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              className="text-primary focus:ring-ring"
-            />
-            <span>Tarde (12h-18h)</span>
-          </label>
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              className="text-primary focus:ring-ring"
-            />
-            <span>Noite (18h-22h)</span>
-          </label>
-        </div>
-      </div>
+
     </div>
   );
 };

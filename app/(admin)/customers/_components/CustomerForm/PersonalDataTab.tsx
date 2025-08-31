@@ -2,7 +2,7 @@
 
 import { Label } from '@/components/ui/label';
 import type { CustomerTabProps } from '../../../../../src/types/CustomerForm';
-import { ESTADO_CIVIL_OPTIONS } from '../../../../../src/types/CustomerForm';
+import { ESTADO_CIVIL_OPTIONS, TIPO_PESSOA_OPTIONS } from '../../../../../src/types/CustomerForm';
 import { useAppData } from '@/hooks/useAppData';
 
 export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps) {
@@ -84,50 +84,27 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
       </div>
 
       {/* Tipo de Pessoa */}
-      <div className="space-y-3">
-        <Label>Tipo de Pessoa *</Label>
-        <div className="flex space-x-6">
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="fisica"
-              name="tipo_pessoa"
-              value="fisica"
-              checked={data.tipo_pessoa === 'fisica'}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  onChange({ 
-                    tipo_pessoa: 'fisica',
-                    tax_id: '',
-                    rg: data.rg
-                  });
-                }
-              }}
-              className="text-primary focus:ring-ring"
-            />
-            <Label htmlFor="fisica">Pessoa Física</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="juridica"
-              name="tipo_pessoa"
-              value="juridica"
-              checked={data.tipo_pessoa === 'juridica'}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  onChange({ 
-                    tipo_pessoa: 'juridica',
-                    tax_id: '',
-                    rg: ''
-                  });
-                }
-              }}
-              className="text-primary focus:ring-ring"
-            />
-            <Label htmlFor="juridica">Pessoa Jurídica</Label>
-          </div>
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="tipo_pessoa">Tipo de Pessoa *</Label>
+        <select
+          id="tipo_pessoa"
+          value={data.tipo_pessoa}
+          onChange={(e) => {
+            const tipoPessoa = e.target.value as 'fisica' | 'juridica';
+            onChange({ 
+              tipo_pessoa: tipoPessoa,
+              tax_id: '',
+              rg: tipoPessoa === 'fisica' ? data.rg : ''
+            });
+          }}
+          className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+        >
+          {TIPO_PESSOA_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Segunda linha - CPF/CNPJ e RG (se pessoa física) */}

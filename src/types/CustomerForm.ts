@@ -19,6 +19,8 @@ export interface CustomerFormData {
   email?: string;
   phone?: string; // telefone residencial
   celular?: string;
+  preferencia_contato?: 'email' | 'telefone' | 'celular' | 'whatsapp';
+  melhor_horario_contato?: string;
 
   // Endereço
   address?: string;
@@ -143,6 +145,24 @@ export const TIPO_IMOVEL_OPTIONS = [
   { value: 'financiado', label: 'Financiado' },
   { value: 'cedido', label: 'Cedido' },
   { value: 'outros', label: 'Outros' }
+];
+
+export const TIPO_PESSOA_OPTIONS = [
+  { value: 'fisica', label: 'Pessoa Física' },
+  { value: 'juridica', label: 'Pessoa Jurídica' }
+];
+
+export const PREFERENCIA_CONTATO_OPTIONS = [
+  { value: 'email', label: 'E-mail' },
+  { value: 'telefone', label: 'Telefone' },
+  { value: 'celular', label: 'Celular' },
+  { value: 'whatsapp', label: 'WhatsApp' }
+];
+
+export const HORARIO_CONTATO_OPTIONS = [
+  { value: 'manha', label: 'Manhã (8h-12h)' },
+  { value: 'tarde', label: 'Tarde (12h-18h)' },
+  { value: 'noite', label: 'Noite (18h-22h)' }
 ];
 
 export const STATUS_OPTIONS = [
