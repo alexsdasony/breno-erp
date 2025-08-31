@@ -139,12 +139,16 @@ serve(async (req) => {
         )
       }
       
-      // Tratar campos de data vazios
+      // Tratar campos de data vazios e mapear status
       const sanitizedBody = {
         ...body,
         data_nascimento: body.data_nascimento?.trim() || null,
         data_admissao: body.data_admissao?.trim() || null,
-        data_cadastro: body.data_cadastro?.trim() || null
+        data_cadastro: body.data_cadastro?.trim() || null,
+        status: body.status === 'ativo' ? 'active' : 
+                body.status === 'inativo' ? 'inactive' : 
+                body.status === 'suspenso' ? 'suspended' : 
+                body.status || 'active'
       }
       
       const { data, error } = await supabase
