@@ -117,15 +117,15 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerId, onSave, onCance
   }
 
   return (
-    <div className="max-w-6xl mx-auto bg-white">
+    <div className="max-w-6xl mx-auto bg-card rounded-lg shadow-lg p-6">
       {/* Header */}
-      <div className="border-b border-gray-200 pb-6 mb-6">
+      <div className="border-b border-border pb-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-card-foreground">
               {customerId ? 'Editar Cliente' : 'Novo Cliente'}
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-muted-foreground mt-1">
               {customerId ? 'Atualize as informações do cliente' : 'Preencha os dados para cadastrar um novo cliente'}
             </p>
           </div>
@@ -134,7 +134,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerId, onSave, onCance
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 border border-border rounded-md text-muted-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 Cancelar
               </button>
@@ -143,7 +143,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerId, onSave, onCance
               type="button"
               onClick={handleFormSave}
               disabled={isSaving}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center space-x-2"
+              className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 flex items-center space-x-2"
             >
               {isSaving && (
                 <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
@@ -158,7 +158,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerId, onSave, onCance
       </div>
 
       {/* Tabs Navigation */}
-      <div className="border-b border-gray-200 mb-6">
+      <div className="border-b border-border mb-6">
         <nav className="-mb-px flex space-x-8 overflow-x-auto">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -170,16 +170,16 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerId, onSave, onCance
                 onClick={() => setActiveTab(tab.id)}
                 className={`group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                   isActive
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } ${hasErrors && tab.id === 'dados-pessoais' ? 'text-red-600' : ''}`}
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-card-foreground hover:border-muted'
+                } ${hasErrors && tab.id === 'dados-pessoais' ? 'text-destructive' : ''}`}
               >
-                <span className={`mr-2 ${isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'}`}>
+                <span className={`mr-2 ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-card-foreground'}`}>
                   {tab.icon as React.ReactNode}
                 </span>
                 {tab.label}
                 {hasErrors && tab.id === 'dados-pessoais' && (
-                  <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive">
                     !
                   </span>
                 )}
@@ -201,14 +201,14 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerId, onSave, onCance
 
       {/* Validation Errors */}
       {validation.errors && Object.keys(validation.errors).length > 0 && (
-        <div className="mt-6 bg-red-50 border border-red-200 rounded-md p-4">
+        <div className="mt-6 bg-destructive/10 border border-destructive/20 rounded-md p-4">
           <div className="flex">
-            <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="h-5 w-5 text-destructive" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Corrija os seguintes erros:</h3>
-              <div className="mt-2 text-sm text-red-700">
+              <h3 className="text-sm font-medium text-destructive">Corrija os seguintes erros:</h3>
+              <div className="mt-2 text-sm text-destructive/80">
                 <ul className="list-disc pl-5 space-y-1">
                   {Object.entries(validation.errors).map(([field, error]) => (
                     <li key={field}>{error}</li>

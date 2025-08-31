@@ -20,7 +20,7 @@ export const ProfessionalDataTab: React.FC<CustomerTabProps> = ({ data, onChange
             type="text"
             value={data.profissao || ''}
             onChange={(e) => handleInputChange('profissao', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
             placeholder="Digite a profissão"
           />
         </div>
@@ -32,7 +32,7 @@ export const ProfessionalDataTab: React.FC<CustomerTabProps> = ({ data, onChange
             type="text"
             value={data.empresa || ''}
             onChange={(e) => handleInputChange('empresa', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
             placeholder="Digite o nome da empresa"
           />
         </div>
@@ -46,7 +46,7 @@ export const ProfessionalDataTab: React.FC<CustomerTabProps> = ({ data, onChange
             type="text"
             value={data.cargo || ''}
             onChange={(e) => handleInputChange('cargo', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
             placeholder="Digite o cargo"
           />
         </div>
@@ -58,7 +58,7 @@ export const ProfessionalDataTab: React.FC<CustomerTabProps> = ({ data, onChange
             type="tel"
             value={data.telefone_comercial || ''}
             onChange={(e) => handleInputChange('telefone_comercial', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
             placeholder="(11) 99999-9999"
           />
         </div>
@@ -72,7 +72,7 @@ export const ProfessionalDataTab: React.FC<CustomerTabProps> = ({ data, onChange
             type="date"
             value={data.data_admissao || ''}
             onChange={(e) => handleInputChange('data_admissao', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
           />
         </div>
 
@@ -83,7 +83,7 @@ export const ProfessionalDataTab: React.FC<CustomerTabProps> = ({ data, onChange
             type="text"
             value={data.observacoes || ''}
             onChange={(e) => handleInputChange('observacoes', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
             placeholder="Digite observações profissionais"
           />
         </div>

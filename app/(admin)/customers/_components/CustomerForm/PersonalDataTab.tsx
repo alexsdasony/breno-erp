@@ -53,7 +53,7 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
           id="segment"
           value={data.segment_id || ''}
           onChange={(e) => onChange({ segment_id: e.target.value })}
-          className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary text-gray-300"
+          className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
         >
           <option value="">Selecione um segmento</option>
           {segments.map((segment: any) => (
@@ -73,8 +73,8 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
           value={data.name}
           onChange={(e) => onChange({ name: e.target.value })}
           placeholder="Digite o nome completo"
-          className={`w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary text-gray-300 ${
-            validation.errors.name ? 'border-red-500' : ''
+          className={`w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground ${
+            validation.errors.name ? 'border-destructive' : ''
           }`}
         />
         {validation.errors.name && (
@@ -102,7 +102,7 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
                   });
                 }
               }}
-              className="text-primary focus:ring-primary"
+              className="text-primary focus:ring-ring"
             />
             <Label htmlFor="fisica">Pessoa Física</Label>
           </div>
@@ -122,7 +122,7 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
                   });
                 }
               }}
-              className="text-primary focus:ring-primary"
+              className="text-primary focus:ring-ring"
             />
             <Label htmlFor="juridica">Pessoa Jurídica</Label>
           </div>
@@ -141,12 +141,12 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
           onChange={(e) => handleTaxIdChange(e.target.value)}
           placeholder={data.tipo_pessoa === 'fisica' ? '000.000.000-00' : '00.000.000/0000-00'}
           maxLength={data.tipo_pessoa === 'fisica' ? 14 : 18}
-          className={`w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary text-gray-300 ${
-            validation.errors.tax_id ? 'border-red-500' : ''
+          className={`w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground ${
+            validation.errors.tax_id ? 'border-destructive' : ''
           }`}
         />
         {validation.errors.tax_id && (
-          <p className="text-sm text-red-500">{validation.errors.tax_id}</p>
+          <p className="text-sm text-destructive">{validation.errors.tax_id}</p>
         )}
       </div>
 
@@ -161,10 +161,10 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
             onChange={(e) => handleRGChange(e.target.value)}
             placeholder="00.000.000-0"
             maxLength={12}
-            className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary text-gray-300"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
           />
           {validation.warnings.rg && (
-            <p className="text-sm text-yellow-600">{validation.warnings.rg}</p>
+            <p className="text-sm text-yellow-500">{validation.warnings.rg}</p>
           )}
         </div>
       )}
@@ -178,7 +178,7 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
             type="date"
             value={data.data_nascimento || ''}
             onChange={(e) => onChange({ data_nascimento: e.target.value })}
-            className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary text-gray-300"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
           />
         </div>
       )}
@@ -191,7 +191,7 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
             id="estado_civil"
             value={data.estado_civil || 'solteiro'}
             onChange={(e) => onChange({ estado_civil: e.target.value as any })}
-            className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary text-gray-300"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
           >
             {ESTADO_CIVIL_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -213,7 +213,7 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
           value={data.profissao || ''}
           onChange={(e) => onChange({ profissao: e.target.value })}
           placeholder={data.tipo_pessoa === 'fisica' ? 'Digite a profissão' : 'Digite a atividade principal'}
-          className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary text-gray-300"
+          className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
         />
       </div>
     </div>

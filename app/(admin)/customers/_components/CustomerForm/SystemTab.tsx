@@ -24,7 +24,7 @@ export const SystemTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
             id="status"
             value={data.status}
             onChange={(e) => handleInputChange('status', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
           >
             {STATUS_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -41,7 +41,7 @@ export const SystemTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
             type="text"
             value={data.responsavel_cadastro || ''}
             onChange={(e) => handleInputChange('responsavel_cadastro', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
             placeholder="Nome do responsável"
           />
         </div>
@@ -55,7 +55,7 @@ export const SystemTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
             type="date"
             value={data.data_cadastro || ''}
             onChange={(e) => handleInputChange('data_cadastro', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
           />
         </div>
 
@@ -83,7 +83,7 @@ export const SystemTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
           value={data.observacoes || ''}
           onChange={(e) => handleInputChange('observacoes', e.target.value)}
           rows={6}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
           placeholder="Digite observações gerais sobre o cliente..."
         />
       </div>

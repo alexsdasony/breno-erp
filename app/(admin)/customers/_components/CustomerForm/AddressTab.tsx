@@ -49,12 +49,12 @@ export const AddressTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
             type="text"
             value={data.zip_code || ''}
             onChange={(e) => handleCepChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
             placeholder="00000-000"
             maxLength={9}
           />
           {isLoadingCep && (
-            <span className="text-sm text-blue-600">Buscando endereço...</span>
+            <span className="text-sm text-primary">Buscando endereço...</span>
           )}
         </div>
 
@@ -64,7 +64,7 @@ export const AddressTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
             id="state"
             value={data.state || ''}
             onChange={(e) => handleInputChange('state', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
           >
             <option value="">Selecione o estado</option>
             <option value="AC">Acre</option>
@@ -104,7 +104,7 @@ export const AddressTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
             type="text"
             value={data.city || ''}
             onChange={(e) => handleInputChange('city', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
             placeholder="Digite a cidade"
           />
         </div>
@@ -118,7 +118,7 @@ export const AddressTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
             type="text"
             value={data.address || ''}
             onChange={(e) => handleInputChange('address', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
             placeholder="Digite o logradouro"
           />
         </div>
@@ -130,7 +130,7 @@ export const AddressTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
             type="text"
             value={data.bairro || ''}
             onChange={(e) => handleInputChange('bairro', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
             placeholder="Digite o bairro"
           />
         </div>
@@ -144,7 +144,7 @@ export const AddressTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
             type="text"
             value={data.numero || ''}
             onChange={(e) => handleInputChange('numero', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
             placeholder="Digite o número"
           />
         </div>
@@ -156,7 +156,7 @@ export const AddressTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
             type="text"
             value={data.complemento || ''}
             onChange={(e) => handleInputChange('complemento', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
             placeholder="Apto, sala, etc."
           />
         </div>
@@ -167,7 +167,7 @@ export const AddressTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
             id="tipo_imovel"
             value={data.tipo_imovel || ''}
             onChange={(e) => handleInputChange('tipo_imovel', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
           >
             <option value="">Selecione o tipo</option>
             {TIPO_IMOVEL_OPTIONS.map((option) => (

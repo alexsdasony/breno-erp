@@ -82,7 +82,7 @@ export const DocumentsTab: React.FC<CustomerTabProps> = ({ data, onChange }) => 
               id="document-type"
               value={selectedDocumentType}
               onChange={(e) => setSelectedDocumentType(e.target.value as DocumentType)}
-              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
             >
               {Object.entries(DOCUMENT_TYPE_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -105,7 +105,7 @@ export const DocumentsTab: React.FC<CustomerTabProps> = ({ data, onChange }) => 
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
             >
               {isLoading ? 'Enviando...' : 'Selecionar Arquivo'}
             </button>
@@ -115,11 +115,11 @@ export const DocumentsTab: React.FC<CustomerTabProps> = ({ data, onChange }) => 
 
       {/* Documents List */}
       <div className="space-y-4">
-        <h3 className="text-lg font-medium text-gray-900">Documentos Anexados</h3>
+        <h3 className="text-lg font-medium text-card-foreground">Documentos Anexados</h3>
         
         {documents.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="text-center py-8 text-muted-foreground">
+            <svg className="mx-auto h-12 w-12 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             <p className="mt-2">Nenhum documento anexado ainda</p>
@@ -127,7 +127,7 @@ export const DocumentsTab: React.FC<CustomerTabProps> = ({ data, onChange }) => 
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {documents.map((doc) => (
-              <div key={doc.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div key={doc.id} className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
                     {getDocumentIcon(doc.file_type)}
