@@ -58,18 +58,18 @@ export const DocumentsTab: React.FC<CustomerTabProps> = ({ data, onChange }) => 
   return (
     <div className="space-y-6">
       {/* Upload Section */}
-      <div className="bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300">
+      <div className="bg-muted/50 p-6 rounded-lg border-2 border-dashed border-border">
         <div className="text-center">
-          <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+          <svg className="mx-auto h-12 w-12 text-muted-foreground" stroke="currentColor" fill="none" viewBox="0 0 48 48">
             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <div className="mt-4">
             <Label htmlFor="document-upload" className="cursor-pointer">
-              <span className="mt-2 block text-sm font-medium text-gray-900">
+              <span className="mt-2 block text-sm font-medium text-foreground">
                 Clique para fazer upload ou arraste arquivos aqui
               </span>
             </Label>
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-muted-foreground">
               PDF, PNG, JPG até 10MB
             </p>
           </div>
@@ -77,12 +77,12 @@ export const DocumentsTab: React.FC<CustomerTabProps> = ({ data, onChange }) => 
 
         <div className="mt-4 flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
-            <Label htmlFor="document-type">Tipo de Documento</Label>
+            <Label htmlFor="document-type" className="text-foreground font-medium">Tipo de Documento</Label>
             <select
               id="document-type"
               value={selectedDocumentType}
               onChange={(e) => setSelectedDocumentType(e.target.value as DocumentType)}
-              className="mt-1 w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+              className="mt-1 w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
             >
               {Object.entries(DOCUMENT_TYPE_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -105,7 +105,7 @@ export const DocumentsTab: React.FC<CustomerTabProps> = ({ data, onChange }) => 
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoading}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 font-medium transition-colors"
             >
               {isLoading ? 'Enviando...' : 'Selecionar Arquivo'}
             </button>
@@ -132,13 +132,13 @@ export const DocumentsTab: React.FC<CustomerTabProps> = ({ data, onChange }) => 
                   <div className="flex items-center space-x-3">
                     {getDocumentIcon(doc.file_type)}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {doc.file_name}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {DOCUMENT_TYPE_LABELS[doc.document_type]}
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-muted-foreground/70">
                         {formatFileSize(doc.file_size)}
                       </p>
                     </div>
@@ -166,11 +166,11 @@ export const DocumentsTab: React.FC<CustomerTabProps> = ({ data, onChange }) => 
                 </div>
                 
                 {doc.ai_extracted_content && (
-                  <div className="mt-3 p-2 bg-blue-50 rounded text-xs">
-                    <p className="font-medium text-blue-900">Conteúdo extraído por IA:</p>
-                    <p className="text-blue-800 mt-1 line-clamp-3">{doc.ai_extracted_content}</p>
+                  <div className="mt-3 p-2 bg-primary/10 rounded text-xs">
+                    <p className="font-medium text-primary">Conteúdo extraído por IA:</p>
+                    <p className="text-foreground/80 mt-1 line-clamp-3">{doc.ai_extracted_content}</p>
                     {doc.confidence_score && (
-                      <p className="text-blue-600 mt-1">
+                      <p className="text-primary/80 mt-1">
                         Confiança: {Math.round(doc.confidence_score * 100)}%
                       </p>
                     )}
