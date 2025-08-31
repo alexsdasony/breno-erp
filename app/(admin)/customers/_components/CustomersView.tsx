@@ -26,11 +26,13 @@ import {
 import { usePartners } from '../_hooks/usePartners';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData';
+import { useRouter } from 'next/navigation';
 import type { Customer } from '@/types';
 
 export default function CustomersView() {
   const { items, loading, hasMore, loadMore, create, update, remove } = usePartners();
   const { segments, activeSegmentId } = useAppData();
+  const router = useRouter();
 
   // State management
   const [showForm, setShowForm] = useState(false);
@@ -142,21 +144,12 @@ export default function CustomersView() {
     setShowForm(true);
   };
 
+  const handleCompleteRegistration = () => {
+    router.push('/customers/new');
+  };
+
   const handleEdit = (customer: Customer) => {
-    setIsEditing(true);
-    setSelectedCustomer(customer);
-    setFormData({
-      segment_id: customer.segment_id?.toString() || '',
-      name: customer.name || '',
-      tipo_pessoa: customer.tipo_pessoa || 'pf',
-      tax_id: customer.tax_id || '',
-      email: customer.email || '',
-      phone: customer.phone || '',
-      address: customer.address || '',
-      city: customer.city || '',
-      state: customer.state || ''
-    });
-    setShowForm(true);
+    router.push(`/customers/${customer.id}/edit`);
   };
 
   const handleView = (customer: Customer) => {
@@ -249,12 +242,21 @@ export default function CustomersView() {
         </div>
         <div className="flex space-x-2">
           <Button 
-            id="customers-new-button" 
+            id="customers-simple-button" 
             onClick={handleAddNew} 
-            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+            variant="outline"
+            className="border-blue-500 text-blue-500 hover:bg-blue-50"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Novo Cliente
+            Cadastro Simples
+          </Button>
+          <Button 
+            id="customers-complete-button" 
+            onClick={handleCompleteRegistration} 
+            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Cadastro Completo
           </Button>
         </div>
       </div>
@@ -346,10 +348,16 @@ export default function CustomersView() {
             <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nenhum cliente encontrado</h3>
             <p className="text-muted-foreground mb-4">Comece adicionando seu primeiro cliente</p>
-            <Button onClick={handleAddNew} className="mt-4">
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar Cliente
-            </Button>
+            <div className="flex space-x-2 justify-center mt-4">
+              <Button onClick={handleAddNew} variant="outline" className="border-blue-500 text-blue-500 hover:bg-blue-50">
+                <Plus className="w-4 h-4 mr-2" />
+                Cadastro Simples
+              </Button>
+              <Button onClick={handleCompleteRegistration} className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+                <UserPlus className="w-4 h-4 mr-2" />
+                Cadastro Completo
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto">
