@@ -2,7 +2,7 @@ export interface CustomerFormData {
   // Dados Pessoais
   segment_id?: string;
   name: string;
-  tipo_pessoa: 'fisica' | 'juridica';
+  tipo_pessoa: 'pf' | 'pj';
   tax_id: string; // CPF ou CNPJ
   rg?: string;
   data_nascimento?: string;
@@ -148,8 +148,8 @@ export const TIPO_IMOVEL_OPTIONS = [
 ];
 
 export const TIPO_PESSOA_OPTIONS = [
-  { value: 'fisica', label: 'Pessoa Física' },
-  { value: 'juridica', label: 'Pessoa Jurídica' }
+  { value: 'pf', label: 'Pessoa Física' },
+  { value: 'pj', label: 'Pessoa Jurídica' }
 ];
 
 export const PREFERENCIA_CONTATO_OPTIONS = [

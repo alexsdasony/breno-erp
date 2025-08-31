@@ -14,7 +14,7 @@ import type {
 
 const initialFormData: CustomerFormData = {
   name: '',
-  tipo_pessoa: 'fisica',
+  tipo_pessoa: 'pf',
   tax_id: '',
   rg: '',
   data_nascimento: '',
@@ -126,12 +126,12 @@ export function useCustomerForm(customerId?: string) {
     }
 
     if (!data.tax_id?.trim()) {
-      errors.tax_id = data.tipo_pessoa === 'fisica' ? 'CPF é obrigatório' : 'CNPJ é obrigatório';
+      errors.tax_id = data.tipo_pessoa === 'pf' ? 'CPF é obrigatório' : 'CNPJ é obrigatório';
     } else {
       // Validação de CPF/CNPJ
-      if (data.tipo_pessoa === 'fisica' && !validateCPF(data.tax_id)) {
+      if (data.tipo_pessoa === 'pf' && !validateCPF(data.tax_id)) {
         errors.tax_id = 'CPF inválido';
-      } else if (data.tipo_pessoa === 'juridica' && !validateCNPJ(data.tax_id)) {
+      } else if (data.tipo_pessoa === 'pj' && !validateCNPJ(data.tax_id)) {
         errors.tax_id = 'CNPJ inválido';
       }
     }
@@ -151,7 +151,7 @@ export function useCustomerForm(customerId?: string) {
       warnings.valor_patrimonio = 'Valor do patrimônio não informado';
     }
 
-    if (data.tipo_pessoa === 'fisica' && !data.rg?.trim()) {
+    if (data.tipo_pessoa === 'pf' && !data.rg?.trim()) {
       warnings.rg = 'RG não informado';
     }
 
@@ -197,7 +197,7 @@ export function useCustomerForm(customerId?: string) {
         const formData: CustomerFormData = {
           segment_id: customer.segment_id || undefined,
           name: customer.name || '',
-          tipo_pessoa: (customer.tipo_pessoa === 'pf' ? 'fisica' : customer.tipo_pessoa === 'pj' ? 'juridica' : 'fisica') as 'fisica' | 'juridica',
+          tipo_pessoa: (customer.tipo_pessoa === 'pf' ? 'pf' : customer.tipo_pessoa === 'pj' ? 'pj' : 'pf') as 'pf' | 'pj',
           tax_id: customer.tax_id || '',
           rg: customer.rg || '',
           data_nascimento: customer.data_nascimento || '',
@@ -265,7 +265,7 @@ export function useCustomerForm(customerId?: string) {
       const customerData = {
         segment_id: state.data.segment_id,
         name: state.data.name,
-        tipo_pessoa: (state.data.tipo_pessoa === 'fisica' ? 'pf' : 'pj') as 'pf' | 'pj',
+        tipo_pessoa: state.data.tipo_pessoa,
         tax_id: state.data.tax_id,
         rg: state.data.rg,
         data_nascimento: state.data.data_nascimento,
@@ -300,10 +300,33 @@ export function useCustomerForm(customerId?: string) {
         : await createCustomer(customerData);
 
       if (!response.success) {
-        throw new Error(response.error || 'Erro ao salvar cliente');
+        // Processar erros detalhados do backend
+        const errorData = response.data as any;
+        const details = errorData?.details || [];
+        const fieldCount = errorData?.field_count || 0;
+        
+        let errorTitle = response.error || 'Erro ao salvar cliente';
+        let errorDescription = response.message || errorTitle;
+        
+        if (fieldCount > 0) {
+          errorTitle = `${fieldCount} erro(s) de validação`;
+          errorDescription = details.length > 0 ? details.join(', ') : errorDescription;
+        }
+        
+        toast({ 
+          title: errorTitle, 
+          description: errorDescription, 
+          variant: 'destructive' 
+        });
+        
+        setState((prev: CustomerFormState) => ({ ...prev, isSaving: false }));
+        return false;
       }
 
-      toast({ title: 'Sucesso', description: customerId ? 'Cliente atualizado com sucesso!' : 'Cliente cadastrado com sucesso!' });
+      toast({ 
+        title: 'Sucesso', 
+        description: response.message || (customerId ? 'Cliente atualizado com sucesso!' : 'Cliente cadastrado com sucesso!') 
+      });
       setState((prev: CustomerFormState) => ({ ...prev, isSaving: false, isDirty: false }));
       
       // Redirecionar para lista de clientes
@@ -311,7 +334,7 @@ export function useCustomerForm(customerId?: string) {
       return true;
     } catch (error) {
       console.error('Erro ao salvar cliente:', error);
-      toast({ title: 'Erro', description: 'Erro ao salvar cliente', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Erro interno do sistema', variant: 'destructive' });
       setState((prev: CustomerFormState) => ({ ...prev, isSaving: false }));
       return false;
     }

@@ -81,6 +81,64 @@ serve(async (req) => {
     // POST - Criar (insere em partners e vincula role 'customer')
     if (req.method === 'POST') {
       const body = await req.json()
+      
+      // Validações obrigatórias
+      const validationErrors: string[] = []
+      
+      if (!body.name?.trim()) {
+        validationErrors.push('Nome é obrigatório')
+      }
+      
+      if (!body.tax_id?.trim()) {
+        validationErrors.push(body.tipo_pessoa === 'pf' ? 'CPF é obrigatório' : 'CNPJ é obrigatório')
+      } else {
+        // Validação básica de formato CPF/CNPJ
+        const cleanTaxId = body.tax_id.replace(/\D/g, '')
+        if (body.tipo_pessoa === 'pf' && cleanTaxId.length !== 11) {
+          validationErrors.push('CPF deve ter 11 dígitos')
+        } else if (body.tipo_pessoa === 'pj' && cleanTaxId.length !== 14) {
+          validationErrors.push('CNPJ deve ter 14 dígitos')
+        }
+      }
+      
+      // Validação de email se fornecido
+      if (body.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
+        validationErrors.push('Email inválido')
+      }
+      
+      // Validação de CEP se fornecido
+      if (body.zip_code && !/^\d{5}-?\d{3}$/.test(body.zip_code)) {
+        validationErrors.push('CEP inválido')
+      }
+      
+      if (validationErrors.length > 0) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Dados inválidos', 
+            details: validationErrors,
+            field_count: validationErrors.length
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      
+      // Verificar se tax_id já existe
+      const { data: existingPartner } = await supabase
+        .from('partners')
+        .select('id, name')
+        .eq('tax_id', body.tax_id)
+        .single()
+        
+      if (existingPartner) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Documento já cadastrado', 
+            details: [`${body.tipo_pessoa === 'pf' ? 'CPF' : 'CNPJ'} já está em uso por: ${existingPartner.name}`]
+          }),
+          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      
       const { data, error } = await supabase
         .from('partners')
         .insert(body)
@@ -88,17 +146,34 @@ serve(async (req) => {
         .single()
 
       if (error) {
+        console.error('Database error:', error)
         return new Response(
-          JSON.stringify({ error: 'Erro ao criar cliente' }),
+          JSON.stringify({ 
+            error: 'Erro interno do servidor', 
+            details: ['Falha ao inserir dados no banco'],
+            db_error: error.message
+          }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
       // vincula role
-      await supabase.from('partner_roles').insert({ partner_id: (data as any).id, role: 'customer' })
+      const { error: roleError } = await supabase
+        .from('partner_roles')
+        .insert({ partner_id: (data as any).id, role: 'customer' })
+        
+      if (roleError) {
+        console.error('Role assignment error:', roleError)
+        // Não falha a operação, apenas loga o erro
+      }
 
       return new Response(
-        JSON.stringify({ success: true, customer: data, message: 'Cliente criado com sucesso' }),
+        JSON.stringify({ 
+          success: true, 
+          customer: data, 
+          message: 'Cliente criado com sucesso',
+          id: data.id
+        }),
         { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

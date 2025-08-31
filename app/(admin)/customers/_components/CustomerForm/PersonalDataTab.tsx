@@ -30,7 +30,7 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
     const cleanValue = value.replace(/\D/g, '');
     let formattedValue = value;
 
-    if (data.tipo_pessoa === 'fisica') {
+    if (data.tipo_pessoa === 'pf') {
       formattedValue = formatCPF(cleanValue);
     } else {
       formattedValue = formatCNPJ(cleanValue);
@@ -91,11 +91,11 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
             id="tipo_pessoa"
             value={data.tipo_pessoa}
             onChange={(e) => {
-              const tipoPessoa = e.target.value as 'fisica' | 'juridica';
+              const tipoPessoa = e.target.value as 'pf' | 'pj';
               onChange({
                 tipo_pessoa: tipoPessoa,
                 tax_id: '',
-                rg: tipoPessoa === 'fisica' ? data.rg : ''
+                rg: tipoPessoa === 'pf' ? data.rg : ''
               });
             }}
             className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
@@ -111,14 +111,14 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
         {/* Profissão */}
         <div className="space-y-2">
           <Label htmlFor="profissao">
-            {data.tipo_pessoa === 'fisica' ? 'Profissão' : 'Atividade Principal'}
+            {data.tipo_pessoa === 'pf' ? 'Profissão' : 'Atividade Principal'}
           </Label>
           <input
             id="profissao"
             type="text"
             value={data.profissao || ''}
             onChange={(e) => onChange({ profissao: e.target.value })}
-            placeholder={data.tipo_pessoa === 'fisica' ? 'Digite a profissão' : 'Digite a atividade principal'}
+            placeholder={data.tipo_pessoa === 'pf' ? 'Digite a profissão' : 'Digite a atividade principal'}
             className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
           />
         </div>
@@ -129,15 +129,15 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="tax_id">
-            {data.tipo_pessoa === 'fisica' ? 'CPF' : 'CNPJ'} *
+            {data.tipo_pessoa === 'pf' ? 'CPF' : 'CNPJ'} *
           </Label>
           <input
             id="tax_id"
             type="text"
             value={data.tax_id}
             onChange={(e) => handleTaxIdChange(e.target.value)}
-            placeholder={data.tipo_pessoa === 'fisica' ? '000.000.000-00' : '00.000.000/0000-00'}
-            maxLength={data.tipo_pessoa === 'fisica' ? 14 : 18}
+            placeholder={data.tipo_pessoa === 'pf' ? '000.000.000-00' : '00.000.000/0000-00'}
+            maxLength={data.tipo_pessoa === 'pf' ? 14 : 18}
             className={`w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground ${validation.errors.tax_id ? 'border-destructive' : ''
               }`}
           />
@@ -147,7 +147,7 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
         </div>
 
         {/* RG - Apenas para Pessoa Física */}
-        {data.tipo_pessoa === 'fisica' && (
+        {data.tipo_pessoa === 'pf' && (
           <div className="space-y-2">
             <Label htmlFor="rg">RG</Label>
             <input
@@ -167,7 +167,7 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
       </div>
 
       {/* Terceira linha - Data de Nascimento e Estado Civil (se pessoa física) */}
-      {data.tipo_pessoa === 'fisica' && (
+      {data.tipo_pessoa === 'pf' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="data_nascimento">Data de Nascimento</Label>
