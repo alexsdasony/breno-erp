@@ -251,7 +251,13 @@ export function useCustomerForm(customerId?: string) {
     
     if (!validation.isValid) {
       setState((prev: CustomerFormState) => ({ ...prev, isSaving: false }));
-      toast({ title: 'Erro', description: 'Corrija os erros antes de salvar', variant: 'destructive' });
+      const errorCount = Object.keys(validation.errors).length;
+      const firstError = Object.values(validation.errors)[0];
+      toast({ 
+        title: `${errorCount} erro(s) encontrado(s)`, 
+        description: errorCount === 1 ? firstError : `${firstError} e mais ${errorCount - 1} erro(s)`,
+        variant: 'destructive'
+      });
       return false;
     }
 

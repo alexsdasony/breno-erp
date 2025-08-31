@@ -29,48 +29,72 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerId, onSave, onCance
       id: 'dados-pessoais' as const,
       label: 'Dados Pessoais',
       icon: <User className="w-5 h-5" />,
-      component: PersonalDataTab
+      component: PersonalDataTab,
+      fields: ['name', 'tipo_pessoa', 'tax_id', 'rg', 'data_nascimento', 'estado_civil', 'profissao']
     },
     {
       id: 'dados-profissionais' as const,
       label: 'Dados Profissionais',
       icon: <Briefcase className="w-5 h-5" />,
-      component: ProfessionalDataTab
+      component: ProfessionalDataTab,
+      fields: ['empresa', 'cargo', 'data_admissao', 'telefone_comercial']
     },
     {
       id: 'contato' as const,
       label: 'Contato',
       icon: <Phone className="w-5 h-5" />,
-      component: ContactDataTab
+      component: ContactDataTab,
+      fields: ['email', 'phone', 'celular', 'preferencia_contato', 'melhor_horario_contato']
     },
     {
       id: 'endereco' as const,
       label: 'Endereço',
       icon: <MapPin className="w-5 h-5" />,
-      component: AddressTab
+      component: AddressTab,
+      fields: ['address', 'numero', 'complemento', 'bairro', 'city', 'state', 'zip_code', 'tipo_imovel']
     },
     {
       id: 'patrimonio' as const,
       label: 'Patrimônio',
       icon: <Banknote className="w-5 h-5" />,
-      component: PatrimonyTab
+      component: PatrimonyTab,
+      fields: ['possui_patrimonio', 'valor_patrimonio', 'descricao_patrimonio']
     },
     {
       id: 'documentos' as const,
       label: 'Documentos',
       icon: <FileText className="w-5 h-5" />,
-      component: DocumentsTab
+      component: DocumentsTab,
+      fields: ['documents']
     },
     {
       id: 'sistema' as const,
       label: 'Sistema',
       icon: <Settings className="w-5 h-5" />,
-      component: SystemTab
+      component: SystemTab,
+      fields: ['status', 'data_cadastro', 'responsavel_cadastro', 'observacoes']
     }
   ];
 
+  // Função para contar erros por aba
+  const getTabErrorCount = (tabFields: string[]) => {
+    if (!validation.errors) return 0;
+    return tabFields.filter(field => validation.errors[field]).length;
+  };
+
   const currentTab = tabs.find(tab => tab.id === activeTab);
   const CurrentTabComponent = currentTab?.component || PersonalDataTab;
+
+  // Calcular progresso do formulário
+  const requiredFields = ['name', 'tipo_pessoa', 'tax_id', 'email'];
+  const filledRequiredFields = requiredFields.filter(field => {
+    const value = data[field as keyof typeof data];
+    return value && value.toString().trim() !== '';
+  }).length;
+  const progressPercentage = Math.round((filledRequiredFields / requiredFields.length) * 100);
+  
+  // Contar total de erros
+  const totalErrors = validation.errors ? Object.keys(validation.errors).length : 0;
 
   const handleFormSave = async () => {
     const success = await saveCustomer();
@@ -92,13 +116,55 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerId, onSave, onCance
       {/* Header */}
       <div className="border-b border-border pb-6 mb-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-card-foreground">
-              {customerId ? 'Editar Cliente' : 'Novo Cliente'}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {customerId ? 'Atualize as informações do cliente' : 'Preencha os dados para cadastrar um novo cliente'}
-            </p>
+          <div className="flex-1">
+            <div className="flex items-center space-x-4">
+              <div>
+                <h1 className="text-2xl font-bold text-card-foreground">
+                  {customerId ? 'Editar Cliente' : 'Novo Cliente'}
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  {customerId ? 'Atualize as informações do cliente' : 'Preencha os dados para cadastrar um novo cliente'}
+                </p>
+              </div>
+              
+              {/* Indicadores de Status */}
+              <div className="flex items-center space-x-4">
+                {/* Progresso */}
+                <div className="flex items-center space-x-2">
+                  <div className="w-24 bg-muted rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        progressPercentage === 100 ? 'bg-green-500' : 'bg-primary'
+                      }`}
+                      style={{ width: `${progressPercentage}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {progressPercentage}%
+                  </span>
+                </div>
+                
+                {/* Status de Erros */}
+                {totalErrors > 0 && (
+                  <div className="flex items-center space-x-1 bg-destructive/10 text-destructive px-2 py-1 rounded-md">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-xs font-medium">{totalErrors} erro(s)</span>
+                  </div>
+                )}
+                
+                {/* Status de Sucesso */}
+                {totalErrors === 0 && progressPercentage === 100 && (
+                  <div className="flex items-center space-x-1 bg-green-100 text-green-700 px-2 py-1 rounded-md">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-xs font-medium">Pronto</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
           <div className="flex space-x-3">
             {onCancel && (
@@ -133,25 +199,34 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerId, onSave, onCance
         <nav className="-mb-px flex space-x-8 overflow-x-auto">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
-            const hasErrors = validation.errors && Object.keys(validation.errors).length > 0;
+            const errorCount = getTabErrorCount(tab.fields);
+            const hasErrors = errorCount > 0;
             
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                className={`group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                   isActive
                     ? 'border-primary text-primary'
+                    : hasErrors
+                    ? 'border-transparent text-destructive hover:text-destructive/80 hover:border-destructive/20'
                     : 'border-transparent text-muted-foreground hover:text-card-foreground hover:border-muted'
-                } ${hasErrors && tab.id === 'dados-pessoais' ? 'text-destructive' : ''}`}
+                }`}
               >
-                <span className={`mr-2 ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-card-foreground'}`}>
+                <span className={`mr-2 transition-colors ${
+                  isActive 
+                    ? 'text-primary' 
+                    : hasErrors 
+                    ? 'text-destructive' 
+                    : 'text-muted-foreground group-hover:text-card-foreground'
+                }`}>
                   {tab.icon as React.ReactNode}
                 </span>
                 {tab.label}
-                {hasErrors && tab.id === 'dados-pessoais' && (
-                  <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive">
-                    !
+                {hasErrors && (
+                  <span className="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold bg-destructive text-destructive-foreground animate-pulse">
+                    {errorCount}
                   </span>
                 )}
               </button>
@@ -170,21 +245,52 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerId, onSave, onCance
         />
       </div>
 
-      {/* Validation Errors */}
+      {/* Validation Summary */}
       {validation.errors && Object.keys(validation.errors).length > 0 && (
         <div className="mt-6 bg-destructive/10 border border-destructive/20 rounded-md p-4">
           <div className="flex">
-            <svg className="h-5 w-5 text-destructive" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="h-5 w-5 text-destructive mt-0.5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-destructive">Corrija os seguintes erros:</h3>
-              <div className="mt-2 text-sm text-destructive/80">
-                <ul className="list-disc pl-5 space-y-1">
-                  {Object.entries(validation.errors).map(([field, error]) => (
-                    <li key={field}>{error}</li>
-                  ))}
-                </ul>
+            <div className="ml-3 flex-1">
+              <h3 className="text-sm font-medium text-destructive mb-3">
+                {Object.keys(validation.errors).length} erro(s) encontrado(s) - Corrija antes de salvar
+              </h3>
+              
+              {/* Resumo por aba */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {tabs.map((tab) => {
+                  const tabErrors = tab.fields.filter(field => validation.errors[field]);
+                  if (tabErrors.length === 0) return null;
+                  
+                  return (
+                    <div key={tab.id} className="bg-background/50 rounded-md p-3">
+                      <div className="flex items-center mb-2">
+                        <span className="mr-2 text-destructive">{tab.icon}</span>
+                        <span className="font-medium text-destructive text-sm">{tab.label}</span>
+                        <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full">
+                          {tabErrors.length}
+                        </span>
+                      </div>
+                      <ul className="text-xs text-destructive/80 space-y-1">
+                        {tabErrors.map(field => (
+                          <li key={field} className="flex items-start">
+                            <span className="w-1 h-1 bg-destructive rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
+                            {validation.errors[field]}
+                          </li>
+                        ))}
+                      </ul>
+                      {tab.id !== activeTab && (
+                        <button
+                          onClick={() => setActiveTab(tab.id)}
+                          className="mt-2 text-xs text-primary hover:text-primary/80 font-medium"
+                        >
+                          Ir para aba →
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

@@ -29,13 +29,13 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
   const handleTaxIdChange = (value: string) => {
     const cleanValue = value.replace(/\D/g, '');
     let formattedValue = value;
-    
+
     if (data.tipo_pessoa === 'fisica') {
       formattedValue = formatCPF(cleanValue);
     } else {
       formattedValue = formatCNPJ(cleanValue);
     }
-    
+
     onChange({ tax_id: formattedValue });
   };
 
@@ -73,9 +73,8 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
             value={data.name}
             onChange={(e) => onChange({ name: e.target.value })}
             placeholder="Digite o nome completo"
-            className={`w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground ${
-              validation.errors.name ? 'border-destructive' : ''
-            }`}
+            className={`w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground ${validation.errors.name ? 'border-destructive' : ''
+              }`}
           />
           {validation.errors.name && (
             <p className="text-sm text-red-500">{validation.errors.name}</p>
@@ -83,28 +82,47 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
         </div>
       </div>
 
-      {/* Tipo de Pessoa */}
-      <div className="space-y-2">
-        <Label htmlFor="tipo_pessoa">Tipo de Pessoa *</Label>
-        <select
-          id="tipo_pessoa"
-          value={data.tipo_pessoa}
-          onChange={(e) => {
-            const tipoPessoa = e.target.value as 'fisica' | 'juridica';
-            onChange({ 
-              tipo_pessoa: tipoPessoa,
-              tax_id: '',
-              rg: tipoPessoa === 'fisica' ? data.rg : ''
-            });
-          }}
-          className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
-        >
-          {TIPO_PESSOA_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {/* Tipo de Pessoa */}
+        <div className="space-y-2">
+          <Label htmlFor="tipo_pessoa">Tipo de Pessoa *</Label>
+          <select
+            id="tipo_pessoa"
+            value={data.tipo_pessoa}
+            onChange={(e) => {
+              const tipoPessoa = e.target.value as 'fisica' | 'juridica';
+              onChange({
+                tipo_pessoa: tipoPessoa,
+                tax_id: '',
+                rg: tipoPessoa === 'fisica' ? data.rg : ''
+              });
+            }}
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+          >
+            {TIPO_PESSOA_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Profissão */}
+        <div className="space-y-2">
+          <Label htmlFor="profissao">
+            {data.tipo_pessoa === 'fisica' ? 'Profissão' : 'Atividade Principal'}
+          </Label>
+          <input
+            id="profissao"
+            type="text"
+            value={data.profissao || ''}
+            onChange={(e) => onChange({ profissao: e.target.value })}
+            placeholder={data.tipo_pessoa === 'fisica' ? 'Digite a profissão' : 'Digite a atividade principal'}
+            className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+          />
+        </div>
+
       </div>
 
       {/* Segunda linha - CPF/CNPJ e RG (se pessoa física) */}
@@ -120,9 +138,8 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
             onChange={(e) => handleTaxIdChange(e.target.value)}
             placeholder={data.tipo_pessoa === 'fisica' ? '000.000.000-00' : '00.000.000/0000-00'}
             maxLength={data.tipo_pessoa === 'fisica' ? 14 : 18}
-            className={`w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground ${
-              validation.errors.tax_id ? 'border-destructive' : ''
-            }`}
+            className={`w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground ${validation.errors.tax_id ? 'border-destructive' : ''
+              }`}
           />
           {validation.errors.tax_id && (
             <p className="text-sm text-destructive">{validation.errors.tax_id}</p>
@@ -181,20 +198,6 @@ export function PersonalDataTab({ data, onChange, validation }: CustomerTabProps
         </div>
       )}
 
-      {/* Profissão */}
-      <div className="space-y-2">
-        <Label htmlFor="profissao">
-          {data.tipo_pessoa === 'fisica' ? 'Profissão' : 'Atividade Principal'}
-        </Label>
-        <input
-          id="profissao"
-          type="text"
-          value={data.profissao || ''}
-          onChange={(e) => onChange({ profissao: e.target.value })}
-          placeholder={data.tipo_pessoa === 'fisica' ? 'Digite a profissão' : 'Digite a atividade principal'}
-          className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
-        />
-      </div>
     </div>
   );
 }

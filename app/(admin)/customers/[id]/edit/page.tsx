@@ -6,14 +6,14 @@ import CustomerForm from '../../_components/CustomerForm';
 import type { CustomerFormData } from '../../../../../src/types/CustomerForm';
 
 interface EditCustomerPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function EditCustomerPage({ params }: EditCustomerPageProps) {
   const router = useRouter();
-  const { id } = params;
+  const { id } = React.use(params);
 
   const handleSave = (customerData: CustomerFormData) => {
     // Redirecionar para a lista de clientes após salvar
