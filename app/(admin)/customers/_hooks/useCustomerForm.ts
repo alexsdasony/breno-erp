@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/components/ui/use-toast';
-import { supabase } from '@/lib/supabase';
+import { getCustomerById, createCustomer, updateCustomer } from '@/services/customersService';
 import type { 
   CustomerFormData, 
   CustomerFormState, 
@@ -185,26 +185,23 @@ export function useCustomerForm(customerId?: string) {
     setState((prev: CustomerFormState) => ({ ...prev, isLoading: true }));
     
     try {
-      const { data: customer, error } = await supabase
-        .from('partners')
-        .select(`
-          *,
-          partner_documents(*)
-        `)
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
+      const response = await getCustomerById(id);
+      
+      if (!response.success || !response.data?.customer) {
+        throw new Error('Cliente não encontrado');
+      }
+      
+      const customer = response.data.customer;
 
       if (customer) {
         const formData: CustomerFormData = {
-          segment_id: customer.segment_id,
+          segment_id: customer.segment_id || undefined,
           name: customer.name || '',
-          tipo_pessoa: customer.tipo_pessoa || 'fisica',
+          tipo_pessoa: (customer.tipo_pessoa === 'pf' ? 'fisica' : customer.tipo_pessoa === 'pj' ? 'juridica' : 'fisica') as 'fisica' | 'juridica',
           tax_id: customer.tax_id || '',
           rg: customer.rg || '',
           data_nascimento: customer.data_nascimento || '',
-          estado_civil: customer.estado_civil || 'solteiro',
+          estado_civil: (customer.estado_civil as any) || 'solteiro',
           profissao: customer.profissao || '',
           empresa: customer.empresa || '',
           cargo: customer.cargo || '',
@@ -220,15 +217,15 @@ export function useCustomerForm(customerId?: string) {
           city: customer.city || '',
           state: customer.state || '',
           zip_code: customer.zip_code || '',
-          tipo_imovel: customer.tipo_imovel || 'proprio',
+          tipo_imovel: (customer.tipo_imovel as any) || 'proprio',
           possui_patrimonio: customer.possui_patrimonio || false,
           valor_patrimonio: customer.valor_patrimonio || 0,
           descricao_patrimonio: customer.descricao_patrimonio || '',
-          status: customer.status || 'ativo',
+          status: (customer.status === 'pendente' ? 'ativo' : customer.status) as 'ativo' | 'inativo' | 'suspenso' || 'ativo',
           data_cadastro: customer.data_cadastro || '',
           responsavel_cadastro: customer.responsavel_cadastro || '',
           observacoes: customer.observacoes || '',
-          documents: customer.partner_documents || []
+          documents: []
         };
 
         setState((prev: CustomerFormState) => ({
@@ -260,42 +257,45 @@ export function useCustomerForm(customerId?: string) {
 
     try {
       const customerData = {
-        ...state.data,
-        updated_at: new Date().toISOString()
+        segment_id: state.data.segment_id,
+        name: state.data.name,
+        tipo_pessoa: (state.data.tipo_pessoa === 'fisica' ? 'pf' : 'pj') as 'pf' | 'pj',
+        tax_id: state.data.tax_id,
+        rg: state.data.rg,
+        data_nascimento: state.data.data_nascimento,
+        estado_civil: state.data.estado_civil,
+        profissao: state.data.profissao,
+        empresa: state.data.empresa,
+        cargo: state.data.cargo,
+        data_admissao: state.data.data_admissao,
+        telefone_comercial: state.data.telefone_comercial,
+        email: state.data.email,
+        phone: state.data.phone,
+        celular: state.data.celular,
+        address: state.data.address,
+        numero: state.data.numero,
+        complemento: state.data.complemento,
+        bairro: state.data.bairro,
+        city: state.data.city,
+        state: state.data.state,
+        zip_code: state.data.zip_code,
+        tipo_imovel: state.data.tipo_imovel,
+        possui_patrimonio: state.data.possui_patrimonio,
+        valor_patrimonio: state.data.valor_patrimonio,
+        descricao_patrimonio: state.data.descricao_patrimonio,
+        status: state.data.status,
+        data_cadastro: state.data.data_cadastro,
+        responsavel_cadastro: state.data.responsavel_cadastro,
+        observacoes: state.data.observacoes
       };
 
-      let result;
-      if (customerId) {
-        // Atualizar cliente existente
-        result = await supabase
-          .from('partners')
-          .update(customerData)
-          .eq('id', customerId)
-          .select()
-          .single();
-      } else {
-        // Criar novo cliente
-        result = await supabase
-          .from('partners')
-          .insert({
-            ...customerData,
-            created_at: new Date().toISOString()
-          })
-          .select()
-          .single();
+      const response = customerId
+        ? await updateCustomer(customerId, customerData)
+        : await createCustomer(customerData);
 
-        // Adicionar role de customer
-        if (result.data) {
-          await supabase
-            .from('partner_roles')
-            .insert({
-              partner_id: result.data.id,
-              role: 'customer'
-            });
-        }
+      if (!response.success) {
+        throw new Error(response.error || 'Erro ao salvar cliente');
       }
-
-      if (result.error) throw result.error;
 
       toast({ title: 'Sucesso', description: customerId ? 'Cliente atualizado com sucesso!' : 'Cliente cadastrado com sucesso!' });
       setState((prev: CustomerFormState) => ({ ...prev, isSaving: false, isDirty: false }));

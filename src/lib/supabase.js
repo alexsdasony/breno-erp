@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import jwt from 'jsonwebtoken'
 
-import { SUPABASE_CONFIG, SECURITY_CONFIG } from '../config/constants.js'
+import { SUPABASE_CONFIG, SECURITY_CONFIG } from '../config/constants'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

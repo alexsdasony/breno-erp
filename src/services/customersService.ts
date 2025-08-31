@@ -13,30 +13,30 @@ export async function getCustomers(params: Record<string, any> = {}): Promise<Ap
 }
 
 export async function getCustomerById(id: string): Promise<ApiResponse<{ customer: Customer }>> {
-  const response = await apiService.get<{ success: boolean; customers: Customer }>(`/customers/${id}`);
+  const response = await apiService.get<{ success: boolean; customer: Customer }>(`/customers/${id}`);
   return {
     data: {
-      customer: response.customers
+      customer: response.customer
     },
     success: response.success || false
   } as ApiResponse<{ customer: Customer }>;
 }
 
 export async function createCustomer(customerData: CustomerPayload): Promise<ApiResponse<{ customer: Customer }>> {
-  const response = await apiService.post<{ success: boolean; customers: Customer }>('/customers', customerData);
+  const response = await apiService.post<{ success: boolean; customer: Customer }>('/customers', customerData);
   return {
     data: {
-      customer: response.customers
+      customer: response.customer
     },
     success: response.success || false
   } as ApiResponse<{ customer: Customer }>;
 }
 
 export async function updateCustomer(id: string, customerData: CustomerPayload): Promise<ApiResponse<{ customer: Customer }>> {
-  const response = await apiService.put<{ success: boolean; customers: Customer }>(`/customers/${id}`, customerData);
+  const response = await apiService.put<{ success: boolean; customer: Customer }>(`/customers/${id}`, customerData);
   return {
     data: {
-      customer: response.customers
+      customer: response.customer
     },
     success: response.success || false
   } as ApiResponse<{ customer: Customer }>;
