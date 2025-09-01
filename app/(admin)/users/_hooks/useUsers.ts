@@ -34,8 +34,11 @@ export function useUsers(): UseUsersState & UseUsersApi {
     setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
     try {
       const page = reset ? 1 : state.page;
+      console.log('Carregando usuários, página:', page);
       const response = await getUsers({ page, pageSize: PAGE_SIZE });
+      console.log('Resposta da API getUsers:', response);
       const users = response.data?.users || [];
+      console.log('Usuários carregados:', users);
       setState((s) => ({
         items: reset ? users : [...s.items, ...users],
         loading: false,
@@ -43,6 +46,7 @@ export function useUsers(): UseUsersState & UseUsersApi {
         hasMore: users.length === PAGE_SIZE,
       }));
     } catch (e) {
+      console.error('Erro ao carregar usuários:', e);
       setState((s) => ({ ...s, loading: false }));
       toast({
         title: 'Falha ao carregar usuários',
@@ -77,10 +81,23 @@ export function useUsers(): UseUsersState & UseUsersApi {
 
   const create = useCallback(async (data: Partial<User>) => {
     try {
-      const response = await createUser(data);
+      console.log('Tentando criar usuário:', data);
+      
+      // Converter status para is_active
+      const payload = {
+        ...data,
+        is_active: (data as any).status === 'ativo',
+      };
+      delete (payload as any).status; // Remove status do payload
+      
+      const response = await createUser(payload);
+      console.log('Resposta da API:', response);
       const user = response.data?.user;
       if (user) {
+        console.log('Usuário criado com sucesso:', user);
         setState((s) => ({ ...s, items: [user, ...s.items] }));
+      } else {
+        console.warn('Resposta da API não contém usuário:', response);
       }
       toast({
         title: 'Usuário criado',
@@ -88,6 +105,7 @@ export function useUsers(): UseUsersState & UseUsersApi {
       });
       return user as User;
     } catch (e) {
+      console.error('Erro ao criar usuário:', e);
       toast({
         title: 'Erro ao criar usuário',
         description: 'Verifique os dados informados.',
@@ -99,7 +117,14 @@ export function useUsers(): UseUsersState & UseUsersApi {
 
   const update = useCallback(async (id: string, data: Partial<User>) => {
     try {
-      const response = await updateUser(id, data);
+      // Converter status para is_active
+      const payload = {
+        ...data,
+        is_active: (data as any).status === 'ativo',
+      };
+      delete (payload as any).status; // Remove status do payload
+      
+      const response = await updateUser(id, payload);
       const user = response.data?.user;
       if (user) {
         setState((s) => ({

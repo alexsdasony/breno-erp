@@ -59,15 +59,6 @@ export default function UsersView() {
   // Check if current user is admin
   const isAdmin = currentUser?.role === 'admin';
 
-  // If not authenticated, show loading
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
   // Filtered users
   const filteredUsers = useMemo(() => {
     return items.filter((user: User) => {

@@ -239,28 +239,6 @@ export default function UserManagement() {
   // Check if current user is admin
   const isAdmin = currentUser?.role === 'admin';
 
-  // If not authenticated, show loading
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  // If not admin, show access denied
-  if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <UserX className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-300 mb-2">Acesso Negado</h3>
-          <p className="text-gray-500">Você não tem permissão para acessar esta página.</p>
-        </div>
-      </div>
-    );
-  }
-
   // Filtered users
   const filteredUsers = useMemo(() => {
     return items.filter((user: User) => {
@@ -287,6 +265,28 @@ export default function UserManagement() {
       inactiveUsers
     };
   }, [items]);
+
+  // If not authenticated, show loading
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  // If not admin, show access denied
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <UserX className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-300 mb-2">Acesso Negado</h3>
+          <p className="text-gray-500">Você não tem permissão para acessar esta página.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Helper functions
   const getRoleIcon = (role: string) => {

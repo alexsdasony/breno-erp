@@ -96,6 +96,8 @@ class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     const token = this.getToken();
     
+    console.log('API Request:', { endpoint, url, hasToken: !!token, tokenLength: token?.length });
+    
     const isEdgeFunctions = this.baseURL === '/api' || (typeof this.baseURL === 'string' && this.baseURL.includes('supabase.co'));
     const config: RequestInit = {
       headers: {

@@ -17,6 +17,11 @@ export const SUPABASE_CONFIG = {
   anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlcnViaml0ZXRxd2ZxcXlkaHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwMDU5NDUsImV4cCI6MjA2OTU4MTk0NX0.eP6QxQI1oerd5HxPxYpHF8mhKLK6bwnuIyw_aKFjuwU',
 };
 
+// Configurações de segurança
+export const SECURITY_CONFIG = {
+  JWT_SECRET: process.env.JWT_SECRET || 'f3696dd52f7674b95e4606c46a6e69065b65600544b4129ba7b09538476f06fa600fcc77ebe4c610026a24bfc95c4ce4cad1e353a4a9246562c1d90e35f01a1d',
+};
+
 // DEPRECATED: Use enums centralizados em src/types/enums.ts
 // Mantido apenas para compatibilidade legada
 import {
@@ -151,6 +156,7 @@ export default {
   APP_CONFIG,
   API_CONFIG,
   SUPABASE_CONFIG,
+  SECURITY_CONFIG,
   TRANSACTION_STATUS,
   TRANSACTION_TYPES,
   PRODUCT_STATUS,

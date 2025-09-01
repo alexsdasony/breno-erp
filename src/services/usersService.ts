@@ -1,6 +1,6 @@
 import apiService from './api';
 import { ApiResponse } from './api';
-import type { User, UserPayload } from '@/types';
+import type { User, UserPayload } from '../types';
 
 // Interface estendida para compatibilidade com dados existentes
 export interface UserExtended extends User {
@@ -13,10 +13,14 @@ export interface UserExtended extends User {
  * @returns Lista de usuários
  */
 export async function getUsers(params: Record<string, any> = {}): Promise<ApiResponse<{ users: UserExtended[] }>> {
-  const response = await apiService.get<{ success: boolean; users: UserExtended[] }>('/users', params);
+  const response = await apiService.get<{ success: boolean; users: User[] }>('/users', params);
+  const usersWithStatus = (response.users || []).map(user => ({
+    ...user,
+    status: user.is_active ? 'ativo' as const : 'inativo' as const
+  }));
   return {
     success: response.success,
-    data: { users: response.users || [] }
+    data: { users: usersWithStatus }
   };
 }
 
@@ -26,10 +30,14 @@ export async function getUsers(params: Record<string, any> = {}): Promise<ApiRes
  * @returns Dados do usuário
  */
 export async function getUser(id: string): Promise<ApiResponse<{ user: UserExtended }>> {
-  const response = await apiService.get<{ success: boolean; user: UserExtended }>(`/users/${id}`);
+  const response = await apiService.get<{ success: boolean; user: User }>(`/users/${id}`);
+  const userWithStatus = response.user ? {
+    ...response.user,
+    status: response.user.is_active ? 'ativo' as const : 'inativo' as const
+  } : undefined;
   return {
     success: response.success,
-    data: { user: response.user }
+    data: { user: userWithStatus as UserExtended }
   };
 }
 
@@ -39,10 +47,14 @@ export async function getUser(id: string): Promise<ApiResponse<{ user: UserExten
  * @returns Usuário criado
  */
 export async function createUser(userData: UserPayload): Promise<ApiResponse<{ user: UserExtended }>> {
-  const response = await apiService.post<{ success: boolean; user: UserExtended }>('/users', userData);
+  const response = await apiService.post<{ success: boolean; user: User }>('/users', userData);
+  const userWithStatus = response.user ? {
+    ...response.user,
+    status: response.user.is_active ? 'ativo' as const : 'inativo' as const
+  } : undefined;
   return {
     success: response.success,
-    data: { user: response.user }
+    data: { user: userWithStatus as UserExtended }
   };
 }
 
@@ -53,10 +65,14 @@ export async function createUser(userData: UserPayload): Promise<ApiResponse<{ u
  * @returns Usuário atualizado
  */
 export async function updateUser(id: string, userData: UserPayload): Promise<ApiResponse<{ user: UserExtended }>> {
-  const response = await apiService.put<{ success: boolean; user: UserExtended }>(`/users/${id}`, userData);
+  const response = await apiService.put<{ success: boolean; user: User }>(`/users/${id}`, userData);
+  const userWithStatus = response.user ? {
+    ...response.user,
+    status: response.user.is_active ? 'ativo' as const : 'inativo' as const
+  } : undefined;
   return {
     success: response.success,
-    data: { user: response.user }
+    data: { user: userWithStatus as UserExtended }
   };
 }
 

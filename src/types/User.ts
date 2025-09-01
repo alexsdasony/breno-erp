@@ -16,6 +16,7 @@ export interface UserPayload {
   name?: string | null
   role?: UserRole | null
   is_active?: boolean
+  status?: 'ativo' | 'inativo'
   segment_id?: ID | null
 }
 
