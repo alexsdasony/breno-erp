@@ -63,9 +63,15 @@ export function useUsers(): UseUsersState & UseUsersApi {
     try {
       const response = await getUsers({ page: nextPage, pageSize: PAGE_SIZE });
       const users = response.data?.users || [];
+      // Converter is_active para status para compatibilidade com o componente
+      const usersWithStatus = users.map(user => ({
+        ...user,
+        status: user.is_active ? 'ativo' as const : 'inativo' as const
+      }));
+      
       setState((s) => ({
         ...s,
-        items: [...s.items, ...users],
+        items: [...s.items, ...usersWithStatus],
         hasMore: users.length === PAGE_SIZE,
         loading: false,
       }));

@@ -134,8 +134,9 @@ export default function UsersView() {
       segment_id: user.segment_id || '',
       name: user.name || '',
       email: user.email || '',
+      password: '',
       role: (user.role as 'user' | 'admin') || 'user',
-      status: (user.status as 'ativo' | 'inativo') || 'ativo'
+      status: user.is_active ? 'ativo' : 'inativo'
     });
     setIsEditing(true);
     setShowForm(true);
