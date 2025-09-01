@@ -17,6 +17,11 @@ export const SystemTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
 
   return (
     <div className="space-y-6">
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-foreground mb-1">Informações do Sistema</h2>
+        <p className="text-sm text-muted-foreground">Status, responsável e dados de controle interno</p>
+      </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="status">Status do Cliente</Label>

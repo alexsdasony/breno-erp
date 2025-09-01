@@ -12,6 +12,11 @@ export const ContactDataTab: React.FC<CustomerTabProps> = ({ data, onChange }) =
 
   return (
     <div className="space-y-6">
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-foreground mb-1">Dados de Contato</h2>
+        <p className="text-sm text-muted-foreground">Telefones, e-mail e informações de comunicação</p>
+      </div>
+      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label htmlFor="email">E-mail</Label>

@@ -27,6 +27,11 @@ export const PatrimonyTab: React.FC<CustomerTabProps> = ({ data, onChange }) => 
 
   return (
     <div className="space-y-6">
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-foreground mb-1">Patrimônio</h2>
+        <p className="text-sm text-muted-foreground">Declaração de bens e informações patrimoniais</p>
+      </div>
+      
       <div className="flex items-center space-x-3">
         <input
           id="possui_patrimonio"

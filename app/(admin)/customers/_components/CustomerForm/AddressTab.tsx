@@ -41,6 +41,11 @@ export const AddressTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
 
   return (
     <div className="space-y-6">
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-foreground mb-1">Endereço</h2>
+        <p className="text-sm text-muted-foreground">Localização e detalhes do endereço do cliente</p>
+      </div>
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-2">
             <Label htmlFor="zip_code">CEP</Label>
