@@ -112,7 +112,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerId, onSave, onCance
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       {/* Header */}
       <div className="bg-card backdrop-blur-sm border border-border/50 rounded-xl p-6 mb-6 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">

@@ -26,14 +26,10 @@ export default function EditCustomerPage({ params }: EditCustomerPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <CustomerForm
-          customerId={id}
-          onSave={handleSave}
-          onCancel={handleCancel}
-        />
-      </div>
-    </div>
+    <CustomerForm
+      customerId={id}
+      onSave={handleSave}
+      onCancel={handleCancel}
+    />
   );
 }
