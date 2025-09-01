@@ -7,6 +7,7 @@ export interface User extends Timestamped {
   name?: string | null
   role?: UserRole | null
   is_active?: boolean
+  status?: 'ativo' | 'inativo'
   last_login?: string | null
   segment_id?: ID | null
 }

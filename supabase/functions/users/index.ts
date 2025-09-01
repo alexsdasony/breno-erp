@@ -165,6 +165,26 @@ serve(async (req) => {
       const body = await req.json()
       console.log('Body recebido:', body);
       
+      // Verificar se o usuário existe antes de atualizar
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id, name, email')
+        .eq('id', lastSegment)
+        .single()
+      
+      console.log('Verificação de existência:', { existingUser, checkError });
+      
+      if (checkError || !existingUser) {
+        console.log('Usuário não encontrado para verificação:', checkError);
+        return new Response(
+          JSON.stringify({ error: 'Usuário não encontrado' }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
       const { data, error } = await supabase
         .from('users')
         .update(body)
@@ -177,9 +197,9 @@ serve(async (req) => {
       if (error || !data) {
         console.log('Erro na atualização:', error);
         return new Response(
-          JSON.stringify({ error: 'Usuário não encontrado' }),
+          JSON.stringify({ error: 'Erro ao atualizar usuário' }),
           { 
-            status: 404, 
+            status: 500, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         )

@@ -136,7 +136,7 @@ export default function UsersView() {
       email: user.email || '',
       password: '',
       role: (user.role as 'user' | 'admin') || 'user',
-      status: user.is_active ? 'ativo' : 'inativo'
+      status: user.status || 'ativo'
     });
     setIsEditing(true);
     setShowForm(true);

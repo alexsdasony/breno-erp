@@ -39,8 +39,29 @@ export function useUsers(): UseUsersState & UseUsersApi {
       console.log('Resposta da API getUsers:', response);
       const users = response.data?.users || [];
       console.log('Usuários carregados:', users);
+      
+      // Log detalhado de cada usuário
+      users.forEach((user, index) => {
+        console.log(`Usuário ${index + 1}:`, {
+          name: user.name,
+          email: user.email,
+          status: user.status,
+          is_active: user.is_active,
+          hasStatus: 'status' in user,
+          hasIsActive: 'is_active' in user
+        });
+      });
+      
+      // Garantir que o campo status esteja presente
+      const usersWithStatus = users.map(user => ({
+        ...user,
+        status: user.status || (user.is_active ? 'ativo' : 'inativo')
+      }));
+      
+      console.log('Usuários com status processado:', usersWithStatus);
+      
       setState((s) => ({
-        items: reset ? users : [...s.items, ...users],
+        items: reset ? usersWithStatus : [...s.items, ...usersWithStatus],
         loading: false,
         page,
         hasMore: users.length === PAGE_SIZE,
@@ -63,10 +84,10 @@ export function useUsers(): UseUsersState & UseUsersApi {
     try {
       const response = await getUsers({ page: nextPage, pageSize: PAGE_SIZE });
       const users = response.data?.users || [];
-      // Converter is_active para status para compatibilidade com o componente
+      // Garantir que o campo status esteja presente
       const usersWithStatus = users.map(user => ({
         ...user,
-        status: user.is_active ? 'ativo' as const : 'inativo' as const
+        status: user.status || (user.is_active ? 'ativo' : 'inativo')
       }));
       
       setState((s) => ({
@@ -127,7 +148,7 @@ export function useUsers(): UseUsersState & UseUsersApi {
       let payload = { ...data };
       
       if ('status' in data) {
-        // Se estamos atualizando status, converter para o formato esperado pela API
+        // Se estamos atualizando status, enviar apenas o status
         payload = {
           status: (data as any).status
         };

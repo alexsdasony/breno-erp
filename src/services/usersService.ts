@@ -16,7 +16,7 @@ export async function getUsers(params: Record<string, any> = {}): Promise<ApiRes
   const response = await apiService.get<{ success: boolean; users: User[] }>('/users', params);
   const usersWithStatus = (response.users || []).map(user => ({
     ...user,
-    status: user.is_active ? 'ativo' as const : 'inativo' as const
+    status: user.status || (user.is_active ? 'ativo' : 'inativo')
   }));
   return {
     success: response.success,
@@ -33,7 +33,7 @@ export async function getUser(id: string): Promise<ApiResponse<{ user: UserExten
   const response = await apiService.get<{ success: boolean; user: User }>(`/users/${id}`);
   const userWithStatus = response.user ? {
     ...response.user,
-    status: response.user.is_active ? 'ativo' as const : 'inativo' as const
+    status: response.user.status || (response.user.is_active ? 'ativo' : 'inativo')
   } : undefined;
   return {
     success: response.success,
@@ -50,7 +50,7 @@ export async function createUser(userData: UserPayload): Promise<ApiResponse<{ u
   const response = await apiService.post<{ success: boolean; user: User }>('/users', userData);
   const userWithStatus = response.user ? {
     ...response.user,
-    status: response.user.is_active ? 'ativo' as const : 'inativo' as const
+    status: response.user.status || (response.user.is_active ? 'ativo' : 'inativo')
   } : undefined;
   return {
     success: response.success,
@@ -68,7 +68,7 @@ export async function updateUser(id: string, userData: UserPayload): Promise<Api
   const response = await apiService.put<{ success: boolean; user: User }>(`/users/${id}`, userData);
   const userWithStatus = response.user ? {
     ...response.user,
-    status: response.user.is_active ? 'ativo' as const : 'inativo' as const
+    status: response.user.status || (response.user.is_active ? 'ativo' : 'inativo')
   } : undefined;
   return {
     success: response.success,
