@@ -26,44 +26,23 @@ export const PatrimonyTab: React.FC<CustomerTabProps> = ({ data, onChange }) => 
   };
 
   return (
-    <div className="space-y-8">
-      {/* Declaração de Patrimônio */}
-      <div className="border border-border/30 rounded-lg p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-primary">Declaração de Patrimônio</h3>
-        </div>
-        
-        <div className="flex items-center space-x-3">
-          <input
-            id="possui_patrimonio"
-            type="checkbox"
-            checked={data.possui_patrimonio || false}
-            onChange={(e) => handleInputChange('possui_patrimonio', e.target.checked)}
-            className="h-5 w-5 text-primary focus:ring-2 focus:ring-primary/20 border-2 border-primary/30 rounded transition-colors"
-          />
-          <Label htmlFor="possui_patrimonio" className="text-base font-medium text-primary cursor-pointer">
-            Cliente possui patrimônio declarado
-          </Label>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center space-x-3">
+        <input
+          id="possui_patrimonio"
+          type="checkbox"
+          checked={data.possui_patrimonio || false}
+          onChange={(e) => handleInputChange('possui_patrimonio', e.target.checked)}
+          className="h-5 w-5 text-primary focus:ring-2 focus:ring-primary/20 border-2 border-primary/30 rounded transition-colors"
+        />
+        <Label htmlFor="possui_patrimonio" className="text-base font-medium text-primary cursor-pointer">
+          Cliente possui patrimônio declarado
+        </Label>
       </div>
 
       {data.possui_patrimonio && (
-        <div className="border border-border/30 rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 bg-secondary/10 rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 text-secondary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-secondary-foreground">Detalhes do Patrimônio</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="valor_patrimonio">Valor do Patrimônio</Label>
               <input
@@ -97,7 +76,7 @@ export const PatrimonyTab: React.FC<CustomerTabProps> = ({ data, onChange }) => 
             </div>
           </div>
 
-          <div className="space-y-2 mb-6">
+          <div className="space-y-2">
             <Label htmlFor="descricao_patrimonio">Descrição do Patrimônio</Label>
             <textarea
               id="descricao_patrimonio"

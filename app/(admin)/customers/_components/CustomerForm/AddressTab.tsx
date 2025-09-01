@@ -40,20 +40,8 @@ export const AddressTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Localização */}
-      <div className="border border-border/30 rounded-lg p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-primary">Localização</h3>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-2">
             <Label htmlFor="zip_code">CEP</Label>
             <input
@@ -126,20 +114,8 @@ export const AddressTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
             />
           </div>
         </div>
-      </div>
 
-      {/* Detalhes do Endereço */}
-      <div className="border border-border/30 rounded-lg p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-8 h-8 bg-secondary/10 rounded-lg flex items-center justify-center">
-            <svg className="w-4 h-4 text-secondary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-secondary-foreground">Detalhes do Endereço</h3>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="address">Logradouro</Label>
             <input
@@ -207,7 +183,6 @@ export const AddressTab: React.FC<CustomerTabProps> = ({ data, onChange }) => {
             </select>
           </div>
         </div>
-      </div>
     </div>
   );
 };
