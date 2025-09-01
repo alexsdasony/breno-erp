@@ -161,7 +161,9 @@ serve(async (req) => {
 
     // PUT - Atualizar
     if (req.method === 'PUT' && isSpecificId) {
+      console.log('PUT - Atualizar usuário:', { lastSegment, isSpecificId, method: req.method });
       const body = await req.json()
+      console.log('Body recebido:', body);
       
       const { data, error } = await supabase
         .from('users')
@@ -170,7 +172,10 @@ serve(async (req) => {
         .select()
         .single()
 
+      console.log('Resultado da atualização:', { data, error });
+
       if (error || !data) {
+        console.log('Erro na atualização:', error);
         return new Response(
           JSON.stringify({ error: 'Usuário não encontrado' }),
           { 

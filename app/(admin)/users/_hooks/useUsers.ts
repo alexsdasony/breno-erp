@@ -117,12 +117,22 @@ export function useUsers(): UseUsersState & UseUsersApi {
 
   const update = useCallback(async (id: string, data: Partial<User>) => {
     try {
-      // Converter status para is_active
-      const payload = {
-        ...data,
-        is_active: (data as any).status === 'ativo',
-      };
-      delete (payload as any).status; // Remove status do payload
+      // Converter status para is_active se necessário
+      let payload = { ...data };
+      
+      if ('status' in data) {
+        // Se estamos atualizando status, converter para o formato esperado pela API
+        payload = {
+          status: (data as any).status
+        };
+      } else if ('is_active' in data) {
+        // Se estamos atualizando is_active, converter para status
+        payload = {
+          status: (data as any).is_active ? 'ativo' : 'inativo'
+        };
+      }
+      
+      console.log('Payload para atualização:', payload);
       
       const response = await updateUser(id, payload);
       const user = response.data?.user;
@@ -138,6 +148,7 @@ export function useUsers(): UseUsersState & UseUsersApi {
       });
       return user as User;
     } catch (e) {
+      console.error('Erro ao atualizar usuário:', e);
       toast({
         title: 'Erro ao atualizar usuário',
         description: 'Tente novamente.',
