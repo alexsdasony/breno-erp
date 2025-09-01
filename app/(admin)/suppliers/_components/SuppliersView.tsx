@@ -10,9 +10,10 @@ import { useSuppliers } from '../_hooks/useSuppliers';
 import { Supplier } from '@/types';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData';
+import SupplierForm from './SupplierForm';
 
 export default function SuppliersView() {
-  const { items: suppliers, loading, hasMore, loadMore } = useSuppliers();
+  const { items: suppliers, loading, hasMore, loadMore, create, update } = useSuppliers();
   const { segments } = useAppData();
   
   // State management
@@ -26,16 +27,18 @@ export default function SuppliersView() {
   
   // Form data
   const [formData, setFormData] = useState({
-    name: '',
+    razao_social: '',
+    nome_fantasia: '',
+    tipo_contribuinte: 'PJ' as 'PJ' | 'PF' | 'MEI' | 'Outros',
+    cpf_cnpj: '',
     email: '',
-    phone: '',
-    city: '',
-    state: '',
-    address: '',
-    tax_id: '',
-    person_type: 'pj' as 'pf' | 'pj',
-    doc: '',
-    segment_id: ''
+    telefone_celular: '',
+    status: 'ATIVO' as 'ATIVO' | 'INATIVO',
+    data_cadastro: new Date().toISOString().split('T')[0],
+    segment_id: '',
+    cidade: '',
+    uf: '',
+    endereco: '',
   });
 
   // Segment options
@@ -49,8 +52,8 @@ export default function SuppliersView() {
   // KPIs calculation
   const kpis = useMemo(() => {
     const totalSuppliers = suppliers.length;
-    const activeSuppliers = suppliers.filter((s: any) => s.status === 'active').length;
-    const inactiveSuppliers = suppliers.filter((s: any) => s.status === 'inactive').length;
+    const activeSuppliers = suppliers.filter((s: any) => s.status === 'ATIVO' || s.status === 'active').length;
+    const inactiveSuppliers = suppliers.filter((s: any) => s.status === 'INATIVO' || s.status === 'inactive').length;
     const totalValue = suppliers.reduce((sum: number, s: any) => sum + (s.total_value || 0), 0);
     
     return {
@@ -64,8 +67,9 @@ export default function SuppliersView() {
   // Filtered suppliers
   const filteredSuppliers = useMemo(() => {
     return suppliers.filter((supplier: any) => {
-      const matchesSearch = supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (supplier.email && supplier.email.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesSearch = (supplier.razao_social || supplier.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (supplier.email && supplier.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                           (supplier.cpf_cnpj && supplier.cpf_cnpj.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesStatus = statusFilter === 'all' || supplier.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -85,7 +89,9 @@ export default function SuppliersView() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'ATIVO':
       case 'active': return <CheckCircle className="w-3 h-3" />;
+      case 'INATIVO':
       case 'inactive': return <Clock className="w-3 h-3" />;
       case 'suspended': return <X className="w-3 h-3" />;
       default: return <Clock className="w-3 h-3" />;
@@ -94,7 +100,9 @@ export default function SuppliersView() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'ATIVO':
       case 'active': return 'text-green-600 bg-green-50 border-green-200';
+      case 'INATIVO':
       case 'inactive': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
       case 'suspended': return 'text-red-600 bg-red-50 border-red-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
@@ -104,16 +112,18 @@ export default function SuppliersView() {
   // Event handlers
   const handleAddNew = () => {
     setFormData({
-      name: '',
+      razao_social: '',
+      nome_fantasia: '',
+      tipo_contribuinte: 'PJ',
+      cpf_cnpj: '',
       email: '',
-      phone: '',
-      city: '',
-      state: '',
-      address: '',
-      tax_id: '',
-      person_type: 'pj',
-      doc: '',
-      segment_id: ''
+      telefone_celular: '',
+      status: 'ATIVO',
+      data_cadastro: new Date().toISOString().split('T')[0],
+      segment_id: '',
+      cidade: '',
+      uf: '',
+      endereco: '',
     });
     setIsEditing(false);
     setShowForm(true);
@@ -121,16 +131,18 @@ export default function SuppliersView() {
 
   const handleEdit = (supplier: Supplier) => {
     setFormData({
-      name: supplier.name,
+      razao_social: supplier.razao_social || supplier.name || '',
+      nome_fantasia: supplier.nome_fantasia || '',
+      tipo_contribuinte: supplier.tipo_contribuinte || (supplier.cnpj ? 'PJ' : 'PF'),
+      cpf_cnpj: supplier.cpf_cnpj || supplier.cnpj || supplier.cpf || '',
       email: supplier.email || '',
-      phone: supplier.telefone || '',
-      city: supplier.cidade || '',
-      state: supplier.estado || '',
-      address: supplier.endereco || '',
-      tax_id: supplier.cnpj || supplier.cpf || '',
-      person_type: supplier.cnpj ? 'pj' : 'pf',
-      doc: supplier.cnpj || supplier.cpf || '',
-      segment_id: supplier.segment_id || ''
+      telefone_celular: supplier.telefone_celular || supplier.telefone || '',
+      status: supplier.status || 'ATIVO',
+      data_cadastro: supplier.data_cadastro || new Date().toISOString().split('T')[0],
+      segment_id: supplier.segment_id || '',
+      cidade: supplier.cidade || '',
+      uf: supplier.uf || '',
+      endereco: supplier.endereco || '',
     });
     setSelectedSupplier(supplier);
     setIsEditing(true);
@@ -265,9 +277,10 @@ export default function SuppliersView() {
               className="px-3 py-2 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
             >
               <option value="all">Todos</option>
-              <option value="active">Ativos</option>
-              <option value="inactive">Inativos</option>
-              <option value="suspended">Suspensos</option>
+              <option value="ATIVO">Ativos</option>
+              <option value="INATIVO">Inativos</option>
+              <option value="active">Ativos (Legado)</option>
+              <option value="inactive">Inativos (Legado)</option>
             </select>
           </div>
         </div>
@@ -317,8 +330,9 @@ export default function SuppliersView() {
                           <Building className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <p className="font-medium">{supplier.name}</p>
-                          <p className="text-sm text-muted-foreground">{supplier.cnpj || supplier.cpf}</p>
+                          <p className="font-medium">{supplier.razao_social || supplier.name}</p>
+                          <p className="text-sm text-muted-foreground">{supplier.cpf_cnpj || supplier.cnpj || supplier.cpf}</p>
+                          <p className="text-xs text-muted-foreground">{supplier.nome_fantasia}</p>
                         </div>
                       </div>
                     </td>
@@ -330,20 +344,20 @@ export default function SuppliersView() {
                         </div>
                         <div className="flex items-center space-x-2">
                           <Phone className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">{supplier.phone || 'N/A'}</span>
+                          <span className="text-sm">{supplier.telefone_celular || supplier.telefone || supplier.phone || 'N/A'}</span>
                         </div>
                       </div>
                     </td>
                     <td className="p-3">
                       <div className="flex items-center space-x-2">
                         <MapPin className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm">{supplier.cidade && supplier.estado ? `${supplier.cidade}, ${supplier.estado}` : 'N/A'}</span>
+                        <span className="text-sm">{supplier.cidade && supplier.uf ? `${supplier.cidade}, ${supplier.uf}` : supplier.cidade && supplier.estado ? `${supplier.cidade}, ${supplier.estado}` : 'N/A'}</span>
                       </div>
                     </td>
                     <td className="p-3">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(supplier.status || 'inactive')}`}>
                         {getStatusIcon(supplier.status || 'inactive')}
-                        <span className="ml-1 capitalize">{supplier.status || 'inactive'}</span>
+                        <span className="ml-1 capitalize">{supplier.status === 'ATIVO' ? 'Ativo' : supplier.status === 'INATIVO' ? 'Inativo' : supplier.status || 'inactive'}</span>
                       </span>
                     </td>
                     <td className="p-3">
@@ -434,8 +448,8 @@ export default function SuppliersView() {
                       id="suppliers-name-input"
                       type="text"
                       required
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      value={formData.razao_social}
+                                              onChange={(e) => setFormData(prev => ({ ...prev, razao_social: e.target.value }))}
                       className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                       placeholder="Nome do fornecedor"
                     />
@@ -457,8 +471,8 @@ export default function SuppliersView() {
                     <label className="block text-sm font-medium mb-1">Telefone</label>
                     <input
                       type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      value={formData.telefone_celular}
+                                              onChange={(e) => setFormData(prev => ({ ...prev, telefone_celular: e.target.value }))}
                       className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                       placeholder="(11) 99999-9999"
                     />
@@ -468,8 +482,8 @@ export default function SuppliersView() {
                     <label className="block text-sm font-medium mb-1">Tipo de Pessoa</label>
                     <select
                       id="suppliers-person-type-select"
-                      value={formData.person_type}
-                      onChange={(e) => setFormData(prev => ({ ...prev, person_type: e.target.value as 'pf' | 'pj' }))}
+                      value={formData.tipo_contribuinte}
+                                              onChange={(e) => setFormData(prev => ({ ...prev, tipo_contribuinte: e.target.value as 'PJ' | 'PF' | 'MEI' | 'Outros' }))}
                       className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                     >
                       <option value="pf">Pessoa Física</option>
@@ -482,8 +496,8 @@ export default function SuppliersView() {
                     <input
                       id="suppliers-doc-input"
                       type="text"
-                      value={formData.doc}
-                      onChange={(e) => setFormData(prev => ({ ...prev, doc: e.target.value }))}
+                      value={formData.cpf_cnpj}
+                                              onChange={(e) => setFormData(prev => ({ ...prev, cpf_cnpj: e.target.value }))}
                       className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                       placeholder="000.000.000-00"
                     />
@@ -493,7 +507,7 @@ export default function SuppliersView() {
                     <label className="block text-sm font-medium mb-1">Segmento</label>
                     <select
                       id="suppliers-segment-select"
-                      value={formData.segment_id}
+                      value={formData.segment_id || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, segment_id: e.target.value }))}
                       className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                     >
@@ -508,8 +522,8 @@ export default function SuppliersView() {
                     <label className="block text-sm font-medium mb-1">Cidade</label>
                     <input
                       type="text"
-                      value={formData.city}
-                      onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                      value={formData.cidade || ''}
+                                              onChange={(e) => setFormData(prev => ({ ...prev, cidade: e.target.value }))}
                       className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                       placeholder="São Paulo"
                     />
@@ -519,8 +533,8 @@ export default function SuppliersView() {
                     <label className="block text-sm font-medium mb-1">Estado</label>
                     <input
                       type="text"
-                      value={formData.state}
-                      onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
+                      value={formData.uf || ''}
+                                              onChange={(e) => setFormData(prev => ({ ...prev, uf: e.target.value }))}
                       className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                       placeholder="SP"
                     />
@@ -531,8 +545,8 @@ export default function SuppliersView() {
                   <label className="block text-sm font-medium mb-1">Endereço</label>
                   <input
                     type="text"
-                    value={formData.address}
-                    onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                    value={formData.endereco || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, endereco: e.target.value }))}
                     className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                     placeholder="Rua, número, bairro"
                   />
@@ -686,6 +700,24 @@ export default function SuppliersView() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Supplier Form Modal */}
+      <SupplierForm
+        supplier={selectedSupplier}
+        isOpen={showForm}
+        onClose={() => {
+          setShowForm(false);
+          setSelectedSupplier(null);
+        }}
+        onSubmit={async (data) => {
+          if (selectedSupplier) {
+            await update(selectedSupplier.id, data);
+          } else {
+            await create(data);
+          }
+        }}
+        isLoading={loading}
+      />
     </motion.div>
   );
 }
