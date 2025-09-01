@@ -57,6 +57,11 @@ export const DocumentsTab: React.FC<CustomerTabProps> = ({ data, onChange }) => 
 
   return (
     <div className="space-y-6">
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-foreground mb-1">Documentos</h2>
+        <p className="text-sm text-muted-foreground">Upload e gerenciamento de documentos do cliente</p>
+      </div>
+      
       {/* Upload Section */}
       <div className="bg-muted/50 p-6 rounded-lg border-2 border-dashed border-border">
         <div className="text-center">
