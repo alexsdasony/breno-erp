@@ -73,7 +73,7 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ success: true, customers: data }),
+        JSON.stringify({ success: true, customer: data }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -208,7 +208,7 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ success: true, customers: data, message: 'Cliente atualizado com sucesso' }),
+        JSON.stringify({ success: true, customer: data, message: 'Cliente atualizado com sucesso' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

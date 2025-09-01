@@ -26,90 +26,115 @@ export const PatrimonyTab: React.FC<CustomerTabProps> = ({ data, onChange }) => 
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
+    <div className="space-y-8">
+      {/* Declaração de Patrimônio */}
+      <div className="border border-border/30 rounded-lg p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-primary">Declaração de Patrimônio</h3>
+        </div>
+        
         <div className="flex items-center space-x-3">
           <input
             id="possui_patrimonio"
             type="checkbox"
             checked={data.possui_patrimonio || false}
             onChange={(e) => handleInputChange('possui_patrimonio', e.target.checked)}
-            className="h-4 w-4 text-primary focus:ring-ring border-border rounded"
+            className="h-5 w-5 text-primary focus:ring-2 focus:ring-primary/20 border-2 border-primary/30 rounded transition-colors"
           />
-          <Label htmlFor="possui_patrimonio" className="text-base font-medium">
+          <Label htmlFor="possui_patrimonio" className="text-base font-medium text-primary cursor-pointer">
             Cliente possui patrimônio declarado
           </Label>
         </div>
+      </div>
 
-        {data.possui_patrimonio && (
-          <div className="space-y-4 pl-7 border-l-2 border-primary/20">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="valor_patrimonio">Valor do Patrimônio</Label>
-                <input
-                  id="valor_patrimonio"
-                  type="text"
-                  value={data.valor_patrimonio ? formatCurrency(data.valor_patrimonio.toString()) : ''}
-                  onChange={(e) => handleCurrencyChange('valor_patrimonio', e.target.value)}
-                  className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
-                  placeholder="R$ 0,00"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tipo_patrimonio">Tipo de Patrimônio</Label>
-                <select
-                  id="tipo_patrimonio"
-                  className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
-                >
-                  <option value="">Selecione o tipo</option>
-                  <option value="imovel">Imóvel</option>
-                  <option value="veiculo">Veículo</option>
-                  <option value="investimentos">Investimentos</option>
-                  <option value="poupanca">Poupança</option>
-                  <option value="conta_corrente">Conta Corrente</option>
-                  <option value="aplicacoes">Aplicações Financeiras</option>
-                  <option value="acoes">Ações</option>
-                  <option value="fundos">Fundos de Investimento</option>
-                  <option value="previdencia">Previdência Privada</option>
-                  <option value="outros">Outros</option>
-                </select>
-              </div>
+      {data.possui_patrimonio && (
+        <div className="border border-border/30 rounded-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 bg-secondary/10 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-secondary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
             </div>
-
+            <h3 className="text-lg font-semibold text-secondary-foreground">Detalhes do Patrimônio</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <div className="space-y-2">
-              <Label htmlFor="descricao_patrimonio">Descrição do Patrimônio</Label>
-              <textarea
-                id="descricao_patrimonio"
-                value={data.descricao_patrimonio || ''}
-                onChange={(e) => handleInputChange('descricao_patrimonio', e.target.value)}
-                rows={4}
-                className="w-full p-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
-                placeholder="Descreva detalhadamente o patrimônio (ex: Casa própria na Rua X, Veículo modelo Y ano Z, etc.)"
+              <Label htmlFor="valor_patrimonio">Valor do Patrimônio</Label>
+              <input
+                id="valor_patrimonio"
+                type="text"
+                value={data.valor_patrimonio ? formatCurrency(data.valor_patrimonio.toString()) : ''}
+                onChange={(e) => handleCurrencyChange('valor_patrimonio', e.target.value)}
+                className="w-full px-4 py-3 border border-input rounded-lg bg-background/50 backdrop-blur-sm text-foreground transition-colors focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-primary/50"
+                placeholder="R$ 0,00"
               />
             </div>
 
-            <div className="bg-primary/10 p-4 rounded-md">
-              <h4 className="font-medium text-primary mb-2">Informações Importantes</h4>
-              <ul className="text-sm text-primary/80 space-y-1">
-                <li>• Declare apenas patrimônio comprovável</li>
-                <li>• Mantenha a documentação atualizada</li>
-                <li>• Valores serão utilizados para análise de crédito</li>
-                <li>• Informações falsas podem resultar em cancelamento</li>
-              </ul>
+            <div className="space-y-2">
+              <Label htmlFor="tipo_patrimonio">Tipo de Patrimônio</Label>
+              <select
+                id="tipo_patrimonio"
+                className="w-full px-4 py-3 border border-input rounded-lg bg-background/50 backdrop-blur-sm text-foreground transition-colors focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-primary/50"
+              >
+                <option value="">Selecione o tipo</option>
+                <option value="imovel">Imóvel</option>
+                <option value="veiculo">Veículo</option>
+                <option value="investimentos">Investimentos</option>
+                <option value="poupanca">Poupança</option>
+                <option value="conta_corrente">Conta Corrente</option>
+                <option value="aplicacoes">Aplicações Financeiras</option>
+                <option value="acoes">Ações</option>
+                <option value="fundos">Fundos de Investimento</option>
+                <option value="previdencia">Previdência Privada</option>
+                <option value="outros">Outros</option>
+              </select>
             </div>
           </div>
-        )}
-      </div>
+
+          <div className="space-y-2 mb-6">
+            <Label htmlFor="descricao_patrimonio">Descrição do Patrimônio</Label>
+            <textarea
+              id="descricao_patrimonio"
+              value={data.descricao_patrimonio || ''}
+              onChange={(e) => handleInputChange('descricao_patrimonio', e.target.value)}
+              rows={4}
+              className="w-full px-4 py-3 border border-input rounded-lg bg-background/50 backdrop-blur-sm text-foreground transition-colors focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-primary/50"
+              placeholder="Descreva detalhadamente o patrimônio (ex: Casa própria na Rua X, Veículo modelo Y ano Z, etc.)"
+            />
+          </div>
+
+          <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h4 className="font-medium text-primary">Informações Importantes</h4>
+            </div>
+            <ul className="text-sm text-primary/80 space-y-1 ml-6">
+              <li>• Declare apenas patrimônio comprovável</li>
+              <li>• Mantenha a documentação atualizada</li>
+              <li>• Valores serão utilizados para análise de crédito</li>
+              <li>• Informações falsas podem resultar em cancelamento</li>
+            </ul>
+          </div>
+        </div>
+      )}
 
       {!data.possui_patrimonio && (
-        <div className="bg-muted p-6 rounded-md text-center">
-          <div className="text-muted-foreground mb-2">
-            <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H5m0 0h2M7 7h10M7 11h6" />
+        <div className="border border-border/30 rounded-lg p-8 text-center bg-muted/20">
+          <div className="text-muted-foreground mb-4">
+            <svg className="mx-auto h-16 w-16 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H5m0 0h2M7 7h10M7 11h6" />
             </svg>
           </div>
-          <p className="text-muted-foreground">
+          <h4 className="text-lg font-medium text-muted-foreground mb-2">Nenhum Patrimônio Declarado</h4>
+          <p className="text-muted-foreground/80">
             Marque a opção acima se o cliente possuir patrimônio a ser declarado
           </p>
         </div>
