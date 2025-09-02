@@ -164,10 +164,14 @@ export function useUsers(): UseUsersState & UseUsersApi {
       const response = await updateUser(id, payload);
       const user = response.data?.user;
       if (user) {
+        console.log('Usuário atualizado recebido:', user);
         setState((s) => ({
           ...s,
           items: s.items.map((item) => (item.id === id ? user : item)),
         }));
+        console.log('Estado atualizado com sucesso');
+      } else {
+        console.warn('Resposta não contém usuário:', response);
       }
       toast({
         title: 'Usuário atualizado',

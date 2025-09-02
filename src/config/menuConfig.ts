@@ -18,5 +18,4 @@ export const menuItems = [
   { id: 'nfe', label: 'Emissão NF-e', icon: FileSpreadsheet },
   // { id: 'integrations', label: 'Integrações', icon: Zap }, // REMOVED - causing issues
   { id: 'reports', label: 'Relatórios', icon: BarChart3 },
-
 ];

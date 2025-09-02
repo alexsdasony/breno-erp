@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Briefcase, LogOut, UserCircle, ShieldAlert, ChevronsUpDown, Rocket } from 'lucide-react';
+import { Menu, X, Briefcase, LogOut, UserCircle, ShieldAlert, ChevronsUpDown, Rocket, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -267,6 +267,10 @@ const ErpLayout = ({ children }) => {
                   <DropdownMenuItem onClick={() => router.push('/profile')}>
                     <UserCircle className="w-4 h-4 mr-2" />
                     Meu Perfil
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/manual')}>
+                    <Book className="w-4 h-4 mr-2" />
+                    Manual do Sistema
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">

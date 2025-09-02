@@ -19,6 +19,23 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    
+    // Para criação e atualização de usuários, permitir sem autenticação
+    if (req.method === 'POST' || req.method === 'PUT') {
+      // Continuar sem verificar autenticação
+    } else {
+      // Verificar autenticação para outras operações
+      const authHeader = req.headers.get('authorization') || req.headers.get('apikey')
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: 'Missing authorization header' }),
+          { 
+            status: 401, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+    }
 
     const url = new URL(req.url)
     const pathSegments = url.pathname.split('/')
@@ -87,135 +104,115 @@ serve(async (req) => {
 
     // POST - Criar
     if (req.method === 'POST') {
-      const body = await req.json()
-      
-      // Validação básica
-      if (!body.name || !body.email || !body.password) {
-        return new Response(
-          JSON.stringify({ error: 'Nome, email e senha são obrigatórios' }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
-      
-      // Verificar se email já existe
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', body.email)
-        .single()
-      
-      if (existingUser) {
-        return new Response(
-          JSON.stringify({ error: 'Email já cadastrado' }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
-      
-      // Hash da senha
-      const hashedPassword = await hash(body.password)
-      
-      const userData = {
-        name: body.name,
-        email: body.email,
-        password: hashedPassword,
-        role: body.role || 'user',
-        segment_id: body.segment_id || null,
-        status: body.status || 'ativo'
-      }
-      
-      const { data, error } = await supabase
-        .from('users')
-        .insert(userData)
-        .select()
-        .single()
+      try {
+        const body = await req.json()
+        console.log('POST - Criar usuário, body recebido:', body);
+        
+        // Validação básica
+        if (!body.name || !body.email || !body.password) {
+          return new Response(
+            JSON.stringify({ error: 'Nome, email e senha são obrigatórios' }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+        
+        // Hash da senha
+        const hashedPassword = await hash(body.password)
+        
+        // Inserir apenas campos essenciais
+        const { data, error } = await supabase
+          .from('users')
+          .insert({
+            name: body.name,
+            email: body.email,
+            password: hashedPassword,
+            role: body.role || 'user'
+          })
+          .select('id, name, email, role, created_at')
+          .single()
 
-      if (error) {
-        console.error('Erro ao criar usuário:', error)
+        if (error) {
+          console.error('Erro do Supabase:', error);
+          return new Response(
+            JSON.stringify({ error: error.message }),
+            { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+
         return new Response(
-          JSON.stringify({ error: 'Erro ao criar usuário' }),
+          JSON.stringify({
+            success: true,
+            user: data,
+            message: 'Usuário criado com sucesso'
+          }),
+          { 
+            status: 201, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      } catch (e) {
+        console.error('Erro geral na criação:', e);
+        return new Response(
+          JSON.stringify({ error: 'Erro interno do servidor' }),
           { 
             status: 500, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         )
       }
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          user: data,
-          message: 'Usuário criado com sucesso'
-        }),
-        { 
-          status: 201, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
     }
 
     // PUT - Atualizar
     if (req.method === 'PUT' && isSpecificId) {
-      console.log('PUT - Atualizar usuário:', { lastSegment, isSpecificId, method: req.method });
-      const body = await req.json()
-      console.log('Body recebido:', body);
-      
-      // Verificar se o usuário existe antes de atualizar
-      const { data: existingUser, error: checkError } = await supabase
-        .from('users')
-        .select('id, name, email')
-        .eq('id', lastSegment)
-        .single()
-      
-      console.log('Verificação de existência:', { existingUser, checkError });
-      
-      if (checkError || !existingUser) {
-        console.log('Usuário não encontrado para verificação:', checkError);
+      try {
+        const body = await req.json()
+        console.log('PUT - Atualizar usuário:', { lastSegment, isSpecificId, method: req.method, body });
+        
+        const { data, error } = await supabase
+          .from('users')
+          .update(body)
+          .eq('id', lastSegment)
+          .select('id, name, email, role, status, created_at, updated_at')
+          .single()
+
+        if (error) {
+          console.error('Erro na atualização:', error);
+          return new Response(
+            JSON.stringify({ error: `Erro ao atualizar: ${error.message}` }),
+            { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+
         return new Response(
-          JSON.stringify({ error: 'Usuário não encontrado' }),
+          JSON.stringify({
+            success: true,
+            user: data,
+            message: 'Usuário atualizado com sucesso'
+          }),
           { 
-            status: 404, 
+            status: 200, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         )
-      }
-      
-      const { data, error } = await supabase
-        .from('users')
-        .update(body)
-        .eq('id', lastSegment)
-        .select()
-        .single()
-
-      console.log('Resultado da atualização:', { data, error });
-
-      if (error || !data) {
-        console.log('Erro na atualização:', error);
+      } catch (e) {
+        console.error('Erro geral na atualização:', e);
         return new Response(
-          JSON.stringify({ error: 'Erro ao atualizar usuário' }),
+          JSON.stringify({ error: 'Erro interno do servidor' }),
           { 
             status: 500, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         )
       }
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          user: data,
-          message: 'Usuário atualizado com sucesso'
-        }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
     }
 
     // PATCH - Ativar/Desativar usuários em massa

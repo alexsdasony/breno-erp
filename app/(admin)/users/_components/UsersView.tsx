@@ -62,6 +62,20 @@ export default function UsersView() {
 
   // Filtered users
   const filteredUsers = useMemo(() => {
+    console.log('=== FILTERED USERS UPDATE ===');
+    console.log('Items no estado:', items);
+    console.log('Usuários filtrados:', items.filter((user: User) => {
+      const matchesSearch = (user.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (user.email || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+      const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+      const matchesSegment = !activeSegmentId || activeSegmentId === '0' || 
+                            (user.segment_id && user.segment_id === activeSegmentId);
+      
+      return matchesSearch && matchesStatus && matchesRole && matchesSegment;
+    }));
+    console.log('=== FIM FILTERED USERS ===');
+    
     return items.filter((user: User) => {
       const matchesSearch = (user.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (user.email || '').toLowerCase().includes(searchTerm.toLowerCase());
