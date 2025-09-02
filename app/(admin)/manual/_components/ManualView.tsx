@@ -16,7 +16,12 @@ import {
   Download,
   Search,
   LayoutDashboard,
-  Briefcase
+  Briefcase,
+  CheckSquare,
+  CreditCard,
+  Building2,
+  Home,
+  BookOpen
 } from 'lucide-react';
 
 export default function ManualView() {
@@ -49,6 +54,36 @@ export default function ManualView() {
           <li><strong>Autenticação:</strong> JWT customizado</li>
           <li><strong>Proxy:</strong> Next.js rewrites para desenvolvimento</li>
         </ul>
+      `
+    },
+    {
+      id: 'receita',
+      title: 'Receita Federal',
+      icon: Search,
+      description: 'Integração e consultas com a Receita Federal para validação de dados',
+      content: `
+        <h2 style="color: #1f2937; margin-bottom: 1rem;">🔍 RECEITA FEDERAL</h2>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">O que é o Módulo Receita Federal</h3>
+        <p style="color: #374151; margin-bottom: 1rem;">O módulo de Receita Federal permite integração direta com os sistemas governamentais para validação de CNPJ, CPF e consulta de informações cadastrais.</p>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Funcionalidades Principais</h3>
+        <ul style="color: #374151; margin-bottom: 1rem;">
+          <li><strong>Validação de CNPJ:</strong> Verificação automática de empresas</li>
+          <li><strong>Validação de CPF:</strong> Confirmação de pessoas físicas</li>
+          <li><strong>Consulta de Dados:</strong> Informações cadastrais atualizadas</li>
+          <li><strong>Integração Automática:</strong> Sincronização com sistemas RFB</li>
+          <li><strong>Relatórios:</strong> Histórico de consultas realizadas</li>
+        </ul>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Como Usar</h3>
+        <ol style="color: #374151; margin-bottom: 1rem;">
+          <li>Acesse "Receita Federal" no menu principal</li>
+          <li>Digite o CNPJ ou CPF a ser consultado</li>
+          <li>Clique em "Consultar"</li>
+          <li>Visualize os dados retornados</li>
+          <li>Salve ou exporte as informações</li>
+        </ol>
       `
     },
     {
@@ -173,6 +208,72 @@ export default function ManualView() {
       `
     },
     {
+      id: 'accountsPayable',
+      title: 'Contas a Pagar',
+      icon: CheckSquare,
+      description: 'Controle completo de todas as obrigações e contas a pagar da empresa',
+      content: `
+        <h2 style="color: #1f2937; margin-bottom: 1rem;">📋 CONTAS A PAGAR</h2>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">O que é o Módulo Contas a Pagar</h3>
+        <p style="color: #374151; margin-bottom: 1rem;">O módulo de Contas a Pagar gerencia todas as obrigações financeiras da empresa, permitindo controle de prazos, valores e fornecedores.</p>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Funcionalidades Principais</h3>
+        <ul style="color: #374151; margin-bottom: 1rem;">
+          <li><strong>Cadastro de Contas:</strong> Registro de obrigações a pagar</li>
+          <li><strong>Controle de Prazos:</strong> Vencimentos e alertas</li>
+          <li><strong>Fornecedores:</strong> Gestão de credores</li>
+          <li><strong>Categorização:</strong> Classificação por tipo de despesa</li>
+          <li><strong>Fluxo de Aprovação:</strong> Controle de autorizações</li>
+          <li><strong>Relatórios:</strong> Análise de obrigações</li>
+        </ul>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Como Registrar uma Conta a Pagar</h3>
+        <ol style="color: #374151; margin-bottom: 1rem;">
+          <li>Acesse "Contas a Pagar" no menu</li>
+          <li>Clique em "Nova Conta"</li>
+          <li>Selecione o fornecedor</li>
+          <li>Preencha valor, vencimento e descrição</li>
+          <li>Defina a categoria e centro de custo</li>
+          <li>Configure o fluxo de aprovação</li>
+          <li>Salve a conta a pagar</li>
+        </ol>
+      `
+    },
+    {
+      id: 'billing',
+      title: 'Cobranças',
+      icon: CreditCard,
+      description: 'Sistema completo de cobrança e gestão de recebimentos da empresa',
+      content: `
+        <h2 style="color: #1f2937; margin-bottom: 1rem;">💳 SISTEMA DE COBRANÇAS</h2>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">O que é o Sistema de Cobranças</h3>
+        <p style="color: #374151; margin-bottom: 1rem;">O sistema de Cobranças gerencia todo o processo de recebimento da empresa, desde a emissão de boletos até o controle de inadimplência.</p>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Funcionalidades Principais</h3>
+        <ul style="color: #374151; margin-bottom: 1rem;">
+          <li><strong>Emissão de Boletos:</strong> Geração automática de cobranças</li>
+          <li><strong>Controle de Vencimentos:</strong> Acompanhamento de prazos</li>
+          <li><strong>Gestão de Inadimplência:</strong> Controle de atrasos</li>
+          <li><strong>Formas de Pagamento:</strong> Múltiplas opções de recebimento</li>
+          <li><strong>Relatórios:</strong> Análise de recebimentos</li>
+          <li><strong>Integração Bancária:</strong> Conciliação automática</li>
+        </ul>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Como Criar uma Cobrança</h3>
+        <ol style="color: #374151; margin-bottom: 1rem;">
+          <li>Acesse "Cobranças" no menu</li>
+          <li>Clique em "Nova Cobrança"</li>
+          <li>Selecione o cliente</li>
+          <li>Defina o valor e vencimento</li>
+          <li>Escolha a forma de pagamento</li>
+          <li>Configure as condições</li>
+          <li>Gere o boleto ou fatura</li>
+        </ol>
+      `
+    },
+    {
       id: 'financial',
       title: 'Módulo Financeiro',
       icon: DollarSign,
@@ -205,6 +306,138 @@ export default function ManualView() {
           <li>Análise por Centro de Custo</li>
           <li>Relatório de Receitas e Despesas</li>
         </ul>
+      `
+    },
+    {
+      id: 'customers',
+      title: 'Gestão de Clientes',
+      icon: Users,
+      description: 'Cadastro completo e gestão de todos os clientes da empresa',
+      content: `
+        <h2 style="color: #1f2937; margin-bottom: 1rem;">👥 GESTÃO DE CLIENTES</h2>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">O que é a Gestão de Clientes</h3>
+        <p style="color: #374151; margin-bottom: 1rem;">O módulo de Gestão de Clientes permite cadastrar, organizar e acompanhar todos os clientes da empresa, incluindo dados pessoais, histórico de compras e preferências.</p>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Funcionalidades Principais</h3>
+        <ul style="color: #374151; margin-bottom: 1rem;">
+          <li><strong>Cadastro Completo:</strong> Dados pessoais e empresariais</li>
+          <li><strong>Categorização:</strong> Segmentação por tipo de cliente</li>
+          <li><strong>Histórico de Compras:</strong> Acompanhamento de pedidos</li>
+          <li><strong>Contatos:</strong> Múltiplas formas de contato</li>
+          <li><strong>Endereços:</strong> Cadastro de múltiplos endereços</li>
+          <li><strong>Relatórios:</strong> Análise de clientes</li>
+        </ul>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Como Cadastrar um Cliente</h3>
+        <ol style="color: #374151; margin-bottom: 1rem;">
+          <li>Acesse "Clientes" no menu</li>
+          <li>Clique em "Novo Cliente"</li>
+          <li>Preencha os dados básicos</li>
+          <li>Adicione informações de contato</li>
+          <li>Configure o endereço</li>
+          <li>Defina a categoria</li>
+          <li>Salve o cliente</li>
+        </ol>
+      `
+    },
+    {
+      id: 'suppliers',
+      title: 'Gestão de Fornecedores',
+      icon: Building2,
+      description: 'Controle completo de fornecedores e parceiros comerciais',
+      content: `
+        <h2 style="color: #1f2937; margin-bottom: 1rem;">🏭 GESTÃO DE FORNECEDORES</h2>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">O que é a Gestão de Fornecedores</h3>
+        <p style="color: #374151; margin-bottom: 1rem;">O módulo de Gestão de Fornecedores permite cadastrar e gerenciar todos os parceiros comerciais da empresa, incluindo fornecedores de produtos e serviços.</p>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Funcionalidades Principais</h3>
+        <ul style="color: #374151; margin-bottom: 1rem;">
+          <li><strong>Cadastro Completo:</strong> Dados empresariais e fiscais</li>
+          <li><strong>Categorização:</strong> Classificação por tipo de serviço</li>
+          <li><strong>Contatos:</strong> Informações de contato</li>
+          <li><strong>Histórico de Compras:</strong> Acompanhamento de pedidos</li>
+          <li><strong>Avaliação:</strong> Sistema de rating e feedback</li>
+          <li><strong>Relatórios:</strong> Análise de fornecedores</li>
+        </ul>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Como Cadastrar um Fornecedor</h3>
+        <ol style="color: #374151; margin-bottom: 1rem;">
+          <li>Acesse "Fornecedores" no menu</li>
+          <li>Clique em "Novo Fornecedor"</li>
+          <li>Preencha os dados empresariais</li>
+          <li>Adicione informações fiscais</li>
+          <li>Configure os contatos</li>
+          <li>Defina a categoria</li>
+          <li>Salve o fornecedor</li>
+        </ol>
+      `
+    },
+    {
+      id: 'costCenters',
+      title: 'Centros de Custo',
+      icon: Home,
+      description: 'Organização e controle de custos por departamentos e projetos',
+      content: `
+        <h2 style="color: #1f2937; margin-bottom: 1rem;">🏢 CENTROS DE CUSTO</h2>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">O que são Centros de Custo</h3>
+        <p style="color: #374151; margin-bottom: 1rem;">Centros de Custo são unidades organizacionais que permitem controlar e analisar gastos por departamento, projeto ou área específica da empresa.</p>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Funcionalidades Principais</h3>
+        <ul style="color: #374151; margin-bottom: 1rem;">
+          <li><strong>Cadastro de Centros:</strong> Criação de unidades de custo</li>
+          <li><strong>Hierarquia:</strong> Organização hierárquica</li>
+          <li><strong>Controle de Gastos:</strong> Acompanhamento de despesas</li>
+          <li><strong>Orçamentos:</strong> Definição de limites</li>
+          <li><strong>Relatórios:</strong> Análise de custos</li>
+          <li><strong>Integração:</strong> Conexão com outros módulos</li>
+        </ul>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Como Criar um Centro de Custo</h3>
+        <ol style="color: #374151; margin-bottom: 1rem;">
+          <li>Acesse "Centros de Custo" no menu</li>
+          <li>Clique em "Novo Centro"</li>
+          <li>Defina o nome e descrição</li>
+          <li>Configure a hierarquia</li>
+          <li>Defina o orçamento</li>
+          <li>Associe responsáveis</li>
+          <li>Salve o centro de custo</li>
+        </ol>
+      `
+    },
+    {
+      id: 'chartOfAccounts',
+      title: 'Plano de Contas',
+      icon: BookOpen,
+      description: 'Estrutura contábil completa para organização financeira da empresa',
+      content: `
+        <h2 style="color: #1f2937; margin-bottom: 1rem;">📚 PLANO DE CONTAS</h2>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">O que é o Plano de Contas</h3>
+        <p style="color: #374151; margin-bottom: 1rem;">O Plano de Contas é a estrutura contábil que organiza todas as contas da empresa, permitindo classificar e controlar movimentações financeiras.</p>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Funcionalidades Principais</h3>
+        <ul style="color: #374151; margin-bottom: 1rem;">
+          <li><strong>Estrutura Hierárquica:</strong> Organização por níveis</li>
+          <li><strong>Códigos de Conta:</strong> Identificação única</li>
+          <li><strong>Tipos de Conta:</strong> Ativo, Passivo, Receita, Despesa</li>
+          <li><strong>Natureza:</strong> Débito ou Crédito</li>
+          <li><strong>Contas Sintéticas:</strong> Agrupamento de contas</li>
+          <li><strong>Relatórios:</strong> Balanço e DRE</li>
+        </ul>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Como Criar uma Conta</h3>
+        <ol style="color: #374151; margin-bottom: 1rem;">
+          <li>Acesse "Plano de Contas" no menu</li>
+          <li>Clique em "Nova Conta"</li>
+          <li>Defina o código e nome</li>
+          <li>Selecione o tipo de conta</li>
+          <li>Configure a natureza</li>
+          <li>Associe à conta pai</li>
+          <li>Salve a conta</li>
+        </ol>
       `
     },
     {
@@ -277,6 +510,70 @@ export default function ManualView() {
           <li>Alertas de estoque baixo</li>
           <li>Relatórios de movimentação</li>
         </ul>
+      `
+    },
+    {
+      id: 'paymentMethods',
+      title: 'Formas de Pagamento',
+      icon: CreditCard,
+      description: 'Configure e gerencie todas as formas de pagamento aceitas pela empresa',
+      content: `
+        <h2 style="color: #1f2937; margin-bottom: 1rem;">💳 FORMAS DE PAGAMENTO</h2>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">O que são Formas de Pagamento</h3>
+        <p style="color: #374151; margin-bottom: 1rem;">As Formas de Pagamento definem como a empresa recebe pagamentos de clientes e como paga fornecedores, incluindo cartões, transferências, PIX e outros métodos.</p>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Funcionalidades Principais</h3>
+        <ul style="color: #374151; margin-bottom: 1rem;">
+          <li><strong>Cadastro de Formas:</strong> Criação de métodos de pagamento</li>
+          <li><strong>Configuração de Taxas:</strong> Definição de comissões</li>
+          <li><strong>Integração Bancária:</strong> Conexão com instituições</li>
+          <li><strong>Controle de Prazos:</strong> Definição de vencimentos</li>
+          <li><strong>Relatórios:</strong> Análise de recebimentos</li>
+        </ul>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Como Configurar uma Forma de Pagamento</h3>
+        <ol style="color: #374151; margin-bottom: 1rem;">
+          <li>Acesse "Formas de Pagamento" no menu</li>
+          <li>Clique em "Nova Forma"</li>
+          <li>Defina o nome e descrição</li>
+          <li>Configure as taxas e prazos</li>
+          <li>Associe às contas bancárias</li>
+          <li>Ative a forma de pagamento</li>
+        </ol>
+      `
+    },
+    {
+      id: 'nfe',
+      title: 'Emissão NF-e',
+      icon: FileText,
+      description: 'Sistema completo de emissão e gestão de notas fiscais eletrônicas',
+      content: `
+        <h2 style="color: #1f2937; margin-bottom: 1rem;">📄 EMISSÃO DE NF-e</h2>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">O que é o Sistema de NF-e</h3>
+        <p style="color: #374151; margin-bottom: 1rem;">O sistema de NF-e permite emitir, gerenciar e controlar todas as notas fiscais eletrônicas da empresa, garantindo conformidade com a legislação fiscal.</p>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Funcionalidades Principais</h3>
+        <ul style="color: #374151; margin-bottom: 1rem;">
+          <li><strong>Emissão Automática:</strong> Geração de NF-e a partir de vendas</li>
+          <li><strong>Validação Fiscal:</strong> Verificação de dados obrigatórios</li>
+          <li><strong>Envio à SEFAZ:</strong> Transmissão automática</li>
+          <li><strong>Cancelamento:</strong> Gestão de NF-e canceladas</li>
+          <li><strong>Relatórios:</strong> Controle fiscal completo</li>
+          <li><strong>Integração:</strong> Conexão com sistemas externos</li>
+        </ul>
+        
+        <h3 style="color: #1f2937; margin-bottom: 0.75rem;">Como Emitir uma NF-e</h3>
+        <ol style="color: #374151; margin-bottom: 1rem;">
+          <li>Acesse "Emissão NF-e" no menu</li>
+          <li>Clique em "Nova NF-e"</li>
+          <li>Selecione o cliente e produtos</li>
+          <li>Preencha os dados fiscais</li>
+          <li>Valide as informações</li>
+          <li>Envie para a SEFAZ</li>
+          <li>Imprima ou envie por email</li>
+        </ol>
       `
     },
     {
