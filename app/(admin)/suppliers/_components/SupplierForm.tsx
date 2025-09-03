@@ -13,11 +13,31 @@ interface SupplierFormProps {
 }
 
 const TABS = [
-  { id: 'identificacao', label: 'Identificação' },
-  { id: 'localizacao', label: 'Localização' },
-  { id: 'contato', label: 'Contato' },
-  { id: 'financeiro', label: 'Financeiro' },
-  { id: 'operacional', label: 'Operacional' },
+  { 
+    id: 'identificacao', 
+    label: 'Identificação',
+    fields: ['razao_social', 'tipo_contribuinte', 'cpf_cnpj', 'segment_id']
+  },
+  { 
+    id: 'localizacao', 
+    label: 'Localização',
+    fields: ['cep', 'uf', 'cidade', 'endereco', 'numero', 'bairro']
+  },
+  { 
+    id: 'contato', 
+    label: 'Contato',
+    fields: ['pessoa_contato', 'email', 'telefone_celular', 'telefone_fixo']
+  },
+  { 
+    id: 'financeiro', 
+    label: 'Financeiro',
+    fields: ['banco_nome', 'agencia_numero', 'conta_numero', 'condicao_pagamento']
+  },
+  { 
+    id: 'operacional', 
+    label: 'Operacional',
+    fields: ['status', 'data_cadastro', 'observacoes']
+  },
 ];
 
 export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLoading = false }: SupplierFormProps) {
@@ -60,6 +80,23 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
     errors: {} as Record<string, string>,
     warnings: {} as Record<string, string>
   });
+
+  // Calcular progresso do formulário
+  const requiredFields = ['razao_social', 'tipo_contribuinte', 'cpf_cnpj'];
+  const filledRequiredFields = requiredFields.filter(field => {
+    const value = formData[field as keyof typeof formData];
+    return value && value.toString().trim() !== '';
+  }).length;
+  const progressPercentage = Math.round((filledRequiredFields / requiredFields.length) * 100);
+  
+  // Contar total de erros
+  const totalErrors = validation.errors ? Object.keys(validation.errors).length : 0;
+
+  // Função para contar erros por aba
+  const getTabErrorCount = (tabFields: string[]) => {
+    if (!validation.errors) return 0;
+    return tabFields.filter(field => validation.errors[field]).length;
+  };
 
   // Funções de formatação
   const formatCPF = (value: string) => {
@@ -157,6 +194,52 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
     }));
   };
 
+  // Função de validação em tempo real
+  const validateField = (field: string, value: any) => {
+    const errors: Record<string, string> = {};
+    
+    switch (field) {
+      case 'razao_social':
+        if (!value || value.trim().length < 3) {
+          errors[field] = 'Razão social deve ter pelo menos 3 caracteres';
+        }
+        break;
+      case 'email':
+        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          errors[field] = 'Email inválido';
+        }
+        break;
+      case 'telefone_celular':
+      case 'telefone_fixo':
+        if (value && value.replace(/\D/g, '').length < 10) {
+          errors[field] = 'Telefone deve ter pelo menos 10 dígitos';
+        }
+        break;
+      case 'cep':
+        if (value && value.replace(/\D/g, '').length !== 8) {
+          errors[field] = 'CEP deve ter 8 dígitos';
+        }
+        break;
+    }
+    
+    return errors;
+  };
+
+  // Função para lidar com mudanças nos campos
+  const handleFieldChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Validar campo em tempo real
+    const fieldErrors = validateField(field, value);
+    setValidation(prev => ({
+      ...prev,
+      errors: {
+        ...prev.errors,
+        ...fieldErrors
+      }
+    }));
+  };
+
   useEffect(() => {
     if (supplier) {
       setFormData({
@@ -224,44 +307,97 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-purple-50">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">F</span>
+          <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-purple-50">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">F</span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {supplier ? 'Editar Fornecedor' : 'Novo Fornecedor'}
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    {supplier ? 'Atualize as informações do fornecedor' : 'Preencha as informações do fornecedor'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {supplier ? 'Editar Fornecedor' : 'Novo Fornecedor'}
-                </h2>
-                <p className="text-sm text-gray-600">
-                  {supplier ? 'Atualize as informações do fornecedor' : 'Preencha as informações do fornecedor'}
-                </p>
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="bg-white/60 rounded-lg p-4 border border-blue-200/30">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-gray-700">Progresso do Formulário</span>
+                <span className="text-sm font-bold text-blue-600">{progressPercentage}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 h-full rounded-full transition-all duration-500 ease-out" 
+                  style={{ width: `${progressPercentage}%` }}
+                ></div>
+              </div>
+              
+              {/* Status Indicators */}
+              <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center space-x-3">
+                  {/* Indicador de Erros */}
+                  {totalErrors > 0 && (
+                    <div className="flex items-center space-x-2 bg-red-100 text-red-700 px-3 py-1.5 rounded-full border border-red-200">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-xs font-medium">{totalErrors} erro{totalErrors > 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+                  
+                  {/* Status de Sucesso */}
+                  {totalErrors === 0 && progressPercentage === 100 && (
+                    <div className="flex items-center space-x-2 bg-green-100 text-green-700 px-3 py-1.5 rounded-full border border-green-200">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-xs font-medium">Formulário Completo</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              ✕
-            </button>
           </div>
 
           {/* Tabs */}
           <div className="flex border-b bg-gray-50">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-6 py-3 text-sm font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <span>{tab.label}</span>
-              </button>
-            ))}
+            {TABS.map((tab) => {
+              const errorCount = getTabErrorCount(tab.fields);
+              const hasErrors = errorCount > 0;
+              
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center space-x-2 px-6 py-3 text-sm font-medium transition-colors ${
+                    activeTab === tab.id
+                      ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+                      : hasErrors
+                      ? 'text-red-600 hover:text-red-700'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <span>{tab.label}</span>
+                  {hasErrors && (
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold bg-red-100 text-red-600">
+                      {errorCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* Form */}
@@ -287,11 +423,23 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="razao_social"
                             type="text"
                             value={formData.razao_social}
-                            onChange={(e) => setFormData(prev => ({ ...prev, razao_social: e.target.value }))}
+                            onChange={(e) => handleFieldChange('razao_social', e.target.value)}
                             placeholder="Digite a razão social"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 ${
+                              validation.errors.razao_social 
+                                ? 'border-red-300 bg-red-50' 
+                                : 'border-gray-300'
+                            }`}
                             required
                           />
+                          {validation.errors.razao_social && (
+                            <p className="text-sm text-red-600 flex items-center space-x-1">
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              <span>{validation.errors.razao_social}</span>
+                            </p>
+                          )}
                         </div>
 
                         <div className="space-y-2">
@@ -302,7 +450,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="nome_fantasia"
                             type="text"
                             value={formData.nome_fantasia || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, nome_fantasia: e.target.value }))}
+                            onChange={(e) => handleFieldChange('nome_fantasia', e.target.value)}
                             placeholder="Digite o nome fantasia"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
@@ -316,7 +464,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="ramo_atividade"
                             type="text"
                             value={formData.ramo_atividade || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, ramo_atividade: e.target.value }))}
+                            onChange={(e) => handleFieldChange('ramo_atividade', e.target.value)}
                             placeholder="Ex: Comércio, Indústria, Serviços"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
@@ -329,7 +477,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                           <select
                             id="tipo_contribuinte"
                             value={formData.tipo_contribuinte}
-                            onChange={(e) => setFormData(prev => ({ ...prev, tipo_contribuinte: e.target.value as any }))}
+                            onChange={(e) => handleFieldChange('tipo_contribuinte', e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                           >
                             <option value="PJ">Pessoa Jurídica</option>
@@ -347,11 +495,23 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="cpf_cnpj"
                             type="text"
                             value={formData.cpf_cnpj}
-                            onChange={(e) => setFormData(prev => ({ ...prev, cpf_cnpj: e.target.value }))}
+                            onChange={(e) => handleCPFCNPJChange(e.target.value)}
                             placeholder="Digite o CPF ou CNPJ"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 ${
+                              validation.errors.cpf_cnpj 
+                                ? 'border-red-300 bg-red-50' 
+                                : 'border-gray-300'
+                            }`}
                             required
                           />
+                          {validation.errors.cpf_cnpj && (
+                            <p className="text-sm text-red-600 flex items-center space-x-1">
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              <span>{validation.errors.cpf_cnpj}</span>
+                            </p>
+                          )}
                         </div>
 
                         <div className="space-y-2">
@@ -362,7 +522,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="inscricao_estadual"
                             type="text"
                             value={formData.inscricao_estadual || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, inscricao_estadual: e.target.value }))}
+                            onChange={(e) => handleFieldChange('inscricao_estadual', e.target.value)}
                             placeholder="Digite a inscrição estadual"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
@@ -376,10 +536,32 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="inscricao_municipal"
                             type="text"
                             value={formData.inscricao_municipal || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, inscricao_municipal: e.target.value }))}
+                            onChange={(e) => handleFieldChange('inscricao_municipal', e.target.value)}
                             placeholder="Digite a inscrição municipal"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label htmlFor="segment_id" className="block text-sm font-semibold text-gray-900">
+                            Segmento
+                          </label>
+                          <select
+                            id="segment_id"
+                            value={formData.segment_id || ''}
+                            onChange={(e) => handleFieldChange('segment_id', e.target.value)}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                          >
+                            <option value="">Selecione o segmento</option>
+                            <option value="comercio">Comércio</option>
+                            <option value="industria">Indústria</option>
+                            <option value="servicos">Serviços</option>
+                            <option value="tecnologia">Tecnologia</option>
+                            <option value="saude">Saúde</option>
+                            <option value="educacao">Educação</option>
+                            <option value="financeiro">Financeiro</option>
+                            <option value="outros">Outros</option>
+                          </select>
                         </div>
                       </div>
                     </div>
@@ -396,7 +578,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                           <select
                             id="uf"
                             value={formData.uf || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, uf: e.target.value }))}
+                            onChange={(e) => handleFieldChange('uf', e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                           >
                             <option value="">Selecione o estado</option>
@@ -438,7 +620,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="cidade"
                             type="text"
                             value={formData.cidade || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, cidade: e.target.value }))}
+                            onChange={(e) => handleFieldChange('cidade', e.target.value)}
                             placeholder="Digite a cidade"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
@@ -452,10 +634,22 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="cep"
                             type="text"
                             value={formData.cep || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, cep: e.target.value }))}
+                            onChange={(e) => handleFieldChange('cep', e.target.value)}
                             placeholder="00000-000"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 ${
+                              validation.errors.cep 
+                                ? 'border-red-300 bg-red-50' 
+                                : 'border-gray-300'
+                            }`}
                           />
+                          {validation.errors.cep && (
+                            <p className="text-sm text-red-600 flex items-center space-x-1">
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              <span>{validation.errors.cep}</span>
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -468,7 +662,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="endereco"
                             type="text"
                             value={formData.endereco || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, endereco: e.target.value }))}
+                            onChange={(e) => handleFieldChange('endereco', e.target.value)}
                             placeholder="Digite o endereço"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
@@ -482,7 +676,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="numero"
                             type="text"
                             value={formData.numero || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, numero: e.target.value }))}
+                            onChange={(e) => handleFieldChange('numero', e.target.value)}
                             placeholder="Digite o número"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
@@ -496,7 +690,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="complemento"
                             type="text"
                             value={formData.complemento || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, complemento: e.target.value }))}
+                            onChange={(e) => handleFieldChange('complemento', e.target.value)}
                             placeholder="Digite o complemento"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
@@ -510,7 +704,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="bairro"
                             type="text"
                             value={formData.bairro || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, bairro: e.target.value }))}
+                            onChange={(e) => handleFieldChange('bairro', e.target.value)}
                             placeholder="Digite o bairro"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
@@ -531,7 +725,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="pessoa_contato"
                             type="text"
                             value={formData.pessoa_contato || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, pessoa_contato: e.target.value }))}
+                            onChange={(e) => handleFieldChange('pessoa_contato', e.target.value)}
                             placeholder="Digite o nome da pessoa de contato"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
@@ -545,10 +739,22 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="telefone_fixo"
                             type="tel"
                             value={formData.telefone_fixo || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, telefone_fixo: e.target.value }))}
+                            onChange={(e) => handleFieldChange('telefone_fixo', e.target.value)}
                             placeholder="(00) 0000-0000"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 ${
+                              validation.errors.telefone_fixo 
+                                ? 'border-red-300 bg-red-50' 
+                                : 'border-gray-300'
+                            }`}
                           />
+                          {validation.errors.telefone_fixo && (
+                            <p className="text-sm text-red-600 flex items-center space-x-1">
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              <span>{validation.errors.telefone_fixo}</span>
+                            </p>
+                          )}
                         </div>
 
                         <div className="space-y-2">
@@ -559,10 +765,22 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="telefone_celular"
                             type="tel"
                             value={formData.telefone_celular || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, telefone_celular: e.target.value }))}
+                            onChange={(e) => handleFieldChange('telefone_celular', e.target.value)}
                             placeholder="(00) 00000-0000"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 ${
+                              validation.errors.telefone_celular 
+                                ? 'border-red-300 bg-red-50' 
+                                : 'border-gray-300'
+                            }`}
                           />
+                          {validation.errors.telefone_celular && (
+                            <p className="text-sm text-red-600 flex items-center space-x-1">
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              <span>{validation.errors.telefone_celular}</span>
+                            </p>
+                          )}
                         </div>
 
                         <div className="space-y-2">
@@ -573,10 +791,22 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="email"
                             type="email"
                             value={formData.email || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                            onChange={(e) => handleFieldChange('email', e.target.value)}
                             placeholder="Digite o email"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                            className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 ${
+                              validation.errors.email 
+                                ? 'border-red-300 bg-red-50' 
+                                : 'border-gray-300'
+                            }`}
                           />
+                          {validation.errors.email && (
+                            <p className="text-sm text-red-600 flex items-center space-x-1">
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              <span>{validation.errors.email}</span>
+                            </p>
+                          )}
                         </div>
 
                         <div className="space-y-2">
@@ -587,7 +817,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="site"
                             type="url"
                             value={formData.site || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, site: e.target.value }))}
+                            onChange={(e) => handleFieldChange('site', e.target.value)}
                             placeholder="https://www.exemplo.com"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
@@ -608,7 +838,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="banco_nome"
                             type="text"
                             value={formData.banco_nome || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, banco_nome: e.target.value }))}
+                            onChange={(e) => handleFieldChange('banco_nome', e.target.value)}
                             placeholder="Digite o nome do banco"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
@@ -622,7 +852,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="banco_codigo"
                             type="text"
                             value={formData.banco_codigo || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, banco_codigo: e.target.value }))}
+                            onChange={(e) => handleFieldChange('banco_codigo', e.target.value)}
                             placeholder="000"
                             maxLength={3}
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
@@ -637,7 +867,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="agencia_numero"
                             type="text"
                             value={formData.agencia_numero || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, agencia_numero: e.target.value }))}
+                            onChange={(e) => handleFieldChange('agencia_numero', e.target.value)}
                             placeholder="Digite o número da agência"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
@@ -651,7 +881,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="agencia_digito"
                             type="text"
                             value={formData.agencia_digito || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, agencia_digito: e.target.value }))}
+                            onChange={(e) => handleFieldChange('agencia_digito', e.target.value)}
                             placeholder="0"
                             maxLength={1}
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
@@ -666,7 +896,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="conta_numero"
                             type="text"
                             value={formData.conta_numero || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, conta_numero: e.target.value }))}
+                            onChange={(e) => handleFieldChange('conta_numero', e.target.value)}
                             placeholder="Digite o número da conta"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
@@ -680,7 +910,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="conta_digito"
                             type="text"
                             value={formData.conta_digito || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, conta_digito: e.target.value }))}
+                            onChange={(e) => handleFieldChange('conta_digito', e.target.value)}
                             placeholder="0"
                             maxLength={1}
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
@@ -695,7 +925,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="pix_chave"
                             type="text"
                             value={formData.pix_chave || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, pix_chave: e.target.value }))}
+                            onChange={(e) => handleFieldChange('pix_chave', e.target.value)}
                             placeholder="Digite a chave PIX"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
@@ -709,7 +939,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="condicao_pagamento"
                             type="text"
                             value={formData.condicao_pagamento || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, condicao_pagamento: e.target.value }))}
+                            onChange={(e) => handleFieldChange('condicao_pagamento', e.target.value)}
                             placeholder="Ex: 30 dias, 50% entrada"
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                           />
@@ -729,7 +959,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                           <select
                             id="status"
                             value={formData.status}
-                            onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
+                            onChange={(e) => handleFieldChange('status', e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                           >
                             <option value="ATIVO">Ativo</option>
@@ -745,7 +975,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="data_cadastro"
                             type="date"
                             value={formData.data_cadastro}
-                            onChange={(e) => setFormData(prev => ({ ...prev, data_cadastro: e.target.value }))}
+                            onChange={(e) => handleFieldChange('data_cadastro', e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                           />
                         </div>
@@ -758,7 +988,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                         <textarea
                           id="observacoes"
                           value={formData.observacoes || ''}
-                          onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
+                          onChange={(e) => handleFieldChange('observacoes', e.target.value)}
                           placeholder="Digite observações adicionais"
                           rows={4}
                           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
