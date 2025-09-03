@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,7 +13,6 @@ import {
   BarChart3, 
   Settings,
   Download,
-  Search,
   LayoutDashboard,
   Briefcase,
   CheckSquare,
@@ -25,7 +23,6 @@ import {
 } from 'lucide-react';
 
 export default function ManualView() {
-  const [searchTerm, setSearchTerm] = useState('');
 
   const manualSections = [
     {
@@ -59,7 +56,7 @@ export default function ManualView() {
     {
       id: 'receita',
       title: 'Receita Federal',
-      icon: Search,
+      icon: FileText,
       description: 'Integração e consultas com a Receita Federal para validação de dados',
       content: `
         <h2 style="color: #1f2937; margin-bottom: 1rem;">🔍 RECEITA FEDERAL</h2>
@@ -644,11 +641,7 @@ export default function ManualView() {
     }
   ];
 
-  const filteredSections = manualSections.filter(section =>
-    section.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    section.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    section.content.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+
 
   return (
     <div className="container mx-auto p-6 bg-gray-50 min-h-screen">
@@ -661,61 +654,60 @@ export default function ManualView() {
         </p>
       </div>
 
-      {/* Barra de Pesquisa */}
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Pesquisar no manual..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
-          />
-        </div>
-      </div>
+
 
       {/* Navegação por Abas - Layout Responsivo */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="flex flex-wrap gap-2 mb-6 p-1 bg-white rounded-lg shadow-sm border border-gray-200">
-          {manualSections.map((section) => (
-            <TabsTrigger 
-              key={section.id} 
-              value={section.id}
-              className="flex flex-col items-center gap-2 p-3 h-auto min-w-[120px] max-w-[140px] rounded-md transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 hover:scale-105 focus:bg-blue-100 focus:text-blue-800 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-800 data-[state=active]:shadow-md bg-gray-50 text-gray-700 border border-gray-200"
-            >
-              <section.icon className="w-5 h-5 flex-shrink-0" />
-              <span className="text-xs font-medium text-center leading-tight break-words">
-                {section.title}
-              </span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        {/* Container dos botões - SEPARADO do conteúdo */}
+        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 mb-4">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">📚 Selecione uma seção do manual:</h3>
+          <TabsList className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 p-0 bg-transparent border-0 shadow-none">
+            {manualSections.map((section) => (
+              <TabsTrigger 
+                key={section.id} 
+                value={section.id}
+                className="flex flex-col items-center gap-1.5 p-2 h-auto rounded-md transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 hover:scale-102 focus:bg-blue-100 focus:text-blue-800 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 data-[state=active]:shadow-sm bg-gray-50 text-gray-700 border-0 hover:border hover:border-blue-300 data-[state=active]:border data-[state=active]:border-blue-400"
+              >
+                <div className="p-1 bg-gray-100 rounded-md data-[state=active]:bg-blue-200 transition-all duration-200">
+                  <section.icon className="w-4 h-4 flex-shrink-0" />
+                </div>
+                <span className="text-xs font-medium text-center leading-tight break-words px-1">
+                  {section.title}
+                </span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+
+        {/* Container do conteúdo - SEMPRE abaixo dos botões */}
+        <div className="mt-0">
 
         {manualSections.map((section) => (
           <TabsContent key={section.id} value={section.id}>
-            <Card className="shadow-lg border border-gray-200 bg-white">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200">
-                <CardTitle className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <section.icon className="w-6 h-6 text-blue-700" />
+            <Card className="shadow-lg border border-gray-200 bg-white mt-2">
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-8 py-6">
+                <CardTitle className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-blue-100 rounded-xl">
+                    <section.icon className="w-8 h-8 text-blue-700" />
                   </div>
-                  <span className="text-2xl font-bold text-gray-900">
+                  <span className="text-3xl font-bold text-gray-900">
                     {section.title}
                   </span>
                 </CardTitle>
-                <p className="text-gray-800 text-base leading-relaxed font-medium">
-                  {section.description}
-                </p>
+                <div className="bg-blue-100 rounded-xl p-4 border border-blue-200">
+                  <p className="text-gray-800 text-lg leading-relaxed font-medium">
+                    {section.description}
+                  </p>
+                </div>
               </CardHeader>
-              <CardContent className="p-6 bg-white">
+              <CardContent className="p-8 bg-white">
                 <div 
-                  className="prose prose-gray max-w-none"
+                  className="prose prose-lg prose-gray max-w-none space-y-6"
                   dangerouslySetInnerHTML={{ __html: section.content }}
                 />
                 
                 {/* Botão de Exportar */}
-                <div className="mt-8 pt-6 border-t border-gray-200">
+                <div className="mt-10 pt-8 border-t border-gray-200">
                   <Button 
                     onClick={() => {
                       const element = document.createElement('a');
@@ -736,6 +728,7 @@ export default function ManualView() {
             </Card>
           </TabsContent>
         ))}
+        </div>
       </Tabs>
 
       {/* Botão de Exportar Manual Completo */}
