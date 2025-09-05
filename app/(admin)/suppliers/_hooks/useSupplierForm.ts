@@ -220,9 +220,19 @@ export function useSupplierForm(supplier?: Supplier | null) {
     setState(prev => ({ ...prev, isSaving: true }));
 
     try {
-      // Aqui você implementaria a lógica de salvamento
-      // Por enquanto, apenas simula um delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Importar o serviço dinamicamente para evitar problemas de dependência circular
+      const { createSupplier, updateSupplier } = await import('@/services/suppliersService');
+      
+      let response;
+      if (supplier) {
+        response = await updateSupplier(supplier.id, state.data);
+      } else {
+        response = await createSupplier(state.data);
+      }
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Erro ao salvar fornecedor');
+      }
       
       toast({
         title: "Sucesso!",
@@ -238,9 +248,10 @@ export function useSupplierForm(supplier?: Supplier | null) {
 
       return true;
     } catch (error) {
+      console.error('Erro ao salvar fornecedor:', error);
       toast({
         title: "Erro",
-        description: "Erro ao salvar fornecedor",
+        description: error instanceof Error ? error.message : "Erro ao salvar fornecedor",
         variant: "destructive"
       });
 

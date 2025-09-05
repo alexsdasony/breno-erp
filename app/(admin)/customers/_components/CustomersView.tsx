@@ -201,26 +201,35 @@ export default function CustomersView() {
         roles: ['customer']
       };
 
+      console.log('Payload para cliente:', payload);
+      
+      let result;
       if (isEditing && selectedCustomer) {
-        await update(selectedCustomer.id, payload);
+        console.log('Atualizando cliente:', selectedCustomer.id);
+        result = await update(selectedCustomer.id, payload);
       } else {
-        await create(payload);
+        console.log('Criando novo cliente');
+        result = await create(payload);
       }
 
-      setShowForm(false);
-      setFormData({
-        segment_id: '',
-        name: '',
-        tipo_pessoa: 'pf',
-        tax_id: '',
-        email: '',
-        phone: '',
-        address: '',
-        city: '',
-        state: ''
-      });
-      setSelectedCustomer(null);
-      setIsEditing(false);
+      console.log('Resultado da operação:', result);
+
+      if (result) {
+        setShowForm(false);
+        setFormData({
+          segment_id: '',
+          name: '',
+          tipo_pessoa: 'pf',
+          tax_id: '',
+          email: '',
+          phone: '',
+          address: '',
+          city: '',
+          state: ''
+        });
+        setSelectedCustomer(null);
+        setIsEditing(false);
+      }
     } catch (error) {
       console.error('Erro ao salvar cliente:', error);
     }

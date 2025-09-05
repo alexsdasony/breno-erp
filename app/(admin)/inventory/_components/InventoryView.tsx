@@ -99,8 +99,8 @@ export default function InventoryView() {
       category: product.category || '',
       price: product.price || '',
       cost: product.cost_price || '',
-      stock: product.stock || '',
-      minStock: product.min_stock || ''
+      stock: product.stock_quantity || product.stock || '',
+      minStock: product.minimum_stock || product.min_stock || ''
     });
     setShowForm(true);
   };
@@ -369,7 +369,7 @@ export default function InventoryView() {
             </thead>
             <tbody className="divide-y divide-border">
               {filteredItems.map((product, index) => {
-                const stockStatus = getStockStatus(Number(product.stock_quantity || 0), Number(product.minimum_stock || 0));
+                const stockStatus = getStockStatus(Number(product.stock_quantity || product.stock || 0), Number(product.minimum_stock || product.min_stock || 0));
                 return (
                   <motion.tr
                     key={product.id}
@@ -397,12 +397,12 @@ export default function InventoryView() {
                       <div className="text-sm text-muted-foreground">Custo: {formatCurrency(Number(product.cost_price || 0))}</div>
                     </td>
                     <td className="p-3">
-                      <div className="font-medium">{product.stock_quantity || 0} unidades</div>
-                      <div className="text-sm text-muted-foreground">Mín: {product.minimum_stock || 0}</div>
+                      <div className="font-medium">{product.stock_quantity || product.stock || 0} unidades</div>
+                      <div className="text-sm text-muted-foreground">Mín: {product.minimum_stock || product.min_stock || 0}</div>
                     </td>
                     <td className="p-3">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${stockStatus.bg}`}>
-                        {getStockIcon(Number(product.stock_quantity || 0), Number(product.minimum_stock || 0))}
+                        {getStockIcon(Number(product.stock_quantity || product.stock || 0), Number(product.minimum_stock || product.min_stock || 0))}
                         <span className={`ml-1 capitalize ${stockStatus.color}`}>
                           {stockStatus.status === 'out' ? 'Sem estoque' : 
                            stockStatus.status === 'low' ? 'Estoque baixo' : 'OK'}

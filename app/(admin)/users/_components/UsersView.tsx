@@ -330,19 +330,21 @@ export default function UsersView() {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
+                style={{ backgroundColor: '#374151', color: 'white' }}
               >
-                <option value="all">Todos os Status</option>
-                <option value="ativo">Ativo</option>
-                <option value="inativo">Inativo</option>
+                <option value="all" style={{ backgroundColor: '#374151', color: 'white' }}>Todos os Status</option>
+                <option value="ativo" style={{ backgroundColor: '#374151', color: 'white' }}>Ativo</option>
+                <option value="inativo" style={{ backgroundColor: '#374151', color: 'white' }}>Inativo</option>
               </select>
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
                 className="px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
+                style={{ backgroundColor: '#374151', color: 'white' }}
               >
-                <option value="all">Todos os Perfis</option>
-                <option value="admin">Administrador</option>
-                <option value="user">Usuário</option>
+                <option value="all" style={{ backgroundColor: '#374151', color: 'white' }}>Todos os Perfis</option>
+                <option value="admin" style={{ backgroundColor: '#374151', color: 'white' }}>Administrador</option>
+                <option value="user" style={{ backgroundColor: '#374151', color: 'white' }}>Usuário</option>
               </select>
             </div>
           </div>
@@ -578,10 +580,11 @@ export default function UsersView() {
                     id="role"
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'user' })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+                    style={{ backgroundColor: 'white', color: 'black' }}
                   >
-                    <option value="user">Usuário</option>
-                    <option value="admin">Administrador</option>
+                    <option value="user" style={{ backgroundColor: 'white', color: 'black' }}>Usuário</option>
+                    <option value="admin" style={{ backgroundColor: 'white', color: 'black' }}>Administrador</option>
                   </select>
                 </div>
 
@@ -591,10 +594,11 @@ export default function UsersView() {
                     id="status"
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as 'ativo' | 'inativo' })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+                    style={{ backgroundColor: 'white', color: 'black' }}
                   >
-                    <option value="ativo">Ativo</option>
-                    <option value="inativo">Inativo</option>
+                    <option value="ativo" style={{ backgroundColor: 'white', color: 'black' }}>Ativo</option>
+                    <option value="inativo" style={{ backgroundColor: 'white', color: 'black' }}>Inativo</option>
                   </select>
                 </div>
 
@@ -605,11 +609,12 @@ export default function UsersView() {
                       id="segment_id"
                       value={formData.segment_id}
                       onChange={(e) => setFormData({ ...formData, segment_id: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+                      style={{ backgroundColor: 'white', color: 'black' }}
                     >
-                      <option value="">Selecione um segmento</option>
+                      <option value="" style={{ backgroundColor: 'white', color: 'black' }}>Selecione um segmento</option>
                       {segmentOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
+                        <option key={option.value} value={option.value} style={{ backgroundColor: 'white', color: 'black' }}>
                           {option.label}
                         </option>
                       ))}

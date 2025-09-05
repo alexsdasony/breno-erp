@@ -129,9 +129,10 @@ serve(async (req) => {
             name: body.name,
             email: body.email,
             password: hashedPassword,
-            role: body.role || 'user'
+            role: body.role || 'user',
+            status: body.status || 'ativo'
           })
-          .select('id, name, email, role, created_at')
+          .select('id, name, email, role, status, created_at')
           .single()
 
         if (error) {
@@ -178,7 +179,7 @@ serve(async (req) => {
           .from('users')
           .update(body)
           .eq('id', lastSegment)
-          .select('id, name, email, role, status, created_at, updated_at')
+          .select('id, name, email, role, status, segment_id, created_at, updated_at')
           .single()
 
         if (error) {

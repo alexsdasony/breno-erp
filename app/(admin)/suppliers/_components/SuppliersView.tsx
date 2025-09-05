@@ -169,9 +169,16 @@ export default function SuppliersView() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement supplier creation/update logic
-    console.log('Form submitted:', formData);
-    handleCancel();
+    try {
+      if (isEditing && selectedSupplier) {
+        await update(selectedSupplier.id, formData);
+      } else {
+        await create(formData);
+      }
+      handleCancel();
+    } catch (error) {
+      console.error('Erro ao salvar fornecedor:', error);
+    }
   };
 
   const confirmDelete = async () => {

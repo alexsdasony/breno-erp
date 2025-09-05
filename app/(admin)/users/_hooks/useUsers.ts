@@ -110,12 +110,11 @@ export function useUsers(): UseUsersState & UseUsersApi {
     try {
       console.log('Tentando criar usuário:', data);
       
-      // Converter status para is_active
+      // Manter o status como está, o backend já espera 'status'
       const payload = {
         ...data,
-        is_active: (data as any).status === 'ativo',
+        status: (data as any).status || 'ativo'
       };
-      delete (payload as any).status; // Remove status do payload
       
       const response = await createUser(payload);
       console.log('Resposta da API:', response);
@@ -144,19 +143,14 @@ export function useUsers(): UseUsersState & UseUsersApi {
 
   const update = useCallback(async (id: string, data: Partial<User>) => {
     try {
-      // Converter status para is_active se necessário
+      // Preparar payload com todos os campos necessários
       let payload = { ...data };
       
+      // Garantir que o status esteja presente
       if ('status' in data) {
-        // Se estamos atualizando status, enviar apenas o status
-        payload = {
-          status: (data as any).status
-        };
+        payload.status = (data as any).status;
       } else if ('is_active' in data) {
-        // Se estamos atualizando is_active, converter para status
-        payload = {
-          status: (data as any).is_active ? 'ativo' : 'inativo'
-        };
+        payload.status = (data as any).is_active ? 'ativo' : 'inativo';
       }
       
       console.log('Payload para atualização:', payload);
