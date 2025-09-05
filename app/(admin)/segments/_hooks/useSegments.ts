@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from '@/components/ui/use-toast'
 import { listSegments, createSegment, updateSegment, deleteSegment } from '@/services/segmentsService'
+import { useAppData } from '@/hooks/useAppData'
 import type { Segment, SegmentPayload } from '@/types'
 
 export type UseSegmentsOptions = {
@@ -24,6 +25,9 @@ export function useSegments({ pageSize = 20 }: UseSegmentsOptions = {}): UseSegm
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(1)
+  
+  // Acesso ao contexto global para sincronização
+  const { refreshSegments } = useAppData()
 
   const load = useCallback(async (pageNum: number = 1, append: boolean = false) => {
     setLoading(true)
@@ -55,6 +59,8 @@ export function useSegments({ pageSize = 20 }: UseSegmentsOptions = {}): UseSegm
       const segment = response.data?.segment
       if (segment) {
         setSegments((prev) => [...prev, segment])
+        // 🔄 SINCRONIZAR COM CONTEXTO GLOBAL
+        await refreshSegments()
         toast({ title: 'Sucesso', description: 'Segmento criado com sucesso' })
         return segment
       }
@@ -65,7 +71,7 @@ export function useSegments({ pageSize = 20 }: UseSegmentsOptions = {}): UseSegm
       toast({ title: 'Erro', description: 'Falha ao criar segmento', variant: 'destructive' })
       throw err
     }
-  }, [])
+  }, [refreshSegments])
 
   const update = useCallback(async (id: string, payload: SegmentPayload) => {
     try {
@@ -73,6 +79,8 @@ export function useSegments({ pageSize = 20 }: UseSegmentsOptions = {}): UseSegm
       const segment = response.data?.segment
       if (segment) {
         setSegments((prev) => prev.map((s) => (s.id === id ? segment : s)))
+        // 🔄 SINCRONIZAR COM CONTEXTO GLOBAL
+        await refreshSegments()
         toast({ title: 'Sucesso', description: 'Segmento atualizado com sucesso' })
         return segment
       }
@@ -83,19 +91,21 @@ export function useSegments({ pageSize = 20 }: UseSegmentsOptions = {}): UseSegm
       toast({ title: 'Erro', description: 'Falha ao atualizar segmento', variant: 'destructive' })
       throw err
     }
-  }, [])
+  }, [refreshSegments])
 
   const remove = useCallback(async (id: string) => {
     try {
       await deleteSegment(id)
       setSegments((prev) => prev.filter((s) => s.id !== id))
+      // 🔄 SINCRONIZAR COM CONTEXTO GLOBAL
+      await refreshSegments()
       toast({ title: 'Sucesso', description: 'Segmento excluído com sucesso' })
     } catch (err) {
       console.error('Erro ao excluir segmento:', err)
       toast({ title: 'Erro', description: 'Falha ao excluir segmento', variant: 'destructive' })
       throw err
     }
-  }, [])
+  }, [refreshSegments])
 
   useEffect(() => {
     load()

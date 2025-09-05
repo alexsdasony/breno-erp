@@ -48,6 +48,7 @@ interface AppDataContextType {
   setActiveSegmentId: (id: string | null) => void;
   refreshData: () => Promise<void>;
   reloadDashboardData: (segmentId?: string | null) => Promise<void>;
+  refreshSegments: () => Promise<void>;
   loginUser: (email: string, password: string) => Promise<boolean>;
   registerUser: (name: string, email: string, password: string, segmentId?: string | null) => Promise<boolean>;
   logoutUser: () => Promise<void>;
@@ -315,6 +316,21 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
     }
   }, [currentUser, activeSegmentId]);
 
+  // Função para atualizar apenas os segmentos
+  const refreshSegments = useCallback(async () => {
+    if (!currentUser) return;
+    
+    try {
+      console.log('🔄 Atualizando segmentos no contexto global...');
+      const segmentsResponse = await apiService.get('/segments');
+      const newSegments = (segmentsResponse as any).segments || segmentsResponse.data?.segments || [];
+      setSegments(newSegments);
+      console.log('✅ Segmentos atualizados no contexto global:', newSegments.length);
+    } catch (error) {
+      console.error('❌ Erro ao atualizar segmentos:', error);
+    }
+  }, [currentUser]);
+
   const contextValue: AppDataContextType = {
     data,
     loading,
@@ -326,6 +342,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
     setActiveSegmentId,
     refreshData,
     reloadDashboardData,
+    refreshSegments,
     loginUser,
     registerUser,
     logoutUser,
