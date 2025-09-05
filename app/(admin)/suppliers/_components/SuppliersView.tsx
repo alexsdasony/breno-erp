@@ -6,38 +6,14 @@ import {
   Plus, Users, CheckCircle, Clock, DollarSign, Search, Eye, Edit, Trash2,
   User, Mail, Phone, MapPin, X, AlertCircle, FileText, Building
 } from 'lucide-react';
-import { useSuppliers } from '@/hooks/usePartners';
+import { useSuppliers } from '../_hooks/useSuppliers';
 import { Supplier } from '@/types';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData';
 import SupplierForm from './SupplierForm';
 
 export default function SuppliersView() {
-  const { items: partners, loading, hasMore, loadMore, create, update } = useSuppliers();
-  
-  // Mapear dados de Partner para Supplier
-  const suppliers = partners.map(partner => ({
-    id: partner.id,
-    razao_social: partner.name,
-    nome_fantasia: partner.name,
-    tipo_contribuinte: partner.tipo_pessoa === 'fisica' ? 'PF' : 'PJ',
-    cpf_cnpj: partner.tax_id,
-    email: partner.email,
-    telefone_celular: partner.phone || partner.celular,
-    telefone: partner.phone || partner.telefone_comercial,
-    phone: partner.phone,
-    cidade: partner.city,
-    uf: partner.state,
-    estado: partner.state,
-    endereco: partner.address,
-    cep: partner.zip_code,
-    observacoes: partner.notes,
-    status: partner.status === 'active' ? 'ativo' : 'inativo',
-    segment_id: partner.segment_id,
-    created_at: partner.created_at,
-    updated_at: partner.updated_at,
-    total_value: 0 // Valor padrão
-  }));
+  const { items: suppliers, loading, hasMore, loadMore, create, update } = useSuppliers();
   const { segments } = useAppData();
   
   // State management
@@ -745,27 +721,21 @@ export default function SuppliersView() {
           setSelectedSupplier(null);
         }}
         onSubmit={async (data) => {
-          // Mapear dados de Supplier para Partner
-          const partnerData = {
-            name: data.razao_social,
-            tax_id: data.cpf_cnpj,
-            email: data.email,
-            phone: data.telefone_celular,
-            address: data.endereco,
-            city: data.cidade,
-            state: data.uf,
-            zip_code: data.cep,
-            notes: data.observacoes,
-            status: data.status === 'ativo' ? 'active' : 'inactive',
-            segment_id: data.segment_id,
-            tipo_pessoa: data.tipo_contribuinte === 'PF' ? 'fisica' : 'juridica',
-            roles: ['supplier'] // Enviar como array
-          };
-          
-          if (selectedSupplier) {
-            await update(selectedSupplier.id, partnerData);
-          } else {
-            await create(partnerData);
+          console.log('🚀 SuppliersView onSubmit chamado com dados:', data);
+          try {
+            if (selectedSupplier) {
+              console.log('📝 Atualizando fornecedor:', selectedSupplier.id);
+              const result = await update(selectedSupplier.id, data);
+              console.log('✅ Fornecedor atualizado:', result);
+            } else {
+              console.log('🆕 Criando novo fornecedor');
+              const result = await create(data);
+              console.log('✅ Fornecedor criado:', result);
+            }
+            console.log('🎉 onSubmit concluído com sucesso');
+          } catch (error) {
+            console.error('❌ Erro em onSubmit:', error);
+            throw error; // Re-lançar o erro para que o modal não feche
           }
         }}
         isLoading={loading}

@@ -68,9 +68,34 @@ async function quickTest() {
     
     // TESTE 3: Criação de fornecedor
     console.log('\n📋 TESTE 3: Criação de fornecedor');
-    const nameField = await page.$('input[placeholder*="Nome do fornecedor"]');
+    const nameField = await page.$('#suppliers-name-input');
     if (nameField) {
       await nameField.type('Fornecedor Teste');
+      
+      // Preencher campos obrigatórios
+      const razaoSocialField = await page.$('#razao_social');
+      if (razaoSocialField) {
+        await razaoSocialField.type('Fornecedor Teste LTDA');
+      }
+      
+      // Para CNPJ, selecionar tipo PJ (Pessoa Jurídica)
+      const tipoContribuinteField = await page.$('#tipo_contribuinte');
+      if (tipoContribuinteField) {
+        await tipoContribuinteField.select('PJ');
+        console.log('✅ Tipo de contribuinte selecionado: PJ (para CNPJ)');
+      }
+      
+      const cpfCnpjField = await page.$('#cpf_cnpj');
+      if (cpfCnpjField) {
+        await cpfCnpjField.type('05.402.904/0015-62'); // CNPJ fornecido
+        console.log('✅ CNPJ preenchido: 05.402.904/0015-62');
+      }
+      
+      const emailField = await page.$('#suppliers-email-input');
+      if (emailField) {
+        await emailField.type('teste@fornecedor.com');
+      }
+      
       const submitBtn = await page.$('button[type="submit"]');
       if (submitBtn) {
         await submitBtn.click();
@@ -127,13 +152,33 @@ async function quickTest() {
         await newSupplierBtn.click();
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        const nameField = await page.$('input[placeholder*="Nome do fornecedor"]');
-        if (nameField) {
-          await nameField.type('Fornecedor para Edição');
-          const emailField = await page.$('input[type="email"]');
-          if (emailField) {
-            await emailField.type('edicao@fornecedor.com');
-          }
+          const nameField = await page.$('#suppliers-name-input');
+          if (nameField) {
+            await nameField.type('Fornecedor para Edição');
+            
+            // Preencher campos obrigatórios
+            const razaoSocialField = await page.$('#razao_social');
+            if (razaoSocialField) {
+              await razaoSocialField.type('Fornecedor para Edição LTDA');
+            }
+            
+            // Para CNPJ, selecionar tipo PJ (Pessoa Jurídica)
+            const tipoContribuinteField = await page.$('#tipo_contribuinte');
+            if (tipoContribuinteField) {
+              await tipoContribuinteField.select('PJ');
+              console.log('✅ Tipo de contribuinte selecionado: PJ (para CNPJ)');
+            }
+            
+            const cpfCnpjField = await page.$('#cpf_cnpj');
+            if (cpfCnpjField) {
+              await cpfCnpjField.type('05.402.904/0015-62'); // CNPJ fornecido
+              console.log('✅ CNPJ preenchido: 05.402.904/0015-62');
+            }
+            
+            const emailField = await page.$('#suppliers-email-input');
+            if (emailField) {
+              await emailField.type('edicao@fornecedor.com');
+            }
           
           const submitBtn = await page.$('button[type="submit"]');
           if (submitBtn) {

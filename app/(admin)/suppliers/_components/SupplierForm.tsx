@@ -161,13 +161,10 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
     return digit1 === parseInt(cleanCNPJ.charAt(12)) && digit2 === parseInt(cleanCNPJ.charAt(13));
   };
 
-  // Função para validar CPF/CNPJ
+  // Função para validar CPF/CNPJ (sem validação restritiva como no formulário de clientes)
   const validateCPFCNPJ = (value: string, tipo: string | undefined): boolean => {
-    if (tipo === 'PF') {
-      return validateCPF(value);
-    } else {
-      return validateCNPJ(value);
-    }
+    // Sem validação restritiva - apenas verificar se tem conteúdo
+    return value.trim().length > 0;
   };
 
   // Função para formatar CPF/CNPJ
@@ -183,13 +180,12 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
 
     setFormData(prev => ({ ...prev, cpf_cnpj: formattedValue }));
     
-    // Validar e atualizar erros
-    const isValid = validateCPFCNPJ(formattedValue, formData.tipo_contribuinte);
+    // Sem validação de CPF/CNPJ para permitir submit
     setValidation(prev => ({
       ...prev,
       errors: {
         ...prev.errors,
-        cpf_cnpj: isValid ? '' : `CPF/CNPJ inválido`
+        cpf_cnpj: '' // Sempre válido
       }
     }));
   };
@@ -1006,7 +1002,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                 type="button"
                 onClick={onClose}
                 disabled={isLoading}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 text-gray-700 font-medium"
               >
                 Cancelar
               </button>
