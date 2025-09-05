@@ -49,7 +49,7 @@ const initialFormData: SupplierPayload = {
   conta_digito: '',
   pix_chave: '',
   condicao_pagamento: '',
-  status: 'ATIVO',
+  status: 'ativo',
   data_cadastro: new Date().toISOString().split('T')[0],
   observacoes: '',
   segment_id: '',
