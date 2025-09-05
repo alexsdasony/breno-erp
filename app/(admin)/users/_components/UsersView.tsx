@@ -237,6 +237,7 @@ export default function UsersView() {
             <p className="text-gray-400 mt-1">Gerencie e monitore usuários do sistema</p>
           </div>
           <motion.button
+            id="users-new-button"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowForm(true)}
@@ -330,7 +331,7 @@ export default function UsersView() {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
-                style={{ backgroundColor: '#374151', color: 'white' }}
+                style={{ backgroundColor: '#374151', color: 'white', appearance: 'none' }}
               >
                 <option value="all" style={{ backgroundColor: '#374151', color: 'white' }}>Todos os Status</option>
                 <option value="ativo" style={{ backgroundColor: '#374151', color: 'white' }}>Ativo</option>
@@ -340,7 +341,7 @@ export default function UsersView() {
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
                 className="px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
-                style={{ backgroundColor: '#374151', color: 'white' }}
+                style={{ backgroundColor: '#374151', color: 'white', appearance: 'none' }}
               >
                 <option value="all" style={{ backgroundColor: '#374151', color: 'white' }}>Todos os Perfis</option>
                 <option value="admin" style={{ backgroundColor: '#374151', color: 'white' }}>Administrador</option>
@@ -445,6 +446,7 @@ export default function UsersView() {
                             size="sm"
                             onClick={() => handleEdit(user)}
                             className="text-green-600 hover:text-green-800"
+                            title="Editar"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -466,6 +468,7 @@ export default function UsersView() {
                             size="sm"
                             onClick={() => handleResetPassword(user)}
                             className="text-orange-600 hover:text-orange-800"
+                            title="Reset"
                           >
                             <Key className="w-4 h-4" />
                           </Button>

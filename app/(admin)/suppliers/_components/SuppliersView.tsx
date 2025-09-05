@@ -387,6 +387,8 @@ export default function SuppliersView() {
                           size="sm" 
                           title="Editar" 
                           onClick={() => handleEdit(supplier)}
+                          className="text-blue-600 hover:text-blue-800"
+                          data-testid="edit-supplier-button"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -562,7 +564,7 @@ export default function SuppliersView() {
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={handleCancel}>
+                  <Button type="button" variant="outline" onClick={handleCancel} className="bg-gray-100 text-gray-800 hover:bg-gray-200" id="suppliers-cancel-button">
                     Cancelar
                   </Button>
                   <Button id="suppliers-submit-button" type="submit">

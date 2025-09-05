@@ -623,7 +623,7 @@ export default function CustomersView() {
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={handleCancel}>
+                  <Button type="button" variant="outline" onClick={handleCancel} className="bg-gray-100 text-gray-800 hover:bg-gray-200" id="customers-cancel-button">
                     Cancelar
                   </Button>
                   <Button id="customers-submit-button" type="submit">
