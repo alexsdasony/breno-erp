@@ -23,14 +23,14 @@ import {
   Building,
   User
 } from 'lucide-react';
-import { usePartners } from '../_hooks/usePartners';
+import { useCustomers } from '@/hooks/usePartners';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData';
 import { useRouter } from 'next/navigation';
 import type { Customer } from '@/types';
 
 export default function CustomersView() {
-  const { items, loading, hasMore, loadMore, create, update, remove } = usePartners();
+  const { items, loading, hasMore, loadMore, create, update, remove } = useCustomers();
   const { segments, activeSegmentId } = useAppData();
   const router = useRouter();
 

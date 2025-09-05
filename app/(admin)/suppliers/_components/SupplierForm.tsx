@@ -70,7 +70,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
     conta_digito: '',
     pix_chave: '',
     condicao_pagamento: '',
-    status: 'ATIVO',
+    status: 'ativo',
     data_cadastro: new Date().toISOString().split('T')[0],
     observacoes: '',
     segment_id: '',
@@ -270,7 +270,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
         conta_digito: supplier.conta_digito || '',
         pix_chave: supplier.pix_chave || '',
         condicao_pagamento: supplier.condicao_pagamento || supplier.payment_terms || '',
-        status: supplier.status || 'ATIVO',
+        status: supplier.status || 'ativo',
         data_cadastro: supplier.data_cadastro || new Date().toISOString().split('T')[0],
         observacoes: supplier.observacoes || '',
         segment_id: supplier.segment_id || '',
@@ -962,8 +962,8 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             onChange={(e) => handleFieldChange('status', e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                           >
-                            <option value="ATIVO">Ativo</option>
-                            <option value="INATIVO">Inativo</option>
+                            <option value="ativo">Ativo</option>
+                            <option value="inativo">Inativo</option>
                           </select>
                         </div>
 

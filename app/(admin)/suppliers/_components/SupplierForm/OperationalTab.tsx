@@ -25,7 +25,7 @@ export function OperationalTab({ data, onChange, validation }: OperationalTabPro
           <select
             id="status"
             value={data.status}
-            onChange={(e) => onChange({ status: e.target.value as 'ATIVO' | 'INATIVO' })}
+            onChange={(e) => onChange({ status: e.target.value as 'ativo' | 'inativo' })}
             className="w-full px-4 py-3 border border-input rounded-lg bg-background/50 backdrop-blur-sm text-foreground transition-colors focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-primary/50"
           >
             <option value="ATIVO">Ativo</option>
@@ -72,11 +72,11 @@ export function OperationalTab({ data, onChange, validation }: OperationalTabPro
           <div>
             <span className="text-muted-foreground">Status:</span>
             <span className={`ml-2 font-medium px-2 py-1 rounded-full text-xs ${
-              data.status === 'ATIVO' 
+              data.status === 'ativo' 
                 ? 'bg-green-100 text-green-800' 
                 : 'bg-red-100 text-red-800'
             }`}>
-              {data.status === 'ATIVO' ? 'Ativo' : 'Inativo'}
+              {data.status === 'ativo' ? 'Ativo' : 'Inativo'}
             </span>
           </div>
           <div>

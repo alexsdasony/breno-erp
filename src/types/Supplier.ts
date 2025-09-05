@@ -39,7 +39,7 @@ export interface Supplier extends Timestamped {
   condicao_pagamento?: string | null
   
   // Operacional
-  status: 'ATIVO' | 'INATIVO'
+  status: 'ativo' | 'inativo'
   data_cadastro: string
   observacoes?: string | null
   segment_id?: ID | null
@@ -106,7 +106,7 @@ export interface SupplierPayload {
   condicao_pagamento?: string | null
   
   // Operacional
-  status?: 'ATIVO' | 'INATIVO'
+  status?: 'ativo' | 'inativo'
   data_cadastro?: string
   observacoes?: string | null
   segment_id?: ID | null

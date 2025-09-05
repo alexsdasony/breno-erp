@@ -6,7 +6,7 @@ import {
   Plus, Users, CheckCircle, Clock, DollarSign, Search, Eye, Edit, Trash2,
   User, Mail, Phone, MapPin, X, AlertCircle, FileText, Building
 } from 'lucide-react';
-import { useSuppliers } from '../_hooks/useSuppliers';
+import { useSuppliers } from '@/hooks/usePartners';
 import { Supplier } from '@/types';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData';
@@ -33,7 +33,7 @@ export default function SuppliersView() {
     cpf_cnpj: '',
     email: '',
     telefone_celular: '',
-    status: 'ATIVO' as 'ATIVO' | 'INATIVO',
+    status: 'ativo' as 'ativo' | 'inativo',
     data_cadastro: new Date().toISOString().split('T')[0],
     segment_id: '',
     cidade: '',
@@ -52,8 +52,8 @@ export default function SuppliersView() {
   // KPIs calculation
   const kpis = useMemo(() => {
     const totalSuppliers = suppliers.length;
-    const activeSuppliers = suppliers.filter((s: any) => s.status === 'ATIVO' || s.status === 'active').length;
-    const inactiveSuppliers = suppliers.filter((s: any) => s.status === 'INATIVO' || s.status === 'inactive').length;
+    const activeSuppliers = suppliers.filter((s: any) => s.status === 'ativo' || s.status === 'active').length;
+    const inactiveSuppliers = suppliers.filter((s: any) => s.status === 'inativo' || s.status === 'inactive').length;
     const totalValue = suppliers.reduce((sum: number, s: any) => sum + (s.total_value || 0), 0);
     
     return {
@@ -89,9 +89,9 @@ export default function SuppliersView() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'ATIVO':
+      case 'ativo':
       case 'active': return <CheckCircle className="w-3 h-3" />;
-      case 'INATIVO':
+      case 'inativo':
       case 'inactive': return <Clock className="w-3 h-3" />;
       case 'suspended': return <X className="w-3 h-3" />;
       default: return <Clock className="w-3 h-3" />;
@@ -100,9 +100,9 @@ export default function SuppliersView() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ATIVO':
+      case 'ativo':
       case 'active': return 'text-green-600 bg-green-50 border-green-200';
-      case 'INATIVO':
+      case 'inativo':
       case 'inactive': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
       case 'suspended': return 'text-red-600 bg-red-50 border-red-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
@@ -118,7 +118,7 @@ export default function SuppliersView() {
       cpf_cnpj: '',
       email: '',
       telefone_celular: '',
-      status: 'ATIVO',
+      status: 'ativo',
       data_cadastro: new Date().toISOString().split('T')[0],
       segment_id: '',
       cidade: '',
@@ -137,7 +137,7 @@ export default function SuppliersView() {
       cpf_cnpj: supplier.cpf_cnpj || supplier.cnpj || supplier.cpf || '',
       email: supplier.email || '',
       telefone_celular: supplier.telefone_celular || supplier.telefone || '',
-      status: supplier.status || 'ATIVO',
+      status: supplier.status || 'ativo',
       data_cadastro: supplier.data_cadastro || new Date().toISOString().split('T')[0],
       segment_id: supplier.segment_id || '',
       cidade: supplier.cidade || '',
@@ -277,8 +277,8 @@ export default function SuppliersView() {
               className="px-3 py-2 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
             >
               <option value="all">Todos</option>
-              <option value="ATIVO">Ativos</option>
-              <option value="INATIVO">Inativos</option>
+              <option value="ativo">Ativos</option>
+              <option value="inativo">Inativos</option>
               <option value="active">Ativos (Legado)</option>
               <option value="inactive">Inativos (Legado)</option>
             </select>
@@ -357,7 +357,7 @@ export default function SuppliersView() {
                     <td className="p-3">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(supplier.status || 'inactive')}`}>
                         {getStatusIcon(supplier.status || 'inactive')}
-                        <span className="ml-1 capitalize">{supplier.status === 'ATIVO' ? 'Ativo' : supplier.status === 'INATIVO' ? 'Inativo' : supplier.status || 'inactive'}</span>
+                        <span className="ml-1 capitalize">{supplier.status === 'ativo' ? 'Ativo' : supplier.status === 'inativo' ? 'Inativo' : supplier.status || 'inactive'}</span>
                       </span>
                     </td>
                     <td className="p-3">
@@ -486,8 +486,10 @@ export default function SuppliersView() {
                                               onChange={(e) => setFormData(prev => ({ ...prev, tipo_contribuinte: e.target.value as 'PJ' | 'PF' | 'MEI' | 'Outros' }))}
                       className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
                     >
-                      <option value="pf">Pessoa Física</option>
-                      <option value="pj">Pessoa Jurídica</option>
+                      <option value="PF">Pessoa Física</option>
+                      <option value="PJ">Pessoa Jurídica</option>
+                      <option value="MEI">MEI</option>
+                      <option value="Outros">Outros</option>
                     </select>
                   </div>
 
