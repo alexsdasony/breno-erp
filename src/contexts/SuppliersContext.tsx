@@ -33,8 +33,8 @@ export function SuppliersProvider({ children }: { children: React.ReactNode }) {
     try {
       // Tentar carregar fornecedores da API, mas não falhar se der erro
       try {
-        const { getSuppliers } = await import('@/services/suppliersService');
-        const result = await getSuppliers({ page: 1, limit: 100 });
+        const { listSuppliers } = await import('@/services/suppliersService');
+        const result = await listSuppliers({ page: 1, limit: 100 });
         const suppliers = result?.data?.suppliers || [];
         // Converter para SimpleSupplier para compatibilidade de tipos
         const simpleSuppliers: SimpleSupplier[] = suppliers.map(s => ({

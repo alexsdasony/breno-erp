@@ -36,23 +36,23 @@ export async function listSuppliers(params: Record<string, any> = {}): Promise<A
 export async function createSupplier(payload: SupplierPayload): Promise<ApiResponse<{ supplier: Supplier }>> {
   // Mapear dados de Supplier para Partner (formato esperado pela API)
   const partnerData = {
-    name: payload.razao_social || payload.nome_fantasia || 'Nome não informado',
-    tax_id: payload.cpf_cnpj,
-    email: payload.email,
-    phone: payload.telefone_celular,
-    address: payload.endereco,
-    city: payload.cidade,
-    state: payload.uf,
-    zip_code: payload.cep,
-    notes: payload.observacoes,
+    name: payload.razao_social || payload.nome_fantasia || 'Fornecedor',
+    tax_id: payload.cpf_cnpj || null,
+    email: payload.email || null,
+    phone: payload.telefone_celular || null,
+    address: payload.endereco || null,
+    city: payload.cidade || null,
+    state: payload.uf || null,
+    zip_code: payload.cep || null,
+    notes: payload.observacoes || null,
     status: payload.status === 'ativo' ? 'active' : 'inactive',
-    segment_id: payload.segment_id,
+    segment_id: payload.segment_id || null,
     tipo_pessoa: payload.tipo_contribuinte === 'PF' ? 'fisica' : 'juridica'
   };
   
-  console.log('🚀 Enviando dados para API /suppliers:', partnerData);
+  console.log('🚀 Enviando dados para API /suppliers:', JSON.stringify(partnerData, null, 2));
   const response = await apiService.post<{ success: boolean; supplier: any }>('/suppliers', partnerData)
-  console.log('📥 Resposta da API:', response);
+  console.log('📥 Resposta da API:', JSON.stringify(response, null, 2));
   
   // Mapear dados de volta para Supplier
   const supplier: Supplier = {
