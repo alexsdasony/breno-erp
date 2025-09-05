@@ -73,8 +73,18 @@ async function quickTest() {
       await nameField.type('Fornecedor Teste');
       const submitBtn = await page.$('button[type="submit"]');
       if (submitBtn) {
-        console.log('✅ Criação de fornecedor: FUNCIONANDO');
-        results.push({ test: 3, status: 'PASS' });
+        await submitBtn.click();
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Verificar se o modal fechou (indica sucesso)
+        const modal = await page.$('.fixed.inset-0.z-50');
+        if (!modal) {
+          console.log('✅ Criação de fornecedor: FUNCIONANDO');
+          results.push({ test: 3, status: 'PASS' });
+        } else {
+          console.log('❌ Criação de fornecedor: FALHOU (modal ainda aberto)');
+          results.push({ test: 3, status: 'FAIL' });
+        }
       } else {
         console.log('❌ Botão submit não encontrado');
         results.push({ test: 3, status: 'FAIL' });
@@ -128,15 +138,36 @@ async function quickTest() {
           const submitBtn = await page.$('button[type="submit"]');
           if (submitBtn) {
             await submitBtn.click();
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await new Promise(resolve => setTimeout(resolve, 5000)); // Aguardar mais tempo
             
-            // Agora verificar se o botão editar existe
-            const editBtn = await page.$('[data-testid="edit-supplier-button"]');
-            if (editBtn) {
-              console.log('✅ Atualização de fornecedor: FUNCIONANDO');
-              results.push({ test: 4, status: 'PASS' });
+            // Verificar se o modal fechou (indica que a criação foi bem-sucedida)
+            const modal = await page.$('.fixed.inset-0.z-50');
+            if (!modal) {
+              console.log('✅ Modal fechou - fornecedor criado com sucesso');
+              
+              // Aguardar mais um pouco para a lista ser atualizada
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              // Verificar se há fornecedores na lista agora
+              const suppliersListAfter = await page.$$('tbody tr');
+              console.log('Fornecedores após criação:', suppliersListAfter.length);
+              
+              if (suppliersListAfter.length > 0) {
+                // Verificar se o botão editar existe
+                const editBtn = await page.$('[data-testid="edit-supplier-button"]');
+                if (editBtn) {
+                  console.log('✅ Atualização de fornecedor: FUNCIONANDO');
+                  results.push({ test: 4, status: 'PASS' });
+                } else {
+                  console.log('❌ Botão editar não encontrado após criação');
+                  results.push({ test: 4, status: 'FAIL' });
+                }
+              } else {
+                console.log('❌ Fornecedor não apareceu na lista após criação');
+                results.push({ test: 4, status: 'FAIL' });
+              }
             } else {
-              console.log('❌ Botão editar não encontrado após criação');
+              console.log('❌ Modal ainda aberto - criação falhou');
               results.push({ test: 4, status: 'FAIL' });
             }
           } else {

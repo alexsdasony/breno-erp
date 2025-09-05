@@ -13,7 +13,31 @@ import { useAppData } from '@/hooks/useAppData';
 import SupplierForm from './SupplierForm';
 
 export default function SuppliersView() {
-  const { items: suppliers, loading, hasMore, loadMore, create, update } = useSuppliers();
+  const { items: partners, loading, hasMore, loadMore, create, update } = useSuppliers();
+  
+  // Mapear dados de Partner para Supplier
+  const suppliers = partners.map(partner => ({
+    id: partner.id,
+    razao_social: partner.name,
+    nome_fantasia: partner.name,
+    tipo_contribuinte: partner.tipo_pessoa === 'fisica' ? 'PF' : 'PJ',
+    cpf_cnpj: partner.tax_id,
+    email: partner.email,
+    telefone_celular: partner.phone || partner.celular,
+    telefone: partner.phone || partner.telefone_comercial,
+    phone: partner.phone,
+    cidade: partner.city,
+    uf: partner.state,
+    estado: partner.state,
+    endereco: partner.address,
+    cep: partner.zip_code,
+    observacoes: partner.notes,
+    status: partner.status === 'active' ? 'ativo' : 'inativo',
+    segment_id: partner.segment_id,
+    created_at: partner.created_at,
+    updated_at: partner.updated_at,
+    total_value: 0 // Valor padrão
+  }));
   const { segments } = useAppData();
   
   // State management
@@ -721,10 +745,27 @@ export default function SuppliersView() {
           setSelectedSupplier(null);
         }}
         onSubmit={async (data) => {
+          // Mapear dados de Supplier para Partner
+          const partnerData = {
+            name: data.razao_social,
+            tax_id: data.cpf_cnpj,
+            email: data.email,
+            phone: data.telefone_celular,
+            address: data.endereco,
+            city: data.cidade,
+            state: data.uf,
+            zip_code: data.cep,
+            notes: data.observacoes,
+            status: data.status === 'ativo' ? 'active' : 'inactive',
+            segment_id: data.segment_id,
+            tipo_pessoa: data.tipo_contribuinte === 'PF' ? 'fisica' : 'juridica',
+            roles: ['supplier'] // Enviar como array
+          };
+          
           if (selectedSupplier) {
-            await update(selectedSupplier.id, data);
+            await update(selectedSupplier.id, partnerData);
           } else {
-            await create(data);
+            await create(partnerData);
           }
         }}
         isLoading={loading}
