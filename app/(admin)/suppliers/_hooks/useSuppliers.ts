@@ -86,22 +86,29 @@ export function useSuppliers() {
   }, [state.loading, state.hasMore, state.page]);
 
   const create = useCallback(async (data: SupplierPayload) => {
+    console.log('🚀 useSuppliers.create chamado com dados:', data);
     try {
       const response = await createSupplier(data);
+      console.log('📥 Resposta do createSupplier:', response);
       if (response.error) {
+        console.log('❌ Erro na resposta:', response.error);
         throw new Error(response.error);
       }
       const supplier = response.data?.supplier;
+      console.log('📦 Supplier extraído:', supplier);
       if (supplier) {
         setState((s) => ({ ...s, items: [supplier, ...s.items] }));
         toast({
           title: 'Fornecedor criado',
           description: supplier.razao_social || 'Registro criado.'
         });
+        console.log('✅ Fornecedor criado com sucesso');
         return supplier;
       }
+      console.log('⚠️ Nenhum supplier retornado');
       return null;
     } catch (e) {
+      console.error('❌ Erro em useSuppliers.create:', e);
       toast({
         title: 'Erro ao criar fornecedor',
         description: 'Verifique os dados informados.',

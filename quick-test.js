@@ -87,8 +87,8 @@ async function quickTest() {
       
       const cpfCnpjField = await page.$('#cpf_cnpj');
       if (cpfCnpjField) {
-        await cpfCnpjField.type('05.402.904/0015-62'); // CNPJ fornecido
-        console.log('✅ CNPJ preenchido: 05.402.904/0015-62');
+        await cpfCnpjField.type('11222333000181'); // CNPJ válido
+        console.log('✅ CNPJ preenchido: 11222333000181');
       }
       
       const emailField = await page.$('#suppliers-email-input');
