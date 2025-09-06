@@ -4,6 +4,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useProducts } from '../_hooks/useProducts';
+import { useAppData } from '@/hooks/useAppData';
 import { 
   Package, 
   Plus, 
@@ -20,6 +21,7 @@ import {
 
 export default function InventoryView() {
   const { items: products, loading, create, update, remove, load } = useProducts();
+  const { activeSegmentId } = useAppData();
   
   // Estado para controle de paginação
   const [page, setPage] = React.useState(1);
@@ -73,14 +75,17 @@ export default function InventoryView() {
       (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (product.category || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'all' || product.category?.toLowerCase() === filterCategory.toLowerCase();
-    return matchesSearch && matchesCategory;
+    const matchesSegment = !activeSegmentId || activeSegmentId === '0' || 
+                          (product.segment_id && product.segment_id === activeSegmentId);
+    
+    return matchesSearch && matchesCategory && matchesSegment;
   });
 
-  // Cálculos dos KPIs
-  const totalProducts = products.length;
-  const totalValue = products.reduce((sum, p) => sum + (Number(p.price || 0) * Number(p.stock_quantity || 0)), 0);
-  const lowStockProducts = products.filter(p => Number(p.stock_quantity || 0) <= Number(p.minimum_stock || 0) && Number(p.stock_quantity || 0) > 0).length;
-  const outOfStockProducts = products.filter(p => Number(p.stock_quantity || 0) <= 0).length;
+  // Cálculos dos KPIs baseados nos itens filtrados
+  const totalProducts = filteredItems.length;
+  const totalValue = filteredItems.reduce((sum, p) => sum + (Number(p.price || 0) * Number(p.stock_quantity || 0)), 0);
+  const lowStockProducts = filteredItems.filter(p => Number(p.stock_quantity || 0) <= Number(p.minimum_stock || 0) && Number(p.stock_quantity || 0) > 0).length;
+  const outOfStockProducts = filteredItems.filter(p => Number(p.stock_quantity || 0) <= 0).length;
 
   // Formatação de moeda
   const formatCurrency = (value: number) => {

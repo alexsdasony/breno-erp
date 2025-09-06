@@ -14,7 +14,7 @@ import SupplierForm from './SupplierForm';
 
 export default function SuppliersView() {
   const { items: suppliers, loading, hasMore, loadMore, create, update, remove, load } = useSuppliers();
-  const { segments } = useAppData();
+  const { segments, activeSegmentId } = useAppData();
   
   // State management
   const [showForm, setShowForm] = useState(false);
@@ -71,9 +71,12 @@ export default function SuppliersView() {
                            (supplier.email && supplier.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
                            (supplier.cpf_cnpj && supplier.cpf_cnpj.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesStatus = statusFilter === 'all' || supplier.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      const matchesSegment = !activeSegmentId || activeSegmentId === '0' || 
+                            (supplier.segment_id && supplier.segment_id === activeSegmentId);
+      
+      return matchesSearch && matchesStatus && matchesSegment;
     });
-  }, [suppliers, searchTerm, statusFilter]);
+  }, [suppliers, searchTerm, statusFilter, activeSegmentId]);
 
   // Utility functions
   const formatCurrency = (value: number) => {
