@@ -19,11 +19,20 @@ export async function createAccountPayable(payload: AccountsPayablePayload): Pro
 }
 
 export async function updateAccountPayable(id: string, payload: Partial<AccountsPayablePayload>): Promise<ApiResponse<{ account_payable: AccountsPayable }>> {
+  console.log('🌐 accountsPayableService.updateAccountPayable chamado com:', { id, payload });
+  
   const response = await apiService.put<{ success: boolean; account_payable: AccountsPayable }>(`/accounts-payable/${id}`, payload)
-  return {
+  
+  console.log('📥 Resposta bruta da API:', response);
+  
+  const result = {
     success: response.success,
     data: { account_payable: response.account_payable }
-  }
+  };
+  
+  console.log('📦 Resultado processado:', result);
+  
+  return result;
 }
 
 export async function deleteAccountPayable(id: string): Promise<ApiResponse<void>> {

@@ -115,9 +115,12 @@ export function useAccountsPayable() {
   }, []);
 
   const update = useCallback(async (id: string, data: Partial<AccountPayableItem>) => {
+    console.log('🔧 useAccountsPayable.update chamado com:', { id, data });
+    
     try {
       // Validar campos obrigatórios se estiverem presentes no payload
       if (data.descricao === '') {
+        console.error('❌ Descrição vazia');
         toast({ title: 'Erro ao atualizar conta a pagar', description: 'A descrição não pode ser vazia.', variant: 'destructive' });
         return null;
       }
@@ -136,10 +139,16 @@ export function useAccountsPayable() {
       if (data.data_pagamento !== undefined) payload.data_pagamento = data.data_pagamento;
       if (data.forma_pagamento !== undefined) payload.forma_pagamento = data.forma_pagamento;
       
+      console.log('📦 Payload criado:', payload);
+      console.log('🌐 Chamando API updateAccountPayable...');
+      
       const response = await updateAccountPayable(id, payload);
+      console.log('📥 Resposta da API:', response);
+      
       const item = response.data?.account_payable;
       
       if (item) {
+        console.log('✅ Item atualizado recebido:', item);
         setState((s) => ({
           ...s,
           items: s.items.map((it) => (it.id === id ? item : it)),
@@ -148,9 +157,11 @@ export function useAccountsPayable() {
         return item;
       }
       
+      console.warn('⚠️ Item não encontrado na resposta');
       toast({ title: 'Aviso', description: 'Conta a pagar atualizada, mas não foi possível atualizar a lista' });
       return null;
     } catch (e) {
+      console.error('❌ Erro no useAccountsPayable.update:', e);
       toast({ title: 'Erro ao atualizar conta a pagar', description: 'Tente novamente.', variant: 'destructive' });
       return null;
     }

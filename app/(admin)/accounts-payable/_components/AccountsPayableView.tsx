@@ -166,16 +166,28 @@ export default function AccountsPayableView() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentAccount) return;
+    if (!currentAccount) {
+      console.error('❌ currentAccount não definido');
+      return;
+    }
+    
+    console.log('🚀 Iniciando atualização da conta a pagar:', currentAccount.id);
+    console.log('📝 Dados do formulário:', formData);
     
     try {
       const result = await update(currentAccount.id, formData);
+      console.log('✅ Resultado da atualização:', result);
+      
       if (result) {
+        console.log('🔄 Recarregando lista...');
         await load(true); // Recarregar a lista
+        console.log('🎉 Atualização concluída com sucesso');
         resetForm();
+      } else {
+        console.error('❌ Falha na atualização - resultado null');
       }
     } catch (error) {
-      console.error('Erro ao atualizar conta a pagar:', error);
+      console.error('❌ Erro ao atualizar conta a pagar:', error);
     }
   };
 
