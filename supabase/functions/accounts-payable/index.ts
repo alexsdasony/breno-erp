@@ -123,6 +123,34 @@ serve(async (req) => {
     // PUT - Atualizar
     if (req.method === 'PUT' && isSpecificId) {
       const body = await req.json()
+      console.log('🔧 PUT /accounts-payable - ID:', lastSegment)
+      console.log('📝 Body recebido:', body)
+      
+      // Primeiro, verificar se o registro existe
+      const { data: existingRecord, error: checkError } = await supabase
+        .from('accounts_payable')
+        .select('id')
+        .eq('id', lastSegment)
+        .single()
+      
+      console.log('🔍 Verificação de existência:', { existingRecord, checkError })
+      
+      if (checkError || !existingRecord) {
+        console.log('❌ Registro não encontrado para ID:', lastSegment)
+        return new Response(
+          JSON.stringify({ 
+            error: 'Conta a Pagar não encontrado',
+            id: lastSegment,
+            details: checkError?.message 
+          }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
+      console.log('✅ Registro encontrado, procedendo com update...')
       
       const { data, error } = await supabase
         .from('accounts_payable')
@@ -131,16 +159,23 @@ serve(async (req) => {
         .select()
         .single()
 
+      console.log('📥 Resultado do update:', { data, error })
+
       if (error || !data) {
+        console.log('❌ Erro no update:', error)
         return new Response(
-          JSON.stringify({ error: 'Conta a Pagar não encontrado' }),
+          JSON.stringify({ 
+            error: 'Erro ao atualizar conta a pagar',
+            details: error?.message 
+          }),
           { 
-            status: 404, 
+            status: 500, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         )
       }
 
+      console.log('✅ Update realizado com sucesso')
       return new Response(
         JSON.stringify({
           success: true,

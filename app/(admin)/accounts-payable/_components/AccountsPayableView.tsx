@@ -571,7 +571,7 @@ export default function AccountsPayableView() {
                     <label className="block text-sm font-medium mb-2">Segmento</label>
                     <select
                       name="segment_id"
-                      value={formData.segment_id}
+                      value={formData.segment_id || ''}
                       onChange={handleInputChange}
                       className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
                       required
