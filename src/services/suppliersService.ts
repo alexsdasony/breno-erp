@@ -46,7 +46,7 @@ export async function createSupplier(payload: SupplierPayload): Promise<ApiRespo
     zip_code: payload.cep || null,
     notes: payload.observacoes || null,
     status: payload.status === 'ativo' ? 'active' : 'inactive',
-    segment_id: payload.segment_id && payload.segment_id !== 'outros' ? payload.segment_id : null
+    segment_id: payload.segment_id && payload.segment_id !== 'outros' && payload.segment_id !== 'comercio' ? payload.segment_id : null
   };
   
   console.log('🚀 Enviando dados para API /suppliers:', JSON.stringify(partnerData, null, 2));
