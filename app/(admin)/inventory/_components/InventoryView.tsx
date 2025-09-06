@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { useProductsContext } from '@/contexts/ProductsContext';
+import { useProducts } from '../_hooks/useProducts';
 import { 
   Package, 
   Plus, 
@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 export default function InventoryView() {
-  const { products, loading } = useProductsContext();
+  const { items: products, loading, create, update, remove, load } = useProducts();
   
   // Estado para controle de paginação
   const [page, setPage] = React.useState(1);
@@ -107,8 +107,18 @@ export default function InventoryView() {
 
   const handleDelete = async (productId: string | undefined) => {
     if (productId && window.confirm('Tem certeza que deseja excluir este produto?')) {
-      // TODO: Implementar delete
-      console.log('Deleting product:', productId);
+      try {
+        const success = await remove(productId);
+        if (success) {
+          console.log('✅ Produto excluído com sucesso');
+          // Recarregar a lista para mostrar as alterações
+          await load(true);
+        } else {
+          console.error('❌ Falha ao excluir produto');
+        }
+      } catch (error) {
+        console.error('❌ Erro ao excluir produto:', error);
+      }
     }
   };
 
@@ -128,9 +138,33 @@ export default function InventoryView() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implementar create/update
-    console.log('Submitting:', formData);
-    handleCancel();
+    
+    try {
+      const productData = {
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        price: parseFloat(formData.price) || 0,
+        cost: parseFloat(formData.cost) || 0,
+        stock_quantity: parseInt(formData.stock) || 0,
+        minimum_stock: parseInt(formData.minStock) || 0
+      };
+
+      if (editingProduct) {
+        console.log('Atualizando produto:', editingProduct.id);
+        await update(editingProduct.id, productData);
+      } else {
+        console.log('Criando novo produto');
+        await create(productData);
+      }
+      
+      // Recarregar a lista para mostrar as alterações
+      await load(true);
+      
+      handleCancel();
+    } catch (error) {
+      console.error('❌ Erro ao salvar produto:', error);
+    }
   };
 
   return (

@@ -31,7 +31,7 @@ import { useRouter } from 'next/navigation';
 import type { Customer } from '@/types';
 
 export default function CustomersView() {
-  const { items, loading, hasMore, loadMore, create, update, remove } = useCustomers();
+  const { items, loading, hasMore, loadMore, create, update, remove, load } = useCustomers();
   const { segments, activeSegmentId } = useAppData();
   const router = useRouter();
 
@@ -182,6 +182,10 @@ export default function CustomersView() {
         const response = await deleteCustomer(selectedCustomer.id);
         if (response.success) {
           console.log('✅ Cliente excluído com sucesso');
+          
+          // Recarregar a lista para mostrar as alterações
+          await load(true);
+          
           setShowDeleteConfirm(false);
           setSelectedCustomer(null);
         } else {
@@ -236,6 +240,9 @@ export default function CustomersView() {
       console.log('Resultado da operação:', result);
 
       if (result) {
+        // Recarregar a lista para mostrar as alterações
+        await load(true);
+        
         setShowForm(false);
         setFormData({
           segment_id: '',

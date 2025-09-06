@@ -33,7 +33,7 @@ import { toast } from '@/components/ui/use-toast';
 import { useAppData } from '@/hooks/useAppData';
 
 export default function UsersView() {
-  const { items, loading, hasMore, loadMore, create, update, remove, resetPassword } = useUsers();
+  const { items, loading, hasMore, loadMore, create, update, remove, resetPassword, load } = useUsers();
   const { segments, activeSegmentId, currentUser, authLoading } = useAppData();
 
   // State management
@@ -135,6 +135,10 @@ export default function UsersView() {
       } else {
         await create(formData);
       }
+      
+      // Recarregar a lista para mostrar as alterações
+      await load(true);
+      
       setShowForm(false);
       resetForm();
     } catch (error) {
@@ -169,6 +173,10 @@ export default function UsersView() {
   const confirmDelete = async () => {
     if (selectedUser) {
       await remove(selectedUser.id);
+      
+      // Recarregar a lista para mostrar as alterações
+      await load(true);
+      
       setShowDeleteConfirm(false);
       setSelectedUser(null);
     }
