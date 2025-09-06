@@ -115,7 +115,11 @@ export default function AccountsPayableView() {
       // Filtro por status
       const statusMatch = filterStatus === 'all' || item.status === filterStatus;
       
-      return searchMatch && statusMatch;
+      // Filtro por segmento
+      const segmentMatch = !activeSegmentId || activeSegmentId === '0' ||
+                          (item.segment_id && item.segment_id === activeSegmentId);
+      
+      return searchMatch && statusMatch && segmentMatch;
     })
     .filter(isWithinPeriod);
 

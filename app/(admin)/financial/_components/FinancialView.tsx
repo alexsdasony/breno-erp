@@ -7,6 +7,7 @@ import { useFinancialDocuments } from '../_hooks/useFinancialDocuments';
 import { Plus, Filter, FileDown } from 'lucide-react';
 import { listSegments } from '@/services/segmentsService';
 import { usePaymentMethodsContext } from '@/contexts/PaymentMethodsContext';
+import { useAppData } from '@/hooks/useAppData';
 import FinancialDetailsDialog from './FinancialDetailsDialog';
 import ConfirmDelete from './ConfirmDelete';
 import FinancialFilters from './FinancialFilters';
@@ -16,6 +17,7 @@ import FinancialFormModal from './FinancialFormModal';
 export default function FinancialView() {
   const { items, loading, refetching, hasMore, loadMore, create, update, remove } = useFinancialDocuments();
   const { paymentMethods } = usePaymentMethodsContext();
+  const { activeSegmentId } = useAppData();
 
   // UI state - filtros (somente UI por enquanto)
   const [dateStart, setDateStart] = React.useState<string>('');
@@ -53,16 +55,23 @@ export default function FinancialView() {
     return () => window.clearTimeout(t);
   }, []);
 
-  // KPIs simples a partir de items (temporário)
+  // KPIs simples a partir de items filtrados por segmento
   const { entradas, saidas, saldo } = React.useMemo(() => {
+    // Filtrar por segmento ativo
+    const filteredItems = items.filter(item => {
+      const matchesSegment = !activeSegmentId || activeSegmentId === '0' ||
+                            (item.segment_id && item.segment_id === activeSegmentId);
+      return matchesSegment;
+    });
+
     let inSum = 0;
     let outSum = 0;
-    for (const it of items) {
+    for (const it of filteredItems) {
       const val = Number(it.amount || 0);
       if (val >= 0) inSum += val; else outSum += val; // valores negativos contam como saída
     }
     return { entradas: inSum, saidas: outSum, saldo: inSum + outSum };
-  }, [items]);
+  }, [items, activeSegmentId]);
 
   // Funções auxiliares
   const currency = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -117,17 +126,19 @@ export default function FinancialView() {
 
   // Submissão do formulário movida para FinancialFormModal
 
-  // Filtro em memória (somente UI)
+  // Filtro em memória (somente UI) - incluindo segmento
   const filtered = React.useMemo(() => {
     const p = partner.trim().toLowerCase();
     return items.filter((it) => {
       const matchesPartner = !p || `${it.partner_name || it.partner?.name || ''}`.toLowerCase().includes(p) || `${it.partner_id || ''}`.toLowerCase().includes(p);
       const matchesType = !type || (it.direction || '') === type;
       const matchesStatus = !status || (it.status || '') === status;
-      // Datas/segment como UI por enquanto (não aplicados)
-      return matchesPartner && matchesType && matchesStatus;
+      const matchesSegment = !activeSegmentId || activeSegmentId === '0' ||
+                            (it.segment_id && it.segment_id === activeSegmentId);
+      // Datas como UI por enquanto (não aplicados)
+      return matchesPartner && matchesType && matchesStatus && matchesSegment;
     });
-  }, [items, partner, type, status]);
+  }, [items, partner, type, status, activeSegmentId]);
 
   return (
     <div className="p-6 space-y-6">

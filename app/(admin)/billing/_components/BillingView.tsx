@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useBillings } from '../_hooks/useBillings';
 import { Plus, Filter, FileDown, Edit, Trash2, Eye, Search, AlertTriangle, CheckCircle, Clock, DollarSign } from 'lucide-react';
+import { useAppData } from '@/hooks/useAppData';
 
 export default function BillingView() {
   const { items, loading, hasMore, loadMore } = useBillings();
+  const { activeSegmentId } = useAppData();
 
   // Estados para filtros e formulário
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -71,14 +73,16 @@ export default function BillingView() {
         (billing.status || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         billing.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || billing.status?.toLowerCase() === filterStatus.toLowerCase();
-    return matchesSearch && matchesStatus;
+    const matchesSegment = !activeSegmentId || activeSegmentId === '0' ||
+                          (billing.segment_id && billing.segment_id === activeSegmentId);
+    return matchesSearch && matchesStatus && matchesSegment;
   });
 
-  // Cálculos dos KPIs
-  const totalBillings = itemsWithStatus.length;
-  const overdueBillings = itemsWithStatus.filter(b => b.status?.toLowerCase() === 'vencida').length;
+  // Cálculos dos KPIs baseados nos itens filtrados por segmento
+  const totalBillings = filteredItems.length;
+  const overdueBillings = filteredItems.filter(b => b.status?.toLowerCase() === 'vencida').length;
   const defaultRate = totalBillings > 0 ? (overdueBillings / totalBillings) * 100 : 0;
-  const totalPendingAmount = itemsWithStatus
+  const totalPendingAmount = filteredItems
     .filter(b => ['pendente', 'vencida'].includes(b.status?.toLowerCase() || ''))
     .reduce((sum, b) => sum + Number(b.amount || 0), 0);
 
