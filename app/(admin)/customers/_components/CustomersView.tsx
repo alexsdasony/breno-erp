@@ -24,7 +24,7 @@ import {
   User
 } from 'lucide-react';
 import { useCustomers } from '@/hooks/usePartners';
-import { updateCustomer, createCustomer } from '@/services/customersService';
+import { updateCustomer, createCustomer, deleteCustomer } from '@/services/customersService';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData';
 import { useRouter } from 'next/navigation';
@@ -150,7 +150,20 @@ export default function CustomersView() {
   };
 
   const handleEdit = (customer: Customer) => {
-    router.push(`/customers/${customer.id}/edit`);
+    setSelectedCustomer(customer);
+    setIsEditing(true);
+    setFormData({
+      segment_id: customer.segment_id || '',
+      name: customer.name || '',
+      tipo_pessoa: customer.tipo_pessoa || 'pf',
+      tax_id: customer.tax_id || '',
+      email: customer.email || '',
+      phone: customer.phone || '',
+      address: customer.address || '',
+      city: customer.city || '',
+      state: customer.state || ''
+    });
+    setShowForm(true);
   };
 
   const handleView = (customer: Customer) => {
@@ -166,11 +179,16 @@ export default function CustomersView() {
   const confirmDelete = async () => {
     if (selectedCustomer) {
       try {
-        await remove(selectedCustomer.id);
-        setShowDeleteConfirm(false);
-        setSelectedCustomer(null);
+        const response = await deleteCustomer(selectedCustomer.id);
+        if (response.success) {
+          console.log('✅ Cliente excluído com sucesso');
+          setShowDeleteConfirm(false);
+          setSelectedCustomer(null);
+        } else {
+          console.error('❌ Falha ao excluir cliente');
+        }
       } catch (error) {
-        console.error('Erro ao excluir cliente:', error);
+        console.error('❌ Erro ao excluir cliente:', error);
       }
     }
   };

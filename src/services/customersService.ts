@@ -1,4 +1,5 @@
 import apiService from '@/services/api';
+import { getSegmentByName } from './segmentsService';
 import type { ApiResponse } from '@/services/api';
 import type { Customer, CustomerPayload } from '@/types';
 
@@ -24,10 +25,59 @@ export async function getCustomerById(id: string): Promise<ApiResponse<{ custome
 
 export async function createCustomer(customerData: CustomerPayload): Promise<ApiResponse<{ customer: Customer }>> {
   try {
-    const response = await apiService.post<{ success: boolean; customer: Customer; message?: string }>('/customers', customerData);
+    // Buscar UUID do segmento se fornecido
+    let segmentId = null;
+    if (customerData.segment_id && customerData.segment_id !== 'outros') {
+      try {
+        const segmentResponse = await getSegmentByName(customerData.segment_id);
+        if (segmentResponse.success && segmentResponse.data?.segment) {
+          segmentId = segmentResponse.data.segment.id;
+        }
+      } catch (error) {
+        console.warn('Erro ao buscar segmento:', error);
+      }
+    }
+
+    // Mapear dados de Customer para Partner (formato esperado pela API)
+    const partnerData = {
+      name: customerData.name || 'Cliente',
+      tax_id: customerData.tax_id || null,
+      email: customerData.email || null,
+      phone: customerData.phone || null,
+      address: customerData.address || null,
+      city: customerData.city || null,
+      state: customerData.state || null,
+      zip_code: customerData.zip_code || null,
+      notes: customerData.notes || null,
+      status: customerData.status === 'ativo' ? 'active' : 'inactive',
+      segment_id: segmentId,
+      tipo_pessoa: customerData.tipo_pessoa || 'pf'
+    };
+
+    const response = await apiService.post<{ success: boolean; customer: any; message?: string }>('/customers', partnerData);
+    
+    // Mapear dados de volta para Customer
+    const customer: Customer = {
+      id: response.customer.id,
+      name: response.customer.name,
+      tipo_pessoa: response.customer.tipo_pessoa,
+      tax_id: response.customer.tax_id,
+      email: response.customer.email,
+      phone: response.customer.phone,
+      address: response.customer.address,
+      city: response.customer.city,
+      state: response.customer.state,
+      zip_code: response.customer.zip_code,
+      notes: response.customer.notes,
+      status: response.customer.status === 'active' ? 'ativo' : 'inativo',
+      segment_id: response.customer.segment_id,
+      created_at: response.customer.created_at,
+      updated_at: response.customer.updated_at
+    } as Customer;
+    
     return {
       data: {
-        customer: response.customer
+        customer
       },
       success: response.success || false,
       message: response.message
@@ -52,6 +102,19 @@ export async function createCustomer(customerData: CustomerPayload): Promise<Api
 }
 
 export async function updateCustomer(id: string, customerData: CustomerPayload): Promise<ApiResponse<{ customer: Customer }>> {
+  // Buscar UUID do segmento se fornecido
+  let segmentId = null;
+  if (customerData.segment_id && customerData.segment_id !== 'outros') {
+    try {
+      const segmentResponse = await getSegmentByName(customerData.segment_id);
+      if (segmentResponse.success && segmentResponse.data?.segment) {
+        segmentId = segmentResponse.data.segment.id;
+      }
+    } catch (error) {
+      console.warn('Erro ao buscar segmento:', error);
+    }
+  }
+
   // Mapear dados de Customer para Partner (formato esperado pela API)
   const partnerData = {
     name: customerData.name || 'Cliente',
@@ -64,7 +127,7 @@ export async function updateCustomer(id: string, customerData: CustomerPayload):
     zip_code: customerData.zip_code || null,
     notes: customerData.notes || null,
     status: customerData.status === 'ativo' ? 'active' : 'inactive',
-    segment_id: customerData.segment_id || null,
+    segment_id: segmentId,
     tipo_pessoa: customerData.tipo_pessoa || 'pf'
   };
   
