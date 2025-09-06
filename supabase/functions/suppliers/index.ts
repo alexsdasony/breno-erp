@@ -44,9 +44,23 @@ serve(async (req) => {
     // POST - create partner and link role 'supplier'
     if (req.method === 'POST') {
       const body = await req.json()
+      console.log('API /suppliers POST - dados recebidos:', JSON.stringify(body, null, 2))
+      
       const { data, error } = await supabase.from('partners').insert(body).select('*').single()
-      if (error) return new Response(JSON.stringify({ error: 'Erro ao criar fornecedor' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-      await supabase.from('partner_roles').insert({ partner_id: (data as any).id, role: 'supplier' })
+      
+      if (error) {
+        console.log('API /suppliers POST - erro ao inserir:', JSON.stringify(error, null, 2))
+        return new Response(JSON.stringify({ error: 'Erro ao criar fornecedor', details: error }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+      
+      console.log('API /suppliers POST - dados inseridos com sucesso:', JSON.stringify(data, null, 2))
+      
+      const { error: roleError } = await supabase.from('partner_roles').insert({ partner_id: (data as any).id, role: 'supplier' })
+      
+      if (roleError) {
+        console.log('API /suppliers POST - erro ao inserir role:', JSON.stringify(roleError, null, 2))
+      }
+      
       return new Response(JSON.stringify({ success: true, supplier: data, message: 'Fornecedor criado com sucesso' }), { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
