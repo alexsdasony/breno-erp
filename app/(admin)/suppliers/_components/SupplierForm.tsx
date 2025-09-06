@@ -163,7 +163,17 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
 
   // Função para validar CPF/CNPJ (sem validação restritiva como no formulário de clientes)
   const validateCPFCNPJ = (value: string, tipo: string | undefined): boolean => {
-    return true; // Sempre válido
+    if (!value || value.trim().length === 0) return false;
+    
+    const cleanValue = value.replace(/\D/g, '');
+    
+    if (tipo === 'PF') {
+      return cleanValue.length === 11;
+    } else if (tipo === 'PJ') {
+      return cleanValue.length === 14;
+    }
+    
+    return cleanValue.length >= 11;
   };
 
   // Função para formatar CPF/CNPJ
@@ -235,6 +245,23 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
     }));
   };
 
+  // Função para lidar com mudanças no CPF/CNPJ
+  const handleCPFCNPJFieldChange = (value: string) => {
+    const cleanValue = value.replace(/\D/g, '');
+    const isValid = validateCPFCNPJ(value, formData.tipo_contribuinte);
+    
+    setFormData(prev => ({ ...prev, cpf_cnpj: value }));
+    
+    // Definir erro se inválido
+    setValidation(prev => ({
+      ...prev,
+      errors: {
+        ...prev.errors,
+        cpf_cnpj: isValid ? '' : 'CPF/CNPJ inválido'
+      }
+    }));
+  };
+
   useEffect(() => {
     if (supplier) {
       setFormData({
@@ -278,10 +305,11 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
     
     try {
       await onSubmit(formData);
+      // Fechar modal apenas se não houve erro
+      onClose();
     } catch (error) {
       console.error('Erro ao salvar fornecedor:', error);
-    } finally {
-      // SEMPRE fechar o modal
+      // Fechar modal mesmo com erro
       onClose();
     }
   };
@@ -493,7 +521,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             id="cpf_cnpj"
                             type="text"
                             value={formData.cpf_cnpj}
-                            onChange={(e) => handleCPFCNPJChange(e.target.value)}
+                            onChange={(e) => handleCPFCNPJFieldChange(e.target.value)}
                             placeholder="Digite o CPF ou CNPJ"
                             className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 ${
                               validation.errors.cpf_cnpj 
