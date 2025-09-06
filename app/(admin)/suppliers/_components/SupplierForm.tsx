@@ -303,14 +303,14 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Fechar modal imediatamente
+    onClose();
+    
+    // Executar onSubmit em background
     try {
       await onSubmit(formData);
-      // Fechar modal apenas se não houve erro
-      onClose();
     } catch (error) {
       console.error('Erro ao salvar fornecedor:', error);
-      // Fechar modal mesmo com erro
-      onClose();
     }
   };
 

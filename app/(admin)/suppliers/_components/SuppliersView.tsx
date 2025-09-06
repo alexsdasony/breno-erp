@@ -735,8 +735,7 @@ export default function SuppliersView() {
             console.log('🎉 onSubmit concluído com sucesso');
           } catch (error) {
             console.error('❌ Erro em onSubmit:', error);
-            // Re-lançar o erro para que o modal não feche
-            throw error;
+            // Não re-lançar o erro para permitir que o modal feche
           }
         }}
         isLoading={loading}
