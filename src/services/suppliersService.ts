@@ -96,19 +96,32 @@ export async function createSupplier(payload: SupplierPayload): Promise<ApiRespo
 }
 
 export async function updateSupplier(id: string, payload: SupplierPayload): Promise<ApiResponse<{ supplier: Supplier }>> {
+  // Buscar UUID do segmento se fornecido
+  let segmentId = null;
+  if (payload.segment_id && payload.segment_id !== 'outros') {
+    try {
+      const segmentResponse = await getSegmentByName(payload.segment_id);
+      if (segmentResponse.success && segmentResponse.data?.segment) {
+        segmentId = segmentResponse.data.segment.id;
+      }
+    } catch (error) {
+      console.warn('Erro ao buscar segmento:', error);
+    }
+  }
+
   // Mapear dados de Supplier para Partner (formato esperado pela API)
   const partnerData = {
-    name: payload.razao_social,
-    tax_id: payload.cpf_cnpj,
-    email: payload.email,
-    phone: payload.telefone_celular,
-    address: payload.endereco,
-    city: payload.cidade,
-    state: payload.uf,
-    zip_code: payload.cep,
-    notes: payload.observacoes,
+    name: payload.razao_social || payload.nome_fantasia || 'Fornecedor',
+    tax_id: payload.cpf_cnpj || null,
+    email: payload.email || null,
+    phone: payload.telefone_celular || null,
+    address: payload.endereco || null,
+    city: payload.cidade || null,
+    state: payload.uf || null,
+    zip_code: payload.cep || null,
+    notes: payload.observacoes || null,
     status: payload.status === 'ativo' ? 'active' : 'inactive',
-    segment_id: payload.segment_id,
+    segment_id: segmentId,
     tipo_pessoa: payload.tipo_contribuinte === 'PF' ? 'fisica' : 'juridica'
   };
   

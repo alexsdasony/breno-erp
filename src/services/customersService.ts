@@ -52,10 +52,46 @@ export async function createCustomer(customerData: CustomerPayload): Promise<Api
 }
 
 export async function updateCustomer(id: string, customerData: CustomerPayload): Promise<ApiResponse<{ customer: Customer }>> {
-  const response = await apiService.put<{ success: boolean; customer: Customer }>(`/customers/${id}`, customerData);
+  // Mapear dados de Customer para Partner (formato esperado pela API)
+  const partnerData = {
+    name: customerData.name || 'Cliente',
+    tax_id: customerData.tax_id || null,
+    email: customerData.email || null,
+    phone: customerData.phone || null,
+    address: customerData.address || null,
+    city: customerData.city || null,
+    state: customerData.state || null,
+    zip_code: customerData.zip_code || null,
+    notes: customerData.notes || null,
+    status: customerData.status === 'ativo' ? 'active' : 'inactive',
+    segment_id: customerData.segment_id || null,
+    tipo_pessoa: customerData.tipo_pessoa || 'pf'
+  };
+  
+  const response = await apiService.put<{ success: boolean; customer: any }>(`/customers/${id}`, partnerData);
+  
+  // Mapear dados de volta para Customer
+  const customer: Customer = {
+    id: response.customer.id,
+    name: response.customer.name,
+    tipo_pessoa: response.customer.tipo_pessoa,
+    tax_id: response.customer.tax_id,
+    email: response.customer.email,
+    phone: response.customer.phone,
+    address: response.customer.address,
+    city: response.customer.city,
+    state: response.customer.state,
+    zip_code: response.customer.zip_code,
+    notes: response.customer.notes,
+    status: response.customer.status === 'active' ? 'ativo' : 'inativo',
+    segment_id: response.customer.segment_id,
+    created_at: response.customer.created_at,
+    updated_at: response.customer.updated_at
+  } as Customer;
+  
   return {
     data: {
-      customer: response.customer
+      customer
     },
     success: response.success || false
   } as ApiResponse<{ customer: Customer }>;

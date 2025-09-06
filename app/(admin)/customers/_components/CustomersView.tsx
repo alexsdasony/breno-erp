@@ -24,6 +24,7 @@ import {
   User
 } from 'lucide-react';
 import { useCustomers } from '@/hooks/usePartners';
+import { updateCustomer, createCustomer } from '@/services/customersService';
 import { Button } from '@/components/ui/button';
 import { useAppData } from '@/hooks/useAppData';
 import { useRouter } from 'next/navigation';
@@ -206,10 +207,12 @@ export default function CustomersView() {
       let result;
       if (isEditing && selectedCustomer) {
         console.log('Atualizando cliente:', selectedCustomer.id);
-        result = await update(selectedCustomer.id, payload);
+        const response = await updateCustomer(selectedCustomer.id, payload);
+        result = response.success ? response.data?.customer : null;
       } else {
         console.log('Criando novo cliente');
-        result = await create(payload);
+        const response = await createCustomer(payload);
+        result = response.success ? response.data?.customer : null;
       }
 
       console.log('Resultado da operação:', result);
