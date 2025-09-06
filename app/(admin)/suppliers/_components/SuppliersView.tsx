@@ -713,13 +713,14 @@ export default function SuppliersView() {
       </AnimatePresence>
 
       {/* Supplier Form Modal */}
-      <SupplierForm
-        supplier={selectedSupplier}
-        isOpen={showForm}
-        onClose={() => {
-          setShowForm(false);
-          setSelectedSupplier(null);
-        }}
+      {showForm && (
+        <SupplierForm
+          supplier={selectedSupplier}
+          isOpen={showForm}
+          onClose={() => {
+            setShowForm(false);
+            setSelectedSupplier(null);
+          }}
         onSubmit={async (data) => {
           console.log('🚀 SuppliersView onSubmit chamado com dados:', data);
           try {
@@ -739,7 +740,8 @@ export default function SuppliersView() {
           }
         }}
         isLoading={loading}
-      />
+        />
+      )}
     </motion.div>
   );
 }

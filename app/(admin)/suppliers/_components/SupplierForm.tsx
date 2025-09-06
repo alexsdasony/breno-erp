@@ -303,27 +303,24 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Fechar modal imediatamente
-    onClose();
-    
-    // Executar onSubmit em background
     try {
       await onSubmit(formData);
+      onClose(); // Fechar modal APÓS salvar com sucesso
     } catch (error) {
       console.error('Erro ao salvar fornecedor:', error);
+      onClose(); // Fechar modal mesmo com erro
     }
   };
 
-  if (!isOpen) return null;
-
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-        onClick={onClose}
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={onClose}
       >
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
@@ -1056,7 +1053,8 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
             </div>
           </form>
         </motion.div>
-      </motion.div>
+        </motion.div>
+      )}
     </AnimatePresence>
   );
 }

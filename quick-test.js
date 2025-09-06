@@ -99,7 +99,7 @@ async function quickTest() {
       const submitBtn = await page.$('button[type="submit"]');
       if (submitBtn) {
         await submitBtn.click();
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 5000));
         
         // Verificar se o modal fechou (indica sucesso)
         const modal = await page.$('.fixed.inset-0.z-50');
