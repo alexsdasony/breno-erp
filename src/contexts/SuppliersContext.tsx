@@ -64,8 +64,8 @@ export function SuppliersProvider({ children }: { children: React.ReactNode }) {
     if (!query.trim()) return [];
     
     try {
-      const { getSuppliers } = await import('@/services/suppliersService');
-      const result = await getSuppliers({ search: query });
+      const { listSuppliers } = await import('@/services/suppliersService');
+      const result = await listSuppliers({ search: query });
       const suppliers = result?.data?.suppliers || [];
       // Converter para SimpleSupplier para compatibilidade de tipos
       return suppliers.map(s => ({
