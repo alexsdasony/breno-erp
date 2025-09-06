@@ -13,6 +13,7 @@ serve(async (req) => {
     const url = new URL(req.url)
     const pathSegments = url.pathname.split('/')
     const lastSegment = pathSegments[pathSegments.length - 1]
+    const isSpecificId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lastSegment)
 
     // GET - list all segments
     if (req.method === 'GET' && !lastSegment.includes('name')) {
@@ -51,6 +52,94 @@ serve(async (req) => {
       }
 
       return new Response(JSON.stringify({ success: true, segment: data }), { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      })
+    }
+
+    // GET - get segment by id
+    if (req.method === 'GET' && isSpecificId) {
+      const { data, error } = await supabase
+        .from('segments')
+        .select('*')
+        .eq('id', lastSegment)
+        .single()
+
+      if (error || !data) {
+        return new Response(JSON.stringify({ error: 'Segmento não encontrado' }), { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        })
+      }
+
+      return new Response(JSON.stringify({ success: true, segment: data }), { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      })
+    }
+
+    // POST - create segment
+    if (req.method === 'POST') {
+      const body = await req.json()
+      
+      const { data, error } = await supabase
+        .from('segments')
+        .insert(body)
+        .select('*')
+        .single()
+
+      if (error) {
+        return new Response(JSON.stringify({ error: 'Erro ao criar segmento', details: error }), { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        })
+      }
+
+      return new Response(JSON.stringify({ success: true, segment: data }), { 
+        status: 201, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      })
+    }
+
+    // PUT - update segment
+    if (req.method === 'PUT' && isSpecificId) {
+      const body = await req.json()
+      
+      const { data, error } = await supabase
+        .from('segments')
+        .update(body)
+        .eq('id', lastSegment)
+        .select('*')
+        .single()
+
+      if (error || !data) {
+        return new Response(JSON.stringify({ error: 'Segmento não encontrado' }), { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        })
+      }
+
+      return new Response(JSON.stringify({ success: true, segment: data }), { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      })
+    }
+
+    // DELETE - delete segment
+    if (req.method === 'DELETE' && isSpecificId) {
+      const { error } = await supabase
+        .from('segments')
+        .delete()
+        .eq('id', lastSegment)
+
+      if (error) {
+        return new Response(JSON.stringify({ error: 'Erro ao deletar segmento' }), { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        })
+      }
+
+      return new Response(JSON.stringify({ success: true, message: 'Segmento deletado com sucesso' }), { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       })

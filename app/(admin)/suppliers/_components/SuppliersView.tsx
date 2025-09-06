@@ -13,7 +13,7 @@ import { useAppData } from '@/hooks/useAppData';
 import SupplierForm from './SupplierForm';
 
 export default function SuppliersView() {
-  const { items: suppliers, loading, hasMore, loadMore, create, update } = useSuppliers();
+  const { items: suppliers, loading, hasMore, loadMore, create, update, remove } = useSuppliers();
   const { segments } = useAppData();
   
   // State management
