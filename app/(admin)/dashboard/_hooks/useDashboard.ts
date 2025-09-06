@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { getDashboardMetrics, DashboardMetrics } from '@/services/dashboardService';
+import { useAppData } from '@/hooks/useAppData';
 
 // Usando a interface DashboardMetrics importada do serviço
 
@@ -67,19 +68,25 @@ export function useDashboard() {
   const [period, setPeriod] = useState<Period>('7d');
   const [customStart, setCustomStart] = useState<string>('');
   const [customEnd, setCustomEnd] = useState<string>('');
+  const { activeSegmentId } = useAppData();
 
   const fetchMetrics = useCallback(async () => {
     setState((s) => ({ ...s, loading: true }));
     try {
       const params = computeRange(period, customStart, customEnd);
-      const response = await getDashboardMetrics(params);
+      // Incluir segment_id nos parâmetros
+      const paramsWithSegment = {
+        ...params,
+        segment_id: activeSegmentId
+      };
+      const response = await getDashboardMetrics(paramsWithSegment);
       const metrics = response.data?.metrics || {};
       setState({ metrics, loading: false });
     } catch (err) {
       setState({ metrics: null, loading: false });
       toast({ title: 'Falha ao carregar métricas', description: 'Tente novamente em instantes.', variant: 'destructive' });
     }
-  }, [period, customStart, customEnd]);
+  }, [period, customStart, customEnd, activeSegmentId]);
 
   useEffect(() => {
     void fetchMetrics();
