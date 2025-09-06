@@ -9,7 +9,7 @@ import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 export default function AccountsPayableView() {
-  const { items, loading, hasMore, loadMore, create, update, remove } = useAccountsPayable();
+  const { items, loading, hasMore, loadMore, create, update, remove, load } = useAccountsPayable();
   const { activeSegmentId } = useAppData();
   
   // Estados para filtros e busca
@@ -62,6 +62,8 @@ export default function AccountsPayableView() {
     setCurrentAccount(null);
     setShowCreateModal(false);
     setShowEditModal(false);
+    setShowViewModal(false);
+    setShowDeleteConfirm(false);
   };
   
   // Função para atualizar status pendente para vencido se necessário
@@ -127,6 +129,49 @@ export default function AccountsPayableView() {
   const totalPaid = filteredItems.filter(a => a.status === 'paid').reduce((sum, a) => sum + Number(a.valor || 0), 0);
   const totalOverdue = filteredItems.filter(a => a.status === 'overdue').reduce((sum, a) => sum + Number(a.valor || 0), 0);
   const totalPending = filteredItems.filter(a => a.status === 'pending').reduce((sum, a) => sum + Number(a.valor || 0), 0);
+
+  // Funções CRUD
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const result = await create(formData);
+      if (result) {
+        await load(true); // Recarregar a lista
+        resetForm();
+      }
+    } catch (error) {
+      console.error('Erro ao criar conta a pagar:', error);
+    }
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentAccount) return;
+    
+    try {
+      const result = await update(currentAccount.id, formData);
+      if (result) {
+        await load(true); // Recarregar a lista
+        resetForm();
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar conta a pagar:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!currentAccount) return;
+    
+    try {
+      const success = await remove(currentAccount.id);
+      if (success) {
+        await load(true); // Recarregar a lista
+        resetForm();
+      }
+    } catch (error) {
+      console.error('Erro ao excluir conta a pagar:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -400,9 +445,211 @@ export default function AccountsPayableView() {
           </Button>
         </div>
 
-        {/* Aqui seriam implementados os modais de criar, editar, visualizar e excluir */}
-        {/* Eles seriam importados de componentes separados ou implementados aqui */}
-        {/* Por enquanto, estamos apenas mantendo a estrutura visual */}
+        {/* Modal de Criar/Editar */}
+        {(showCreateModal || showEditModal) && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <h3 className="text-lg font-semibold mb-4">
+                {showCreateModal ? 'Nova Conta a Pagar' : 'Editar Conta a Pagar'}
+              </h3>
+              <form onSubmit={showCreateModal ? handleCreate : handleUpdate} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Fornecedor</label>
+                    <input
+                      type="text"
+                      name="supplier_id"
+                      value={formData.supplier_id}
+                      onChange={handleInputChange}
+                      className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                      placeholder="Nome do fornecedor"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Valor</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      name="valor"
+                      value={formData.valor}
+                      onChange={handleInputChange}
+                      className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                      placeholder="0,00"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Data de Vencimento</label>
+                    <input
+                      type="date"
+                      name="data_vencimento"
+                      value={formData.data_vencimento}
+                      onChange={handleInputChange}
+                      className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Status</label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="pending">Pendente</option>
+                      <option value="paid">Pago</option>
+                      <option value="overdue">Vencido</option>
+                      <option value="cancelled">Cancelado</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Forma de Pagamento</label>
+                    <select
+                      name="forma_pagamento"
+                      value={formData.forma_pagamento}
+                      onChange={handleInputChange}
+                      className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="boleto">Boleto</option>
+                      <option value="pix">PIX</option>
+                      <option value="transferencia">Transferência</option>
+                      <option value="dinheiro">Dinheiro</option>
+                      <option value="cartao">Cartão</option>
+                      <option value="cheque">Cheque</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Data de Pagamento</label>
+                    <input
+                      type="date"
+                      name="data_pagamento"
+                      value={formData.data_pagamento}
+                      onChange={handleInputChange}
+                      className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Descrição</label>
+                  <textarea
+                    name="descricao"
+                    value={formData.descricao}
+                    onChange={handleInputChange}
+                    className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    rows={3}
+                    placeholder="Descrição da conta a pagar"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Observações</label>
+                  <textarea
+                    name="observacoes"
+                    value={formData.observacoes}
+                    onChange={handleInputChange}
+                    className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    rows={2}
+                    placeholder="Observações adicionais"
+                  />
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit">
+                    {showCreateModal ? 'Criar' : 'Atualizar'}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Visualização */}
+        {showViewModal && currentAccount && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+              <h3 className="text-lg font-semibold mb-4">Detalhes da Conta a Pagar</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">Fornecedor</label>
+                  <p className="text-sm">{currentAccount.supplier_id || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">Descrição</label>
+                  <p className="text-sm">{currentAccount.descricao || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">Valor</label>
+                  <p className="text-sm font-semibold">{formatCurrency(currentAccount.valor)}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">Data de Vencimento</label>
+                  <p className="text-sm">{formatDate(currentAccount.data_vencimento)}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">Status</label>
+                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                    getStatusColor(getStatusWithDueDate(currentAccount))
+                  }`}>
+                    {getStatusLabel(getStatusWithDueDate(currentAccount))}
+                  </span>
+                </div>
+                {currentAccount.observacoes && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">Observações</label>
+                    <p className="text-sm">{currentAccount.observacoes}</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <Button variant="outline" onClick={resetForm}>
+                  Fechar
+                </Button>
+                <Button onClick={() => {
+                  setFormData({
+                    supplier_id: currentAccount.supplier_id || '',
+                    descricao: currentAccount.descricao || '',
+                    valor: currentAccount.valor?.toString() || '',
+                    data_vencimento: currentAccount.data_vencimento || '',
+                    data_pagamento: currentAccount.data_pagamento || '',
+                    status: currentAccount.status || 'pending',
+                    categoria_id: currentAccount.categoria_id || '',
+                    forma_pagamento: currentAccount.forma_pagamento || 'boleto',
+                    observacoes: currentAccount.observacoes || '',
+                    segment_id: currentAccount.segment_id || activeSegmentId
+                  });
+                  setShowViewModal(false);
+                  setShowEditModal(true);
+                }}>
+                  Editar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Confirmação de Exclusão */}
+        {showDeleteConfirm && currentAccount && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <h3 className="text-lg font-semibold mb-4">Confirmar Exclusão</h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Tem certeza que deseja excluir a conta a pagar "{currentAccount.descricao}"?
+                Esta ação não pode ser desfeita.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <Button variant="outline" onClick={resetForm}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={handleDelete}>
+                  Excluir
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

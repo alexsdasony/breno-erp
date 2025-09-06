@@ -110,7 +110,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          accountPayable: data,
+          account_payable: data,
           message: 'Conta a Pagar criada com sucesso'
         }),
         { 
