@@ -183,9 +183,18 @@ export default function SuppliersView() {
 
   const confirmDelete = async () => {
     if (selectedSupplier) {
-      // TODO: Implement supplier deletion logic
-      console.log('Deleting supplier:', selectedSupplier.id);
-      handleCancel();
+      try {
+        console.log('Deleting supplier:', selectedSupplier.id);
+        const success = await remove(selectedSupplier.id);
+        if (success) {
+          console.log('✅ Fornecedor excluído com sucesso');
+          handleCancel();
+        } else {
+          console.error('❌ Falha ao excluir fornecedor');
+        }
+      } catch (error) {
+        console.error('❌ Erro ao excluir fornecedor:', error);
+      }
     }
   };
 
