@@ -163,8 +163,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
 
   // Função para validar CPF/CNPJ (sem validação restritiva como no formulário de clientes)
   const validateCPFCNPJ = (value: string, tipo: string | undefined): boolean => {
-    // Sem validação restritiva - apenas verificar se tem conteúdo
-    return true; // Sempre válido para permitir submit
+    return true; // Sempre válido
   };
 
   // Função para formatar CPF/CNPJ
@@ -282,7 +281,7 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
     } catch (error) {
       console.error('Erro ao salvar fornecedor:', error);
     } finally {
-      // SEMPRE fechar o modal, independente do resultado
+      // SEMPRE fechar o modal
       onClose();
     }
   };
