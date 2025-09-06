@@ -26,17 +26,31 @@ serve(async (req) => {
     // Usar regex para detectar se é uma rota /:id (UUID ou número)
     const isSpecificId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lastSegment) || 
                         /^\d+$/.test(lastSegment)
+    
+    console.log('🔍 Debug - URL:', req.url)
+    console.log('🔍 Debug - Path segments:', pathSegments)
+    console.log('🔍 Debug - Last segment:', lastSegment)
+    console.log('🔍 Debug - Is specific ID:', isSpecificId)
+    console.log('🔍 Debug - Method:', req.method)
 
     // GET - Listar todos
     if (req.method === 'GET' && !isSpecificId) {
+      console.log('📋 Listando todas as contas a pagar...')
+      
       const { data, error } = await supabase
         .from('accounts_payable')
         .select('*')
         .order('created_at', { ascending: false })
 
+      console.log('📥 Resultado da listagem:', { data, error })
+
       if (error) {
+        console.error('❌ Erro ao buscar contas a pagar:', error)
         return new Response(
-          JSON.stringify({ error: 'Erro ao buscar conta a pagars' }),
+          JSON.stringify({ 
+            error: 'Erro ao buscar contas a pagar',
+            details: error.message 
+          }),
           { 
             status: 500, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
