@@ -13,7 +13,7 @@ import { useAppData } from '@/hooks/useAppData';
 import SupplierForm from './SupplierForm';
 
 export default function SuppliersView() {
-  const { items: suppliers, loading, hasMore, loadMore, create, update, remove } = useSuppliers();
+  const { items: suppliers, loading, hasMore, loadMore, create, update, remove, load } = useSuppliers();
   const { segments } = useAppData();
   
   // State management
@@ -188,6 +188,11 @@ export default function SuppliersView() {
         const success = await remove(selectedSupplier.id);
         if (success) {
           console.log('✅ Fornecedor excluído com sucesso');
+          
+          // Recarregar a lista para mostrar as alterações
+          await load(true);
+          console.log('🔄 Lista recarregada após exclusão');
+          
           handleCancel();
         } else {
           console.error('❌ Falha ao excluir fornecedor');
@@ -742,6 +747,11 @@ export default function SuppliersView() {
               const result = await create(data);
               console.log('✅ Fornecedor criado:', result);
             }
+            
+            // Recarregar a lista para mostrar as alterações
+            await load(true);
+            console.log('🔄 Lista recarregada');
+            
             console.log('🎉 onSubmit concluído com sucesso');
           } catch (error) {
             console.error('❌ Erro em onSubmit:', error);
