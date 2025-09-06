@@ -7,10 +7,14 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, Edit, Trash2, Search, Filter, FileDown, Eye, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { listSegments } from '@/services/segmentsService';
 
 export default function AccountsPayableView() {
   const { items, loading, hasMore, loadMore, create, update, remove, load } = useAccountsPayable();
   const { activeSegmentId } = useAppData();
+  
+  // Estado para segmentos
+  const [segments, setSegments] = useState<Array<{ id: string; name: string }>>([]);
   
   // Estados para filtros e busca
   const [searchTerm, setSearchTerm] = useState('');
@@ -129,6 +133,22 @@ export default function AccountsPayableView() {
   const totalPaid = filteredItems.filter(a => a.status === 'paid').reduce((sum, a) => sum + Number(a.valor || 0), 0);
   const totalOverdue = filteredItems.filter(a => a.status === 'overdue').reduce((sum, a) => sum + Number(a.valor || 0), 0);
   const totalPending = filteredItems.filter(a => a.status === 'pending').reduce((sum, a) => sum + Number(a.valor || 0), 0);
+
+  // Carregar segmentos
+  React.useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const response = await listSegments({ page: 1, pageSize: 100 });
+        if (active && response.data?.segments) {
+          setSegments(response.data.segments);
+        }
+      } catch (error) {
+        console.warn('Erro ao carregar segmentos:', error);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   // Funções CRUD
   const handleCreate = async (e: React.FormEvent) => {
@@ -331,6 +351,9 @@ export default function AccountsPayableView() {
                       Categoria
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold">
+                      Segmento
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">
                       Valor
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold">
@@ -357,6 +380,9 @@ export default function AccountsPayableView() {
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">
                         {item.categoria_id || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
+                        {segments.find(s => s.id === item.segment_id)?.name || 'N/A'}
                       </td>
                       <td className="px-6 py-4 text-sm font-semibold">
                         {formatCurrency(item.valor)}
@@ -529,6 +555,23 @@ export default function AccountsPayableView() {
                       className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Segmento</label>
+                    <select
+                      name="segment_id"
+                      value={formData.segment_id}
+                      onChange={handleInputChange}
+                      className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                      required
+                    >
+                      <option value="">Selecione um segmento</option>
+                      {segments.map((segment) => (
+                        <option key={segment.id} value={segment.id}>
+                          {segment.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Descrição</label>
@@ -595,6 +638,12 @@ export default function AccountsPayableView() {
                   }`}>
                     {getStatusLabel(getStatusWithDueDate(currentAccount))}
                   </span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">Segmento</label>
+                  <p className="text-sm">
+                    {segments.find(s => s.id === currentAccount.segment_id)?.name || 'N/A'}
+                  </p>
                 </div>
                 {currentAccount.observacoes && (
                   <div>
