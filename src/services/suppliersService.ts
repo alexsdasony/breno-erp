@@ -1,4 +1,5 @@
 import apiService from '@/services/api'
+import { getSegmentByName } from './segmentsService'
 import type { ApiResponse } from '@/services/api'
 import type { Supplier, SupplierPayload } from '@/types'
 
@@ -34,6 +35,19 @@ export async function listSuppliers(params: Record<string, any> = {}): Promise<A
 }
 
 export async function createSupplier(payload: SupplierPayload): Promise<ApiResponse<{ supplier: Supplier }>> {
+  // Buscar UUID do segmento se fornecido
+  let segmentId = null;
+  if (payload.segment_id && payload.segment_id !== 'outros') {
+    try {
+      const segmentResponse = await getSegmentByName(payload.segment_id);
+      if (segmentResponse.success && segmentResponse.data?.segment) {
+        segmentId = segmentResponse.data.segment.id;
+      }
+    } catch (error) {
+      console.warn('Erro ao buscar segmento:', error);
+    }
+  }
+
   // Mapear dados de Supplier para Partner (formato esperado pela API)
   const partnerData = {
     name: payload.razao_social || payload.nome_fantasia || 'Fornecedor',
@@ -46,7 +60,7 @@ export async function createSupplier(payload: SupplierPayload): Promise<ApiRespo
     zip_code: payload.cep || null,
     notes: payload.observacoes || null,
     status: payload.status === 'ativo' ? 'active' : 'inactive',
-    segment_id: payload.segment_id && payload.segment_id !== 'outros' && payload.segment_id !== 'comercio' ? payload.segment_id : null
+    segment_id: segmentId
   };
   
   console.log('🚀 Enviando dados para API /suppliers:', JSON.stringify(partnerData, null, 2));

@@ -1,43 +1,32 @@
-import apiService from '@/services/api'
-import type { ApiResponse } from '@/services/api'
-import type { Segment, SegmentPayload } from '@/types'
+import { apiService } from './api';
+import type { ApiResponse } from './api';
 
-export async function listSegments(params: Record<string, any> = {}): Promise<ApiResponse<{ segments: Segment[] }>> {
-  const response = await apiService.get<{ success: boolean; segments: Segment[] }>('/segments', params)
-  return {
-    success: response.success,
-    data: { segments: response.segments || [] }
-  }
+export interface Segment {
+  id: string;
+  name: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export async function createSegment(payload: SegmentPayload): Promise<ApiResponse<{ segment: Segment }>> {
-  const response = await apiService.post<{ success: boolean; segment: Segment }>('/segments', payload)
+export async function listSegments(): Promise<ApiResponse<{ segments: Segment[] }>> {
+  const response = await apiService.get<{ success: boolean; segments: Segment[] }>('/segments');
+  
   return {
-    success: response.success,
-    data: { segment: response.segment }
-  }
+    data: {
+      segments: response.segments || []
+    },
+    success: response.success || false
+  } as ApiResponse<{ segments: Segment[] }>;
 }
 
-export async function updateSegment(id: string, payload: SegmentPayload): Promise<ApiResponse<{ segment: Segment }>> {
-  const response = await apiService.put<{ success: boolean; segment: Segment }>(`/segments/${id}`, payload)
+export async function getSegmentByName(name: string): Promise<ApiResponse<{ segment: Segment }>> {
+  const response = await apiService.get<{ success: boolean; segment: Segment }>(`/segments/name/${name}`);
+  
   return {
-    success: response.success,
-    data: { segment: response.segment }
-  }
-}
-
-export async function deleteSegment(id: string): Promise<ApiResponse<void>> {
-  const response = await apiService.delete<{ success: boolean; message?: string }>(`/segments/${id}`);
-  return {
-    success: response.success,
-    data: undefined
-  };
-}
-
-export async function getSegmentById(id: string): Promise<ApiResponse<{ segment: Segment }>> {
-  const response = await apiService.get<{ success: boolean; segment: Segment }>(`/segments/${id}`)
-  return {
-    success: response.success,
-    data: { segment: response.segment }
-  }
+    data: {
+      segment: response.segment
+    },
+    success: response.success || false
+  } as ApiResponse<{ segment: Segment }>;
 }
