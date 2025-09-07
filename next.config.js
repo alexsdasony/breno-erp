@@ -36,14 +36,15 @@ const nextConfig = {
   async rewrites() {
     const rewrites = [];
     
-    // Rewrite para Supabase Edge Functions
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (apiUrl) {
-      rewrites.push({
-        source: '/api/:path*',
-        destination: `${apiUrl}/:path*`,
-      });
-    }
+    // DESABILITADO: Rewrite para Supabase Edge Functions
+    // Forçar uso das APIs locais
+    // const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    // if (apiUrl) {
+    //   rewrites.push({
+    //     source: '/api/:path*',
+    //     destination: `${apiUrl}/:path*`,
+    //   });
+    // }
     
     // Rewrite para Supabase Functions
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
