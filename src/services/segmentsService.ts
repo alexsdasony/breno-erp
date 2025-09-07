@@ -9,8 +9,9 @@ export interface Segment {
   updated_at: string;
 }
 
-export async function listSegments(): Promise<ApiResponse<{ segments: Segment[] }>> {
-  const response = await apiService.get<{ success: boolean; segments: Segment[] }>('/segments');
+export async function listSegments(params?: { page?: number; pageSize?: number }): Promise<ApiResponse<{ segments: Segment[] }>> {
+  const queryParams = params ? `?page=${params.page || 1}&limit=${params.pageSize || 100}` : '';
+  const response = await apiService.get<{ success: boolean; segments: Segment[] }>(`/segments${queryParams}`);
   
   return {
     data: {
