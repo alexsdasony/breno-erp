@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📝 Body recebido:', body);
     
-    const { data, error } = await supabaseAdminAdmin
+    const { data, error } = await supabaseAdmin
       .from('accounts_payable')
       .insert(body)
       .select()

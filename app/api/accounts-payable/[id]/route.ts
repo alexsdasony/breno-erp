@@ -9,7 +9,7 @@ export async function GET(
     const { id } = await params;
     console.log('🔍 API Route GET /api/accounts-payable/[id]:', id);
     
-    const { data, error } = await supabaseAdminAdmin
+    const { data, error } = await supabaseAdmin
       .from('accounts_payable')
       .select('*')
       .eq('id', id)
@@ -80,7 +80,7 @@ export async function PUT(
     
     console.log('✅ Registro encontrado, procedendo com update...');
 
-    const { data, error } = await supabaseAdminAdmin
+    const { data, error } = await supabaseAdmin
       .from('accounts_payable')
       .update(cleanedBody)
       .eq('id', id)
