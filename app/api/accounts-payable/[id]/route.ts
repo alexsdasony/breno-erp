@@ -51,6 +51,16 @@ export async function PUT(
     console.log('🔧 API Route PUT /api/accounts-payable/[id]:', id);
     console.log('📝 Body recebido:', body);
     
+    // Converter strings vazias para null nos campos UUID
+    const cleanedBody = {
+      ...body,
+      supplier_id: body.supplier_id === '' ? null : body.supplier_id,
+      categoria_id: body.categoria_id === '' ? null : body.categoria_id,
+      data_pagamento: body.data_pagamento === '' ? null : body.data_pagamento,
+    };
+    
+    console.log('🧹 Body limpo:', cleanedBody);
+    
     // Primeiro, verificar se o registro existe
     const { data: existingRecord, error: checkError } = await supabase
       .from('accounts_payable')
@@ -73,10 +83,10 @@ export async function PUT(
     }
     
     console.log('✅ Registro encontrado, procedendo com update...');
-    
+
     const { data, error } = await supabase
       .from('accounts_payable')
-      .update(body)
+      .update(cleanedBody)
       .eq('id', id)
       .select()
       .single();
