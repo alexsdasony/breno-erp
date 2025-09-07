@@ -8,6 +8,7 @@ import { PlusCircle, Edit, Trash2, Search, Filter, FileDown, Eye, CheckCircle, A
 import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { listSegments } from '@/services/segmentsService';
+import { AccountsPayableStatus, PaymentMethod } from '@/types/enums';
 
 export default function AccountsPayableView() {
   const { items, loading, hasMore, loadMore, create, update, remove, load } = useAccountsPayable();
@@ -167,7 +168,11 @@ export default function AccountsPayableView() {
     try {
       const dataToSend = {
         ...formData,
-        valor: parseFloat(formData.valor) || 0
+        valor: parseFloat(formData.valor) || 0,
+        status: formData.status as AccountsPayableStatus,
+        forma_pagamento: formData.forma_pagamento as PaymentMethod,
+        data_vencimento: formData.data_vencimento || null,
+        data_pagamento: formData.data_pagamento || null
       };
       const result = await create(dataToSend);
       if (result) {
@@ -192,7 +197,11 @@ export default function AccountsPayableView() {
     try {
       const dataToSend = {
         ...formData,
-        valor: parseFloat(formData.valor) || 0
+        valor: parseFloat(formData.valor) || 0,
+        status: formData.status as AccountsPayableStatus,
+        forma_pagamento: formData.forma_pagamento as PaymentMethod,
+        data_vencimento: formData.data_vencimento || null,
+        data_pagamento: formData.data_pagamento || null
       };
       const result = await update(currentAccount.id, dataToSend);
       console.log('✅ Resultado da atualização:', result);
