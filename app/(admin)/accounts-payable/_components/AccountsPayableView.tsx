@@ -72,12 +72,12 @@ export default function AccountsPayableView() {
   
   // Função para atualizar status pendente para vencido se necessário
   function getStatusWithDueDate(account: any) {
-    if ((account.status || '').toLowerCase() === 'pending') {
-      const due = new Date(account.due_date);
+    if ((account.status || '').toLowerCase() === 'pending' || (account.status || '').toLowerCase() === 'pendente') {
+      const due = new Date(account.data_vencimento || account.due_date);
       const today = new Date();
       today.setHours(0,0,0,0);
       if (!isNaN(due.getTime()) && due < today) {
-        return 'overdue';
+        return 'vencido';
       }
     }
     return account.status;
@@ -87,7 +87,7 @@ export default function AccountsPayableView() {
   function isWithinPeriod(account: any) {
     if (periodType === 'all') return true;
     
-    const dueDate = new Date(account.due_date);
+    const dueDate = new Date(account.data_vencimento || account.due_date);
     const today = new Date();
     
     switch (periodType) {
@@ -129,10 +129,21 @@ export default function AccountsPayableView() {
     })
     .filter(isWithinPeriod);
 
-  // Consolidado de valores por status
-  const totalPaid = filteredItems.filter(a => a.status === 'paid').reduce((sum, a) => sum + Number(a.valor || 0), 0);
-  const totalOverdue = filteredItems.filter(a => a.status === 'overdue').reduce((sum, a) => sum + Number(a.valor || 0), 0);
-  const totalPending = filteredItems.filter(a => a.status === 'pending').reduce((sum, a) => sum + Number(a.valor || 0), 0);
+  // Consolidado de valores por status (aplicando getStatusWithDueDate)
+  const totalPaid = filteredItems.filter(a => {
+    const status = getStatusWithDueDate(a);
+    return status === 'paga' || status === 'paid';
+  }).reduce((sum, a) => sum + Number(a.valor || 0), 0);
+  
+  const totalOverdue = filteredItems.filter(a => {
+    const status = getStatusWithDueDate(a);
+    return status === 'vencido' || status === 'overdue';
+  }).reduce((sum, a) => sum + Number(a.valor || 0), 0);
+  
+  const totalPending = filteredItems.filter(a => {
+    const status = getStatusWithDueDate(a);
+    return status === 'pendente' || status === 'pending';
+  }).reduce((sum, a) => sum + Number(a.valor || 0), 0);
 
   // Carregar segmentos
   React.useEffect(() => {
@@ -719,18 +730,32 @@ export default function AccountsPayableView() {
 // Funções auxiliares para formatação
 function getStatusColor(status: string) {
   switch (status) {
-    case 'paid': return 'bg-green-100 text-green-800';
-    case 'pending': return 'bg-yellow-100 text-yellow-800';
-    case 'overdue': return 'bg-red-100 text-red-800';
-    default: return 'bg-gray-100 text-gray-800';
+    case 'paga':
+    case 'paid': 
+      return 'bg-green-100 text-green-800';
+    case 'vencido':
+    case 'overdue': 
+      return 'bg-red-100 text-red-800';
+    case 'pendente':
+    case 'pending': 
+      return 'bg-yellow-100 text-yellow-800';
+    default: 
+      return 'bg-gray-100 text-gray-800';
   }
 }
 
 function getStatusLabel(status: string) {
   switch (status) {
-    case 'paid': return 'Pago';
-    case 'pending': return 'Pendente';
-    case 'overdue': return 'Atrasado';
-    default: return status;
+    case 'paga':
+    case 'paid': 
+      return 'Pago';
+    case 'vencido':
+    case 'overdue': 
+      return 'Vencido';
+    case 'pendente':
+    case 'pending': 
+      return 'Pendente';
+    default: 
+      return status;
   }
 }
