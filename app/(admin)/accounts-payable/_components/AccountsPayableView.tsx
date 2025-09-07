@@ -165,7 +165,11 @@ export default function AccountsPayableView() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const result = await create(formData);
+      const dataToSend = {
+        ...formData,
+        valor: parseFloat(formData.valor) || 0
+      };
+      const result = await create(dataToSend);
       if (result) {
         await load(true); // Recarregar a lista
         resetForm();
@@ -186,7 +190,11 @@ export default function AccountsPayableView() {
     console.log('📝 Dados do formulário:', formData);
     
     try {
-      const result = await update(currentAccount.id, formData);
+      const dataToSend = {
+        ...formData,
+        valor: parseFloat(formData.valor) || 0
+      };
+      const result = await update(currentAccount.id, dataToSend);
       console.log('✅ Resultado da atualização:', result);
       
       if (result) {
