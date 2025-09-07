@@ -4,8 +4,6 @@ import type { ApiResponse } from '@/services/api'
 export interface DashboardMetrics {
   total_sales?: number;
   total_revenue?: number;
-  total_expenses?: number;
-  total_profit?: number;
   avg_ticket?: number;
   total_customers?: number;
   low_stock_count?: number;

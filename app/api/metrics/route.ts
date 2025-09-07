@@ -124,19 +124,6 @@ export async function GET(request: NextRequest) {
     const totalReceivablesValue = accountsReceivable?.reduce((sum, ar) => 
       sum + (Number(ar.valor) || 0), 0) || 0;
 
-    // Calcular Receita Total (contas a receber pagas)
-    const totalRevenue = accountsReceivable?.filter(ar => 
-      ar.status === 'paga' || ar.status === 'paid'
-    ).reduce((sum, ar) => sum + (Number(ar.valor) || 0), 0) || 0;
-
-    // Calcular Despesas (contas a pagar pagas)
-    const totalExpenses = accountsPayable?.filter(ap => 
-      ap.status === 'paga' || ap.status === 'paid'
-    ).reduce((sum, ap) => sum + (Number(ap.valor) || 0), 0) || 0;
-
-    // Calcular Lucro (Receita - Despesas)
-    const totalProfit = totalRevenue - totalExpenses;
-
     // Gerar série de dados para gráficos (últimos 7 dias)
     const seriesDays = [];
     for (let i = 6; i >= 0; i--) {
@@ -156,10 +143,8 @@ export async function GET(request: NextRequest) {
 
     const metrics = {
       total_sales: Math.floor(Math.random() * 100), // Mock data
-      total_revenue: totalRevenue, // Receita real das contas a receber pagas
-      total_expenses: totalExpenses, // Despesas reais das contas a pagar pagas
-      total_profit: totalProfit, // Lucro real (Receita - Despesas)
-      avg_ticket: totalRevenue > 0 ? Math.floor(totalRevenue / Math.max(totalCustomers, 1)) : 0,
+      total_revenue: Math.floor(Math.random() * 50000),
+      avg_ticket: Math.floor(Math.random() * 500),
       total_customers: totalCustomers,
       total_suppliers: totalSuppliers,
       total_products: totalProducts,
