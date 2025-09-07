@@ -171,8 +171,11 @@ export default function AccountsPayableView() {
         valor: parseFloat(formData.valor) || 0,
         status: formData.status as AccountsPayableStatus,
         forma_pagamento: formData.forma_pagamento as PaymentMethod,
-        data_vencimento: formData.data_vencimento || null,
-        data_pagamento: formData.data_pagamento || null
+        data_vencimento: formData.data_vencimento,
+        data_pagamento: formData.data_pagamento || null,
+        supplier_id: formData.supplier_id || null,
+        categoria_id: formData.categoria_id || null,
+        segment_id: formData.segment_id || null
       };
       const result = await create(dataToSend);
       if (result) {
@@ -200,8 +203,11 @@ export default function AccountsPayableView() {
         valor: parseFloat(formData.valor) || 0,
         status: formData.status as AccountsPayableStatus,
         forma_pagamento: formData.forma_pagamento as PaymentMethod,
-        data_vencimento: formData.data_vencimento || null,
-        data_pagamento: formData.data_pagamento || null
+        data_vencimento: formData.data_vencimento,
+        data_pagamento: formData.data_pagamento || null,
+        supplier_id: formData.supplier_id || null,
+        categoria_id: formData.categoria_id || null,
+        segment_id: formData.segment_id || null
       };
       const result = await update(currentAccount.id, dataToSend);
       console.log('✅ Resultado da atualização:', result);
