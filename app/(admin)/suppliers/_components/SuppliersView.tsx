@@ -49,6 +49,20 @@ export default function SuppliersView() {
     }));
   }, [segments]);
 
+  // Filtered suppliers
+  const filteredSuppliers = useMemo(() => {
+    return suppliers.filter((supplier: any) => {
+      const matchesSearch = (supplier.razao_social || supplier.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (supplier.email && supplier.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                           (supplier.cpf_cnpj && supplier.cpf_cnpj.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesStatus = statusFilter === 'all' || supplier.status === statusFilter;
+      const matchesSegment = !activeSegmentId || activeSegmentId === '0' || 
+                            (supplier.segment_id && supplier.segment_id === activeSegmentId);
+      
+      return matchesSearch && matchesStatus && matchesSegment;
+    });
+  }, [suppliers, searchTerm, statusFilter, activeSegmentId]);
+
   // KPIs calculation
   const kpis = useMemo(() => {
     const totalSuppliers = filteredSuppliers.length;
@@ -63,20 +77,6 @@ export default function SuppliersView() {
       totalValue
     };
   }, [filteredSuppliers]);
-
-  // Filtered suppliers
-  const filteredSuppliers = useMemo(() => {
-    return suppliers.filter((supplier: any) => {
-      const matchesSearch = (supplier.razao_social || supplier.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (supplier.email && supplier.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                           (supplier.cpf_cnpj && supplier.cpf_cnpj.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesStatus = statusFilter === 'all' || supplier.status === statusFilter;
-      const matchesSegment = !activeSegmentId || activeSegmentId === '0' || 
-                            (supplier.segment_id && supplier.segment_id === activeSegmentId);
-      
-      return matchesSearch && matchesStatus && matchesSegment;
-    });
-  }, [suppliers, searchTerm, statusFilter, activeSegmentId]);
 
   // Utility functions
   const formatCurrency = (value: number) => {
