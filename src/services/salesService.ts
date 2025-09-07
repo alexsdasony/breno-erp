@@ -3,7 +3,9 @@ import type { ApiResponse } from '@/services/api'
 import type { Sale, SalePayload } from '@/types'
 
 export async function listSales(params: Record<string, any> = {}): Promise<ApiResponse<{ sales: Sale[] }>> {
+  console.log('🛒 listSales chamado com params:', params);
   const response = await apiService.get<{ success: boolean; sales: Sale[] }>('/sales', params)
+  console.log('📥 Resposta da API sales:', response);
   return {
     data: {
       sales: response.sales || []

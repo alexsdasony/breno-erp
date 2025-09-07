@@ -33,13 +33,9 @@ export const calculateMetrics = (data: MetricsData, segmentId: number | null = n
     .reduce((sum: number, ar: any) => sum + Number(ar.valor || 0), 0);
 
   // Cálculo de despesas (contas a pagar pagas)
-  const paidAccountsPayable = filteredAccountsPayable.filter((ap: any) => ap.status === 'paga' || ap.status === 'paid');
-  console.log('🔍 Debug metrics - Contas a pagar pagas:', paidAccountsPayable.length, paidAccountsPayable);
-  
-  const totalExpenses = paidAccountsPayable
+  const totalExpenses = filteredAccountsPayable
+    .filter((ap: any) => ap.status === 'paga' || ap.status === 'paid')
     .reduce((sum: number, ap: any) => sum + Number(ap.valor || 0), 0);
-  
-  console.log('💰 Total de despesas calculado:', totalExpenses);
 
   // Lucro (Receita - Despesas)
   const netProfit = totalRevenue - totalExpenses;

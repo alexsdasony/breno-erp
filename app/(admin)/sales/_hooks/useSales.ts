@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { listSales, createSale, updateSale, deleteSale } from '@/services/salesService';
+import { useAppData } from '@/hooks/useAppData';
 import { Sale, SaleItem } from '@/types';
 
 interface State {
@@ -22,13 +23,25 @@ const PAGE_SIZE = 20;
 
 export function useSales() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
+  const { data, activeSegmentId } = useAppData();
+
+  // Filtrar vendas por segmento ativo
+  const filteredSales = useMemo(() => {
+    if (!data.sales) return [];
+    
+    if (!activeSegmentId || activeSegmentId === '0') {
+      return data.sales;
+    }
+    
+    return data.sales.filter((sale: any) => sale.segment_id === activeSegmentId);
+  }, [data.sales, activeSegmentId]);
 
   const fetchPage = useCallback(async (page: number) => {
-    const response = await listSales({ page, pageSize: PAGE_SIZE });
+    const response = await listSales({ page, pageSize: PAGE_SIZE, segment_id: activeSegmentId });
     console.log('API Response:', response); // Log para debug
     const list = response.data?.sales || [];
     return list as Sale[];
-  }, []);
+  }, [activeSegmentId]);
 
   const load = useCallback(async (reset: boolean = false) => {
     setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
@@ -120,5 +133,9 @@ export function useSales() {
 
   const api: Api = useMemo(() => ({ load, loadMore, create, update, remove }), [load, loadMore, create, update, remove]);
 
-  return { ...state, ...api };
+  return { 
+    ...state, 
+    items: filteredSales, // Usar dados filtrados por segmento
+    ...api 
+  };
 }

@@ -11,22 +11,50 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '20');
+    const segmentId = searchParams.get('segment_id');
 
-    console.log('🛒 Sales API request:', { page, pageSize });
+    console.log('🛒 Sales API request:', { page, pageSize, segmentId });
 
-    // Buscar vendas (mock data por enquanto)
-    const sales = [];
+    // Buscar vendas da tabela real
+    let query = supabase
+      .from('sales')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    console.log('📊 Vendas encontradas:', sales.length);
+    // Filtrar por segmento se fornecido
+    if (segmentId && segmentId !== 'null' && segmentId !== '0') {
+      query = query.eq('segment_id', segmentId);
+    }
+
+    const { data: sales, error } = await query;
+
+    if (error) {
+      console.error('❌ Erro ao buscar vendas:', error);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Erro ao buscar vendas',
+          details: error.message
+        },
+        { status: 500 }
+      );
+    }
+
+    // Aplicar paginação
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedSales = (sales || []).slice(startIndex, endIndex);
+
+    console.log('📊 Vendas encontradas:', (sales || []).length);
 
     return NextResponse.json({
       success: true,
-      sales,
+      sales: paginatedSales,
       pagination: {
         page,
         pageSize,
-        total: 0,
-        totalPages: 0
+        total: (sales || []).length,
+        totalPages: Math.ceil((sales || []).length / pageSize)
       }
     });
 
