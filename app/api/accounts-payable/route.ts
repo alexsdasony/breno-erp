@@ -7,12 +7,22 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 API Route GET /api/accounts-payable');
+    const { searchParams } = new URL(request.url);
+    const segmentId = searchParams.get('segment_id');
     
-    const { data, error } = await supabase
+    console.log('🔍 API Route GET /api/accounts-payable', { segmentId });
+    
+    let query = supabase
       .from('accounts_payable')
       .select('*')
       .order('created_at', { ascending: false });
+    
+    // Filtrar por segmento se fornecido
+    if (segmentId && segmentId !== 'null' && segmentId !== '0') {
+      query = query.eq('segment_id', segmentId);
+    }
+    
+    const { data, error } = await query;
 
     console.log('📥 Resultado da listagem:', { data, error });
 

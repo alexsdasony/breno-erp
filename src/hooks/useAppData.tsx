@@ -215,6 +215,9 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         getUsers({ segment_id: activeSegmentId ?? null })
       ]);
 
+      const accountsPayableData = accountsPayableResponse.data?.accounts_payable || [];
+      console.log('🔍 Debug useAppData - Contas a pagar carregadas:', accountsPayableData.length, accountsPayableData);
+      
       setData({
         transactions: transactionsResponse.data?.transactions || [],
         products: productsResponse.data?.products || [],
@@ -224,7 +227,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         nfeList: nfeResponse.data?.nfes || [],
         billings: billingsResponse.data?.billings || [],
         costCenters: costCentersResponse.data?.costCenters || [],
-        accountsPayable: accountsPayableResponse.data?.accounts_payable || [],
+        accountsPayable: accountsPayableData,
         accountsReceivable: accountsReceivableResponse.data?.accounts_receivable || [],
         financialDocuments: financialDocumentsResponse.data?.financialDocuments || [],
         integrations: integrationsResponse.data?.integrations || { imobzi: { apiKey: '', enabled: false } },
