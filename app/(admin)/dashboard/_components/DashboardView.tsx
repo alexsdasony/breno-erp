@@ -109,11 +109,11 @@ export default function DashboardView() {
               </ResponsiveContainer>
             </div>
           </div>
-          {/* Card: Receita */}
+          {/* Card: Receita Total */}
           <div className="rounded-md border border-white/10 bg-white/5 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-gray-400">Receita</div>
+                <div className="text-sm text-gray-400">Receita Total</div>
                 <div className="text-2xl font-semibold">R$ {(Number(metrics.total_revenue ?? 0)).toFixed(2)}</div>
               </div>
               <div className="h-10 w-10 rounded-md bg-amber-500/20 flex items-center justify-center text-amber-400">
@@ -128,40 +128,42 @@ export default function DashboardView() {
               </ResponsiveContainer>
             </div>
           </div>
-          {/* Card: Ticket médio */}
+          {/* Card: Despesas */}
           <div className="rounded-md border border-white/10 bg-white/5 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-gray-400">Ticket médio</div>
-                <div className="text-2xl font-semibold">R$ {(Number(metrics.avg_ticket ?? 0)).toFixed(2)}</div>
+                <div className="text-sm text-gray-400">Despesas</div>
+                <div className="text-2xl font-semibold">R$ {(Number(metrics.total_expenses ?? 0)).toFixed(2)}</div>
               </div>
-              <div className="h-10 w-10 rounded-md bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-                <FileText size={18} />
+              <div className="h-10 w-10 rounded-md bg-red-500/20 flex items-center justify-center text-red-400">
+                <Wallet size={18} />
+              </div>
+            </div>
+            <div className="h-10 mt-3">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data}>
+                  <Line type="monotone" dataKey="payables" stroke="#ef4444" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          {/* Card: Lucro */}
+          <div className="rounded-md border border-white/10 bg-white/5 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-400">Lucro</div>
+                <div className={`text-2xl font-semibold ${(Number(metrics.total_profit ?? 0)) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  R$ {(Number(metrics.total_profit ?? 0)).toFixed(2)}
+                </div>
+              </div>
+              <div className={`h-10 w-10 rounded-md flex items-center justify-center ${(Number(metrics.total_profit ?? 0)) >= 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                <CircleDollarSign size={18} />
               </div>
             </div>
             <div className="h-10 mt-3">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
                   <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-          {/* Card: Clientes */}
-          <div className="rounded-md border border-white/10 bg-white/5 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm text-gray-400">Clientes</div>
-                <div className="text-2xl font-semibold">{metrics.total_customers ?? 0}</div>
-              </div>
-              <div className="h-10 w-10 rounded-md bg-indigo-500/20 flex items-center justify-center text-indigo-400">
-                <Users size={18} />
-              </div>
-            </div>
-            <div className="h-10 mt-3">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data}>
-                  <Line type="monotone" dataKey="sales" stroke="#818cf8" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
