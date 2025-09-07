@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     // Determinar se é conta a pagar ou receber
     const table = body.type === 'receivable' ? 'accounts_receivable' : 'accounts_payable';
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from(table)
       .insert(body)
       .select()

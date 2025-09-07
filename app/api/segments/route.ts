@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +13,7 @@ export async function GET(request: NextRequest) {
     
     console.log('📝 Parâmetros:', { page, limit, offset });
     
-    const { data, error, count } = await supabase
+    const { data, error, count } = await supabaseAdmin
       .from('segments')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
@@ -62,7 +59,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📝 Dados recebidos:', body);
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('segments')
       .insert([body])
       .select()

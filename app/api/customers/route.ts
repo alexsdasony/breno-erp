@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +13,7 @@ export async function GET(request: NextRequest) {
     
     console.log('📝 Parâmetros:', { page, limit, offset });
     
-    const { data, error, count } = await supabase
+    const { data, error, count } = await supabaseAdmin
       .from('partners')
       .select(`
         *,
@@ -67,7 +64,7 @@ export async function POST(request: NextRequest) {
     console.log('📝 Dados recebidos:', body);
     
     // Primeiro inserir o partner
-    const { data: partner, error: partnerError } = await supabase
+    const { data: partner, error: partnerError } = await supabaseAdmin
       .from('partners')
       .insert([body])
       .select()
@@ -78,7 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Depois inserir o role
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('partner_roles')
       .insert([{ partner_id: partner.id, role: 'customer' }])
       .select();

@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,7 +29,7 @@ export async function GET(request: NextRequest) {
       }
       
       // Buscar dados atualizados do usuário
-      const { data: user, error } = await supabase
+      const { data: user, error } = await supabaseAdmin
         .from('users')
         .select('*')
         .eq('id', tokenData.user_id)
