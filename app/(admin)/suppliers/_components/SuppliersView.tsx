@@ -51,10 +51,10 @@ export default function SuppliersView() {
 
   // KPIs calculation
   const kpis = useMemo(() => {
-    const totalSuppliers = suppliers.length;
-    const activeSuppliers = suppliers.filter((s: any) => s.status === 'ativo' || s.status === 'active').length;
-    const inactiveSuppliers = suppliers.filter((s: any) => s.status === 'inativo' || s.status === 'inactive').length;
-    const totalValue = suppliers.reduce((sum: number, s: any) => sum + (s.total_value || 0), 0);
+    const totalSuppliers = filteredSuppliers.length;
+    const activeSuppliers = filteredSuppliers.filter((s: any) => s.status === 'ativo' || s.status === 'active').length;
+    const inactiveSuppliers = filteredSuppliers.filter((s: any) => s.status === 'inativo' || s.status === 'inactive').length;
+    const totalValue = filteredSuppliers.reduce((sum: number, s: any) => sum + (s.total_value || 0), 0);
     
     return {
       totalSuppliers,
@@ -62,7 +62,7 @@ export default function SuppliersView() {
       inactiveSuppliers,
       totalValue
     };
-  }, [suppliers]);
+  }, [filteredSuppliers]);
 
   // Filtered suppliers
   const filteredSuppliers = useMemo(() => {
