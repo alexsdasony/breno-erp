@@ -4,11 +4,13 @@ export interface MetricsData {
   sales: any[];
   customers: any[];
   billings: any[];
+  accountsPayable: any[];
+  accountsReceivable: any[];
   [key: string]: any[];
 }
 
 export const calculateMetrics = (data: MetricsData, segmentId: number | null = null) => {
-  const { transactions, products, sales, customers, billings } = data;
+  const { transactions, products, sales, customers, billings, accountsPayable = [], accountsReceivable = [] } = data;
 
   // Função para filtrar por segmento
   const filterBySegment = (item: any) => {
@@ -22,16 +24,21 @@ export const calculateMetrics = (data: MetricsData, segmentId: number | null = n
   const filteredSales = sales.filter(filterBySegment);
   const filteredCustomers = customers.filter(filterBySegment);
   const filteredBillings = billings.filter(filterBySegment);
+  const filteredAccountsPayable = accountsPayable.filter(filterBySegment);
+  const filteredAccountsReceivable = accountsReceivable.filter(filterBySegment);
 
-  // Cálculo de receitas
-  const totalRevenue = filteredTransactions
-    .filter((t: any) => t.type === 'receita')
-    .reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0);
+  // Cálculo de receitas (contas a receber pagas)
+  const totalRevenue = filteredAccountsReceivable
+    .filter((ar: any) => ar.status === 'paga' || ar.status === 'paid')
+    .reduce((sum: number, ar: any) => sum + Number(ar.valor || 0), 0);
 
-  // Cálculo de despesas
-  const totalExpenses = filteredTransactions
-    .filter((t: any) => t.type === 'despesa')
-    .reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0);
+  // Cálculo de despesas (contas a pagar pagas)
+  const totalExpenses = filteredAccountsPayable
+    .filter((ap: any) => ap.status === 'paga' || ap.status === 'paid')
+    .reduce((sum: number, ap: any) => sum + Number(ap.valor || 0), 0);
+
+  // Lucro (Receita - Despesas)
+  const netProfit = totalRevenue - totalExpenses;
 
   // Produtos com estoque baixo
   const lowStockProducts = filteredProducts.filter((p: any) => p.stock <= p.minStock).length;
@@ -51,7 +58,7 @@ export const calculateMetrics = (data: MetricsData, segmentId: number | null = n
   return {
     totalRevenue,
     totalExpenses,
-    netIncome: totalRevenue - totalExpenses,
+    netProfit,
     lowStockProducts,
     uniqueCustomers,
     overdueBillings,

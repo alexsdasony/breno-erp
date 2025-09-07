@@ -14,6 +14,7 @@ import { listNFes } from '@/services/nfeService';
 import { listBillings } from '@/services/billingService';
 import { listCostCenters } from '@/services/costCentersService';
 import { listAccountsPayable } from '@/services/accountsPayableService';
+import { listAccountsReceivable } from '@/services/accountsReceivableService';
 import { getFinancialDocuments } from '@/services/financialDocumentsService';
 import { listIntegrations, type Integration } from '@/services/integrationsService';
 import { getUsers } from '@/services/usersService';
@@ -28,6 +29,7 @@ interface AppData {
   billings: any[];
   costCenters: any[];
   accountsPayable: any[];
+  accountsReceivable: any[];
   financialDocuments: any[];
   integrations: Integration[] | {
     imobzi: { apiKey: string; enabled: boolean };
@@ -95,6 +97,7 @@ const defaultInitialData: AppData = {
   billings: [],
   costCenters: [],
   accountsPayable: [],
+  accountsReceivable: [],
   financialDocuments: [],
   integrations: {
     imobzi: { apiKey: '', enabled: false }
@@ -192,6 +195,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         billingsResponse,
         costCentersResponse,
         accountsPayableResponse,
+        accountsReceivableResponse,
         financialDocumentsResponse,
         integrationsResponse,
         usersResponse
@@ -205,6 +209,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         listBillings({ segment_id: activeSegmentId ?? null }),
         listCostCenters({ segment_id: activeSegmentId ?? null }),
         listAccountsPayable({ segment_id: activeSegmentId ?? null }),
+        listAccountsReceivable({ segment_id: activeSegmentId ?? null }),
         getFinancialDocuments({ segment_id: activeSegmentId ?? null }),
         listIntegrations(),
         getUsers({ segment_id: activeSegmentId ?? null })
@@ -220,6 +225,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         billings: billingsResponse.data?.billings || [],
         costCenters: costCentersResponse.data?.costCenters || [],
         accountsPayable: accountsPayableResponse.data?.accounts_payable || [],
+        accountsReceivable: accountsReceivableResponse.data?.accounts_receivable || [],
         financialDocuments: financialDocumentsResponse.data?.financialDocuments || [],
         integrations: integrationsResponse.data?.integrations || { imobzi: { apiKey: '', enabled: false } },
         users: usersResponse.data?.users || [],
@@ -266,6 +272,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         billingsResponse,
         costCentersResponse,
         accountsPayableResponse,
+        accountsReceivableResponse,
         financialDocumentsResponse,
         integrationsResponse,
         usersResponse
@@ -279,6 +286,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         listBillings({ segment_id: targetSegmentId }),
         listCostCenters({ segment_id: targetSegmentId }),
         listAccountsPayable({ segment_id: targetSegmentId }),
+        listAccountsReceivable({ segment_id: targetSegmentId }),
         getFinancialDocuments({ segment_id: targetSegmentId }),
         listIntegrations(),
         getUsers({ segment_id: targetSegmentId })
@@ -295,6 +303,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         billings: billingsResponse.data?.billings || [],
         costCenters: costCentersResponse.data?.costCenters || [],
         accountsPayable: accountsPayableResponse.data?.accounts_payable || [],
+        accountsReceivable: accountsReceivableResponse.data?.accounts_receivable || [],
         financialDocuments: financialDocumentsResponse.data?.financialDocuments || [],
         integrations: integrationsResponse.data?.integrations || { imobzi: { apiKey: '', enabled: false } },
         users: usersResponse.data?.users || []
