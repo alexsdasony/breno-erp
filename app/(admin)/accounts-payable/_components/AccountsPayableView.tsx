@@ -8,6 +8,7 @@ import { PlusCircle, Edit, Trash2, Search, Filter, FileDown, Eye, CheckCircle, A
 import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { listSegments } from '@/services/segmentsService';
+import type { AccountsPayableStatus, PaymentMethod } from '@/types/enums';
 
 export default function AccountsPayableView() {
   const { items, loading, hasMore, loadMore, create, update, remove, load } = useAccountsPayable();
@@ -165,7 +166,18 @@ export default function AccountsPayableView() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const result = await create(formData);
+      const dataToSend = {
+        ...formData,
+        valor: Number(formData.valor),
+        status: formData.status as AccountsPayableStatus,
+        forma_pagamento: formData.forma_pagamento as PaymentMethod,
+        data_vencimento: formData.data_vencimento || undefined,
+        data_pagamento: formData.data_pagamento || undefined,
+        supplier_id: formData.supplier_id || null,
+        categoria_id: formData.categoria_id || null,
+        segment_id: formData.segment_id || null
+      };
+      const result = await create(dataToSend);
       if (result) {
         await load(true); // Recarregar a lista
         resetForm();
@@ -186,7 +198,18 @@ export default function AccountsPayableView() {
     console.log('📝 Dados do formulário:', formData);
     
     try {
-      const result = await update(currentAccount.id, formData);
+      const dataToSend = {
+        ...formData,
+        valor: Number(formData.valor),
+        status: formData.status as AccountsPayableStatus,
+        forma_pagamento: formData.forma_pagamento as PaymentMethod,
+        data_vencimento: formData.data_vencimento || undefined,
+        data_pagamento: formData.data_pagamento || undefined,
+        supplier_id: formData.supplier_id || null,
+        categoria_id: formData.categoria_id || null,
+        segment_id: formData.segment_id || null
+      };
+      const result = await update(currentAccount.id, dataToSend);
       console.log('✅ Resultado da atualização:', result);
       
       if (result) {

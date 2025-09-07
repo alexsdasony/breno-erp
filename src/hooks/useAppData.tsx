@@ -209,7 +209,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         listBillings({ segment_id: activeSegmentId ?? null }),
         listCostCenters({ segment_id: activeSegmentId ?? null }),
         listAccountsPayable({ segment_id: activeSegmentId ?? null }),
-        listAccountsReceivable({ segment_id: activeSegmentId ?? null }),
+        listAccountsReceivable(),
         getFinancialDocuments({ segment_id: activeSegmentId ?? null }),
         listIntegrations(),
         getUsers({ segment_id: activeSegmentId ?? null })
@@ -286,7 +286,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         listBillings({ segment_id: targetSegmentId }),
         listCostCenters({ segment_id: targetSegmentId }),
         listAccountsPayable({ segment_id: targetSegmentId }),
-        listAccountsReceivable({ segment_id: targetSegmentId }),
+        listAccountsReceivable(),
         getFinancialDocuments({ segment_id: targetSegmentId }),
         listIntegrations(),
         getUsers({ segment_id: targetSegmentId })

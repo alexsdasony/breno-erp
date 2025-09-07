@@ -55,7 +55,11 @@ export function useSegments({ pageSize = 20 }: UseSegmentsOptions = {}): UseSegm
 
   const create = useCallback(async (payload: SegmentPayload) => {
     try {
-      const response = await createSegment(payload)
+      const dataToSend = {
+        name: payload.name || '',
+        description: payload.description || undefined
+      };
+      const response = await createSegment(dataToSend)
       const segment = response.data?.segment
       if (segment) {
         setSegments((prev) => [...prev, segment])
@@ -75,7 +79,11 @@ export function useSegments({ pageSize = 20 }: UseSegmentsOptions = {}): UseSegm
 
   const update = useCallback(async (id: string, payload: SegmentPayload) => {
     try {
-      const response = await updateSegment(id, payload)
+      const dataToSend = {
+        name: payload.name,
+        description: payload.description || undefined
+      };
+      const response = await updateSegment(id, dataToSend)
       const segment = response.data?.segment
       if (segment) {
         setSegments((prev) => prev.map((s) => (s.id === id ? segment : s)))
