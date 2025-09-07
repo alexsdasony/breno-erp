@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { listBillings, createBilling, updateBilling, deleteBilling } from '@/services/billingService';
+import { useAppData } from '@/hooks/useAppData';
 import type { Billing, BillingPayload } from '@/types';
 
 // Usando a interface Billing do sistema para manter consistência
@@ -25,12 +26,24 @@ const PAGE_SIZE = 20;
 
 export function useBillings() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
+  const { data, activeSegmentId } = useAppData();
+
+  // Filtrar cobranças por segmento ativo
+  const filteredBillings = useMemo(() => {
+    if (!data.billings) return [];
+    
+    if (!activeSegmentId || activeSegmentId === '0') {
+      return data.billings;
+    }
+    
+    return data.billings.filter((billing: any) => billing.segment_id === activeSegmentId);
+  }, [data.billings, activeSegmentId]);
 
   const fetchPage = useCallback(async (page: number) => {
-    const response = await listBillings({ page, pageSize: PAGE_SIZE });
+    const response = await listBillings({ page, pageSize: PAGE_SIZE, segment_id: activeSegmentId });
     const list = response.data?.billings || [];
     return list as BillingItem[];
-  }, []);
+  }, [activeSegmentId]);
 
   const load = useCallback(async (reset: boolean = false) => {
     setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
@@ -128,5 +141,9 @@ export function useBillings() {
 
   const api: Api = useMemo(() => ({ load, loadMore, create, update, remove }), [load, loadMore, create, update, remove]);
 
-  return { ...state, ...api };
+  return { 
+    ...state, 
+    items: filteredBillings, // Usar dados filtrados por segmento
+    ...api 
+  };
 }
