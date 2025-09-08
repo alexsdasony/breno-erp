@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +8,7 @@ export async function GET(request: NextRequest) {
     
     console.log('🔍 API Route GET /api/accounts-payable', { segmentId });
     
-    let query = supabase
+    let query = supabaseAdmin
       .from('accounts_payable')
       .select('*')
       .order('created_at', { ascending: false });
@@ -57,7 +53,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📝 Body recebido:', body);
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('accounts_payable')
       .insert(body)
       .select()
