@@ -13,10 +13,11 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = (page - 1) * limit;
+    const segmentId = searchParams.get('segment_id');
     
-    console.log('📝 Parâmetros:', { page, limit, offset });
+    console.log('📝 Parâmetros:', { page, limit, offset, segmentId });
     
-    const { data, error, count } = await supabase
+    let query = supabase
       .from('partners')
       .select(`
         *,
@@ -25,6 +26,13 @@ export async function GET(request: NextRequest) {
       .eq('partner_roles.role', 'customer')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
+
+    // Filtrar por segmento se fornecido
+    if (segmentId && segmentId !== 'null' && segmentId !== '0') {
+      query = query.eq('segment_id', segmentId);
+    }
+
+    const { data, error, count } = await query;
 
     console.log('📥 Resultado da listagem:', { count, error });
 

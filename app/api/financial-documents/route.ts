@@ -11,8 +11,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '20');
+    const segmentId = searchParams.get('segment_id');
 
-    console.log('💰 Financial documents API request:', { page, pageSize });
+    console.log('💰 Financial documents API request:', { page, pageSize, segmentId });
+
+    // Construir filtros baseados no segmento
+    const segmentFilter = segmentId && segmentId !== 'null' && segmentId !== '0' 
+      ? { segment_id: segmentId } 
+      : {};
 
     // Buscar documentos financeiros (contas a pagar e receber)
     const [
@@ -22,11 +28,13 @@ export async function GET(request: NextRequest) {
       supabase
         .from('accounts_payable')
         .select('*')
+        .match(segmentFilter)
         .order('created_at', { ascending: false }),
       
       supabase
         .from('accounts_receivable')
         .select('*')
+        .match(segmentFilter)
         .order('created_at', { ascending: false })
         .then(result => result.error ? { data: [], error: null } : result)
     ]);

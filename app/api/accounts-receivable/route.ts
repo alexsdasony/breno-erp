@@ -11,14 +11,22 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '20');
+    const segmentId = searchParams.get('segment_id');
 
-    console.log('💰 Accounts receivable API request:', { page, pageSize });
+    console.log('💰 Accounts receivable API request:', { page, pageSize, segmentId });
 
     // Buscar contas a receber (mock data por enquanto, pois a tabela pode não existir)
-    const { data, error } = await supabase
+    let query = supabase
       .from('accounts_receivable')
       .select('*')
       .order('created_at', { ascending: false });
+
+    // Filtrar por segmento se fornecido
+    if (segmentId && segmentId !== 'null' && segmentId !== '0') {
+      query = query.eq('segment_id', segmentId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.log('⚠️ Tabela accounts_receivable não existe, retornando dados vazios');
