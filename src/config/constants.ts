@@ -7,7 +7,7 @@ export const APP_CONFIG = {
 
 // Configurações de API
 export const API_CONFIG = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || '/api',
+  baseURL: '/api', // Forçar uso das API routes do Next.js
   timeout: 30000,
 };
 
