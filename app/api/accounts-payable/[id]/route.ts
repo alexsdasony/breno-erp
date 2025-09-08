@@ -47,24 +47,74 @@ export async function PUT(
     console.log('🔧 API Route PUT /api/accounts-payable/[id]:', id);
     console.log('📝 Body recebido:', body);
     
-    // Normalizar campos para evitar erros de tipo
-    const cleanedBody = {
-      ...body,
-      // Converter strings vazias para null nos campos UUID
-      supplier_id: body.supplier_id === '' || body.supplier_id === undefined ? null : body.supplier_id,
-      categoria_id: body.categoria_id === '' || body.categoria_id === undefined ? null : body.categoria_id,
-      segment_id: body.segment_id === '' || body.segment_id === undefined ? null : body.segment_id,
-      // Tratar campos de data
-      data_pagamento: body.data_pagamento === '' || body.data_pagamento === undefined ? null : body.data_pagamento,
-      // Garantir que valor seja numérico
-      valor: typeof body.valor === 'string' ? parseFloat(body.valor) : body.valor,
-      // Tratar campos opcionais
-      observacoes: body.observacoes === '' || body.observacoes === undefined ? null : body.observacoes,
-      numero_nota_fiscal: body.numero_nota_fiscal === '' || body.numero_nota_fiscal === undefined ? null : body.numero_nota_fiscal,
-      responsavel_pagamento: body.responsavel_pagamento === '' || body.responsavel_pagamento === undefined ? null : body.responsavel_pagamento,
+    // Função para normalizar valores
+    const normalizeValue = (value: any, type: 'string' | 'number' | 'date' | 'uuid') => {
+      if (value === null || value === undefined || value === '') {
+        return null;
+      }
+      
+      switch (type) {
+        case 'number':
+          const num = typeof value === 'string' ? parseFloat(value) : value;
+          return isNaN(num) ? null : num;
+        case 'date':
+          return value || null;
+        case 'uuid':
+          return value || null;
+        case 'string':
+        default:
+          return value || null;
+      }
     };
     
-    console.log('🧹 Body limpo:', cleanedBody);
+    // Validação e conversão de tipos antes de chamar o Supabase
+    const cleanedBody = {
+      // Campos obrigatórios
+      descricao: body.descricao || '',
+      valor: normalizeValue(body.valor, 'number'),
+      data_vencimento: normalizeValue(body.data_vencimento, 'date'),
+      
+      // Campos opcionais com normalização
+      supplier_id: normalizeValue(body.supplier_id, 'uuid'),
+      categoria_id: normalizeValue(body.categoria_id, 'uuid'),
+      segment_id: normalizeValue(body.segment_id, 'uuid'),
+      data_pagamento: normalizeValue(body.data_pagamento, 'date'),
+      observacoes: normalizeValue(body.observacoes, 'string'),
+      numero_nota_fiscal: normalizeValue(body.numero_nota_fiscal, 'string'),
+      responsavel_pagamento: normalizeValue(body.responsavel_pagamento, 'string'),
+      
+      // Campos de enum
+      status: body.status || 'pendente',
+      forma_pagamento: body.forma_pagamento || 'boleto',
+      
+      // Campos numéricos opcionais
+      numero_parcela: normalizeValue(body.numero_parcela, 'number') || 1,
+      total_parcelas: normalizeValue(body.total_parcelas, 'number') || 1,
+    };
+    
+    console.log('🧹 Body limpo e normalizado:', cleanedBody);
+    
+    // Validações obrigatórias
+    if (!cleanedBody.descricao) {
+      return NextResponse.json(
+        { error: 'Descrição é obrigatória' },
+        { status: 400 }
+      );
+    }
+    
+    if (cleanedBody.valor === null || cleanedBody.valor <= 0) {
+      return NextResponse.json(
+        { error: 'Valor deve ser um número positivo' },
+        { status: 400 }
+      );
+    }
+    
+    if (!cleanedBody.data_vencimento) {
+      return NextResponse.json(
+        { error: 'Data de vencimento é obrigatória' },
+        { status: 400 }
+      );
+    }
     
     // Primeiro, verificar se o registro existe
     const { data: existingRecord, error: checkError } = await supabaseAdmin
@@ -133,7 +183,8 @@ export async function PUT(
     return NextResponse.json(
       { 
         error: 'Erro interno do servidor',
-        details: error instanceof Error ? error.message : 'Erro desconhecido'
+        details: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );
