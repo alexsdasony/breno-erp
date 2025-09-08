@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseAdminAdmin } from '@/lib/supabaseAdminAdmin';
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,13 +20,13 @@ export async function GET(request: NextRequest) {
       { data: payables, error: payablesError },
       { data: receivables, error: receivablesError }
     ] = await Promise.all([
-      supabase
+      supabaseAdmin
         .from('accounts_payable')
         .select('*')
         .match(segmentFilter)
         .order('created_at', { ascending: false }),
       
-      supabase
+      supabaseAdmin
         .from('accounts_receivable')
         .select('*')
         .match(segmentFilter)
@@ -87,7 +82,7 @@ export async function POST(request: NextRequest) {
     // Determinar se é conta a pagar ou receber
     const table = body.type === 'receivable' ? 'accounts_receivable' : 'accounts_payable';
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from(table)
       .insert(body)
       .select()

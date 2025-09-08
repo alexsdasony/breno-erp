@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseAdminAdmin } from '@/lib/supabaseAdminAdmin';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +11,7 @@ export async function GET(request: NextRequest) {
     console.log('💰 Accounts receivable API request:', { page, pageSize, segmentId });
 
     // Buscar contas a receber (mock data por enquanto, pois a tabela pode não existir)
-    let query = supabase
+    let query = supabaseAdmin
       .from('accounts_receivable')
       .select('*')
       .order('created_at', { ascending: false });
@@ -78,7 +73,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('💰 Criando nova conta a receber:', body);
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('accounts_receivable')
       .insert(body)
       .select()

@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseAdminAdmin } from '@/lib/supabaseAdminAdmin';
 
 export async function GET(request: NextRequest) {
   try {
@@ -60,33 +55,33 @@ export async function GET(request: NextRequest) {
       { data: accountsReceivable, error: receivablesError }
     ] = await Promise.all([
       // Total de clientes
-      supabase
+      supabaseAdmin
         .from('partners')
         .select('id')
         .eq('role', 'customer')
         .match(segmentFilter),
       
       // Total de fornecedores
-      supabase
+      supabaseAdmin
         .from('partners')
         .select('id')
         .eq('role', 'supplier')
         .match(segmentFilter),
       
       // Total de produtos
-      supabase
+      supabaseAdmin
         .from('products')
         .select('id, stock_quantity')
         .match(segmentFilter),
       
       // Contas a pagar
-      supabase
+      supabaseAdmin
         .from('accounts_payable')
         .select('valor, status, data_vencimento')
         .match(segmentFilter),
       
       // Contas a receber (se existir a tabela)
-      supabase
+      supabaseAdmin
         .from('accounts_receivable')
         .select('valor, status, data_vencimento')
         .match(segmentFilter)

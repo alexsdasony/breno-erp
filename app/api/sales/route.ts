@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseAdminAdmin } from '@/lib/supabaseAdminAdmin';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +11,7 @@ export async function GET(request: NextRequest) {
     console.log('🛒 Sales API request:', { page, pageSize, segmentId });
 
     // Buscar vendas da tabela real
-    let query = supabase
+    let query = supabaseAdmin
       .from('sales')
       .select('*')
       .order('created_at', { ascending: false });
