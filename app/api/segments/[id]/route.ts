@@ -1,19 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function GET(
-  request: NextRequest,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
     console.log('🏷️ API Route GET /api/segments/[id]:', id);
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('segments')
       .select('*')
       .eq('id', id)
@@ -42,7 +38,7 @@ export async function GET(
 }
 
 export async function PUT(
-  request: NextRequest,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -52,7 +48,7 @@ export async function PUT(
     const body = await request.json();
     console.log('📝 Dados recebidos:', body);
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('segments')
       .update(body)
       .eq('id', id)
@@ -83,14 +79,14 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
     console.log('🏷️ API Route DELETE /api/segments/[id]:', id);
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('segments')
       .delete()
       .eq('id', id)

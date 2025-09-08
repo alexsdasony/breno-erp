@@ -1,18 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     console.log('💰 Atualizando conta a receber:', { id, body });
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('accounts_receivable')
       .update(body)
       .eq('id', id)
@@ -49,12 +44,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     console.log('💰 Deletando conta a receber:', { id });
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('accounts_receivable')
       .delete()
       .eq('id', id);
