@@ -177,13 +177,33 @@ export default function AccountsPayableView() {
         categoria_id: formData.categoria_id || null,
         segment_id: formData.segment_id || null
       };
+      
       const result = await create(dataToSend);
       if (result) {
         await load(true); // Recarregar a lista
+        
+        // Feedback de sucesso
+        toast({ 
+          title: '✅ Sucesso!', 
+          description: 'Conta a pagar criada com sucesso',
+          className: 'bg-green-50 border-green-200 text-green-800'
+        });
+        
         resetForm();
+      } else {
+        toast({ 
+          title: '❌ Erro', 
+          description: 'Falha ao criar conta a pagar', 
+          variant: 'destructive' 
+        });
       }
     } catch (error) {
       console.error('Erro ao criar conta a pagar:', error);
+      toast({ 
+        title: '❌ Erro', 
+        description: 'Erro ao criar conta a pagar. Tente novamente.', 
+        variant: 'destructive' 
+      });
     }
   };
 
@@ -191,6 +211,11 @@ export default function AccountsPayableView() {
     e.preventDefault();
     if (!currentAccount) {
       console.error('❌ currentAccount não definido');
+      toast({ 
+        title: 'Erro', 
+        description: 'Conta a pagar não encontrada', 
+        variant: 'destructive' 
+      });
       return;
     }
     
@@ -209,6 +234,7 @@ export default function AccountsPayableView() {
         categoria_id: formData.categoria_id || null,
         segment_id: formData.segment_id || null
       };
+      
       const result = await update(currentAccount.id, dataToSend);
       console.log('✅ Resultado da atualização:', result);
       
@@ -216,12 +242,30 @@ export default function AccountsPayableView() {
         console.log('🔄 Recarregando lista...');
         await load(true); // Recarregar a lista
         console.log('🎉 Atualização concluída com sucesso');
+        
+        // Feedback de sucesso
+        toast({ 
+          title: '✅ Sucesso!', 
+          description: 'Conta a pagar atualizada com sucesso',
+          className: 'bg-green-50 border-green-200 text-green-800'
+        });
+        
         resetForm();
       } else {
         console.error('❌ Falha na atualização - resultado null');
+        toast({ 
+          title: '❌ Erro', 
+          description: 'Falha ao atualizar conta a pagar', 
+          variant: 'destructive' 
+        });
       }
     } catch (error) {
       console.error('❌ Erro ao atualizar conta a pagar:', error);
+      toast({ 
+        title: '❌ Erro', 
+        description: 'Erro ao atualizar conta a pagar. Tente novamente.', 
+        variant: 'destructive' 
+      });
     }
   };
 
@@ -520,54 +564,54 @@ export default function AccountsPayableView() {
         {/* Modal de Criar/Editar */}
         {(showCreateModal || showEditModal) && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <h3 className="text-lg font-semibold mb-4">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+              <h3 className="text-xl font-semibold mb-6 text-gray-900">
                 {showCreateModal ? 'Nova Conta a Pagar' : 'Editar Conta a Pagar'}
               </h3>
-              <form onSubmit={showCreateModal ? handleCreate : handleUpdate} className="space-y-4">
+              <form onSubmit={showCreateModal ? handleCreate : handleUpdate} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Fornecedor</label>
+                    <label className="block text-sm font-semibold mb-2 text-gray-700">Fornecedor</label>
                     <input
                       type="text"
                       name="supplier_id"
                       value={formData.supplier_id}
                       onChange={handleInputChange}
-                      className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                      className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                       placeholder="Nome do fornecedor"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Valor</label>
+                    <label className="block text-sm font-semibold mb-2 text-gray-700">Valor</label>
                     <input
                       type="number"
                       step="0.01"
                       name="valor"
                       value={formData.valor}
                       onChange={handleInputChange}
-                      className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                      className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                       placeholder="0,00"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Data de Vencimento</label>
+                    <label className="block text-sm font-semibold mb-2 text-gray-700">Data de Vencimento</label>
                     <input
                       type="date"
                       name="data_vencimento"
                       value={formData.data_vencimento}
                       onChange={handleInputChange}
-                      className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                      className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Status</label>
+                    <label className="block text-sm font-semibold mb-2 text-gray-700">Status</label>
                     <select
                       name="status"
                       value={formData.status}
                       onChange={handleInputChange}
-                      className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                      className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                     >
                       <option value="pending">Pendente</option>
                       <option value="paid">Pago</option>
@@ -576,12 +620,12 @@ export default function AccountsPayableView() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Forma de Pagamento</label>
+                    <label className="block text-sm font-semibold mb-2 text-gray-700">Forma de Pagamento</label>
                     <select
                       name="forma_pagamento"
                       value={formData.forma_pagamento}
                       onChange={handleInputChange}
-                      className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                      className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                     >
                       <option value="boleto">Boleto</option>
                       <option value="pix">PIX</option>
@@ -592,22 +636,22 @@ export default function AccountsPayableView() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Data de Pagamento</label>
+                    <label className="block text-sm font-semibold mb-2 text-gray-700">Data de Pagamento</label>
                     <input
                       type="date"
                       name="data_pagamento"
                       value={formData.data_pagamento}
                       onChange={handleInputChange}
-                      className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                      className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Segmento</label>
+                    <label className="block text-sm font-semibold mb-2 text-gray-700">Segmento</label>
                     <select
                       name="segment_id"
                       value={formData.segment_id || ''}
                       onChange={handleInputChange}
-                      className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                      className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                       required
                     >
                       <option value="">Selecione um segmento</option>
@@ -620,33 +664,41 @@ export default function AccountsPayableView() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Descrição</label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Descrição</label>
                   <textarea
                     name="descricao"
                     value={formData.descricao}
                     onChange={handleInputChange}
-                    className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                     rows={3}
                     placeholder="Descrição da conta a pagar"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Observações</label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Observações</label>
                   <textarea
                     name="observacoes"
                     value={formData.observacoes}
                     onChange={handleInputChange}
-                    className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                     rows={2}
                     placeholder="Observações adicionais"
                   />
                 </div>
-                <div className="flex justify-end space-x-3">
-                  <Button type="button" variant="outline" onClick={resetForm}>
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={resetForm}
+                    className="px-6 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
                     Cancelar
                   </Button>
-                  <Button type="submit">
+                  <Button 
+                    type="submit"
+                    className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700"
+                  >
                     {showCreateModal ? 'Criar' : 'Atualizar'}
                   </Button>
                 </div>
