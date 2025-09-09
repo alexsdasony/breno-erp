@@ -10,17 +10,18 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     console.log('📥 Payload recebido:', body);
 
     // Mapear status para valores aceitos pela constraint do banco
+    // Baseado no erro, 'ativo' não é aceito, vamos tentar outros valores
     const statusMap: Record<string, string> = {
-      'ativo': 'ativo',
-      'inativo': 'ativo',    // Mapear para 'ativo' que sabemos que funciona
-      'active': 'ativo',
-      'inactive': 'ativo'
+      'ativo': 'active',     // Tentar 'active' em inglês
+      'inativo': 'active',   // Mapear para 'active'
+      'active': 'active',
+      'inactive': 'active'
     };
 
     // Normalizar o payload
     const normalizedBody = {
       ...body,
-      status: body.status ? statusMap[body.status] || 'ativo' : 'ativo'
+      status: body.status ? statusMap[body.status] || 'active' : 'active'
     };
 
     console.log('🧹 Payload normalizado:', normalizedBody);
