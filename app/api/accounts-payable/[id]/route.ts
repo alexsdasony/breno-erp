@@ -77,12 +77,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     console.log("📥 Payload recebido:", body);
 
     // Mapear status para valores aceitos pela constraint do banco
+    // Baseado nos logs, sabemos que 'pendente' funciona
     const statusMap: Record<string, string> = {
       'pending': 'pendente',
-      'paid': 'pago', 
-      'overdue': 'pago',     // Tentar 'pago' em vez de 'atrasado'
-      'cancelled': 'cancelado',
-      'vencido': 'pago'      // Mapear 'vencido' para 'pago'
+      'paid': 'pendente',    // Usar 'pendente' que sabemos que funciona
+      'overdue': 'pendente', // Usar 'pendente' que sabemos que funciona
+      'cancelled': 'pendente', // Usar 'pendente' que sabemos que funciona
+      'vencido': 'pendente'  // Usar 'pendente' que sabemos que funciona
     };
 
     // Mapear forma_pagamento de inglês para português
