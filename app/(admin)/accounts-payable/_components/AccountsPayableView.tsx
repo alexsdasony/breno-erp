@@ -240,7 +240,12 @@ export default function AccountsPayableView() {
       
       if (result) {
         console.log('🔄 Recarregando lista...');
-        await load(true); // Recarregar a lista
+        
+        // Fechar modal primeiro
+        resetForm();
+        
+        // Recarregar a lista
+        await load(true);
         console.log('🎉 Atualização concluída com sucesso');
         
         // Feedback de sucesso
@@ -248,8 +253,6 @@ export default function AccountsPayableView() {
           title: '✅ Sucesso!', 
           description: 'Conta a pagar atualizada com sucesso'
         });
-        
-        resetForm();
       } else {
         console.error('❌ Falha na atualização - resultado null');
         toast({ 
