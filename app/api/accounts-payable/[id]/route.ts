@@ -76,9 +76,36 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     console.log("🔍 [AP UPDATE] id:", id);
     console.log("📥 Payload recebido:", body);
 
+    // Mapear status de inglês para português
+    const statusMap: Record<string, string> = {
+      'pending': 'pendente',
+      'paid': 'pago', 
+      'overdue': 'vencido',
+      'cancelled': 'cancelado'
+    };
+
+    // Mapear forma_pagamento de inglês para português
+    const paymentMethodMap: Record<string, string> = {
+      'boleto': 'boleto',
+      'cash': 'dinheiro',
+      'credit_card': 'cartão de crédito',
+      'debit_card': 'cartão de débito',
+      'pix': 'pix',
+      'bank_transfer': 'transferência bancária'
+    };
+
+    // Normalizar o payload
+    const normalizedBody = {
+      ...body,
+      status: body.status ? statusMap[body.status] || body.status : 'pendente',
+      forma_pagamento: body.forma_pagamento ? paymentMethodMap[body.forma_pagamento] || body.forma_pagamento : 'boleto'
+    };
+
+    console.log("🧹 Payload normalizado:", normalizedBody);
+
     const { data, error } = await supabaseAdmin
       .from("accounts_payable")
-      .update(body)
+      .update(normalizedBody)
       .eq("id", id)
       .select();
 
