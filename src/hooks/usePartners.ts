@@ -3,7 +3,7 @@ import { toast } from '@/components/ui/use-toast';
 import { listPartners, createPartner, updatePartner, deletePartner } from '@/services/partnersService';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/services/customersService';
 import { listSuppliers, createSupplier, updateSupplier, deleteSupplier } from '@/services/suppliersService';
-import type { Partner } from '@/types';
+import type { Partner, Customer, Supplier } from '@/types';
 
 export type PartnerRole = 'customer' | 'supplier';
 
@@ -21,6 +21,38 @@ export interface UsePartnersApi {
   update: (id: string, data: Partial<Partner>) => Promise<Partner | null>;
   remove: (id: string) => Promise<boolean>;
   search: (query: string) => Promise<Partner[]>;
+}
+
+export interface UseCustomersState {
+  items: Customer[];
+  loading: boolean;
+  page: number;
+  hasMore: boolean;
+}
+
+export interface UseCustomersApi {
+  load: (reset?: boolean) => Promise<void>;
+  loadMore: () => Promise<void>;
+  create: (data: Partial<Customer>) => Promise<Customer | null>;
+  update: (id: string, data: Partial<Customer>) => Promise<Customer | null>;
+  remove: (id: string) => Promise<boolean>;
+  search: (query: string) => Promise<Customer[]>;
+}
+
+export interface UseSuppliersState {
+  items: Supplier[];
+  loading: boolean;
+  page: number;
+  hasMore: boolean;
+}
+
+export interface UseSuppliersApi {
+  load: (reset?: boolean) => Promise<void>;
+  loadMore: () => Promise<void>;
+  create: (data: Partial<Supplier>) => Promise<Supplier | null>;
+  update: (id: string, data: Partial<Supplier>) => Promise<Supplier | null>;
+  remove: (id: string) => Promise<boolean>;
+  search: (query: string) => Promise<Supplier[]>;
 }
 
 const PAGE_SIZE = 20;
@@ -207,7 +239,7 @@ export function usePartners(role?: PartnerRole) {
 
 // Hooks especializados para facilitar o uso
 export const useCustomers = () => {
-  const [state, setState] = useState<UsePartnersState>({
+  const [state, setState] = useState<UseCustomersState>({
     items: [],
     loading: false,
     page: 1,
@@ -270,7 +302,7 @@ export const useCustomers = () => {
     }
   }, [state.loading, state.hasMore, state.page]);
 
-  const create = useCallback(async (data: Partial<Partner>) => {
+  const create = useCallback(async (data: Partial<Customer>) => {
     try {
       const response = await createCustomer(data as any);
       if (response.error) {
@@ -296,7 +328,7 @@ export const useCustomers = () => {
     }
   }, []);
 
-  const update = useCallback(async (id: string, data: Partial<Partner>) => {
+  const update = useCallback(async (id: string, data: Partial<Customer>) => {
     try {
       const response = await updateCustomer(id, data as any);
       if (response.error) {
@@ -367,7 +399,7 @@ export const useCustomers = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const api: UsePartnersApi = useMemo(
+  const api: UseCustomersApi = useMemo(
     () => ({ load, loadMore, create, update, remove, search }),
     [load, loadMore, create, update, remove, search]
   );
@@ -376,7 +408,7 @@ export const useCustomers = () => {
 };
 
 export const useSuppliers = () => {
-  const [state, setState] = useState<UsePartnersState>({
+  const [state, setState] = useState<UseSuppliersState>({
     items: [],
     loading: false,
     page: 1,
@@ -439,7 +471,7 @@ export const useSuppliers = () => {
     }
   }, [state.loading, state.hasMore, state.page]);
 
-  const create = useCallback(async (data: Partial<Partner>) => {
+  const create = useCallback(async (data: Partial<Supplier>) => {
     try {
       const response = await createSupplier(data as any);
       if (response.error) {
@@ -465,7 +497,7 @@ export const useSuppliers = () => {
     }
   }, []);
 
-  const update = useCallback(async (id: string, data: Partial<Partner>) => {
+  const update = useCallback(async (id: string, data: Partial<Supplier>) => {
     try {
       const response = await updateSupplier(id, data as any);
       if (response.error) {
@@ -536,7 +568,7 @@ export const useSuppliers = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const api: UsePartnersApi = useMemo(
+  const api: UseSuppliersApi = useMemo(
     () => ({ load, loadMore, create, update, remove, search }),
     [load, loadMore, create, update, remove, search]
   );
