@@ -68,99 +68,41 @@ export async function GET(
 }
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  if (!id || !UUID_RE.test(id)) {
-    return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
-  }
-
   try {
-    const raw = await req.json();
-    console.log('🔍 [AP UPDATE] id:', id);
-    console.log('📥 Payload bruto:', raw);
+    const { id } = await params;
+    const body = await req.json();
 
-    // Normalização
-    const payload: Record<string, any> = {
-      ...raw,
-      valor: toNumberOrNull(raw?.valor),
-      data_vencimento: toDateOrNull(raw?.data_vencimento),
-      data_pagamento: toDateOrNull(raw?.data_pagamento),
-      supplier_id: toNullIfEmpty(raw?.supplier_id),
-      categoria_id: toNullIfEmpty(raw?.categoria_id),
-      forma_pagamento: toNullIfEmpty(raw?.forma_pagamento),
-      observacoes: toNullIfEmpty(raw?.observacoes),
-      responsavel_pagamento: toNullIfEmpty(raw?.responsavel_pagamento),
-      numero_parcela: raw?.numero_parcela ?? null,
-      total_parcelas: raw?.total_parcelas ?? null,
-      segment_id: toNullIfEmpty(raw?.segment_id),
-      deleted_at: toNullIfEmpty(raw?.deleted_at),
-      is_deleted: raw?.is_deleted ?? false,
-    };
-
-    // Validação segment_id
-    if (payload.segment_id !== null && payload.segment_id !== undefined) {
-      if (!UUID_RE.test(payload.segment_id)) {
-        return NextResponse.json({ error: 'segment_id inválido (UUID esperado)' }, { status: 400 });
-      }
-      // existe no banco?
-      const { data: seg, error: segErr } = await supabaseAdmin
-        .from('segments')
-        .select('id')
-        .eq('id', payload.segment_id)
-        .maybeSingle();
-
-      if (segErr) {
-        console.error('❌ Erro ao validar segment_id:', segErr);
-        return NextResponse.json({ error: 'Falha ao validar segment_id' }, { status: 500 });
-      }
-      if (!seg) {
-        return NextResponse.json({ error: 'segment_id não encontrado' }, { status: 400 });
-      }
-    }
-
-    // Confere existência do registro
-    const { data: existing, error: existErr } = await supabaseAdmin
-      .from('accounts_payable')
-      .select('id')
-      .eq('id', id)
-      .maybeSingle();
-
-    if (existErr) {
-      console.error('❌ Erro ao verificar existência:', existErr);
-      return NextResponse.json({ error: 'Falha ao verificar existência' }, { status: 500 });
-    }
-    if (!existing) {
-      return NextResponse.json({ error: 'Conta a pagar não encontrada' }, { status: 404 });
-    }
-
-    // Só envia campos permitidos + sem undefined
-    const cleaned = pickAllowed(payload);
-    for (const k of Object.keys(cleaned)) if (cleaned[k] === undefined) delete cleaned[k];
-
-    console.log('🧹 Payload normalizado:', cleaned);
+    console.log("🚀 [AP UPDATE] Iniciando atualização");
+    console.log("🔍 [AP UPDATE] id:", id);
+    console.log("📥 Payload recebido:", body);
 
     const { data, error } = await supabaseAdmin
-      .from('accounts_payable')
-      .update(cleaned)
-      .eq('id', id)
-      .select()
-      .maybeSingle();
+      .from("accounts_payable")
+      .update(body)
+      .eq("id", id)
+      .select();
 
     if (error) {
-      console.error('❌ Supabase UPDATE error:', {
+      console.error("❌ Supabase UPDATE error:", {
         message: error.message,
-        code: (error as any).code,
-        hint: (error as any).hint,
-        details: (error as any).details,
-        full: error
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
       });
-      return NextResponse.json({ error: error.message, details: (error as any).details }, { status: 500 });
+      return NextResponse.json(
+        { error: error.message, details: error },
+        { status: 500 }
+      );
     }
 
-    console.log('✅ Atualizado:', data);
-    return NextResponse.json({ success: true, data }, { status: 200 });
-  } catch (e: any) {
-    console.error('💥 Exceção no handler:', e);
-    return NextResponse.json({ error: 'Erro interno', details: String(e?.message ?? e) }, { status: 500 });
+    console.log("✅ Supabase UPDATE sucesso:", data);
+    return NextResponse.json({ data }, { status: 200 });
+  } catch (err: any) {
+    console.error("🔥 Erro inesperado no PUT /accounts-payable:", err);
+    return NextResponse.json(
+      { error: "Erro interno", details: err.message },
+      { status: 500 }
+    );
   }
 }
 
