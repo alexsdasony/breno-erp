@@ -138,6 +138,8 @@ export async function PUT(
     }
     
     console.log('✅ Registro encontrado, procedendo com update...');
+    console.log('🔍 ID do registro:', id);
+    console.log('🔍 Dados que serão enviados para o Supabase:', JSON.stringify(cleanedBody, null, 2));
 
     const { data, error } = await supabaseAdmin
       .from('accounts_payable')
@@ -147,6 +149,15 @@ export async function PUT(
       .single();
 
     console.log('📥 Resultado do update:', { data, error });
+    
+    if (error) {
+      console.log('❌ ERRO DETALHADO DO SUPABASE:');
+      console.log('  - Message:', error.message);
+      console.log('  - Code:', error.code);
+      console.log('  - Hint:', error.hint);
+      console.log('  - Details:', error.details);
+      console.log('  - Error completo:', JSON.stringify(error, null, 2));
+    }
 
     if (error) {
       console.log('❌ Erro no update:', error);
