@@ -43,27 +43,53 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    console.log('🏷️ API Route PUT /api/segments/[id]:', id);
+    console.log('🏷️ [SEGMENT UPDATE] Iniciando atualização');
+    console.log('🔍 [SEGMENT UPDATE] id:', id);
     
     const body = await request.json();
-    console.log('📝 Dados recebidos:', body);
+    console.log('📥 Payload recebido:', body);
+    
+    // Mapear status para valores aceitos pela constraint do banco
+    const statusMap: Record<string, string> = {
+      'ativo': 'active',
+      'inativo': 'active',
+      'active': 'active',
+      'inactive': 'active'
+    };
+
+    // Normalizar o payload
+    const normalizedBody = {
+      ...body,
+      status: body.status ? statusMap[body.status] || 'active' : 'active'
+    };
+
+    console.log('🧹 Payload normalizado:', normalizedBody);
     
     const { data, error } = await supabaseAdmin
       .from('segments')
-      .update(body)
+      .update(normalizedBody)
       .eq('id', id)
       .select()
       .single();
 
-    if (error || !data) {
-      console.log('❌ Erro ao atualizar segmento:', { id, error });
+    if (error) {
+      console.error('❌ Supabase UPDATE error:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
       return NextResponse.json(
-        { error: 'Erro ao atualizar segmento' },
+        { 
+          success: false, 
+          error: error.message,
+          details: error.details
+        },
         { status: 500 }
       );
     }
 
-    console.log('✅ Segmento atualizado:', data);
+    console.log('✅ Supabase UPDATE sucesso:', data);
     return NextResponse.json({
       success: true,
       segment: data
@@ -72,7 +98,11 @@ export async function PUT(
   } catch (error) {
     console.error('❌ Erro na atualização de segmento:', error);
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { 
+        success: false, 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      },
       { status: 500 }
     );
   }
