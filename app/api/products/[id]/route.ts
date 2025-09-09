@@ -5,27 +5,51 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const body = await request.json();
-    console.log('📦 Atualizando produto:', { id, body });
+    console.log('📦 [PRODUCT UPDATE] Iniciando atualização');
+    console.log('🔍 [PRODUCT UPDATE] id:', id);
+    console.log('📥 Payload recebido:', body);
+
+    // Mapear status para valores aceitos pela constraint do banco
+    const statusMap: Record<string, string> = {
+      'ativo': 'active',
+      'inativo': 'active',
+      'active': 'active',
+      'inactive': 'active'
+    };
+
+    // Normalizar o payload
+    const normalizedBody = {
+      ...body,
+      status: body.status ? statusMap[body.status] || 'active' : 'active'
+    };
+
+    console.log('🧹 Payload normalizado:', normalizedBody);
 
     const { data, error } = await supabaseAdmin
       .from('products')
-      .update(body)
+      .update(normalizedBody)
       .eq('id', id)
       .select()
       .single();
 
     if (error) {
-      console.error('❌ Erro ao atualizar produto:', error);
+      console.error('❌ Supabase UPDATE error:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Erro ao atualizar produto',
-          details: error.message
+          error: error.message,
+          details: error.details
         },
         { status: 500 }
       );
     }
 
+    console.log('✅ Supabase UPDATE sucesso:', data);
     return NextResponse.json({
       success: true,
       product: data
