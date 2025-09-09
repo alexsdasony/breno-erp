@@ -76,12 +76,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     console.log("🔍 [AP UPDATE] id:", id);
     console.log("📥 Payload recebido:", body);
 
-    // Mapear status de inglês para português
+    // Mapear status para valores aceitos pela constraint do banco
     const statusMap: Record<string, string> = {
       'pending': 'pendente',
       'paid': 'pago', 
-      'overdue': 'vencido',
-      'cancelled': 'cancelado'
+      'overdue': 'atrasado',  // Banco aceita 'atrasado', não 'vencido'
+      'cancelled': 'cancelado',
+      'vencido': 'atrasado'   // Mapear 'vencido' para 'atrasado'
     };
 
     // Mapear forma_pagamento de inglês para português
