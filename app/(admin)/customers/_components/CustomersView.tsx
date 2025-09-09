@@ -21,7 +21,9 @@ import {
   AlertCircle,
   Clock,
   Building,
-  User
+  User,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 import { useCustomers } from '@/hooks/usePartners';
 import { updateCustomer, createCustomer, deleteCustomer } from '@/services/customersService';
@@ -31,7 +33,7 @@ import { useRouter } from 'next/navigation';
 import type { Customer } from '@/types';
 
 export default function CustomersView() {
-  const { items, loading, hasMore, loadMore, create, update, remove, load } = useCustomers();
+  const { items, loading, hasMore, loadMore, create, update, remove, load, toggleStatus } = useCustomers();
   const { segments, activeSegmentId } = useAppData();
   const router = useRouter();
 
@@ -177,6 +179,14 @@ export default function CustomersView() {
   const handleDelete = (customer: Customer) => {
     setSelectedCustomer(customer);
     setShowDeleteConfirm(true);
+  };
+
+  const handleToggleStatus = async (customer: Customer) => {
+    try {
+      await toggleStatus(customer.id);
+    } catch (error) {
+      console.error('Erro ao alterar status do cliente:', error);
+    }
   };
 
   const confirmDelete = async () => {
@@ -484,6 +494,20 @@ export default function CustomersView() {
                           onClick={() => handleEdit(customer)}
                         >
                           <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          id={`customers-toggle-${customer.id}`} 
+                          variant="ghost" 
+                          size="sm" 
+                          title={customer.status === 'ativo' ? 'Inativar' : 'Ativar'} 
+                          onClick={() => handleToggleStatus(customer)}
+                          className={customer.status === 'ativo' ? 'text-green-600 hover:text-green-800' : 'text-yellow-600 hover:text-yellow-800'}
+                        >
+                          {customer.status === 'ativo' ? (
+                            <ToggleRight className="w-4 h-4" />
+                          ) : (
+                            <ToggleLeft className="w-4 h-4" />
+                          )}
                         </Button>
                         <Button 
                           id={`customers-delete-${customer.id}`} 

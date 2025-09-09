@@ -37,6 +37,7 @@ export interface UseCustomersApi {
   update: (id: string, data: Partial<Customer>) => Promise<Customer | null>;
   remove: (id: string) => Promise<boolean>;
   search: (query: string) => Promise<Customer[]>;
+  toggleStatus: (id: string) => Promise<Customer | null>;
 }
 
 export interface UseSuppliersState {
@@ -394,14 +395,53 @@ export const useCustomers = () => {
     }
   }, []);
 
+  const toggleStatus = useCallback(async (id: string) => {
+    try {
+      // Encontrar o cliente atual
+      const currentCustomer = state.items.find(customer => customer.id === id);
+      if (!currentCustomer) {
+        throw new Error('Cliente não encontrado');
+      }
+
+      // Alternar status: 'ativo' <-> 'inativo'
+      const newStatus = currentCustomer.status === 'ativo' ? 'inativo' : 'ativo';
+      
+      const response = await updateCustomer(id, { status: newStatus } as any);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
+      const customer = response.data?.customer;
+      if (customer) {
+        setState((s) => ({
+          ...s,
+          items: s.items.map((it) => (it.id === id ? customer : it)),
+        }));
+        toast({
+          title: 'Status alterado',
+          description: `Cliente ${newStatus === 'ativo' ? 'ativado' : 'inativado'} com sucesso.`
+        });
+        return customer;
+      }
+      return null;
+    } catch (e) {
+      toast({
+        title: 'Erro ao alterar status',
+        description: 'Tente novamente.',
+        variant: 'destructive'
+      });
+      return null;
+    }
+  }, [state.items, update]);
+
   useEffect(() => {
     void load(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const api: UseCustomersApi = useMemo(
-    () => ({ load, loadMore, create, update, remove, search }),
-    [load, loadMore, create, update, remove, search]
+    () => ({ load, loadMore, create, update, remove, search, toggleStatus }),
+    [load, loadMore, create, update, remove, search, toggleStatus]
   );
 
   return { ...state, ...api };
