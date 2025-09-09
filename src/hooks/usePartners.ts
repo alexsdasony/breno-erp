@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { listPartners, createPartner, updatePartner, deletePartner } from '@/services/partnersService';
+import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/services/customersService';
+import { listSuppliers, createSupplier, updateSupplier, deleteSupplier } from '@/services/suppliersService';
 import type { Partner } from '@/types';
 
 export type PartnerRole = 'customer' | 'supplier';
@@ -204,5 +206,340 @@ export function usePartners(role?: PartnerRole) {
 }
 
 // Hooks especializados para facilitar o uso
-export const useCustomers = () => usePartners('customer');
-export const useSuppliers = () => usePartners('supplier');
+export const useCustomers = () => {
+  const [state, setState] = useState<UsePartnersState>({
+    items: [],
+    loading: false,
+    page: 1,
+    hasMore: true
+  });
+
+  const load = useCallback(async (reset: boolean = false) => {
+    setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
+    try {
+      const page = reset ? 1 : state.page;
+      const params: any = { page, pageSize: PAGE_SIZE };
+      
+      const response = await getCustomers(params);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      const customers = response.data?.customers || [];
+      setState((s) => ({
+        items: reset ? customers : [...s.items, ...customers],
+        loading: false,
+        page,
+        hasMore: customers.length === PAGE_SIZE,
+      }));
+    } catch (e) {
+      setState((s) => ({ ...s, loading: false }));
+      toast({
+        title: 'Falha ao carregar clientes',
+        description: 'Tente novamente em instantes.',
+        variant: 'destructive'
+      });
+    }
+  }, [state.page]);
+
+  const loadMore = useCallback(async () => {
+    if (state.loading || !state.hasMore) return;
+    const nextPage = state.page + 1;
+    setState((s) => ({ ...s, page: nextPage }));
+    
+    try {
+      const params: any = { page: nextPage, pageSize: PAGE_SIZE };
+      
+      const response = await getCustomers(params);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      const customers = response.data?.customers || [];
+      setState((s) => ({
+        ...s,
+        items: [...s.items, ...customers],
+        hasMore: customers.length === PAGE_SIZE,
+        loading: false,
+      }));
+    } catch (e) {
+      setState((s) => ({ ...s, loading: false }));
+      toast({
+        title: 'Falha ao carregar mais clientes',
+        description: 'Tente novamente em instantes.',
+        variant: 'destructive'
+      });
+    }
+  }, [state.loading, state.hasMore, state.page]);
+
+  const create = useCallback(async (data: Partial<Partner>) => {
+    try {
+      const response = await createCustomer(data as any);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      const customer = response.data?.customer;
+      if (customer) {
+        setState((s) => ({ ...s, items: [customer, ...s.items] }));
+        toast({
+          title: 'Cliente criado',
+          description: customer.name || 'Registro criado.'
+        });
+        return customer;
+      }
+      return null;
+    } catch (e) {
+      toast({
+        title: 'Erro ao criar cliente',
+        description: 'Verifique os dados informados.',
+        variant: 'destructive'
+      });
+      return null;
+    }
+  }, []);
+
+  const update = useCallback(async (id: string, data: Partial<Partner>) => {
+    try {
+      const response = await updateCustomer(id, data as any);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      const customer = response.data?.customer;
+      if (customer) {
+        setState((s) => ({
+          ...s,
+          items: s.items.map((it) => (it.id === id ? customer : it)),
+        }));
+        toast({
+          title: 'Cliente atualizado',
+          description: customer.name || 'Registro atualizado.'
+        });
+        return customer;
+      }
+      return null;
+    } catch (e) {
+      toast({
+        title: 'Erro ao atualizar cliente',
+        description: 'Tente novamente.',
+        variant: 'destructive'
+      });
+      return null;
+    }
+  }, []);
+
+  const remove = useCallback(async (id: string) => {
+    try {
+      const response = await deleteCustomer(id);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      setState((s) => ({ ...s, items: s.items.filter((it) => it.id !== id) }));
+      toast({
+        title: 'Cliente removido',
+        description: 'Registro excluído com sucesso.'
+      });
+      return true;
+    } catch (e) {
+      toast({
+        title: 'Erro ao remover cliente',
+        description: 'Tente novamente.',
+        variant: 'destructive'
+      });
+      return false;
+    }
+  }, []);
+
+  const search = useCallback(async (query: string) => {
+    try {
+      const params: any = { q: query, page: 1, pageSize: 50 };
+      
+      const response = await getCustomers(params);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      return response.data?.customers || [];
+    } catch (e) {
+      console.error('Erro ao buscar clientes:', e);
+      return [];
+    }
+  }, []);
+
+  useEffect(() => {
+    void load(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const api: UsePartnersApi = useMemo(
+    () => ({ load, loadMore, create, update, remove, search }),
+    [load, loadMore, create, update, remove, search]
+  );
+
+  return { ...state, ...api };
+};
+
+export const useSuppliers = () => {
+  const [state, setState] = useState<UsePartnersState>({
+    items: [],
+    loading: false,
+    page: 1,
+    hasMore: true
+  });
+
+  const load = useCallback(async (reset: boolean = false) => {
+    setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
+    try {
+      const page = reset ? 1 : state.page;
+      const params: any = { page, pageSize: PAGE_SIZE };
+      
+      const response = await listSuppliers(params);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      const suppliers = response.data?.suppliers || [];
+      setState((s) => ({
+        items: reset ? suppliers : [...s.items, ...suppliers],
+        loading: false,
+        page,
+        hasMore: suppliers.length === PAGE_SIZE,
+      }));
+    } catch (e) {
+      setState((s) => ({ ...s, loading: false }));
+      toast({
+        title: 'Falha ao carregar fornecedores',
+        description: 'Tente novamente em instantes.',
+        variant: 'destructive'
+      });
+    }
+  }, [state.page]);
+
+  const loadMore = useCallback(async () => {
+    if (state.loading || !state.hasMore) return;
+    const nextPage = state.page + 1;
+    setState((s) => ({ ...s, page: nextPage }));
+    
+    try {
+      const params: any = { page: nextPage, pageSize: PAGE_SIZE };
+      
+      const response = await listSuppliers(params);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      const suppliers = response.data?.suppliers || [];
+      setState((s) => ({
+        ...s,
+        items: [...s.items, ...suppliers],
+        hasMore: suppliers.length === PAGE_SIZE,
+        loading: false,
+      }));
+    } catch (e) {
+      setState((s) => ({ ...s, loading: false }));
+      toast({
+        title: 'Falha ao carregar mais fornecedores',
+        description: 'Tente novamente em instantes.',
+        variant: 'destructive'
+      });
+    }
+  }, [state.loading, state.hasMore, state.page]);
+
+  const create = useCallback(async (data: Partial<Partner>) => {
+    try {
+      const response = await createSupplier(data as any);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      const supplier = response.data?.supplier;
+      if (supplier) {
+        setState((s) => ({ ...s, items: [supplier, ...s.items] }));
+        toast({
+          title: 'Fornecedor criado',
+          description: supplier.razao_social || 'Registro criado.'
+        });
+        return supplier;
+      }
+      return null;
+    } catch (e) {
+      toast({
+        title: 'Erro ao criar fornecedor',
+        description: 'Verifique os dados informados.',
+        variant: 'destructive'
+      });
+      return null;
+    }
+  }, []);
+
+  const update = useCallback(async (id: string, data: Partial<Partner>) => {
+    try {
+      const response = await updateSupplier(id, data as any);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      const supplier = response.data?.supplier;
+      if (supplier) {
+        setState((s) => ({
+          ...s,
+          items: s.items.map((it) => (it.id === id ? supplier : it)),
+        }));
+        toast({
+          title: 'Fornecedor atualizado',
+          description: supplier.razao_social || 'Registro atualizado.'
+        });
+        return supplier;
+      }
+      return null;
+    } catch (e) {
+      toast({
+        title: 'Erro ao atualizar fornecedor',
+        description: 'Tente novamente.',
+        variant: 'destructive'
+      });
+      return null;
+    }
+  }, []);
+
+  const remove = useCallback(async (id: string) => {
+    try {
+      const response = await deleteSupplier(id);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      setState((s) => ({ ...s, items: s.items.filter((it) => it.id !== id) }));
+      toast({
+        title: 'Fornecedor removido',
+        description: 'Registro excluído com sucesso.'
+      });
+      return true;
+    } catch (e) {
+      toast({
+        title: 'Erro ao remover fornecedor',
+        description: 'Tente novamente.',
+        variant: 'destructive'
+      });
+      return false;
+    }
+  }, []);
+
+  const search = useCallback(async (query: string) => {
+    try {
+      const params: any = { q: query, page: 1, pageSize: 50 };
+      
+      const response = await listSuppliers(params);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      return response.data?.suppliers || [];
+    } catch (e) {
+      console.error('Erro ao buscar fornecedores:', e);
+      return [];
+    }
+  }, []);
+
+  useEffect(() => {
+    void load(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const api: UsePartnersApi = useMemo(
+    () => ({ load, loadMore, create, update, remove, search }),
+    [load, loadMore, create, update, remove, search]
+  );
+
+  return { ...state, ...api };
+};
