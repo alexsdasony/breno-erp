@@ -1,6 +1,37 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const ALLOWED_FIELDS = new Set([
+  'supplier_id','numero_nota_fiscal','descricao','valor','data_vencimento','data_pagamento',
+  'status','categoria_id','forma_pagamento','observacoes','responsavel_pagamento',
+  'numero_parcela','total_parcelas','segment_id','is_deleted','deleted_at'
+]);
+
+function toNullIfEmpty(v: any) {
+  return v === '' || v === undefined ? null : v;
+}
+
+function toNumberOrNull(v: any) {
+  if (v === '' || v === null || v === undefined) return null;
+  if (typeof v === 'number') return v;
+  const n = Number(String(v).replace(/\./g, '').replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+}
+
+function toDateOrNull(v: any) {
+  const val = toNullIfEmpty(v);
+  if (val === null) return null;
+  // aceita YYYY-MM-DD
+  return String(val);
+}
+
+function pickAllowed(obj: Record<string, any>) {
+  const out: Record<string, any> = {};
+  for (const k of Object.keys(obj)) if (ALLOWED_FIELDS.has(k)) out[k] = obj[k];
+  return out;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -36,169 +67,100 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  if (!id || !UUID_RE.test(id)) {
+    return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+  }
+
   try {
-    const { id } = await params;
-    const body = await request.json();
-    
-    console.log('🔧 API Route PUT /api/accounts-payable/[id]:', id);
-    console.log('📝 Body recebido:', body);
-    
-    // Função para normalizar valores
-    const normalizeValue = (value: any, type: 'string' | 'number' | 'date' | 'uuid') => {
-      if (value === null || value === undefined || value === '') {
-        return null;
-      }
-      
-      switch (type) {
-        case 'number':
-          const num = typeof value === 'string' ? parseFloat(value) : value;
-          return isNaN(num) ? null : num;
-        case 'date':
-          return value || null;
-        case 'uuid':
-          return value || null;
-        case 'string':
-        default:
-          return value || null;
-      }
+    const raw = await req.json();
+    console.log('🔍 [AP UPDATE] id:', id);
+    console.log('📥 Payload bruto:', raw);
+
+    // Normalização
+    const payload: Record<string, any> = {
+      ...raw,
+      valor: toNumberOrNull(raw?.valor),
+      data_vencimento: toDateOrNull(raw?.data_vencimento),
+      data_pagamento: toDateOrNull(raw?.data_pagamento),
+      supplier_id: toNullIfEmpty(raw?.supplier_id),
+      categoria_id: toNullIfEmpty(raw?.categoria_id),
+      forma_pagamento: toNullIfEmpty(raw?.forma_pagamento),
+      observacoes: toNullIfEmpty(raw?.observacoes),
+      responsavel_pagamento: toNullIfEmpty(raw?.responsavel_pagamento),
+      numero_parcela: raw?.numero_parcela ?? null,
+      total_parcelas: raw?.total_parcelas ?? null,
+      segment_id: toNullIfEmpty(raw?.segment_id),
+      deleted_at: toNullIfEmpty(raw?.deleted_at),
+      is_deleted: raw?.is_deleted ?? false,
     };
-    
-    // Validação e conversão de tipos antes de chamar o Supabase
-    const cleanedBody = {
-      // Campos obrigatórios
-      descricao: body.descricao || '',
-      valor: normalizeValue(body.valor, 'number'),
-      data_vencimento: normalizeValue(body.data_vencimento, 'date'),
-      
-      // Campos opcionais com normalização
-      supplier_id: normalizeValue(body.supplier_id, 'uuid'),
-      categoria_id: normalizeValue(body.categoria_id, 'uuid'),
-      segment_id: normalizeValue(body.segment_id, 'uuid'),
-      data_pagamento: normalizeValue(body.data_pagamento, 'date'),
-      observacoes: normalizeValue(body.observacoes, 'string'),
-      numero_nota_fiscal: normalizeValue(body.numero_nota_fiscal, 'string'),
-      responsavel_pagamento: normalizeValue(body.responsavel_pagamento, 'string'),
-      
-      // Campos de enum
-      status: body.status || 'pendente',
-      forma_pagamento: body.forma_pagamento || 'boleto',
-      
-      // Campos numéricos opcionais
-      numero_parcela: normalizeValue(body.numero_parcela, 'number') || 1,
-      total_parcelas: normalizeValue(body.total_parcelas, 'number') || 1,
-    };
-    
-    console.log('🧹 Body limpo e normalizado:', cleanedBody);
-    
-    // Validações obrigatórias
-    if (!cleanedBody.descricao) {
-      return NextResponse.json(
-        { error: 'Descrição é obrigatória' },
-        { status: 400 }
-      );
+
+    // Validação segment_id
+    if (payload.segment_id !== null && payload.segment_id !== undefined) {
+      if (!UUID_RE.test(payload.segment_id)) {
+        return NextResponse.json({ error: 'segment_id inválido (UUID esperado)' }, { status: 400 });
+      }
+      // existe no banco?
+      const { data: seg, error: segErr } = await supabaseAdmin
+        .from('segments')
+        .select('id')
+        .eq('id', payload.segment_id)
+        .maybeSingle();
+
+      if (segErr) {
+        console.error('❌ Erro ao validar segment_id:', segErr);
+        return NextResponse.json({ error: 'Falha ao validar segment_id' }, { status: 500 });
+      }
+      if (!seg) {
+        return NextResponse.json({ error: 'segment_id não encontrado' }, { status: 400 });
+      }
     }
-    
-    if (cleanedBody.valor === null || cleanedBody.valor <= 0) {
-      return NextResponse.json(
-        { error: 'Valor deve ser um número positivo' },
-        { status: 400 }
-      );
-    }
-    
-    if (!cleanedBody.data_vencimento) {
-      return NextResponse.json(
-        { error: 'Data de vencimento é obrigatória' },
-        { status: 400 }
-      );
-    }
-    
-    // Primeiro, verificar se o registro existe
-    const { data: existingRecord, error: checkError } = await supabaseAdmin
+
+    // Confere existência do registro
+    const { data: existing, error: existErr } = await supabaseAdmin
       .from('accounts_payable')
       .select('id')
       .eq('id', id)
-      .single();
-    
-    console.log('🔍 Verificação de existência:', { existingRecord, checkError });
-    
-    if (checkError || !existingRecord) {
-      console.log('❌ Registro não encontrado para ID:', id);
-      return NextResponse.json(
-        { 
-          error: 'Conta a Pagar não encontrado',
-          id: id,
-          details: checkError?.message 
-        },
-        { status: 404 }
-      );
+      .maybeSingle();
+
+    if (existErr) {
+      console.error('❌ Erro ao verificar existência:', existErr);
+      return NextResponse.json({ error: 'Falha ao verificar existência' }, { status: 500 });
     }
-    
-    console.log('✅ Registro encontrado, procedendo com update...');
-    console.log('🔍 ID do registro:', id);
-    console.log('🔍 Dados que serão enviados para o Supabase:', JSON.stringify(cleanedBody, null, 2));
+    if (!existing) {
+      return NextResponse.json({ error: 'Conta a pagar não encontrada' }, { status: 404 });
+    }
+
+    // Só envia campos permitidos + sem undefined
+    const cleaned = pickAllowed(payload);
+    for (const k of Object.keys(cleaned)) if (cleaned[k] === undefined) delete cleaned[k];
+
+    console.log('🧹 Payload normalizado:', cleaned);
 
     const { data, error } = await supabaseAdmin
       .from('accounts_payable')
-      .update(cleanedBody)
+      .update(cleaned)
       .eq('id', id)
       .select()
-      .single();
-
-    console.log('📥 Resultado do update:', { data, error });
-    
-    if (error) {
-      console.log('❌ ERRO DETALHADO DO SUPABASE:');
-      console.log('  - Message:', error.message);
-      console.log('  - Code:', error.code);
-      console.log('  - Hint:', error.hint);
-      console.log('  - Details:', error.details);
-      console.log('  - Error completo:', JSON.stringify(error, null, 2));
-    }
+      .maybeSingle();
 
     if (error) {
-      console.log('❌ Erro no update:', error);
-      return NextResponse.json(
-        { 
-          error: 'Erro ao atualizar conta a pagar',
-          details: error.message,
-          code: error.code,
-          hint: error.hint
-        },
-        { status: 500 }
-      );
+      console.error('❌ Supabase UPDATE error:', {
+        message: error.message,
+        code: (error as any).code,
+        hint: (error as any).hint,
+        details: (error as any).details,
+        full: error
+      });
+      return NextResponse.json({ error: error.message, details: (error as any).details }, { status: 500 });
     }
 
-    if (!data) {
-      console.log('❌ Nenhum dado retornado do update');
-      return NextResponse.json(
-        { 
-          error: 'Erro ao atualizar conta a pagar',
-          details: 'Nenhum dado foi retornado após a atualização'
-        },
-        { status: 500 }
-      );
-    }
-
-    console.log('✅ Update realizado com sucesso');
-    return NextResponse.json({
-      success: true,
-      account_payable: data,
-      message: 'Conta a Pagar atualizado com sucesso'
-    });
-  } catch (error) {
-    console.error('❌ Erro na API route PUT [id]:', error);
-    return NextResponse.json(
-      { 
-        error: 'Erro interno do servidor',
-        details: error instanceof Error ? error.message : 'Erro desconhecido',
-        stack: error instanceof Error ? error.stack : undefined
-      },
-      { status: 500 }
-    );
+    console.log('✅ Atualizado:', data);
+    return NextResponse.json({ success: true, data }, { status: 200 });
+  } catch (e: any) {
+    console.error('💥 Exceção no handler:', e);
+    return NextResponse.json({ error: 'Erro interno', details: String(e?.message ?? e) }, { status: 500 });
   }
 }
 
