@@ -53,7 +53,8 @@ export default function CustomersView() {
     phone: '',
     address: '',
     city: '',
-    state: ''
+    state: '',
+    status: 'active'
   });
 
   const segmentOptions = useMemo(() => (segments || []).map((s: any) => ({ value: String(s.id), label: s.name })), [segments]);
@@ -140,7 +141,8 @@ export default function CustomersView() {
       phone: '',
       address: '',
       city: '',
-      state: ''
+      state: '',
+      status: 'active'
     });
     setShowForm(true);
   };
@@ -161,7 +163,8 @@ export default function CustomersView() {
       phone: customer.phone || '',
       address: customer.address || '',
       city: customer.city || '',
-      state: customer.state || ''
+      state: customer.state || '',
+      status: customer.status || 'active'
     });
     setShowForm(true);
   };
@@ -253,7 +256,8 @@ export default function CustomersView() {
           phone: '',
           address: '',
           city: '',
-          state: ''
+          state: '',
+          status: 'active'
         });
         setSelectedCustomer(null);
         setIsEditing(false);
@@ -613,6 +617,20 @@ export default function CustomersView() {
                       {segmentOptions.map((opt) => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Status</label>
+                    <select
+                      id="customers-status-select"
+                      value={formData.status}
+                      onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                      className="w-full p-3 bg-muted border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="active">Ativo</option>
+                      <option value="inactive">Inativo</option>
+                      <option value="suspended">Suspenso</option>
                     </select>
                   </div>
 
