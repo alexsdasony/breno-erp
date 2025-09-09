@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     
     console.log('📝 Parâmetros:', { page, limit, offset });
     
-    const { data, error, count } = await supabase
+    const { data, error, count } = await supabaseAdmin
       .from('segments')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
