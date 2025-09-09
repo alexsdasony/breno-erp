@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     console.log('📝 Dados recebidos:', body);
     
     // Primeiro inserir o partner
-    const { data: partner, error: partnerError } = await supabase
+    const { data: partner, error: partnerError } = await supabaseAdmin
       .from('partners')
       .insert([body])
       .select()
