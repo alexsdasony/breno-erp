@@ -153,7 +153,13 @@ class ApiService {
     } catch (error: any) {
       // Evitar logs ruidosos em 401 (já redireciona)
       if (error?.status !== 401) {
-        console.error(`API Error (${endpoint}):`, error);
+        console.error(`API Error (${endpoint}):`, {
+          error,
+          message: error?.message,
+          status: error?.status,
+          response: error?.response,
+          data: error?.data
+        });
       }
       throw error;
     } finally {

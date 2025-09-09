@@ -10,12 +10,12 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     console.log('📥 Payload recebido:', body);
 
     // Mapear status para valores aceitos pela constraint do banco
-    // Mesmo problema dos fornecedores - tabela partners
+    // Permitir alternância entre ativo e inativo
     const statusMap: Record<string, string> = {
-      'ativo': 'active',     // Tentar 'active' em inglês
-      'inativo': 'active',   // Mapear para 'active'
+      'ativo': 'active',
+      'inativo': 'inactive',
       'active': 'active',
-      'inactive': 'active'
+      'inactive': 'inactive'
     };
 
     // Normalizar o payload
@@ -58,11 +58,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
   } catch (error) {
     console.error('❌ Erro ao atualizar cliente:', error);
+    console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
       { 
         success: false, 
         error: 'Erro interno do servidor',
-        details: error instanceof Error ? error.message : 'Erro desconhecido'
+        details: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );
