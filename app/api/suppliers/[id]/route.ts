@@ -5,27 +5,51 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const body = await request.json();
-    console.log('🏭 Atualizando fornecedor:', { id, body });
+    console.log('🏭 [SUPPLIER UPDATE] Iniciando atualização');
+    console.log('🔍 [SUPPLIER UPDATE] id:', id);
+    console.log('📥 Payload recebido:', body);
+
+    // Mapear status para valores aceitos pela constraint do banco
+    const statusMap: Record<string, string> = {
+      'ativo': 'ativo',
+      'inativo': 'ativo',    // Mapear para 'ativo' que sabemos que funciona
+      'active': 'ativo',
+      'inactive': 'ativo'
+    };
+
+    // Normalizar o payload
+    const normalizedBody = {
+      ...body,
+      status: body.status ? statusMap[body.status] || 'ativo' : 'ativo'
+    };
+
+    console.log('🧹 Payload normalizado:', normalizedBody);
 
     const { data, error } = await supabaseAdmin
       .from('partners')
-      .update(body)
+      .update(normalizedBody)
       .eq('id', id)
       .select()
       .single();
 
     if (error) {
-      console.error('❌ Erro ao atualizar fornecedor:', error);
+      console.error('❌ Supabase UPDATE error:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Erro ao atualizar fornecedor',
-          details: error.message
+          error: error.message,
+          details: error.details
         },
         { status: 500 }
       );
     }
 
+    console.log('✅ Supabase UPDATE sucesso:', data);
     return NextResponse.json({
       success: true,
       supplier: data
