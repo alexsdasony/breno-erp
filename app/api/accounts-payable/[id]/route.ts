@@ -80,9 +80,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const statusMap: Record<string, string> = {
       'pending': 'pendente',
       'paid': 'pago', 
-      'overdue': 'atrasado',  // Banco aceita 'atrasado', não 'vencido'
+      'overdue': 'pago',     // Tentar 'pago' em vez de 'atrasado'
       'cancelled': 'cancelado',
-      'vencido': 'atrasado'   // Mapear 'vencido' para 'atrasado'
+      'vencido': 'pago'      // Mapear 'vencido' para 'pago'
     };
 
     // Mapear forma_pagamento de inglês para português
