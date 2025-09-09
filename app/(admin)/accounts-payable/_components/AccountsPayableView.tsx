@@ -186,8 +186,7 @@ export default function AccountsPayableView() {
         // Feedback de sucesso
         toast({ 
           title: '✅ Sucesso!', 
-          description: 'Conta a pagar criada com sucesso',
-          className: 'bg-green-50 border-green-200 text-green-800'
+          description: 'Conta a pagar criada com sucesso'
         });
         
         resetForm();
@@ -247,8 +246,7 @@ export default function AccountsPayableView() {
         // Feedback de sucesso
         toast({ 
           title: '✅ Sucesso!', 
-          description: 'Conta a pagar atualizada com sucesso',
-          className: 'bg-green-50 border-green-200 text-green-800'
+          description: 'Conta a pagar atualizada com sucesso'
         });
         
         resetForm();
