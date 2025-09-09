@@ -15,8 +15,10 @@ export async function GET(request: NextRequest) {
     
     // Filtrar por segmento se fornecido
     if (segmentId && segmentId !== 'null' && segmentId !== '0') {
-      query = query.eq('segment_id', segmentId);
+      // Mostrar registros do segmento específico + registros globais (segment_id = null)
+      query = query.or(`segment_id.eq.${segmentId},segment_id.is.null`);
     }
+    // Se segmentId for null, '0' ou não fornecido, mostra todos os registros
     
     const { data, error } = await query;
 
