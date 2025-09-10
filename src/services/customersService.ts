@@ -133,6 +133,8 @@ export async function updateCustomer(id: string, customerData: CustomerPayload):
   
   const response = await apiService.put<{ success: boolean; customer: any }>(`/customers/${id}`, partnerData);
   
+  console.log('🔄 updateCustomer - Resposta da API:', response);
+  
   // Mapear dados de volta para Customer
   const customer: Customer = {
     id: response.customer.id,

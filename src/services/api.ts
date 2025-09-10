@@ -134,8 +134,10 @@ class ApiService {
       let data: any = null;
       try {
         data = await response.json();
-      } catch {
+        console.log('📥 API Response parsed:', { endpoint, status: response.status, data });
+      } catch (parseError) {
         // Corpo vazio ou inválido
+        console.error('❌ JSON Parse Error:', { endpoint, status: response.status, parseError });
         data = null;
       }
       
