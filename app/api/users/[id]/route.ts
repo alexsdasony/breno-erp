@@ -19,7 +19,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (body.email !== undefined) updateData.email = body.email;
     if (body.role !== undefined) updateData.role = body.role;
     if (body.status !== undefined) updateData.status = body.status;
-    if (body.segment_id !== undefined) updateData.segment_id = body.segment_id;
+    if (body.segment_id !== undefined) {
+      // Converter string vazia para null para campos integer
+      updateData.segment_id = body.segment_id === '' ? null : body.segment_id;
+    }
     if (body.password !== undefined && body.password.trim() !== '') {
       updateData.password = body.password;
     }
