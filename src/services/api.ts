@@ -134,10 +134,8 @@ class ApiService {
       let data: any = null;
       try {
         data = await response.json();
-        console.log('📥 API Response parsed:', { endpoint, status: response.status, data });
       } catch (parseError) {
         // Corpo vazio ou inválido
-        console.error('❌ JSON Parse Error:', { endpoint, status: response.status, parseError });
         data = null;
       }
       
@@ -155,13 +153,7 @@ class ApiService {
     } catch (error: any) {
       // Evitar logs ruidosos em 401 (já redireciona)
       if (error?.status !== 401) {
-        console.error(`API Error (${endpoint}):`, {
-          error,
-          message: error?.message,
-          status: error?.status,
-          response: error?.response,
-          data: error?.data
-        });
+        console.error(`API Error (${endpoint}):`, error);
       }
       throw error;
     } finally {

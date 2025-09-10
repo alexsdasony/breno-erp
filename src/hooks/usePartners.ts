@@ -403,26 +403,16 @@ export const useCustomers = () => {
         throw new Error('Cliente não encontrado');
       }
 
-      console.log('🔄 Toggle status - Cliente atual:', {
-        id: currentCustomer.id,
-        name: currentCustomer.name,
-        currentStatus: currentCustomer.status
-      });
-
       // Alternar status: 'ativo' <-> 'inativo'
       const newStatus = currentCustomer.status === 'ativo' ? 'inativo' : 'ativo';
       
-      console.log('🔄 Toggle status - Novo status:', newStatus);
-      
       const response = await updateCustomer(id, { status: newStatus } as any);
       if (response.error) {
-        console.error('❌ Erro na resposta da API:', response.error);
         throw new Error(response.error);
       }
       
       const customer = response.data?.customer;
       if (customer) {
-        console.log('✅ Cliente atualizado com sucesso:', customer);
         setState((s) => ({
           ...s,
           items: s.items.map((it) => (it.id === id ? customer : it)),
@@ -435,7 +425,6 @@ export const useCustomers = () => {
       }
       return null;
     } catch (e) {
-      console.error('❌ Erro no toggleStatus:', e);
       toast({
         title: 'Erro ao alterar status',
         description: 'Tente novamente.',

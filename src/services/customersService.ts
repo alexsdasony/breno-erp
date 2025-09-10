@@ -133,10 +133,6 @@ export async function updateCustomer(id: string, customerData: CustomerPayload):
   
   const response = await apiService.put<{ success: boolean; customer: any }>(`/customers/${id}`, partnerData);
   
-  console.log('🔄 updateCustomer - Resposta da API:', response);
-  console.log('🔄 updateCustomer - Tipo da resposta:', typeof response);
-  console.log('🔄 updateCustomer - response.customer:', response.customer);
-  
   // Verificar se a resposta tem a estrutura esperada
   if (!response || !response.customer) {
     console.error('❌ Resposta inválida:', response);
