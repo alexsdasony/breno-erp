@@ -18,13 +18,25 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       'inactive': 'inactive'
     };
 
-    // Normalizar o payload
-    const normalizedBody = {
-      ...body,
+    // Normalizar o payload - APENAS campos que não são null
+    const normalizedBody: any = {
       status: body.status ? statusMap[body.status] || 'active' : 'active'
     };
 
-    console.log('🧹 Payload normalizado:', normalizedBody);
+    // Adicionar apenas campos que não são null para evitar constraint violations
+    if (body.name !== null && body.name !== undefined) normalizedBody.name = body.name;
+    if (body.tax_id !== null && body.tax_id !== undefined) normalizedBody.tax_id = body.tax_id;
+    if (body.email !== null && body.email !== undefined) normalizedBody.email = body.email;
+    if (body.phone !== null && body.phone !== undefined) normalizedBody.phone = body.phone;
+    if (body.address !== null && body.address !== undefined) normalizedBody.address = body.address;
+    if (body.city !== null && body.city !== undefined) normalizedBody.city = body.city;
+    if (body.state !== null && body.state !== undefined) normalizedBody.state = body.state;
+    if (body.zip_code !== null && body.zip_code !== undefined) normalizedBody.zip_code = body.zip_code;
+    if (body.notes !== null && body.notes !== undefined) normalizedBody.notes = body.notes;
+    if (body.segment_id !== null && body.segment_id !== undefined) normalizedBody.segment_id = body.segment_id;
+    if (body.tipo_pessoa !== null && body.tipo_pessoa !== undefined) normalizedBody.tipo_pessoa = body.tipo_pessoa;
+
+    console.log('🧹 Payload normalizado (apenas campos não-null):', normalizedBody);
 
     const { data, error } = await supabaseAdmin
       .from('partners')
