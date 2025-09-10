@@ -53,7 +53,12 @@ export const useAuth = (): AuthContextType => {
               if (profile.data && profile.data.user) {
                 setCurrentUser(profile.data.user);
                 localStorage.setItem('cached_user', JSON.stringify(profile.data.user));
-                console.log('Usuário autenticado restaurado:', profile.data.user.name);
+                console.log('Usuário autenticado restaurado:', {
+                  name: profile.data.user.name,
+                  email: profile.data.user.email,
+                  role: profile.data.user.role,
+                  fullUser: profile.data.user
+                });
               } else {
                 // Fallback para usuário em cache se perfil não disponível
                 const cachedUser = localStorage.getItem('cached_user');

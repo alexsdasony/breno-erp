@@ -59,6 +59,14 @@ export default function UsersView() {
 
   // Check if current user is admin
   const isAdmin = currentUser?.role === 'admin';
+  
+  // Debug logs
+  console.log('🔍 UsersView - Debug Info:', {
+    currentUser,
+    userRole: currentUser?.role,
+    isAdmin,
+    authLoading
+  });
 
   // Filtered users
   const filteredUsers = useMemo(() => {
