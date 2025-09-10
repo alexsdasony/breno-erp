@@ -9,6 +9,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     
     const body = await request.json();
     console.log('📝 Dados recebidos:', body);
+    console.log('📝 Tipo dos dados:', typeof body);
+    console.log('📝 JSON stringify:', JSON.stringify(body));
     
     // Preparar dados para atualização
     const updateData: any = {};
