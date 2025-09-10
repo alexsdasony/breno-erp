@@ -64,8 +64,11 @@ export default function UsersView() {
   console.log('🔍 UsersView - Debug Info:', {
     currentUser,
     userRole: currentUser?.role,
+    userRoleType: typeof currentUser?.role,
     isAdmin,
-    authLoading
+    authLoading,
+    roleComparison: currentUser?.role === 'admin',
+    roleTrimmed: currentUser?.role?.trim?.() === 'admin'
   });
 
   // Filtered users
