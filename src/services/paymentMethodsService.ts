@@ -3,10 +3,10 @@ import type { ApiResponse } from '@/services/api'
 import type { PaymentMethod, PaymentMethodPayload } from '@/types'
 
 export async function listPaymentMethods(params: Record<string, any> = {}): Promise<ApiResponse<{ payment_methods: PaymentMethod[] }>> {
-  const response = await apiService.get<{ success: boolean; payment_methods: PaymentMethod[] }>('/payment-methods', params);
+  const response = await apiService.get<{ success: boolean; paymentMethods: PaymentMethod[] }>('/payment-methods', params);
   return {
     success: response.success,
-    data: { payment_methods: response.payment_methods || [] }
+    data: { payment_methods: response.paymentMethods || [] }
   };
 }
 
