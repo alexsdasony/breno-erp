@@ -65,6 +65,11 @@ export async function createUser(userData: UserPayload): Promise<ApiResponse<{ u
  * @returns Usuário atualizado
  */
 export async function updateUser(id: string, userData: UserPayload): Promise<ApiResponse<{ user: UserExtended }>> {
+  console.log('🔄 updateUser - ID:', id);
+  console.log('🔄 updateUser - userData:', userData);
+  console.log('🔄 updateUser - userData type:', typeof userData);
+  console.log('🔄 updateUser - userData JSON:', JSON.stringify(userData));
+  
   const response = await apiService.put<{ success: boolean; user: User }>(`/users/${id}`, userData);
   const userWithStatus = response.user ? {
     ...response.user,
