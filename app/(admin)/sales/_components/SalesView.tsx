@@ -22,7 +22,7 @@ export default function SalesView() {
 
   // Cálculos para KPIs
   const totalSales = items.length;
-  const totalRevenue = items.reduce((acc, sale) => acc + Number(sale.total_amount || 0), 0);
+  const totalRevenue = items.reduce((acc: number, sale) => acc + Number(sale.total_amount || 0), 0);
   const uniqueCustomers = new Set(items.map(sale => sale.customer_id)).size;
   const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
 

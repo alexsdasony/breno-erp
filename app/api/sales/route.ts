@@ -71,23 +71,56 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('🛒 Criando nova venda:', body);
 
-    // Mock implementation
-    const newSale = {
-      id: `sale_${Date.now()}`,
-      ...body,
-      created_at: new Date().toISOString()
-    };
+    // Preparar dados para inserção
+    const insertData: any = { ...body };
+    
+    // Converter string vazia para null para campos integer
+    if (insertData.segment_id === '') {
+      insertData.segment_id = null;
+    }
+    
+    // Garantir que campos obrigatórios tenham valores padrão
+    if (!insertData.sale_date) {
+      insertData.sale_date = new Date().toISOString().split('T')[0];
+    }
+    if (!insertData.status) {
+      insertData.status = 'Pendente';
+    }
+    if (!insertData.payment_method) {
+      insertData.payment_method = 'dinheiro';
+    }
+    
+    console.log('🧹 Dados para inserção:', insertData);
 
+    const { data, error } = await supabaseAdmin
+      .from('sales')
+      .insert([insertData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Erro ao criar venda:', error);
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Erro ao criar venda',
+          details: error.message 
+        },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ Venda criada:', data);
     return NextResponse.json({
       success: true,
-      sale: newSale
+      sale: data
     });
 
   } catch (error) {
     console.error('❌ Erro ao criar venda:', error);
     return NextResponse.json(
       { 
-        success: false, 
+        success: false,
         error: 'Erro interno do servidor',
         details: error instanceof Error ? error.message : 'Erro desconhecido'
       },
