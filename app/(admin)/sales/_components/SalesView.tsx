@@ -22,8 +22,8 @@ export default function SalesView() {
 
   // Cálculos para KPIs
   const totalSales = items.length;
-  const totalRevenue = items.reduce((acc: number, sale) => acc + Number(sale.total_amount || 0), 0);
-  const uniqueCustomers = new Set(items.map(sale => sale.customer_id)).size;
+  const totalRevenue = items.reduce((acc: number, sale: Sale) => acc + Number(sale.total_amount || 0), 0);
+  const uniqueCustomers = new Set(items.map((sale: Sale) => sale.customer_id)).size;
   const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
 
   // Funções de manipulação de vendas
@@ -56,8 +56,8 @@ export default function SalesView() {
         customer_name: formData.customer_name,
         date: formData.sale_date,
         status: formData.status as SaleStatus,
-        total_amount: saleItems.reduce((acc, item) => acc + item.totalPrice, 0),
-        items: saleItems.map(item => ({
+        total_amount: saleItems.reduce((acc: number, item: SaleItemUI) => acc + item.totalPrice, 0),
+        items: saleItems.map((item: SaleItemUI) => ({
           id: item.id,
           sale_id: '',
           product_id: item.product_id,

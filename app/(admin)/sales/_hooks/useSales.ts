@@ -128,7 +128,6 @@ export function useSales() {
 
   return { 
     ...state, 
-    items: filteredSales, // Usar dados filtrados por segmento
     ...api 
   };
 }
