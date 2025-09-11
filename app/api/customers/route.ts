@@ -10,8 +10,9 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = (page - 1) * limit;
     const segmentId = searchParams.get('segment_id');
+    const search = searchParams.get('search');
     
-    console.log('📝 Parâmetros:', { page, limit, offset, segmentId });
+    console.log('📝 Parâmetros:', { page, limit, offset, segmentId, search });
     
     let query = supabaseAdmin
       .from('partners')
@@ -22,6 +23,11 @@ export async function GET(request: NextRequest) {
       .eq('partner_roles.role', 'customer')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
+
+    // Filtrar por busca se fornecido
+    if (search && search.trim()) {
+      query = query.ilike('name', `%${search.trim()}%`);
+    }
 
     // Filtrar por segmento se fornecido
     if (segmentId && segmentId !== 'null' && segmentId !== '0') {

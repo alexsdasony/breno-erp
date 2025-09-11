@@ -11,6 +11,7 @@ import { SalesForm } from './SalesForm';
 import { SalesList } from './SalesList';
 import { SaleViewModal } from './SaleViewModal';
 import { FormData, SaleItemUI } from './types';
+import { getCustomers } from '@/services/customersService';
 
 export default function SalesView() {
   // Estados principais
@@ -19,6 +20,24 @@ export default function SalesView() {
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [activeCustomersCount, setActiveCustomersCount] = useState(0);
+
+  // Carregar número de clientes ativos
+  useEffect(() => {
+    const loadActiveCustomers = async () => {
+      try {
+        const response = await getCustomers({ page: 1, limit: 1000 });
+        const customers = response.data?.customers || [];
+        const activeCount = customers.filter(customer => customer.status === 'ativo').length;
+        setActiveCustomersCount(activeCount);
+      } catch (error) {
+        console.error('Erro ao carregar clientes ativos:', error);
+        setActiveCustomersCount(0);
+      }
+    };
+    
+    loadActiveCustomers();
+  }, []);
 
   // Cálculos para KPIs
   const totalSales = items.length;
@@ -98,7 +117,7 @@ export default function SalesView() {
       <SalesKPIs 
         totalSales={totalSales}
         totalRevenue={totalRevenue}
-        uniqueCustomers={uniqueCustomers}
+        uniqueCustomers={activeCustomersCount}
         averageTicket={averageTicket}
       />
 
