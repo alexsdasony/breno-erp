@@ -37,9 +37,13 @@ export function useSales() {
   }, [data.sales, activeSegmentId]);
 
   const fetchPage = useCallback(async (page: number) => {
+    console.log('🛒 fetchPage - page:', page, 'activeSegmentId:', activeSegmentId);
     const response = await listSales({ page, pageSize: PAGE_SIZE, segment_id: activeSegmentId });
-    console.log('API Response:', response); // Log para debug
+    console.log('🛒 API Response:', response); // Log para debug
+    console.log('🛒 Response data:', response.data);
+    console.log('🛒 Sales array:', response.data?.sales);
     const list = response.data?.sales || [];
+    console.log('🛒 List length:', list.length);
     return list as Sale[];
   }, [activeSegmentId]);
 
