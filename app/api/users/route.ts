@@ -58,9 +58,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📝 Dados recebidos:', body);
     
+    // Preparar dados para inserção
+    const insertData = { ...body };
+    
+    // Converter string vazia para null para campos integer
+    if (insertData.segment_id === '') {
+      insertData.segment_id = null;
+    }
+    
+    console.log('🧹 Dados para inserção:', insertData);
+    
     const { data, error } = await supabaseAdmin
       .from('users')
-      .insert([body])
+      .insert([insertData])
       .select()
       .single();
 
