@@ -23,18 +23,7 @@ const PAGE_SIZE = 20;
 
 export function useSales() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
-  const { data, activeSegmentId } = useAppData();
-
-  // Filtrar vendas por segmento ativo
-  const filteredSales = useMemo(() => {
-    if (!data.sales) return [];
-    
-    if (!activeSegmentId || activeSegmentId === '0') {
-      return data.sales;
-    }
-    
-    return data.sales.filter((sale: any) => sale.segment_id === activeSegmentId);
-  }, [data.sales, activeSegmentId]);
+  const { activeSegmentId } = useAppData();
 
   const fetchPage = useCallback(async (page: number) => {
     console.log('🛒 fetchPage - page:', page, 'activeSegmentId:', activeSegmentId);
