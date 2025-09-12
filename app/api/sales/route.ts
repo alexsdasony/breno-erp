@@ -10,10 +10,25 @@ export async function GET(request: NextRequest) {
 
     console.log('🛒 Sales API request:', { page, pageSize, segmentId });
 
-    // Buscar vendas da tabela real
+    // Buscar vendas com dados do cliente usando uma abordagem mais robusta
     let query = supabaseAdmin
       .from('sales')
-      .select('*')
+      .select(`
+        id,
+        customer_id,
+        customer_name,
+        sale_date,
+        total_amount,
+        payment_method,
+        status,
+        notes,
+        created_at,
+        updated_at,
+        segment_id,
+        deleted_at,
+        is_deleted
+      `)
+      .eq('is_deleted', false)
       .order('created_at', { ascending: false });
 
     // Filtrar por segmento se fornecido
@@ -35,12 +50,42 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Buscar dados dos clientes para vendas que têm customer_id
+    const salesWithCustomerData = await Promise.all(
+      (sales || []).map(async (sale) => {
+        if (sale.customer_id) {
+          try {
+            const { data: customer } = await supabaseAdmin
+              .from('partners')
+              .select('id, name, email, phone')
+              .eq('id', sale.customer_id)
+              .single();
+            
+            return {
+              ...sale,
+              customer: customer || null
+            };
+          } catch (error) {
+            console.warn(`⚠️ Cliente não encontrado para venda ${sale.id}:`, error);
+            return {
+              ...sale,
+              customer: null
+            };
+          }
+        }
+        return {
+          ...sale,
+          customer: null
+        };
+      })
+    );
+
     // Aplicar paginação
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const paginatedSales = (sales || []).slice(startIndex, endIndex);
+    const paginatedSales = salesWithCustomerData.slice(startIndex, endIndex);
 
-    console.log('📊 Vendas encontradas:', (sales || []).length);
+    console.log('📊 Vendas encontradas:', salesWithCustomerData.length);
 
     return NextResponse.json({
       success: true,
@@ -48,8 +93,8 @@ export async function GET(request: NextRequest) {
       pagination: {
         page,
         pageSize,
-        total: (sales || []).length,
-        totalPages: Math.ceil((sales || []).length / pageSize)
+        total: salesWithCustomerData.length,
+        totalPages: Math.ceil(salesWithCustomerData.length / pageSize)
       }
     });
 
@@ -74,24 +119,47 @@ export async function POST(request: NextRequest) {
     // Separar dados da venda dos itens
     const { items, ...saleData } = body;
     
-    // Preparar dados para inserção da venda
-    const insertData: any = { ...saleData };
-    
-    // Converter string vazia para null para campos integer
-    if (insertData.segment_id === '') {
-      insertData.segment_id = null;
+    // Validar dados obrigatórios
+    if (!saleData.customer_id) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'ID do cliente é obrigatório'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Verificar se o cliente existe
+    const { data: customer, error: customerError } = await supabaseAdmin
+      .from('partners')
+      .select('id, name')
+      .eq('id', saleData.customer_id)
+      .single();
+
+    if (customerError || !customer) {
+      console.error('❌ Cliente não encontrado:', customerError);
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Cliente não encontrado'
+        },
+        { status: 400 }
+      );
     }
     
-    // Garantir que campos obrigatórios tenham valores padrão
-    if (!insertData.sale_date) {
-      insertData.sale_date = new Date().toISOString().split('T')[0];
-    }
-    if (!insertData.status) {
-      insertData.status = 'Pendente';
-    }
-    if (!insertData.payment_method) {
-      insertData.payment_method = 'dinheiro';
-    }
+    // Preparar dados para inserção da venda com estrutura consistente
+    const insertData = {
+      customer_id: saleData.customer_id,
+      customer_name: customer.name, // Garantir que o nome do cliente seja salvo
+      sale_date: saleData.sale_date || new Date().toISOString().split('T')[0],
+      total_amount: saleData.total_amount || 0,
+      payment_method: saleData.payment_method || 'dinheiro',
+      status: saleData.status || 'Pendente',
+      notes: saleData.notes || null,
+      segment_id: saleData.segment_id === '' ? null : saleData.segment_id,
+      is_deleted: false
+    };
     
     console.log('🧹 Dados para inserção da venda:', insertData);
 
@@ -123,7 +191,7 @@ export async function POST(request: NextRequest) {
         product_id: item.product_id,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        total: item.total || (item.quantity * item.unit_price)
+        total_price: item.total || (item.quantity * item.unit_price)
       }));
 
       console.log('🧹 Dados para inserção dos itens:', saleItems);
@@ -140,9 +208,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Retornar a venda com dados do cliente
+    const responseData = {
+      ...sale,
+      customer: {
+        id: customer.id,
+        name: customer.name
+      }
+    };
+
     return NextResponse.json({
       success: true,
-      sale: sale
+      sale: responseData
     });
 
   } catch (error) {
