@@ -50,32 +50,53 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Buscar dados dos clientes para vendas que têm customer_id
+    // Buscar dados dos clientes e itens para vendas que têm customer_id
     const salesWithCustomerData = await Promise.all(
       (sales || []).map(async (sale) => {
+        let customer: any = null;
+        let items: any[] = [];
+
+        // Buscar dados do cliente se existir
         if (sale.customer_id) {
           try {
-            const { data: customer } = await supabaseAdmin
+            const { data: customerData } = await supabaseAdmin
               .from('partners')
               .select('id, name, email, phone')
               .eq('id', sale.customer_id)
               .single();
-            
-            return {
-              ...sale,
-              customer: customer || null
-            };
+            customer = customerData;
           } catch (error) {
             console.warn(`⚠️ Cliente não encontrado para venda ${sale.id}:`, error);
-            return {
-              ...sale,
-              customer: null
-            };
           }
         }
+
+        // Buscar itens da venda
+        try {
+          const { data: saleItems } = await supabaseAdmin
+            .from('sale_items')
+            .select(`
+              id,
+              product_id,
+              quantity,
+              unit_price,
+              total_price,
+              product:products(
+                id,
+                name,
+                price
+              )
+            `)
+            .eq('sale_id', sale.id);
+
+          items = saleItems || [];
+        } catch (error) {
+          console.warn(`⚠️ Erro ao buscar itens da venda ${sale.id}:`, error);
+        }
+        
         return {
           ...sale,
-          customer: null
+          customer,
+          items
         };
       })
     );

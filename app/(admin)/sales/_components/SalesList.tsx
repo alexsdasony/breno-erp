@@ -108,6 +108,7 @@ export function SalesList({ items, loading, hasMore, loadMore, onEdit, onView, o
           <thead>
             <tr className="border-b border-border">
               <th className="text-left p-3 text-sm font-medium text-muted-foreground">Cliente</th>
+              <th className="text-left p-3 text-sm font-medium text-muted-foreground">Produtos</th>
               <th className="text-left p-3 text-sm font-medium text-muted-foreground">Data</th>
               <th className="text-left p-3 text-sm font-medium text-muted-foreground">Pagamento</th>
               <th className="text-left p-3 text-sm font-medium text-muted-foreground">Status</th>
@@ -130,13 +131,43 @@ export function SalesList({ items, loading, hasMore, loadMore, onEdit, onView, o
                       <Users className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <div className="font-medium">{sale.customer_name || 'Cliente'}</div>
-                      <div className="text-sm text-muted-foreground">Itens: {sale.items?.length ?? 1}</div>
+                      <div className="font-medium">
+                        {sale.customer?.name || sale.customer_name || 'Cliente não identificado'}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {sale.customer?.email && `📧 ${sale.customer.email}`}
+                        {sale.customer?.phone && ` 📞 ${sale.customer.phone}`}
+                      </div>
                     </div>
                   </div>
                 </td>
                 <td className="p-3">
-                  <span className="text-sm">{formatDate(sale.date || '')}</span>
+                  <div className="space-y-1">
+                    {sale.items && sale.items.length > 0 ? (
+                      sale.items.map((item: any, itemIndex: number) => (
+                        <div key={itemIndex} className="flex items-center space-x-2">
+                          <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center">
+                            <span className="text-xs font-medium text-blue-500">{item.quantity}</span>
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">
+                              {item.product?.name || `Produto ${item.product_id}`}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {formatCurrency(item.unit_price)} × {item.quantity} = {formatCurrency(item.total_price)}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-muted-foreground">
+                        {sale.product || 'Produto não identificado'}
+                      </div>
+                    )}
+                  </div>
+                </td>
+                <td className="p-3">
+                  <span className="text-sm">{formatDate(sale.date || sale.sale_date || '')}</span>
                 </td>
                 <td className="p-3">
                   <div className="flex items-center space-x-2">
