@@ -10,10 +10,18 @@ export async function GET(request: NextRequest) {
 
     console.log('🛒 Sales API request:', { page, pageSize, segmentId });
 
-    // Buscar vendas da tabela real
+    // Buscar vendas da tabela real com dados do cliente
     let query = supabaseAdmin
       .from('sales')
-      .select('*')
+      .select(`
+        *,
+        customer:partners!sales_customer_id_fkey(
+          id,
+          name,
+          email,
+          phone
+        )
+      `)
       .order('created_at', { ascending: false });
 
     // Filtrar por segmento se fornecido
