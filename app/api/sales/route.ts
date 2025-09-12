@@ -165,7 +165,12 @@ export async function POST(request: NextRequest) {
       status: saleData.status || 'Pendente',
       notes: saleData.notes || null,
       segment_id: saleData.segment_id === '' ? null : saleData.segment_id,
-      is_deleted: false
+      is_deleted: false,
+      // Campos obrigatórios para compatibilidade com estrutura antiga
+      quantity: 1, // Valor padrão
+      total: saleData.total_amount || 0,
+      date: saleData.sale_date || new Date().toISOString().split('T')[0],
+      product: 'Produto da venda' // Valor padrão
     };
     
     console.log('🧹 Dados para inserção da venda:', insertData);

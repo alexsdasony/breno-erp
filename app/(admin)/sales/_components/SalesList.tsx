@@ -137,6 +137,11 @@ export function SalesList({ items, loading, hasMore, loadMore, onEdit, onView, o
                       <div className="text-sm text-muted-foreground">
                         {sale.customer?.email && `📧 ${sale.customer.email}`}
                         {sale.customer?.phone && ` 📞 ${sale.customer.phone}`}
+                        {!sale.customer && !sale.customer_name && (
+                          <span className="text-orange-500 text-xs">
+                            ⚠️ Venda antiga - dados do cliente não disponíveis
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
