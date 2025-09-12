@@ -5,9 +5,16 @@ import type { Customer, CustomerPayload } from '@/types';
 
 export async function getCustomers(params: Record<string, any> = {}): Promise<ApiResponse<{ customers: Customer[] }>> {
   const response = await apiService.get<{ success: boolean; customers: Customer[] }>('/customers', params);
+  
+  // Converter status de 'active'/'inactive' para 'ativo'/'inativo'
+  const customers = (response.customers || []).map(customer => ({
+    ...customer,
+    status: (customer.status as any) === 'active' ? 'ativo' : (customer.status as any) === 'inactive' ? 'inativo' : customer.status
+  }));
+  
   return {
     data: {
-      customers: response.customers || []
+      customers
     },
     success: response.success || false
   } as ApiResponse<{ customers: Customer[] }>;

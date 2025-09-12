@@ -12,6 +12,7 @@ import { SalesList } from './SalesList';
 import { SaleViewModal } from './SaleViewModal';
 import { FormData, SaleItemUI } from './types';
 import { getCustomers } from '@/services/customersService';
+import { CustomerStatus } from '@/types/enums';
 
 export default function SalesView() {
   // Estados principais
@@ -28,7 +29,7 @@ export default function SalesView() {
       try {
         const response = await getCustomers({ page: 1, limit: 1000 });
         const customers = response.data?.customers || [];
-        const activeCount = customers.filter(customer => customer.status === 'ativo').length;
+        const activeCount = customers.filter(customer => customer.status === CustomerStatus.ATIVO).length;
         setActiveCustomersCount(activeCount);
       } catch (error) {
         console.error('Erro ao carregar clientes ativos:', error);
