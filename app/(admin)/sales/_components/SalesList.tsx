@@ -160,8 +160,21 @@ export function SalesList({ items, loading, hasMore, loadMore, onEdit, onView, o
                         </div>
                       ))
                     ) : (
-                      <div className="text-sm text-muted-foreground">
-                        {sale.product || 'Produto não identificado'}
+                      <div className="flex items-center space-x-2">
+                        <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center">
+                          <span className="text-xs font-medium text-blue-500">{sale.quantity || 1}</span>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium">
+                            {sale.product || 'Produto não identificado'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {sale.quantity && sale.total ? 
+                              `Qtd: ${sale.quantity} - Total: ${formatCurrency(sale.total)}` : 
+                              'Dados antigos'
+                            }
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>

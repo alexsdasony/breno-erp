@@ -13,21 +13,7 @@ export async function GET(request: NextRequest) {
     // Buscar vendas com dados do cliente usando uma abordagem mais robusta
     let query = supabaseAdmin
       .from('sales')
-      .select(`
-        id,
-        customer_id,
-        customer_name,
-        sale_date,
-        total_amount,
-        payment_method,
-        status,
-        notes,
-        created_at,
-        updated_at,
-        segment_id,
-        deleted_at,
-        is_deleted
-      `)
+      .select('*')
       .eq('is_deleted', false)
       .order('created_at', { ascending: false });
 
