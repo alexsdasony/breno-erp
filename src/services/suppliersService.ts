@@ -11,6 +11,7 @@ export async function listSuppliers(params: Record<string, any> = {}): Promise<A
     id: partner.id,
     razao_social: partner.name,
     nome_fantasia: partner.name,
+    ramo_atividade: partner.profissao, // Mapear profissao para ramo_atividade
     tipo_contribuinte: partner.tipo_pessoa === 'fisica' ? 'PF' : 'PJ',
     cpf_cnpj: partner.tax_id,
     email: partner.email,
@@ -18,6 +19,9 @@ export async function listSuppliers(params: Record<string, any> = {}): Promise<A
     cidade: partner.city,
     uf: partner.state,
     endereco: partner.address,
+    numero: partner.numero,
+    complemento: partner.complemento,
+    bairro: partner.bairro,
     cep: partner.zip_code,
     observacoes: partner.notes,
     status: partner.status === 'active' ? 'ativo' : 'inativo',
@@ -58,9 +62,14 @@ export async function createSupplier(payload: SupplierPayload): Promise<ApiRespo
     city: payload.cidade || null,
     state: payload.uf || null,
     zip_code: payload.cep || null,
+    numero: payload.numero || null,
+    complemento: payload.complemento || null,
+    bairro: payload.bairro || null,
+    profissao: payload.ramo_atividade || null, // Mapear ramo_atividade para profissao
     notes: payload.observacoes || null,
     status: payload.status === 'ativo' ? 'active' : 'inactive',
-    segment_id: segmentId
+    segment_id: segmentId,
+    tipo_pessoa: payload.tipo_contribuinte === 'PF' ? 'fisica' : 'juridica'
   };
   
   console.log('🚀 Enviando dados para API /suppliers:', JSON.stringify(partnerData, null, 2));
@@ -72,6 +81,7 @@ export async function createSupplier(payload: SupplierPayload): Promise<ApiRespo
     id: response.supplier.id,
     razao_social: response.supplier.name,
     nome_fantasia: response.supplier.name,
+    ramo_atividade: response.supplier.profissao, // Mapear profissao para ramo_atividade
     tipo_contribuinte: response.supplier.tipo_pessoa === 'fisica' ? 'PF' : 'PJ',
     cpf_cnpj: response.supplier.tax_id,
     email: response.supplier.email,
@@ -79,6 +89,9 @@ export async function createSupplier(payload: SupplierPayload): Promise<ApiRespo
     cidade: response.supplier.city,
     uf: response.supplier.state,
     endereco: response.supplier.address,
+    numero: response.supplier.numero,
+    complemento: response.supplier.complemento,
+    bairro: response.supplier.bairro,
     cep: response.supplier.zip_code,
     observacoes: response.supplier.notes,
     status: response.supplier.status === 'active' ? 'ativo' : 'inativo',
@@ -119,6 +132,10 @@ export async function updateSupplier(id: string, payload: SupplierPayload): Prom
     city: payload.cidade || null,
     state: payload.uf || null,
     zip_code: payload.cep || null,
+    numero: payload.numero || null,
+    complemento: payload.complemento || null,
+    bairro: payload.bairro || null,
+    profissao: payload.ramo_atividade || null, // Mapear ramo_atividade para profissao
     notes: payload.observacoes || null,
     status: payload.status === 'ativo' ? 'active' : 'inactive',
     segment_id: segmentId,
@@ -132,6 +149,7 @@ export async function updateSupplier(id: string, payload: SupplierPayload): Prom
     id: response.supplier.id,
     razao_social: response.supplier.name,
     nome_fantasia: response.supplier.name,
+    ramo_atividade: response.supplier.profissao, // Mapear profissao para ramo_atividade
     tipo_contribuinte: response.supplier.tipo_pessoa === 'fisica' ? 'PF' : 'PJ',
     cpf_cnpj: response.supplier.tax_id,
     email: response.supplier.email,
@@ -139,6 +157,9 @@ export async function updateSupplier(id: string, payload: SupplierPayload): Prom
     cidade: response.supplier.city,
     uf: response.supplier.state,
     endereco: response.supplier.address,
+    numero: response.supplier.numero,
+    complemento: response.supplier.complemento,
+    bairro: response.supplier.bairro,
     cep: response.supplier.zip_code,
     observacoes: response.supplier.notes,
     status: response.supplier.status === 'active' ? 'ativo' : 'inativo',
