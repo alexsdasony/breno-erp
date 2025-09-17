@@ -37,6 +37,10 @@ export default function CustomersView() {
   const { segments, activeSegmentId } = useAppData();
   const router = useRouter();
 
+  // Debug: verificar se os segmentos estão sendo carregados
+  console.log('Debug CustomersView - segments:', segments);
+  console.log('Debug CustomersView - items:', items);
+
   // State management
   const [showForm, setShowForm] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -464,7 +468,16 @@ export default function CustomersView() {
                       </div>
                     </td>
                     <td className="p-3">
-                       {segments.find((s: any) => Number(s.id) === Number(customer.segment_id))?.name || 'N/A'}
+                       {(() => {
+                         const segment = segments.find((s: any) => s.id === customer.segment_id);
+                         console.log('Debug segmento:', { 
+                           customerName: customer.name, 
+                           customerSegmentId: customer.segment_id, 
+                           segments: segments.map(s => ({ id: s.id, name: s.name })),
+                           foundSegment: segment 
+                         });
+                         return segment?.name || 'N/A';
+                       })()}
                      </td>
                     <td className="p-3">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(customer.status)}`}>
