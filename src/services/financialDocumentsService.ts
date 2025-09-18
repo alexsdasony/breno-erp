@@ -82,44 +82,121 @@ export async function getFinancialDocuments(params: Record<string, any> = {}): P
  * Obtém um documento financeiro pelo ID
  */
 export async function getFinancialDocumentById(id: ID): Promise<ApiResponse<{ financialDocument: FinancialDocument }>> {
-  const response = await apiService.get<{ financialDocument: FinancialDocument }>(`/financial-documents/${id}`);
-  return response as ApiResponse<{ financialDocument: FinancialDocument }>;
+  try {
+    const response = await fetch(`/api/financial-documents/${id}`, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    
+    return {
+      success: true,
+      data: {
+        financialDocument: data.financialDocument
+      }
+    } as ApiResponse<{ financialDocument: FinancialDocument }>;
+  } catch (error) {
+    console.error('Erro ao buscar documento financeiro:', error);
+    return {
+      success: false,
+      data: {
+        financialDocument: {} as FinancialDocument
+      }
+    } as ApiResponse<{ financialDocument: FinancialDocument }>;
+  }
 }
 
 /**
  * Cria um novo documento financeiro
  */
 export async function createFinancialDocument(data: FinancialDocumentPayload): Promise<ApiResponse<{ financialDocument: FinancialDocument }>> {
-  const response = await apiService.post<{ document: FinancialDocument }>('/financial-documents', data);
-  // Mapear a resposta da edge function {document: data} para o formato esperado {data: {financialDocument: data}}
-  return {
-    success: true,
-    data: { financialDocument: response.document }
-  };
+  try {
+    const response = await fetch('/api/financial-documents', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+    
+    const result = await response.json();
+    
+    return {
+      success: true,
+      data: {
+        financialDocument: result.document
+      }
+    } as ApiResponse<{ financialDocument: FinancialDocument }>;
+  } catch (error) {
+    console.error('Erro ao criar documento financeiro:', error);
+    return {
+      success: false,
+      data: {
+        financialDocument: {} as FinancialDocument
+      }
+    } as ApiResponse<{ financialDocument: FinancialDocument }>;
+  }
 }
 
 /**
  * Atualiza um documento financeiro existente
  */
-// TODO: Analise humana
 export async function updateFinancialDocument(id: ID, data: Partial<FinancialDocumentPayload>): Promise<ApiResponse<{ financialDocument: FinancialDocument }>> {
-  const response = await apiService.put<{ document: FinancialDocument }>(`/financial-documents/${id}`, data);
-  // Mapear a resposta da edge function {document: data} para o formato esperado {data: {financialDocument: data}}
-  return {
-    success: true,
-    data: { financialDocument: response.document }
-  };
+  try {
+    const response = await fetch(`/api/financial-documents/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+    
+    const result = await response.json();
+    
+    return {
+      success: true,
+      data: {
+        financialDocument: result.document
+      }
+    } as ApiResponse<{ financialDocument: FinancialDocument }>;
+  } catch (error) {
+    console.error('Erro ao atualizar documento financeiro:', error);
+    return {
+      success: false,
+      data: {
+        financialDocument: {} as FinancialDocument
+      }
+    } as ApiResponse<{ financialDocument: FinancialDocument }>;
+  }
 }
 
 /**
  * Remove um documento financeiro
  */
 export async function deleteFinancialDocument(id: ID): Promise<ApiResponse<void>> {
-  const response = await apiService.delete<{ success: boolean; message?: string }>(`/financial-documents/${id}`);
-  return {
-    success: response.success,
-    data: undefined
-  };
+  try {
+    const response = await fetch(`/api/financial-documents/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const result = await response.json();
+    
+    return {
+      success: result.success,
+      data: undefined
+    } as ApiResponse<void>;
+  } catch (error) {
+    console.error('Erro ao deletar documento financeiro:', error);
+    return {
+      success: false,
+      data: undefined
+    } as ApiResponse<void>;
+  }
 }
 
 export default {

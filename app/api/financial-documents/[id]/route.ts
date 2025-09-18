@@ -1,6 +1,53 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    console.log('💰 Buscando documento financeiro:', { id });
+
+    // Buscar documento específico na tabela financial_documents
+    const { data, error } = await supabaseAdmin
+      .from('financial_documents')
+      .select(`
+        *,
+        partner:partners(name, id),
+        payment_method_data:payment_methods(name, id)
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('❌ Erro ao buscar documento financeiro:', error);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Erro ao buscar documento financeiro',
+          details: error.message
+        },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ Documento financeiro encontrado:', data);
+    return NextResponse.json({
+      success: true,
+      financialDocument: data
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao buscar documento financeiro:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -76,15 +123,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type') || 'payable';
-    console.log('💰 Deletando documento financeiro:', { id, type });
+    console.log('💰 Deletando documento financeiro:', { id });
 
-    // Determinar se é conta a pagar ou receber
-    const table = type === 'receivable' ? 'accounts_receivable' : 'accounts_payable';
-    
+    // Usar sempre a tabela financial_documents
     const { error } = await supabaseAdmin
-      .from(table)
+      .from('financial_documents')
       .delete()
       .eq('id', id);
 
