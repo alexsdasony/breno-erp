@@ -9,33 +9,22 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     console.log('🔍 [FD UPDATE] id:', id);
     console.log('📥 Payload recebido:', body);
 
-    // Determinar se é conta a pagar ou receber
-    const table = body.type === 'receivable' ? 'accounts_receivable' : 'accounts_payable';
+    // Usar sempre a tabela financial_documents
+    const table = 'financial_documents';
     
-    // Mapear status para valores aceitos pela constraint do banco
-    const statusMap: Record<string, string> = {
-      'pending': 'pendente',
-      'paid': 'pendente',
-      'overdue': 'pendente',
-      'cancelled': 'pendente',
-      'vencido': 'pendente'
-    };
-
-    // Mapear forma_pagamento de inglês para português
-    const paymentMethodMap: Record<string, string> = {
-      'boleto': 'boleto',
-      'cash': 'dinheiro',
-      'credit_card': 'cartão de crédito',
-      'debit_card': 'cartão de débito',
-      'pix': 'pix',
-      'bank_transfer': 'transferência bancária'
-    };
-
-    // Normalizar o payload
+    // Normalizar o payload para a tabela financial_documents
     const normalizedBody = {
-      ...body,
-      status: body.status ? statusMap[body.status] || 'pendente' : 'pendente',
-      forma_pagamento: body.forma_pagamento ? paymentMethodMap[body.forma_pagamento] || body.forma_pagamento : 'boleto'
+      direction: body.direction,
+      description: body.description,
+      amount: body.amount,
+      issue_date: body.issue_date,
+      due_date: body.due_date,
+      status: body.status || 'paid',
+      partner_id: body.partner_id,
+      segment_id: body.segment_id,
+      payment_method_id: body.payment_method_id,
+      doc_no: body.doc_no,
+      notes: body.notes
     };
 
     console.log('🧹 Payload normalizado:', normalizedBody);
