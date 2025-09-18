@@ -31,15 +31,34 @@ export function useFinancialDocuments() {
   const [state, setState] = useState<State>({ items: [], loading: false, refetching: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
-    const response = await getFinancialDocuments({ page, pageSize: PAGE_SIZE });
-    const list = response.data?.financialDocuments || [];
-    console.log('Dados financeiros recebidos do backend:', {
-      page,
-      total: list.length,
-      response: response.data,
-      rawData: list
-    });
-    return list.map(normalizeFinancialDocument);
+    try {
+      const response = await getFinancialDocuments({ page, pageSize: PAGE_SIZE });
+      const list = response.data?.financialDocuments || [];
+      
+      // Se não há dados, tentar buscar diretamente da API
+      if (list.length === 0) {
+        try {
+          const directResponse = await fetch('/api/financial-documents?page=1&pageSize=20', {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          const directData = await directResponse.json();
+          
+          if (directData.financialDocuments && directData.financialDocuments.length > 0) {
+            const directList = directData.financialDocuments || [];
+            return directList.map(normalizeFinancialDocument);
+          }
+        } catch (error) {
+          console.error('Erro na busca direta:', error);
+        }
+      }
+      
+      return list.map(normalizeFinancialDocument);
+    } catch (error) {
+      console.error('Erro ao buscar documentos financeiros:', error);
+      return [];
+    }
   }, []);
 
   const load = useCallback(async (reset: boolean = false) => {
@@ -51,14 +70,17 @@ export function useFinancialDocuments() {
         return s;
       });
       const list = await fetchPage(currentPage!);
-      setState((s) => ({
-        ...s,
-        items: reset ? list : [...s.items, ...list],
-        loading: false,
-        refetching: false,
-        page: currentPage!,
-        hasMore: list.length === PAGE_SIZE,
-      }));
+      setState((s) => {
+        const newItems = reset ? list : [...s.items, ...list];
+        return {
+          ...s,
+          items: newItems,
+          loading: false,
+          refetching: false,
+          page: currentPage!,
+          hasMore: list.length === PAGE_SIZE,
+        };
+      });
     } catch (e) {
       setState((s) => ({ ...s, loading: false, refetching: false }));
       toast({ title: 'Falha ao carregar documentos financeiros', description: 'Tente novamente em instantes.', variant: 'destructive' });

@@ -15,9 +15,11 @@ import FinancialTable from './FinancialTable';
 import FinancialFormModal from './FinancialFormModal';
 
 export default function FinancialView() {
-  const { items, loading, refetching, hasMore, loadMore, create, update, remove } = useFinancialDocuments();
+  const { items, loading, refetching, hasMore, loadMore, create, update, remove, load } = useFinancialDocuments();
   const { paymentMethods } = usePaymentMethodsContext();
   const { activeSegmentId } = useAppData();
+
+
 
   // UI state - filtros (somente UI por enquanto)
   const [dateStart, setDateStart] = React.useState<string>('');
@@ -185,6 +187,7 @@ export default function FinancialView() {
         segments={segments}
         filterSearchRef={filterSearchRef}
       />
+
 
       {/* Tabela */}
       <AnimatePresence>

@@ -8,17 +8,21 @@ export async function GET(request: NextRequest) {
     
     console.log('🔍 API Route GET /api/accounts-payable', { segmentId });
     
+    // Buscar documentos financeiros com direction = 'payable' (contas a pagar)
     let query = supabaseAdmin
-      .from('accounts_payable')
-      .select('*')
+      .from('financial_documents')
+      .select(`
+        *,
+        partner:partners(name, id),
+        payment_method_data:payment_methods(name, id)
+      `)
+      .eq('direction', 'payable')
       .order('created_at', { ascending: false });
     
     // Filtrar por segmento se fornecido
     if (segmentId && segmentId !== 'null' && segmentId !== '0') {
-      // Mostrar registros do segmento específico + registros globais (segment_id = null)
-      query = query.or(`segment_id.eq.${segmentId},segment_id.is.null`);
+      query = query.eq('segment_id', segmentId);
     }
-    // Se segmentId for null, '0' ou não fornecido, mostra todos os registros
     
     const { data, error } = await query;
 
@@ -55,10 +59,21 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📝 Body recebido:', body);
     
+    // Garantir que direction seja 'payable' para contas a pagar
+    const mappedBody = {
+      ...body,
+      direction: 'payable',
+      status: body.status || 'paid'
+    };
+    
     const { data, error } = await supabaseAdmin
-      .from('accounts_payable')
-      .insert(body)
-      .select()
+      .from('financial_documents')
+      .insert(mappedBody)
+      .select(`
+        *,
+        partner:partners(name, id),
+        payment_method_data:payment_methods(name, id)
+      `)
       .single();
 
     if (error) {

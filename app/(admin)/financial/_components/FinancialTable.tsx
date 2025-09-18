@@ -35,7 +35,13 @@ export default function FinancialTable({ items, currency, pmMap, onDetails, onEd
   };
 
   const getPartnerName = (doc: FinancialDoc) => {
-    return doc.partner_name || doc.partner?.name || (doc.entity_name || doc.entity_id) || '-';
+    // Priorizar partner_name, depois partner.name, depois description como fallback
+    if (doc.partner_name) return doc.partner_name;
+    if (doc.partner?.name) return doc.partner.name;
+    if (doc.entity_name) return doc.entity_name;
+    if (doc.entity_id) return doc.entity_id;
+    if (doc.description) return doc.description;
+    return 'Sem parceiro';
   };
   return (
     <div className="glass-effect rounded-xl p-0 border overflow-hidden">

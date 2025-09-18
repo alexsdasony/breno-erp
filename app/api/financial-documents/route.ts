@@ -15,51 +15,55 @@ export async function GET(request: NextRequest) {
       ? { segment_id: segmentId } 
       : {};
 
-    // Buscar documentos financeiros (contas a pagar e receber)
-    const [
-      { data: payables, error: payablesError },
-      { data: receivables, error: receivablesError }
-    ] = await Promise.all([
-      supabaseAdmin
-        .from('accounts_payable')
-        .select('*')
-        .match(segmentFilter)
-        .order('created_at', { ascending: false }),
-      
-      supabaseAdmin
-        .from('accounts_receivable')
-        .select('*')
-        .match(segmentFilter)
-        .order('created_at', { ascending: false })
-        .then(result => result.error ? { data: [], error: null } : result)
-    ]);
+    // Buscar documentos financeiros da tabela financial_documents
+    const { data: financialDocuments, error: financialDocsError } = await supabaseAdmin
+      .from('financial_documents')
+      .select(`
+        *,
+        partner:partners(name, id),
+        payment_method_data:payment_methods(name, id)
+      `)
+      .match(segmentFilter)
+      .order('created_at', { ascending: false });
 
-    if (payablesError) console.error('❌ Erro ao buscar contas a pagar:', payablesError);
-    if (receivablesError) console.error('❌ Erro ao buscar contas a receber:', receivablesError);
-
-    // Combinar documentos financeiros
-    const financialDocuments = [
-      ...(payables || []).map(p => ({ ...p, type: 'payable' })),
-      ...(receivables || []).map(r => ({ ...r, type: 'receivable' }))
-    ];
+    if (financialDocsError) {
+      console.error('❌ Erro ao buscar documentos financeiros:', financialDocsError);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Erro ao buscar documentos financeiros',
+          details: financialDocsError.message
+        },
+        { status: 500 }
+      );
+    }
 
     // Aplicar paginação
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const paginatedDocuments = financialDocuments.slice(startIndex, endIndex);
+    const paginatedDocuments = (financialDocuments || []).slice(startIndex, endIndex);
 
-    console.log('📊 Documentos financeiros encontrados:', financialDocuments.length);
+    console.log('📊 Documentos financeiros encontrados:', financialDocuments?.length || 0);
+    console.log('📊 Documentos paginados:', paginatedDocuments?.length || 0);
 
-    return NextResponse.json({
+    const response = {
       success: true,
-      documents: paginatedDocuments,
+      financialDocuments: paginatedDocuments,
       pagination: {
         page,
         pageSize,
-        total: financialDocuments.length,
-        totalPages: Math.ceil(financialDocuments.length / pageSize)
+        total: financialDocuments?.length || 0,
+        totalPages: Math.ceil((financialDocuments?.length || 0) / pageSize)
       }
+    };
+
+    console.log('📤 Resposta da API:', {
+      success: response.success,
+      totalDocuments: response.financialDocuments?.length || 0,
+      pagination: response.pagination
     });
+
+    return NextResponse.json(response);
 
   } catch (error) {
     console.error('❌ Erro na API financial-documents:', error);
@@ -79,13 +83,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('💰 Criando novo documento financeiro:', body);
 
-    // Determinar se é conta a pagar ou receber
-    const table = body.type === 'receivable' ? 'accounts_receivable' : 'accounts_payable';
-    
+    // Mapear status para valores aceitos pela constraint do banco
+    const mappedBody = {
+      ...body,
+      status: body.status === 'pending' ? 'paid' : body.status || 'paid',
+      direction: body.direction || 'receivable'
+    };
+
+    // Inserir na tabela financial_documents
     const { data, error } = await supabaseAdmin
-      .from(table)
-      .insert(body)
-      .select()
+      .from('financial_documents')
+      .insert(mappedBody)
+      .select(`
+        *,
+        partner:partners(name, id),
+        payment_method_data:payment_methods(name, id)
+      `)
       .single();
 
     if (error) {
