@@ -10,6 +10,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { listSegments } from '@/services/segmentsService';
 import { toast } from '@/components/ui/use-toast';
 import type { AccountsPayableStatus, PaymentMethod } from '@/types/enums';
+import SupplierAutocomplete from './SupplierAutocomplete';
 
 export default function AccountsPayableView() {
   const { items, loading, hasMore, loadMore, create, update, remove, load } = useAccountsPayable();
@@ -51,10 +52,18 @@ export default function AccountsPayableView() {
     segment_id: activeSegmentId
   });
   
+  // Estado para nome do fornecedor selecionado
+  const [selectedSupplierName, setSelectedSupplierName] = useState('');
+  
   // Funções auxiliares
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSupplierSelect = (supplierId: string, supplierName: string) => {
+    setFormData({ ...formData, supplier_id: supplierId });
+    setSelectedSupplierName(supplierName);
   };
   
   const resetForm = () => {
@@ -70,6 +79,7 @@ export default function AccountsPayableView() {
       observacoes: '',
       segment_id: activeSegmentId
     });
+    setSelectedSupplierName('');
     setCurrentAccount(null);
     setShowCreateModal(false);
     setShowEditModal(false);
@@ -470,7 +480,7 @@ export default function AccountsPayableView() {
                     return (
                     <tr key={item.id} className="hover:bg-muted/50 transition-colors">
                       <td className="px-6 py-4 text-sm font-medium">
-                        {item.supplier_id || item.partner_name || 'N/A'}
+                        {item.partner_name || item.supplier_id || 'N/A'}
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">
                         <div className="max-w-xs truncate" title={item.descricao}>
@@ -582,13 +592,11 @@ export default function AccountsPayableView() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold mb-2 text-gray-700">Fornecedor</label>
-                    <input
-                      type="text"
-                      name="supplier_id"
+                    <SupplierAutocomplete
                       value={formData.supplier_id}
-                      onChange={handleInputChange}
-                      className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
-                      placeholder="Nome do fornecedor"
+                      onChange={handleSupplierSelect}
+                      placeholder="Buscar fornecedor..."
+                      className="w-full"
                     />
                   </div>
                   <div>
@@ -725,7 +733,7 @@ export default function AccountsPayableView() {
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-500">Fornecedor</label>
-                  <p className="text-sm">{currentAccount.supplier_id || 'N/A'}</p>
+                  <p className="text-sm">{currentAccount.partner_name || currentAccount.supplier_id || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-500">Descrição</label>
