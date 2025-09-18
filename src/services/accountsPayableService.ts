@@ -10,7 +10,20 @@ export function normalizeAccountsPayable(row: any): AccountsPayable {
   const partnerName = row.partner?.name || row.partner_name || null;
   
   // Garantir que payment_method seja extraído corretamente
-  const paymentMethod = row.payment_method_data?.name || row.payment_method || 'boleto';
+  // Se não há payment_method_id, usar valor padrão baseado no status
+  let paymentMethod = row.payment_method_data?.name || row.payment_method;
+  
+  // Se não há forma de pagamento associada, usar valor padrão
+  if (!paymentMethod) {
+    // Se o status é 'paid', usar 'boleto' como padrão
+    // Se o status é 'pending', usar 'boleto' como padrão
+    paymentMethod = 'boleto';
+  }
+  
+  // Se ainda não há forma de pagamento, usar 'boleto' como fallback
+  if (!paymentMethod) {
+    paymentMethod = 'boleto';
+  }
   
   // Se não há fornecedor, usar a descrição como fallback
   const displayName = partnerName || row.description || 'Sem fornecedor';
@@ -50,12 +63,16 @@ export function normalizeAccountsPayable(row: any): AccountsPayable {
   const normalizedStatus = statusMap[row.status] || row.status || 'pending';
   const normalizedPaymentMethod = paymentMethodMap[paymentMethod] || paymentMethod || 'boleto';
   
+  // Garantir que sempre temos um valor válido
+  const finalPaymentMethod = normalizedPaymentMethod || 'boleto';
+  
   console.log('🔍 Normalizando conta a pagar:', {
     id: row.id,
     statusOriginal: row.status,
     statusNormalizado: normalizedStatus,
     formaPagamentoOriginal: paymentMethod,
     formaPagamentoNormalizada: normalizedPaymentMethod,
+    formaPagamentoFinal: finalPaymentMethod,
     partnerName: partnerName,
     displayName: displayName
   });
@@ -70,7 +87,7 @@ export function normalizeAccountsPayable(row: any): AccountsPayable {
     status: normalizedStatus,
     categoria_id: row.category_id,
     segment_id: row.segment_id,
-    forma_pagamento: normalizedPaymentMethod,
+    forma_pagamento: finalPaymentMethod,
     observacoes: row.notes,
     numero_nota_fiscal: row.doc_no,
     created_at: row.created_at,
