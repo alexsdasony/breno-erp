@@ -10,7 +10,7 @@ export function normalizeAccountsPayable(row: any): AccountsPayable {
   const partnerName = row.partner?.name || row.partner_name || null;
   
   // Garantir que payment_method seja extraído corretamente
-  const paymentMethod = row.payment_method_data?.name || row.payment_method || null;
+  const paymentMethod = row.payment_method_data?.name || row.payment_method || 'boleto';
   
   // Se não há fornecedor, usar a descrição como fallback
   const displayName = partnerName || row.description || 'Sem fornecedor';
@@ -37,7 +37,14 @@ export function normalizeAccountsPayable(row: any): AccountsPayable {
     'cheque': 'cheque',
     'cartão de crédito': 'cartao',
     'cartão de débito': 'cartao',
-    'transferência bancária': 'transferencia'
+    'transferência bancária': 'transferencia',
+    'Boleto': 'boleto',
+    'PIX': 'pix',
+    'Transferência': 'transferencia',
+    'Dinheiro': 'dinheiro',
+    'Cartão de Crédito': 'cartao',
+    'Cartão de Débito': 'cartao',
+    'Cheque': 'cheque'
   };
   
   const normalizedStatus = statusMap[row.status] || row.status || 'pending';
@@ -48,7 +55,9 @@ export function normalizeAccountsPayable(row: any): AccountsPayable {
     statusOriginal: row.status,
     statusNormalizado: normalizedStatus,
     formaPagamentoOriginal: paymentMethod,
-    formaPagamentoNormalizada: normalizedPaymentMethod
+    formaPagamentoNormalizada: normalizedPaymentMethod,
+    partnerName: partnerName,
+    displayName: displayName
   });
   
   return {

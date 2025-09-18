@@ -541,8 +541,9 @@ export default function AccountsPayableView() {
                             size="sm"
                             className="h-8 w-8 p-0"
                             onClick={() => {
+                              console.log('🔍 Dados do item para edição:', item);
                               setCurrentAccount(item);
-                              setFormData({
+                              const formDataToSet = {
                                 supplier_id: item.supplier_id || '',
                                 descricao: item.descricao || '',
                                 valor: item.valor?.toString() || '',
@@ -553,7 +554,9 @@ export default function AccountsPayableView() {
                                 forma_pagamento: item.forma_pagamento || 'boleto',
                                 observacoes: item.observacoes || '',
                                 segment_id: item.segment_id || activeSegmentId
-                              });
+                              };
+                              console.log('🔍 FormData a ser definido:', formDataToSet);
+                              setFormData(formDataToSet);
                               setShowEditModal(true);
                             }}
                           >
