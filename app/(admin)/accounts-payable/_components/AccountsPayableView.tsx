@@ -35,9 +35,6 @@ export default function AccountsPayableView() {
     });
   }
   
-  // Debug do formData para verificar se os valores estão sendo carregados
-  console.log('🔍 FormData atual:', formData);
-  
   // Estado para segmentos
   const [segments, setSegments] = useState<Array<{ id: string; name: string }>>([]);
   
@@ -71,6 +68,9 @@ export default function AccountsPayableView() {
   
   // Estado para nome do fornecedor selecionado
   const [selectedSupplierName, setSelectedSupplierName] = useState('');
+  
+  // Debug do formData para verificar se os valores estão sendo carregados
+  console.log('🔍 FormData atual:', formData);
   
   // Funções auxiliares
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
