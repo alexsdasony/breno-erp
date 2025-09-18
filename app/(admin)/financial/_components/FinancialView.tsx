@@ -70,9 +70,14 @@ export default function FinancialView() {
     let outSum = 0;
     for (const it of filteredItems) {
       const val = Number(it.amount || 0);
-      if (val >= 0) inSum += val; else outSum += val; // valores negativos contam como saída
+      // Usar o campo direction para determinar se é entrada ou saída
+      if (it.direction === 'receivable') {
+        inSum += val; // Contas a receber são entradas
+      } else if (it.direction === 'payable') {
+        outSum += val; // Contas a pagar são saídas
+      }
     }
-    return { entradas: inSum, saidas: outSum, saldo: inSum + outSum };
+    return { entradas: inSum, saidas: outSum, saldo: inSum - outSum };
   }, [items, activeSegmentId]);
 
   // Funções auxiliares
