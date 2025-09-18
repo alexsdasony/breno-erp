@@ -22,6 +22,7 @@ export interface AccountsPayable extends Timestamped {
   // Campos adicionais para compatibilidade
   partner_name?: string | null
   payment_method?: string | null
+  display_name?: string | null
 }
 
 export interface AccountsPayablePayload {

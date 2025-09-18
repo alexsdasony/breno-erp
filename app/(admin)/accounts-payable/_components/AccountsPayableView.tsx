@@ -21,6 +21,18 @@ export default function AccountsPayableView() {
   console.log('🔍 AccountsPayableView - loading:', loading);
   console.log('🔍 AccountsPayableView - items length:', items?.length || 0);
   
+  // Debug dos primeiros itens para verificar normalização
+  if (items && items.length > 0) {
+    console.log('🔍 Primeiro item normalizado:', items[0]);
+    console.log('🔍 Campos do primeiro item:', {
+      id: items[0].id,
+      display_name: items[0].display_name,
+      partner_name: items[0].partner_name,
+      supplier_id: items[0].supplier_id,
+      descricao: items[0].descricao
+    });
+  }
+  
   // Estado para segmentos
   const [segments, setSegments] = useState<Array<{ id: string; name: string }>>([]);
   
@@ -480,7 +492,7 @@ export default function AccountsPayableView() {
                     return (
                     <tr key={item.id} className="hover:bg-muted/50 transition-colors">
                       <td className="px-6 py-4 text-sm font-medium">
-                        {item.partner_name || item.supplier_id || 'N/A'}
+                        {item.display_name || item.partner_name || item.supplier_id || 'N/A'}
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">
                         <div className="max-w-xs truncate" title={item.descricao}>
@@ -733,7 +745,7 @@ export default function AccountsPayableView() {
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-500">Fornecedor</label>
-                  <p className="text-sm">{currentAccount.partner_name || currentAccount.supplier_id || 'N/A'}</p>
+                  <p className="text-sm">{currentAccount.display_name || currentAccount.partner_name || currentAccount.supplier_id || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-500">Descrição</label>

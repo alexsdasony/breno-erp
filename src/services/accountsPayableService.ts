@@ -12,6 +12,9 @@ export function normalizeAccountsPayable(row: any): AccountsPayable {
   // Garantir que payment_method seja extraído corretamente
   const paymentMethod = row.payment_method_data?.name || row.payment_method || null;
   
+  // Se não há fornecedor, usar a descrição como fallback
+  const displayName = partnerName || row.description || 'Sem fornecedor';
+  
   return {
     id: row.id,
     supplier_id: row.partner_id,
@@ -29,7 +32,9 @@ export function normalizeAccountsPayable(row: any): AccountsPayable {
     updated_at: row.updated_at,
     // Campos adicionais para compatibilidade
     partner_name: partnerName,
-    payment_method: paymentMethod
+    payment_method: paymentMethod,
+    // Campo para exibição quando não há fornecedor
+    display_name: displayName
   };
 }
 
