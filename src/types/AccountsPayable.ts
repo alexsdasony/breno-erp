@@ -19,6 +19,9 @@ export interface AccountsPayable extends Timestamped {
   segment_id?: ID | null
   deleted_at?: string | null
   is_deleted?: boolean
+  // Campos adicionais para compatibilidade
+  partner_name?: string | null
+  payment_method?: string | null
 }
 
 export interface AccountsPayablePayload {
