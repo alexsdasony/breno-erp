@@ -56,6 +56,20 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     console.log('🔍 [FD UPDATE] id:', id);
     console.log('📥 Payload recebido:', body);
 
+    // Validar se o ID é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      console.error('❌ ID inválido:', id);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'ID inválido. Deve ser um UUID válido.',
+          details: `ID recebido: ${id}`
+        },
+        { status: 400 }
+      );
+    }
+
     // Usar sempre a tabela financial_documents
     const table = 'financial_documents';
     

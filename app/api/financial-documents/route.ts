@@ -4,8 +4,12 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '20');
+    const pageParam = searchParams.get('page') || '1';
+    const pageSizeParam = searchParams.get('pageSize') || '20';
+    
+    // Validar e converter parâmetros de paginação
+    const page = isNaN(parseInt(pageParam)) ? 1 : Math.max(1, parseInt(pageParam));
+    const pageSize = isNaN(parseInt(pageSizeParam)) ? 20 : Math.max(1, Math.min(100, parseInt(pageSizeParam)));
     const segmentId = searchParams.get('segment_id');
 
     console.log('💰 Financial documents API request:', { page, pageSize, segmentId });

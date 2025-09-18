@@ -127,6 +127,9 @@ export default function FinancialView() {
   const openEdit = (doc: any, ev?: React.MouseEvent) => {
     ev?.preventDefault();
     ev?.stopPropagation();
+    console.log('🔍 openEdit - doc recebido:', doc);
+    console.log('🔍 openEdit - doc.id:', doc?.id);
+    console.log('🔍 openEdit - tipo do ID:', typeof doc?.id);
     setEditingDoc(doc);
     window.setTimeout(() => setShowForm(true), 0);
   };

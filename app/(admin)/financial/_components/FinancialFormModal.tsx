@@ -179,7 +179,11 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
     } as any;
 
     if (isEditing && editingDoc?.id) {
-      console.log('Editando documento financeiro:', { id: editingDoc.id, payload });
+      console.log('🔍 FinancialFormModal - Editando documento financeiro:', { 
+        id: editingDoc.id, 
+        tipoId: typeof editingDoc.id,
+        payload 
+      });
       const result = await onUpdate(editingDoc.id, payload);
       console.log('Resposta do backend (update):', result);
     } else {
