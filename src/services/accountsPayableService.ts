@@ -114,11 +114,15 @@ export async function listAccountsPayable(params: Record<string, any> = {}): Pro
     
     const data = await response.json();
     
-    // A resposta já vem com a estrutura correta da API
+    // Normalizar os dados usando a função de normalização
+    const normalizedData = (data.accounts_payable || []).map((row: any) => normalizeAccountsPayable(row));
+    
+    console.log('🔍 Dados normalizados:', normalizedData);
+    
     const result = {
       success: true,
       data: {
-        accounts_payable: data.accounts_payable || []
+        accounts_payable: normalizedData
       }
     } as ApiResponse<{ accounts_payable: AccountsPayable[] }>;
     
