@@ -43,15 +43,15 @@ export async function GET(request: NextRequest) {
       }
       
       // Mapear segmentos conhecidos
-      const segmentosConhecidos = {
+      const segmentosConhecidos: Record<string, string> = {
         '68a2c101-4c01-4b1f-b5a2-18468df86b26': 'NAURU',
         '791b380a-89dd-44e6-8982-bc204b47a024': 'ESCRITÓRIO JURÍDICO - AR&N',
         'f5c2e105-4c05-4bbd-947a-575cf8877936': 'RDS IMOBILIÁRIO'
       };
       
       // Criar segmentos baseados nos IDs únicos encontrados
-      const segmentIds = [...new Set(partnersData.map(p => p.segment_id))];
-      const segments = segmentIds.map(id => ({
+      const segmentIds = [...new Set(partnersData.map((p: any) => p.segment_id))];
+      const segments = segmentIds.map((id: string) => ({
         id: id,
         name: segmentosConhecidos[id] || `Segmento ${id.substring(0, 8)}`,
         description: `Segmento ${segmentosConhecidos[id] || id.substring(0, 8)}`,
