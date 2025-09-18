@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
-import { listAccountsPayable, createAccountPayable, updateAccountPayable, deleteAccountPayable } from '@/services/accountsPayableService';
+import { listAccountsPayable, createAccountPayable, updateAccountPayable, deleteAccountPayable, normalizeAccountsPayable } from '@/services/accountsPayableService';
 import { AccountsPayable, AccountsPayablePayload } from '@/types';
 
 export type AccountPayableItem = AccountsPayable;
@@ -36,8 +36,34 @@ export function useAccountsPayable() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
-    const response = await listAccountsPayable({ page, pageSize: PAGE_SIZE });
-    return response.data?.accounts_payable || [];
+    try {
+      const response = await listAccountsPayable({ page, pageSize: PAGE_SIZE });
+      const list = response.data?.accounts_payable || [];
+      
+      // Se não há dados, tentar buscar diretamente da API
+      if (list.length === 0) {
+        try {
+          const directResponse = await fetch('/api/accounts-payable?page=1&pageSize=20', {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          const directData = await directResponse.json();
+          
+          if (directData.accounts_payable && directData.accounts_payable.length > 0) {
+            const directList = directData.accounts_payable || [];
+            return directList.map(normalizeAccountsPayable);
+          }
+        } catch (error) {
+          console.error('Erro na busca direta:', error);
+        }
+      }
+      
+      return list.map(normalizeAccountsPayable);
+    } catch (error) {
+      console.error('Erro ao buscar contas a pagar:', error);
+      return [];
+    }
   }, []);
 
   const load = useCallback(async (reset: boolean = false) => {

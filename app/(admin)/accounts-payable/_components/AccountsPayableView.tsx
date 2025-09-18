@@ -15,6 +15,11 @@ export default function AccountsPayableView() {
   const { items, loading, hasMore, loadMore, create, update, remove, load } = useAccountsPayable();
   const { activeSegmentId } = useAppData();
   
+  // Debug logs
+  console.log('🔍 AccountsPayableView - items:', items);
+  console.log('🔍 AccountsPayableView - loading:', loading);
+  console.log('🔍 AccountsPayableView - items length:', items?.length || 0);
+  
   // Estado para segmentos
   const [segments, setSegments] = useState<Array<{ id: string; name: string }>>([]);
   
@@ -460,10 +465,12 @@ export default function AccountsPayableView() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filteredItems.map((item) => (
+                  {filteredItems.map((item) => {
+                    console.log('🔍 Renderizando item:', item);
+                    return (
                     <tr key={item.id} className="hover:bg-muted/50 transition-colors">
                       <td className="px-6 py-4 text-sm font-medium">
-                        {item.supplier_id || 'N/A'}
+                        {item.supplier_id || item.partner_name || 'N/A'}
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">
                         <div className="max-w-xs truncate" title={item.descricao}>
@@ -539,7 +546,8 @@ export default function AccountsPayableView() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
