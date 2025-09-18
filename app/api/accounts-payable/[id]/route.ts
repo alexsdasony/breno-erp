@@ -40,10 +40,16 @@ export async function GET(
     const { id } = await params;
     console.log('🔍 API Route GET /api/accounts-payable/[id]:', id);
     
+    // Buscar na tabela financial_documents com direction = 'payable'
     const { data, error } = await supabaseAdmin
-      .from('accounts_payable')
-      .select('*')
+      .from('financial_documents')
+      .select(`
+        *,
+        partner:partners(name, id),
+        payment_method_data:payment_methods(name, id)
+      `)
       .eq('id', id)
+      .eq('direction', 'payable')
       .single();
 
     if (error || !data) {
@@ -76,40 +82,33 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     console.log("🔍 [AP UPDATE] id:", id);
     console.log("📥 Payload recebido:", body);
 
-    // Mapear status para valores aceitos pela constraint do banco
-    // Baseado nos logs, sabemos que 'pendente' funciona
-    const statusMap: Record<string, string> = {
-      'pending': 'pendente',
-      'paid': 'pendente',    // Usar 'pendente' que sabemos que funciona
-      'overdue': 'pendente', // Usar 'pendente' que sabemos que funciona
-      'cancelled': 'pendente', // Usar 'pendente' que sabemos que funciona
-      'vencido': 'pendente'  // Usar 'pendente' que sabemos que funciona
-    };
-
-    // Mapear forma_pagamento de inglês para português
-    const paymentMethodMap: Record<string, string> = {
-      'boleto': 'boleto',
-      'cash': 'dinheiro',
-      'credit_card': 'cartão de crédito',
-      'debit_card': 'cartão de débito',
-      'pix': 'pix',
-      'bank_transfer': 'transferência bancária'
-    };
-
-    // Normalizar o payload
+    // Normalizar o payload para a tabela financial_documents
     const normalizedBody = {
-      ...body,
-      status: body.status ? statusMap[body.status] || body.status : 'pendente',
-      forma_pagamento: body.forma_pagamento ? paymentMethodMap[body.forma_pagamento] || body.forma_pagamento : 'boleto'
+      direction: 'payable', // Sempre payable para contas a pagar
+      description: body.descricao,
+      amount: body.valor,
+      due_date: body.data_vencimento,
+      issue_date: body.data_vencimento, // Usar data_vencimento como issue_date se não houver
+      status: body.status || 'paid',
+      partner_id: body.supplier_id,
+      segment_id: body.segment_id,
+      payment_method_id: body.payment_method_id,
+      doc_no: body.numero_nota_fiscal,
+      notes: body.observacoes
     };
 
     console.log("🧹 Payload normalizado:", normalizedBody);
 
     const { data, error } = await supabaseAdmin
-      .from("accounts_payable")
+      .from("financial_documents")
       .update(normalizedBody)
       .eq("id", id)
-      .select();
+      .eq("direction", "payable")
+      .select(`
+        *,
+        partner:partners(name, id),
+        payment_method_data:payment_methods(name, id)
+      `);
 
     if (error) {
       console.error("❌ Supabase UPDATE error:", {
@@ -125,7 +124,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     console.log("✅ Supabase UPDATE sucesso:", data);
-    return NextResponse.json({ data }, { status: 200 });
+    return NextResponse.json({ 
+      success: true,
+      account_payable: data[0] 
+    }, { status: 200 });
   } catch (err: any) {
     console.error("🔥 Erro inesperado no PUT /accounts-payable:", err);
     return NextResponse.json(
@@ -143,10 +145,12 @@ export async function DELETE(
     const { id } = await params;
     console.log('🔍 API Route DELETE /api/accounts-payable/[id]:', id);
     
+    // Deletar da tabela financial_documents com direction = 'payable'
     const { error } = await supabaseAdmin
-      .from('accounts_payable')
+      .from('financial_documents')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('direction', 'payable');
 
     if (error) {
       console.error('❌ Erro ao deletar conta a pagar:', error);

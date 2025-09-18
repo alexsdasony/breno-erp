@@ -68,43 +68,111 @@ export async function listAccountsPayable(params: Record<string, any> = {}): Pro
 }
 
 export async function createAccountPayable(payload: AccountsPayablePayload): Promise<ApiResponse<{ account_payable: AccountsPayable }>> {
-  const response = await apiService.post<{ success: boolean; account_payable: AccountsPayable }>('/accounts-payable', payload)
-  return {
-    success: response.success,
-    data: { account_payable: response.account_payable }
+  try {
+    const response = await fetch('/api/accounts-payable', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await response.json();
+    
+    return {
+      success: true,
+      data: {
+        account_payable: result.account_payable
+      }
+    } as ApiResponse<{ account_payable: AccountsPayable }>;
+  } catch (error) {
+    console.error('Erro ao criar conta a pagar:', error);
+    return {
+      success: false,
+      data: {
+        account_payable: {} as AccountsPayable
+      }
+    } as ApiResponse<{ account_payable: AccountsPayable }>;
   }
 }
 
 export async function updateAccountPayable(id: string, payload: Partial<AccountsPayablePayload>): Promise<ApiResponse<{ account_payable: AccountsPayable }>> {
-  console.log('🌐 accountsPayableService.updateAccountPayable chamado com:', { id, payload });
-  
-  const response = await apiService.put<{ success: boolean; account_payable: AccountsPayable }>(`/accounts-payable/${id}`, payload)
-  
-  console.log('📥 Resposta bruta da API:', response);
-  
-  const result = {
-    success: response.success,
-    data: { account_payable: response.account_payable }
-  };
-  
-  console.log('📦 Resultado processado:', result);
-  
-  return result;
+  try {
+    const response = await fetch(`/api/accounts-payable/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await response.json();
+    
+    return {
+      success: true,
+      data: {
+        account_payable: result.account_payable
+      }
+    } as ApiResponse<{ account_payable: AccountsPayable }>;
+  } catch (error) {
+    console.error('Erro ao atualizar conta a pagar:', error);
+    return {
+      success: false,
+      data: {
+        account_payable: {} as AccountsPayable
+      }
+    } as ApiResponse<{ account_payable: AccountsPayable }>;
+  }
 }
 
 export async function deleteAccountPayable(id: string): Promise<ApiResponse<void>> {
-  const response = await apiService.delete<{ success: boolean; message?: string }>(`/accounts-payable/${id}`);
-  return {
-    success: response.success,
-    data: undefined
-  };
+  try {
+    const response = await fetch(`/api/accounts-payable/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const result = await response.json();
+    
+    return {
+      success: result.success,
+      data: undefined
+    } as ApiResponse<void>;
+  } catch (error) {
+    console.error('Erro ao deletar conta a pagar:', error);
+    return {
+      success: false,
+      data: undefined
+    } as ApiResponse<void>;
+  }
 }
 
 export async function getAccountPayableById(id: string): Promise<ApiResponse<{ account_payable: AccountsPayable }>> {
-  const response = await apiService.get<{ success: boolean; account_payable: AccountsPayable }>(`/accounts-payable/${id}`)
-  return {
-    success: response.success,
-    data: { account_payable: response.account_payable }
+  try {
+    const response = await fetch(`/api/accounts-payable/${id}`, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    
+    return {
+      success: true,
+      data: {
+        account_payable: data.account_payable
+      }
+    } as ApiResponse<{ account_payable: AccountsPayable }>;
+  } catch (error) {
+    console.error('Erro ao buscar conta a pagar:', error);
+    return {
+      success: false,
+      data: {
+        account_payable: {} as AccountsPayable
+      }
+    } as ApiResponse<{ account_payable: AccountsPayable }>;
   }
 }
 
