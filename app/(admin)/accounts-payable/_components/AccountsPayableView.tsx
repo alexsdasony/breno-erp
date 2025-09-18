@@ -29,9 +29,14 @@ export default function AccountsPayableView() {
       display_name: items[0].display_name,
       partner_name: items[0].partner_name,
       supplier_id: items[0].supplier_id,
-      descricao: items[0].descricao
+      descricao: items[0].descricao,
+      status: items[0].status,
+      forma_pagamento: items[0].forma_pagamento
     });
   }
+  
+  // Debug do formData para verificar se os valores estão sendo carregados
+  console.log('🔍 FormData atual:', formData);
   
   // Estado para segmentos
   const [segments, setSegments] = useState<Array<{ id: string; name: string }>>([]);

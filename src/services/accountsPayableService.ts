@@ -15,6 +15,42 @@ export function normalizeAccountsPayable(row: any): AccountsPayable {
   // Se não há fornecedor, usar a descrição como fallback
   const displayName = partnerName || row.description || 'Sem fornecedor';
   
+  // Mapear status para valores aceitos pelo frontend
+  const statusMap: Record<string, string> = {
+    'paid': 'paid',
+    'pending': 'pending', 
+    'overdue': 'overdue',
+    'cancelled': 'cancelled',
+    'pendente': 'pending',
+    'pago': 'paid',
+    'vencido': 'overdue',
+    'cancelado': 'cancelled'
+  };
+  
+  // Mapear forma de pagamento para valores aceitos pelo frontend
+  const paymentMethodMap: Record<string, string> = {
+    'boleto': 'boleto',
+    'pix': 'pix',
+    'transferencia': 'transferencia',
+    'dinheiro': 'dinheiro',
+    'cartao': 'cartao',
+    'cheque': 'cheque',
+    'cartão de crédito': 'cartao',
+    'cartão de débito': 'cartao',
+    'transferência bancária': 'transferencia'
+  };
+  
+  const normalizedStatus = statusMap[row.status] || row.status || 'pending';
+  const normalizedPaymentMethod = paymentMethodMap[paymentMethod] || paymentMethod || 'boleto';
+  
+  console.log('🔍 Normalizando conta a pagar:', {
+    id: row.id,
+    statusOriginal: row.status,
+    statusNormalizado: normalizedStatus,
+    formaPagamentoOriginal: paymentMethod,
+    formaPagamentoNormalizada: normalizedPaymentMethod
+  });
+  
   return {
     id: row.id,
     supplier_id: row.partner_id,
@@ -22,10 +58,10 @@ export function normalizeAccountsPayable(row: any): AccountsPayable {
     valor: row.amount || 0,
     data_vencimento: row.due_date,
     data_pagamento: row.payment_date,
-    status: row.status,
+    status: normalizedStatus,
     categoria_id: row.category_id,
     segment_id: row.segment_id,
-    forma_pagamento: paymentMethod,
+    forma_pagamento: normalizedPaymentMethod,
     observacoes: row.notes,
     numero_nota_fiscal: row.doc_no,
     created_at: row.created_at,

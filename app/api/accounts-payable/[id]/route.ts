@@ -82,6 +82,28 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     console.log("🔍 [AP UPDATE] id:", id);
     console.log("📥 Payload recebido:", body);
 
+    // Mapear status para valores aceitos pela tabela financial_documents
+    const statusMap: Record<string, string> = {
+      'pending': 'paid',
+      'paid': 'paid',
+      'overdue': 'paid',
+      'cancelled': 'paid',
+      'pendente': 'paid',
+      'pago': 'paid',
+      'vencido': 'paid',
+      'cancelado': 'paid'
+    };
+    
+    // Mapear forma de pagamento para payment_method_id (se necessário)
+    const paymentMethodMap: Record<string, string> = {
+      'boleto': 'boleto',
+      'pix': 'pix',
+      'transferencia': 'transferencia',
+      'dinheiro': 'dinheiro',
+      'cartao': 'cartao',
+      'cheque': 'cheque'
+    };
+    
     // Normalizar o payload para a tabela financial_documents
     const normalizedBody = {
       direction: 'payable', // Sempre payable para contas a pagar
@@ -89,7 +111,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       amount: body.valor,
       due_date: body.data_vencimento,
       issue_date: body.data_vencimento, // Usar data_vencimento como issue_date se não houver
-      status: body.status || 'paid',
+      status: statusMap[body.status] || body.status || 'paid',
       partner_id: body.supplier_id,
       segment_id: body.segment_id,
       payment_method_id: body.payment_method_id,
