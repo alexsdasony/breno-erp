@@ -117,7 +117,7 @@ export function useFinancialDocuments() {
     try {
       const list = await fetchPage(1);
       // Ordenar por data de criação decrescente
-      const sortedList = list.sort((a, b) => {
+      const sortedList = list.sort((a: any, b: any) => {
         const dateA = new Date(a.created_at || 0).getTime();
         const dateB = new Date(b.created_at || 0).getTime();
         return dateB - dateA;
