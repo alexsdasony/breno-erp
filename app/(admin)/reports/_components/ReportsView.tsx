@@ -787,6 +787,83 @@ export default function ReportsView() {
     }
   };
 
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Relatórios</h1>
+          <p className="text-gray-600">Visualize e baixe relatórios detalhados do sistema</p>
+        </div>
+        
+        {/* Barra de Pesquisa */}
+        <div className="mb-6">
+        <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Buscar relatórios..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+
+        {/* Grid de Módulos */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredModules.map((module) => (
+            <motion.div
+              key={module.id}
+              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className={`p-6 ${module.color}`}>
+                <div className="flex items-center mb-4">
+                  <module.icon className="w-8 h-8 text-white mr-3" />
+                  <h3 className="text-xl font-semibold text-white">{module.name}</h3>
+            </div>
+                <p className="text-white/90 text-sm">Relatórios de {module.name.toLowerCase()}</p>
+              </div>
+              
+              <div className="p-6">
+                <div className="space-y-3">
+                  {module.reports.map((report) => (
+                    <div 
+                      key={report.id} 
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+            <div>
+                        <h4 className="font-medium text-gray-900">{report.name}</h4>
+                        <p className="text-sm text-gray-600">{report.description}</p>
+            </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleGenerateReport(module.id, report.id, 'view')}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Visualizar"
+                        >
+                          <Search className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleGenerateReport(module.id, report.id, 'download')}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Baixar"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+          </div>
+        </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   // Funções para gerar HTML específico de cada relatório
   const generateCashFlowHTML = (data: any) => {
     const hasData = data?.data?.inflows > 0 || data?.data?.outflows > 0;
@@ -797,7 +874,7 @@ export default function ReportsView() {
           <div class="icon">💰</div>
           <h3>Nenhum movimento de caixa encontrado</h3>
           <p>Não foram encontradas transações de entrada ou saída de caixa no período selecionado.</p>
-        </div>
+            </div>
         <div class="summary-section">
           <div class="summary-title">Resumo do Período</div>
           <div class="breakdown">
@@ -808,11 +885,11 @@ export default function ReportsView() {
             <div class="breakdown-item">
               <div class="breakdown-label">Saídas</div>
               <div class="breakdown-value">R$ 0,00</div>
-            </div>
+          </div>
             <div class="breakdown-item">
               <div class="breakdown-label">Saldo</div>
               <div class="breakdown-value">R$ 0,00</div>
-            </div>
+        </div>
           </div>
         </div>
       `;
@@ -823,11 +900,11 @@ export default function ReportsView() {
         <div class="stat-card">
           <div class="stat-value">R$ ${(data.data.inflows || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
           <div class="stat-label">Entradas</div>
-        </div>
+            </div>
         <div class="stat-card">
           <div class="stat-value">R$ ${(data.data.outflows || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
           <div class="stat-label">Saídas</div>
-        </div>
+            </div>
         <div class="stat-card">
           <div class="stat-value" style="color: ${(data.data.balance || 0) >= 0 ? '#28a745' : '#dc3545'}">
             R$ ${(data.data.balance || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -866,7 +943,7 @@ export default function ReportsView() {
           <div class="icon">📊</div>
           <h3>Nenhuma receita ou custo encontrado</h3>
           <p>Não foram encontradas receitas ou custos no período selecionado.</p>
-        </div>
+            </div>
         <div class="summary-section">
           <div class="summary-title">Resumo do Período</div>
           <div class="breakdown">
@@ -877,12 +954,12 @@ export default function ReportsView() {
             <div class="breakdown-item">
               <div class="breakdown-label">Custos</div>
               <div class="breakdown-value">R$ 0,00</div>
-            </div>
+          </div>
             <div class="breakdown-item">
               <div class="breakdown-label">Lucro</div>
               <div class="breakdown-value">R$ 0,00</div>
-            </div>
-          </div>
+        </div>
+      </div>
         </div>
       `;
     }
@@ -892,17 +969,17 @@ export default function ReportsView() {
         <div class="stat-card">
           <div class="stat-value">R$ ${(data.data.revenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
           <div class="stat-label">Receitas</div>
-        </div>
+                  </div>
         <div class="stat-card">
           <div class="stat-value">R$ ${(data.data.costs || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
           <div class="stat-label">Custos</div>
-        </div>
+                  </div>
         <div class="stat-card">
           <div class="stat-value" style="color: ${(data.data.profit || 0) >= 0 ? '#28a745' : '#dc3545'}">
             R$ ${(data.data.profit || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </div>
+                </div>
           <div class="stat-label">Lucro</div>
-        </div>
+              </div>
         <div class="stat-card">
           <div class="stat-value">${(data.data.profitMargin || 0).toFixed(1)}%</div>
           <div class="stat-label">Margem de Lucro</div>
@@ -920,7 +997,7 @@ export default function ReportsView() {
           <div class="icon">👥</div>
           <h3>Nenhum cliente encontrado</h3>
           <p>Não há clientes cadastrados no sistema.</p>
-        </div>
+                        </div>
       `;
     }
 
@@ -955,7 +1032,7 @@ export default function ReportsView() {
                 <td>
                   <span style="color: ${customer.status === 'active' ? '#28a745' : '#dc3545'}; font-weight: 600;">
                     ${customer.status === 'active' ? 'Ativo' : 'Inativo'}
-                  </span>
+                            </span>
                 </td>
               </tr>
             `).join('')}
@@ -1009,13 +1086,13 @@ export default function ReportsView() {
                 <td>
                   <span style="color: ${supplier.status === 'active' ? '#28a745' : '#dc3545'}; font-weight: 600;">
                     ${supplier.status === 'active' ? 'Ativo' : 'Inativo'}
-                  </span>
+                            </span>
                 </td>
               </tr>
             `).join('')}
           </tbody>
         </table>
-      </div>
+                          </div>
     `;
   };
 
@@ -1028,7 +1105,7 @@ export default function ReportsView() {
           <div class="icon">💳</div>
           <h3>Nenhuma conta a pagar encontrada</h3>
           <p>Não há contas a pagar cadastradas no sistema.</p>
-        </div>
+                        </div>
       `;
     }
 
@@ -1038,20 +1115,20 @@ export default function ReportsView() {
           <div class="stat-card">
             <div class="stat-value">${data.data.current || 0}</div>
             <div class="stat-label">Em Dia</div>
-          </div>
+                      </div>
           <div class="stat-card">
             <div class="stat-value">${data.data.overdue30 || 0}</div>
             <div class="stat-label">Vencidas 30 dias</div>
-          </div>
+                      </div>
           <div class="stat-card">
             <div class="stat-value">${data.data.overdue60 || 0}</div>
             <div class="stat-label">Vencidas 60 dias</div>
-          </div>
+                    </div>
           <div class="stat-card">
             <div class="stat-value">${data.data.overdue90 || 0}</div>
             <div class="stat-label">Vencidas 90+ dias</div>
-          </div>
-        </div>
+              </div>
+      </div>
       `;
     }
 
@@ -1064,11 +1141,11 @@ export default function ReportsView() {
             <div class="stat-item">
               <span class="stat-label">Total de Fornecedores:</span>
               <span class="stat-value">${suppliers.length}</span>
-            </div>
+        </div>
             <div class="stat-item">
               <span class="stat-label">Valor Total Pago:</span>
               <span class="stat-value">R$ ${suppliers.reduce((sum: number, s: any) => sum + (s.total_amount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-            </div>
+    </div>
           </div>
           <div class="table-container">
             <table class="report-table">
