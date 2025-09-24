@@ -185,27 +185,146 @@ async function generateNfeReport(reportId: string, params: any) {
 
 // Implementações das funções de dados
 async function getCashFlowData(params: any) {
-  // Implementar lógica de fluxo de caixa
+  console.log('💰 Calculando fluxo de caixa...');
+  
+  // Buscar vendas (entradas de caixa)
+  const { data: sales, error: salesError } = await supabaseAdmin
+    .from('sales')
+    .select('total, date, status')
+    .gte('date', params.startDate || '2024-01-01')
+    .lte('date', params.endDate || '2024-12-31')
+    .eq('status', 'Concluída');
+
+  if (salesError) {
+    console.error('Erro ao buscar vendas:', salesError);
+  }
+
+  // Buscar contas a receber pagas
+  const { data: receivables, error: receivablesError } = await supabaseAdmin
+    .from('accounts_receivable')
+    .select('amount, payment_date, status')
+    .gte('payment_date', params.startDate || '2024-01-01')
+    .lte('payment_date', params.endDate || '2024-12-31')
+    .eq('status', 'paid');
+
+  if (receivablesError) {
+    console.error('Erro ao buscar contas a receber:', receivablesError);
+  }
+
+  // Buscar contas a pagar (saídas de caixa)
+  const { data: payables, error: payablesError } = await supabaseAdmin
+    .from('accounts_payable')
+    .select('amount, payment_date, status')
+    .gte('payment_date', params.startDate || '2024-01-01')
+    .lte('payment_date', params.endDate || '2024-12-31')
+    .eq('status', 'paid');
+
+  if (payablesError) {
+    console.error('Erro ao buscar contas a pagar:', payablesError);
+  }
+
+  // Calcular entradas
+  const salesInflows = (sales || []).reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0);
+  const receivablesInflows = (receivables || []).reduce((sum, rec) => sum + (parseFloat(rec.amount) || 0), 0);
+  const totalInflows = salesInflows + receivablesInflows;
+
+  // Calcular saídas
+  const totalOutflows = (payables || []).reduce((sum, pay) => sum + (parseFloat(pay.amount) || 0), 0);
+
+  // Calcular saldo
+  const balance = totalInflows - totalOutflows;
+
+  console.log('💰 Fluxo de caixa calculado:', {
+    salesInflows,
+    receivablesInflows,
+    totalInflows,
+    totalOutflows,
+    balance
+  });
+
   return {
     title: 'Fluxo de Caixa',
     period: `${params.startDate} a ${params.endDate}`,
     data: {
-      inflows: 0,
-      outflows: 0,
-      balance: 0
+      inflows: totalInflows,
+      outflows: totalOutflows,
+      balance: balance,
+      breakdown: {
+        sales: salesInflows,
+        receivables: receivablesInflows,
+        payables: totalOutflows
+      },
+      summary: {
+        totalSales: (sales || []).length,
+        totalReceivables: (receivables || []).length,
+        totalPayables: (payables || []).length
+      }
     }
   };
 }
 
 async function getProfitLossData(params: any) {
-  // Implementar lógica de DRE
+  console.log('📊 Calculando DRE...');
+  
+  // Buscar receitas (vendas)
+  const { data: sales, error: salesError } = await supabaseAdmin
+    .from('sales')
+    .select('total, date, status')
+    .gte('date', params.startDate || '2024-01-01')
+    .lte('date', params.endDate || '2024-12-31')
+    .eq('status', 'Concluída');
+
+  if (salesError) {
+    console.error('Erro ao buscar vendas:', salesError);
+  }
+
+  // Buscar custos (compras de produtos)
+  const { data: purchases, error: purchasesError } = await supabaseAdmin
+    .from('accounts_payable')
+    .select('amount, description, payment_date, status')
+    .gte('payment_date', params.startDate || '2024-01-01')
+    .lte('payment_date', params.endDate || '2024-12-31')
+    .eq('status', 'paid')
+    .ilike('description', '%produto%');
+
+  if (purchasesError) {
+    console.error('Erro ao buscar compras:', purchasesError);
+  }
+
+  // Calcular receitas
+  const totalRevenue = (sales || []).reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0);
+
+  // Calcular custos
+  const totalCosts = (purchases || []).reduce((sum, purchase) => sum + (parseFloat(purchase.amount) || 0), 0);
+
+  // Calcular lucro
+  const profit = totalRevenue - totalCosts;
+  const profitMargin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
+
+  console.log('📊 DRE calculado:', {
+    totalRevenue,
+    totalCosts,
+    profit,
+    profitMargin
+  });
+
   return {
     title: 'Demonstrativo de Resultados',
     period: `${params.startDate} a ${params.endDate}`,
     data: {
-      revenue: 0,
-      costs: 0,
-      profit: 0
+      revenue: totalRevenue,
+      costs: totalCosts,
+      profit: profit,
+      profitMargin: profitMargin,
+      breakdown: {
+        sales: totalRevenue,
+        purchases: totalCosts,
+        otherCosts: 0
+      },
+      summary: {
+        totalSales: (sales || []).length,
+        totalPurchases: (purchases || []).length
+      }
     }
   };
 }

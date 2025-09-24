@@ -400,26 +400,206 @@ export default function ReportsView() {
         // Abrir relatório em nova aba para visualização
         const newWindow = window.open('', '_blank');
         if (newWindow) {
+          const reportData = data.data;
+          const reportTitle = reportData?.title || 'Relatório';
+          const reportPeriod = reportData?.period || 'N/A';
+          
+          // Gerar HTML baseado no tipo de relatório
+          let reportContent = '';
+          
+          if (moduleId === 'financial' && reportId === 'cash-flow') {
+            reportContent = generateCashFlowHTML(reportData);
+          } else if (moduleId === 'financial' && reportId === 'profit-loss') {
+            reportContent = generateProfitLossHTML(reportData);
+          } else if (moduleId === 'customers' && reportId === 'customer-list') {
+            reportContent = generateCustomerListHTML(reportData);
+          } else if (moduleId === 'suppliers' && reportId === 'supplier-list') {
+            reportContent = generateSupplierListHTML(reportData);
+          } else {
+            reportContent = generateGenericHTML(reportData);
+          }
+          
           newWindow.document.write(`
             <html>
               <head>
-                <title>Relatório - ${data.data?.title || reportId}</title>
+                <title>${reportTitle}</title>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <style>
-                  body { font-family: Arial, sans-serif; margin: 20px; }
-                  .header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-                  .content { margin: 20px 0; }
-                  table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                  th { background-color: #f2f2f2; }
+                  * { margin: 0; padding: 0; box-sizing: border-box; }
+                  body { 
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    min-height: 100vh;
+                    padding: 20px;
+                  }
+                  .container {
+                    max-width: 1200px;
+                    margin: 0 auto;
+                    background: white;
+                    border-radius: 12px;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                    overflow: hidden;
+                  }
+                  .header { 
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 30px;
+                    text-align: center;
+                  }
+                  .header h1 { 
+                    font-size: 2.5rem; 
+                    font-weight: 700; 
+                    margin-bottom: 10px;
+                    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                  }
+                  .header .period { 
+                    font-size: 1.1rem; 
+                    opacity: 0.9;
+                    font-weight: 300;
+                  }
+                  .content { 
+                    padding: 40px; 
+                  }
+                  .stats-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 20px;
+                    margin-bottom: 30px;
+                  }
+                  .stat-card {
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    padding: 20px;
+                    text-align: center;
+                    border-left: 4px solid #667eea;
+                    transition: transform 0.2s ease;
+                  }
+                  .stat-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                  }
+                  .stat-value {
+                    font-size: 2rem;
+                    font-weight: 700;
+                    color: #667eea;
+                    margin-bottom: 5px;
+                  }
+                  .stat-label {
+                    color: #6c757d;
+                    font-size: 0.9rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                  }
+                  .table-container {
+                    background: white;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                  }
+                  table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                  }
+                  th { 
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 15px;
+                    text-align: left;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    font-size: 0.85rem;
+                  }
+                  td { 
+                    padding: 15px; 
+                    border-bottom: 1px solid #e9ecef;
+                    color: #495057;
+                  }
+                  tr:hover {
+                    background-color: #f8f9fa;
+                  }
+                  .empty-state {
+                    text-align: center;
+                    padding: 60px 20px;
+                    color: #6c757d;
+                  }
+                  .empty-state .icon {
+                    font-size: 4rem;
+                    margin-bottom: 20px;
+                    opacity: 0.5;
+                  }
+                  .empty-state h3 {
+                    font-size: 1.5rem;
+                    margin-bottom: 10px;
+                    color: #495057;
+                  }
+                  .empty-state p {
+                    font-size: 1rem;
+                    line-height: 1.6;
+                  }
+                  .summary-section {
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin-bottom: 20px;
+                  }
+                  .summary-title {
+                    font-size: 1.2rem;
+                    font-weight: 600;
+                    color: #495057;
+                    margin-bottom: 15px;
+                    display: flex;
+                    align-items: center;
+                  }
+                  .summary-title::before {
+                    content: "📊";
+                    margin-right: 10px;
+                  }
+                  .breakdown {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 15px;
+                    margin-top: 15px;
+                  }
+                  .breakdown-item {
+                    background: white;
+                    padding: 15px;
+                    border-radius: 6px;
+                    border-left: 3px solid #667eea;
+                  }
+                  .breakdown-label {
+                    font-size: 0.9rem;
+                    color: #6c757d;
+                    margin-bottom: 5px;
+                  }
+                  .breakdown-value {
+                    font-size: 1.1rem;
+                    font-weight: 600;
+                    color: #495057;
+                  }
+                  @media (max-width: 768px) {
+                    .stats-grid {
+                      grid-template-columns: 1fr;
+                    }
+                    .header h1 {
+                      font-size: 2rem;
+                    }
+                    .content {
+                      padding: 20px;
+                    }
+                  }
                 </style>
               </head>
               <body>
-                <div class="header">
-                  <h1>${data.data?.title || 'Relatório'}</h1>
-                  <p>Período: ${data.data?.period || 'N/A'}</p>
-                </div>
-                <div class="content">
-                  <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                <div class="container">
+                  <div class="header">
+                    <h1>${reportTitle}</h1>
+                    <div class="period">Período: ${reportPeriod}</div>
+                  </div>
+                  <div class="content">
+                    ${reportContent}
+                  </div>
                 </div>
               </body>
             </html>
@@ -457,6 +637,249 @@ export default function ReportsView() {
       console.error('Erro ao gerar relatório:', error);
       alert('Erro ao gerar relatório. Tente novamente.');
     }
+  };
+
+  // Funções para gerar HTML específico de cada relatório
+  const generateCashFlowHTML = (data: any) => {
+    const hasData = data?.data?.inflows > 0 || data?.data?.outflows > 0;
+    
+    if (!hasData) {
+      return `
+        <div class="empty-state">
+          <div class="icon">💰</div>
+          <h3>Nenhum movimento de caixa encontrado</h3>
+          <p>Não foram encontradas transações de entrada ou saída de caixa no período selecionado.</p>
+        </div>
+        <div class="summary-section">
+          <div class="summary-title">Resumo do Período</div>
+          <div class="breakdown">
+            <div class="breakdown-item">
+              <div class="breakdown-label">Entradas</div>
+              <div class="breakdown-value">R$ 0,00</div>
+            </div>
+            <div class="breakdown-item">
+              <div class="breakdown-label">Saídas</div>
+              <div class="breakdown-value">R$ 0,00</div>
+            </div>
+            <div class="breakdown-item">
+              <div class="breakdown-label">Saldo</div>
+              <div class="breakdown-value">R$ 0,00</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">R$ ${(data.data.inflows || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+          <div class="stat-label">Entradas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">R$ ${(data.data.outflows || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+          <div class="stat-label">Saídas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color: ${(data.data.balance || 0) >= 0 ? '#28a745' : '#dc3545'}">
+            R$ ${(data.data.balance || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </div>
+          <div class="stat-label">Saldo</div>
+        </div>
+      </div>
+      ${data.data.breakdown ? `
+        <div class="summary-section">
+          <div class="summary-title">Detalhamento</div>
+          <div class="breakdown">
+            <div class="breakdown-item">
+              <div class="breakdown-label">Vendas</div>
+              <div class="breakdown-value">R$ ${(data.data.breakdown.sales || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            </div>
+            <div class="breakdown-item">
+              <div class="breakdown-label">Contas a Receber</div>
+              <div class="breakdown-value">R$ ${(data.data.breakdown.receivables || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            </div>
+            <div class="breakdown-item">
+              <div class="breakdown-label">Contas a Pagar</div>
+              <div class="breakdown-value">R$ ${(data.data.breakdown.payables || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            </div>
+          </div>
+        </div>
+      ` : ''}
+    `;
+  };
+
+  const generateProfitLossHTML = (data: any) => {
+    const hasData = data?.data?.revenue > 0 || data?.data?.costs > 0;
+    
+    if (!hasData) {
+      return `
+        <div class="empty-state">
+          <div class="icon">📊</div>
+          <h3>Nenhuma receita ou custo encontrado</h3>
+          <p>Não foram encontradas receitas ou custos no período selecionado.</p>
+        </div>
+        <div class="summary-section">
+          <div class="summary-title">Resumo do Período</div>
+          <div class="breakdown">
+            <div class="breakdown-item">
+              <div class="breakdown-label">Receitas</div>
+              <div class="breakdown-value">R$ 0,00</div>
+            </div>
+            <div class="breakdown-item">
+              <div class="breakdown-label">Custos</div>
+              <div class="breakdown-value">R$ 0,00</div>
+            </div>
+            <div class="breakdown-item">
+              <div class="breakdown-label">Lucro</div>
+              <div class="breakdown-value">R$ 0,00</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">R$ ${(data.data.revenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+          <div class="stat-label">Receitas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">R$ ${(data.data.costs || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+          <div class="stat-label">Custos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color: ${(data.data.profit || 0) >= 0 ? '#28a745' : '#dc3545'}">
+            R$ ${(data.data.profit || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </div>
+          <div class="stat-label">Lucro</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${(data.data.profitMargin || 0).toFixed(1)}%</div>
+          <div class="stat-label">Margem de Lucro</div>
+        </div>
+      </div>
+    `;
+  };
+
+  const generateCustomerListHTML = (data: any) => {
+    const customers = data?.data || [];
+    
+    if (customers.length === 0) {
+      return `
+        <div class="empty-state">
+          <div class="icon">👥</div>
+          <h3>Nenhum cliente encontrado</h3>
+          <p>Não há clientes cadastrados no sistema.</p>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="summary-section">
+        <div class="summary-title">Resumo</div>
+        <div class="breakdown">
+          <div class="breakdown-item">
+            <div class="breakdown-label">Total de Clientes</div>
+            <div class="breakdown-value">${customers.length}</div>
+          </div>
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Email</th>
+              <th>Telefone</th>
+              <th>Cidade</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${customers.map((customer: any) => `
+              <tr>
+                <td>${customer.name || 'N/A'}</td>
+                <td>${customer.email || 'N/A'}</td>
+                <td>${customer.phone || 'N/A'}</td>
+                <td>${customer.city || 'N/A'}</td>
+                <td>
+                  <span style="color: ${customer.status === 'active' ? '#28a745' : '#dc3545'}; font-weight: 600;">
+                    ${customer.status === 'active' ? 'Ativo' : 'Inativo'}
+                  </span>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  };
+
+  const generateSupplierListHTML = (data: any) => {
+    const suppliers = data?.data || [];
+    
+    if (suppliers.length === 0) {
+      return `
+        <div class="empty-state">
+          <div class="icon">🏭</div>
+          <h3>Nenhum fornecedor encontrado</h3>
+          <p>Não há fornecedores cadastrados no sistema.</p>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="summary-section">
+        <div class="summary-title">Resumo</div>
+        <div class="breakdown">
+          <div class="breakdown-item">
+            <div class="breakdown-label">Total de Fornecedores</div>
+            <div class="breakdown-value">${suppliers.length}</div>
+          </div>
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Email</th>
+              <th>Telefone</th>
+              <th>Cidade</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${suppliers.map((supplier: any) => `
+              <tr>
+                <td>${supplier.name || 'N/A'}</td>
+                <td>${supplier.email || 'N/A'}</td>
+                <td>${supplier.phone || 'N/A'}</td>
+                <td>${supplier.city || 'N/A'}</td>
+                <td>
+                  <span style="color: ${supplier.status === 'active' ? '#28a745' : '#dc3545'}; font-weight: 600;">
+                    ${supplier.status === 'active' ? 'Ativo' : 'Inativo'}
+                  </span>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  };
+
+  const generateGenericHTML = (data: any) => {
+    return `
+      <div class="summary-section">
+        <div class="summary-title">Dados do Relatório</div>
+        <pre style="background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.4;">
+${JSON.stringify(data, null, 2)}
+        </pre>
+      </div>
+    `;
   };
 
   return (
