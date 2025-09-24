@@ -425,15 +425,55 @@ async function getCustomerListData(params: any) {
 }
 
 async function getCustomerAnalysisData(params: any) {
-  return {
-    title: 'Análise de Clientes',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: {
-      totalCustomers: 0,
-      activeCustomers: 0,
-      newCustomers: 0
+  console.log('👥 Analisando dados de clientes...');
+  
+  try {
+    // Buscar dados reais de clientes
+    const { data: customersData, error: customersError } = await supabaseAdmin
+      .from('partners')
+      .select('id, name, status, created_at')
+      .eq('role', 'customer')
+      .eq('is_deleted', false);
+
+    if (customersError) {
+      console.error('❌ Erro ao buscar clientes:', customersError);
+      throw customersError;
     }
-  };
+
+    const customers = customersData || [];
+    const totalCustomers = customers.length;
+    const activeCustomers = customers.filter(c => c.status === 'active' || c.status === 'ativo').length;
+    
+    // Calcular novos clientes no período
+    const startDate = new Date(params.startDate || '2024-01-01');
+    const newCustomers = customers.filter(c => {
+      const createdDate = new Date(c.created_at);
+      return createdDate >= startDate;
+    }).length;
+
+    return {
+      title: 'Análise de Clientes',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        totalCustomers,
+        activeCustomers,
+        newCustomers,
+        inactiveCustomers: totalCustomers - activeCustomers
+      }
+    };
+  } catch (error) {
+    console.error('❌ Erro ao analisar clientes:', error);
+    return {
+      title: 'Análise de Clientes',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        totalCustomers: 0,
+        activeCustomers: 0,
+        newCustomers: 0,
+        inactiveCustomers: 0
+      }
+    };
+  }
 }
 
 async function getSupplierListData(params: any) {
@@ -616,15 +656,66 @@ async function getSalesSummaryData(params: any) {
 }
 
 async function getSalesAnalysisData(params: any) {
-  return {
-    title: 'Análise de Vendas',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: {
-      totalSales: 0,
-      averageValue: 0,
-      topProducts: []
+  console.log('📊 Analisando dados de vendas...');
+  
+  try {
+    // Buscar dados reais de vendas
+    const { data: salesData, error: salesError } = await supabaseAdmin
+      .from('sales')
+      .select('total, date, status, items:sale_items(product_id, product_name, quantity)')
+      .gte('date', params.startDate || '2024-01-01')
+      .lte('date', params.endDate || '2024-12-31')
+      .eq('status', 'completed');
+
+    if (salesError) {
+      console.error('❌ Erro ao buscar vendas:', salesError);
+      throw salesError;
     }
-  };
+
+    const sales = salesData || [];
+    const totalSales = sales.length;
+    const totalValue = sales.reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0);
+    const averageValue = totalSales > 0 ? totalValue / totalSales : 0;
+
+    // Calcular top produtos
+    const productCounts: { [key: string]: number } = {};
+    sales.forEach(sale => {
+      if (sale.items) {
+        sale.items.forEach((item: any) => {
+          const productName = item.product_name || 'Produto não identificado';
+          productCounts[productName] = (productCounts[productName] || 0) + (item.quantity || 0);
+        });
+      }
+    });
+
+    const topProducts = Object.entries(productCounts)
+      .map(([name, quantity]) => ({ name, quantity: quantity as number }))
+      .sort((a, b) => (b.quantity as number) - (a.quantity as number))
+      .slice(0, 5);
+
+    return {
+      title: 'Análise de Vendas',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        totalSales,
+        averageValue,
+        topProducts,
+        totalValue
+      }
+    };
+  } catch (error) {
+    console.error('❌ Erro ao analisar vendas:', error);
+    return {
+      title: 'Análise de Vendas',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        totalSales: 0,
+        averageValue: 0,
+        topProducts: [],
+        totalValue: 0
+      }
+    };
+  }
 }
 
 async function getProductListData(params: any) {
