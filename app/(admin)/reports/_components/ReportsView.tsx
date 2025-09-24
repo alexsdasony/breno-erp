@@ -415,6 +415,18 @@ export default function ReportsView() {
             reportContent = generateCustomerListHTML(reportData);
           } else if (moduleId === 'suppliers' && reportId === 'supplier-list') {
             reportContent = generateSupplierListHTML(reportData);
+          } else if (moduleId === 'accounts-payable') {
+            reportContent = generateAccountsPayableHTML(reportData, reportId);
+          } else if (moduleId === 'billing') {
+            reportContent = generateBillingHTML(reportData, reportId);
+          } else if (moduleId === 'inventory') {
+            reportContent = generateInventoryHTML(reportData, reportId);
+          } else if (moduleId === 'sales') {
+            reportContent = generateSalesHTML(reportData, reportId);
+          } else if (moduleId === 'dashboard') {
+            reportContent = generateDashboardHTML(reportData, reportId);
+          } else if (moduleId === 'nfe') {
+            reportContent = generateNfeHTML(reportData, reportId);
           } else {
             reportContent = generateGenericHTML(reportData);
           }
@@ -869,6 +881,228 @@ export default function ReportsView() {
         </table>
       </div>
     `;
+  };
+
+  const generateAccountsPayableHTML = (data: any, reportId: string) => {
+    const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
+    
+    if (!hasData) {
+      return `
+        <div class="empty-state">
+          <div class="icon">💳</div>
+          <h3>Nenhuma conta a pagar encontrada</h3>
+          <p>Não há contas a pagar cadastradas no sistema.</p>
+        </div>
+      `;
+    }
+
+    if (reportId === 'payables-aging') {
+      return `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${data.data.current || 0}</div>
+            <div class="stat-label">Em Dia</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.overdue30 || 0}</div>
+            <div class="stat-label">Vencidas 30 dias</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.overdue60 || 0}</div>
+            <div class="stat-label">Vencidas 60 dias</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.overdue90 || 0}</div>
+            <div class="stat-label">Vencidas 90+ dias</div>
+          </div>
+        </div>
+      `;
+    }
+
+    return generateGenericHTML(data);
+  };
+
+  const generateBillingHTML = (data: any, reportId: string) => {
+    const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
+    
+    if (!hasData) {
+      return `
+        <div class="empty-state">
+          <div class="icon">💳</div>
+          <h3>Nenhuma conta a receber encontrada</h3>
+          <p>Não há contas a receber cadastradas no sistema.</p>
+        </div>
+      `;
+    }
+
+    if (reportId === 'receivables-aging') {
+      return `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${data.data.current || 0}</div>
+            <div class="stat-label">Em Dia</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.overdue30 || 0}</div>
+            <div class="stat-label">Vencidas 30 dias</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.overdue60 || 0}</div>
+            <div class="stat-label">Vencidas 60 dias</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.overdue90 || 0}</div>
+            <div class="stat-label">Vencidas 90+ dias</div>
+          </div>
+        </div>
+      `;
+    }
+
+    return generateGenericHTML(data);
+  };
+
+  const generateInventoryHTML = (data: any, reportId: string) => {
+    const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
+    
+    if (!hasData) {
+      return `
+        <div class="empty-state">
+          <div class="icon">📦</div>
+          <h3>Nenhum produto encontrado</h3>
+          <p>Não há produtos cadastrados no sistema.</p>
+        </div>
+      `;
+    }
+
+    if (reportId === 'stock-movement') {
+      return `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${data.data.entries || 0}</div>
+            <div class="stat-label">Entradas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.exits || 0}</div>
+            <div class="stat-label">Saídas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.balance || 0}</div>
+            <div class="stat-label">Saldo</div>
+          </div>
+        </div>
+      `;
+    }
+
+    return generateGenericHTML(data);
+  };
+
+  const generateSalesHTML = (data: any, reportId: string) => {
+    const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
+    
+    if (!hasData) {
+      return `
+        <div class="empty-state">
+          <div class="icon">🛒</div>
+          <h3>Nenhuma venda encontrada</h3>
+          <p>Não há vendas registradas no sistema.</p>
+        </div>
+      `;
+    }
+
+    if (reportId === 'sales-performance') {
+      return `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">R$ ${(data.data.totalSales || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            <div class="stat-label">Total de Vendas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${(data.data.growth || 0).toFixed(1)}%</div>
+            <div class="stat-label">Crescimento</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.topSeller || 'N/A'}</div>
+            <div class="stat-label">Top Vendedor</div>
+          </div>
+        </div>
+      `;
+    }
+
+    return generateGenericHTML(data);
+  };
+
+  const generateDashboardHTML = (data: any, reportId: string) => {
+    const hasData = data?.data && Object.keys(data.data).length > 0;
+    
+    if (!hasData) {
+      return `
+        <div class="empty-state">
+          <div class="icon">📊</div>
+          <h3>Nenhum dado disponível</h3>
+          <p>Não há dados suficientes para gerar o relatório.</p>
+        </div>
+      `;
+    }
+
+    if (reportId === 'kpi-overview') {
+      return `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">R$ ${(data.data.totalRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            <div class="stat-label">Receita Total</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.totalCustomers || 0}</div>
+            <div class="stat-label">Total de Clientes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.totalSales || 0}</div>
+            <div class="stat-label">Total de Vendas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">R$ ${(data.data.averageTicket || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            <div class="stat-label">Ticket Médio</div>
+          </div>
+        </div>
+      `;
+    }
+
+    return generateGenericHTML(data);
+  };
+
+  const generateNfeHTML = (data: any, reportId: string) => {
+    const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
+    
+    if (!hasData) {
+      return `
+        <div class="empty-state">
+          <div class="icon">📄</div>
+          <h3>Nenhuma NFe encontrada</h3>
+          <p>Não há notas fiscais cadastradas no sistema.</p>
+        </div>
+      `;
+    }
+
+    if (reportId === 'nfe-status') {
+      return `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" style="color: #28a745">${data.data.authorized || 0}</div>
+            <div class="stat-label">Autorizadas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color: #ffc107">${data.data.pending || 0}</div>
+            <div class="stat-label">Pendentes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color: #dc3545">${data.data.rejected || 0}</div>
+            <div class="stat-label">Rejeitadas</div>
+          </div>
+        </div>
+      `;
+    }
+
+    return generateGenericHTML(data);
   };
 
   const generateGenericHTML = (data: any) => {

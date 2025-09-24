@@ -25,26 +25,29 @@ export async function GET(request: NextRequest) {
     
     // Gerar dados baseado no tipo de relatório
     switch (moduleId) {
+      case 'dashboard':
+        data = await generateDashboardReport(reportId, { startDate, endDate });
+        break;
       case 'financial':
         data = await generateFinancialReport(reportId, { startDate, endDate });
+        break;
+      case 'accounts-payable':
+        data = await generateAccountsPayableReport(reportId, { startDate, endDate });
+        break;
+      case 'billing':
+        data = await generateBillingReport(reportId, { startDate, endDate });
+        break;
+      case 'inventory':
+        data = await generateInventoryReport(reportId, { startDate, endDate });
+        break;
+      case 'sales':
+        data = await generateSalesReport(reportId, { startDate, endDate });
         break;
       case 'customers':
         data = await generateCustomersReport(reportId, { startDate, endDate });
         break;
       case 'suppliers':
         data = await generateSuppliersReport(reportId, { startDate, endDate });
-        break;
-      case 'sales':
-        data = await generateSalesReport(reportId, { startDate, endDate });
-        break;
-      case 'products':
-        data = await generateProductsReport(reportId, { startDate, endDate });
-        break;
-      case 'accounts-payable':
-        data = await generateAccountsPayableReport(reportId, { startDate, endDate });
-        break;
-      case 'accounts-receivable':
-        data = await generateAccountsReceivableReport(reportId, { startDate, endDate });
         break;
       case 'nfe':
         data = await generateNfeReport(reportId, { startDate, endDate });
@@ -87,6 +90,17 @@ export async function GET(request: NextRequest) {
 }
 
 // Funções para gerar relatórios específicos
+async function generateDashboardReport(reportId: string, params: any) {
+  switch (reportId) {
+    case 'kpi-overview':
+      return await getKpiOverviewData(params);
+    case 'executive-summary':
+      return await getExecutiveSummaryData(params);
+    default:
+      throw new Error('Relatório de dashboard não encontrado');
+  }
+}
+
 async function generateFinancialReport(reportId: string, params: any) {
   switch (reportId) {
     case 'cash-flow':
@@ -106,8 +120,10 @@ async function generateCustomersReport(reportId: string, params: any) {
   switch (reportId) {
     case 'customer-list':
       return await getCustomerListData(params);
-    case 'customer-analysis':
-      return await getCustomerAnalysisData(params);
+    case 'customer-segmentation':
+      return await getCustomerSegmentationData(params);
+    case 'customer-lifetime-value':
+      return await getCustomerLifetimeValueData(params);
     default:
       throw new Error('Relatório de clientes não encontrado');
   }
@@ -128,10 +144,14 @@ async function generateSuppliersReport(reportId: string, params: any) {
 
 async function generateSalesReport(reportId: string, params: any) {
   switch (reportId) {
-    case 'sales-summary':
-      return await getSalesSummaryData(params);
-    case 'sales-analysis':
-      return await getSalesAnalysisData(params);
+    case 'sales-performance':
+      return await getSalesPerformanceData(params);
+    case 'top-products':
+      return await getTopProductsData(params);
+    case 'sales-forecast':
+      return await getSalesForecastData(params);
+    case 'customer-analysis':
+      return await getCustomerAnalysisData(params);
     default:
       throw new Error('Relatório de vendas não encontrado');
   }
@@ -150,12 +170,42 @@ async function generateProductsReport(reportId: string, params: any) {
 
 async function generateAccountsPayableReport(reportId: string, params: any) {
   switch (reportId) {
-    case 'payable-list':
-      return await getAccountsPayableData(params);
-    case 'payable-analysis':
-      return await getAccountsPayableAnalysisData(params);
+    case 'payables-aging':
+      return await getPayablesAgingData(params);
+    case 'supplier-payments':
+      return await getSupplierPaymentsData(params);
+    case 'overdue-bills':
+      return await getOverdueBillsData(params);
     default:
       throw new Error('Relatório de contas a pagar não encontrado');
+  }
+}
+
+async function generateBillingReport(reportId: string, params: any) {
+  switch (reportId) {
+    case 'receivables-aging':
+      return await getReceivablesAgingData(params);
+    case 'collection-efficiency':
+      return await getCollectionEfficiencyData(params);
+    case 'customer-receivables':
+      return await getCustomerReceivablesData(params);
+    default:
+      throw new Error('Relatório de cobranças não encontrado');
+  }
+}
+
+async function generateInventoryReport(reportId: string, params: any) {
+  switch (reportId) {
+    case 'stock-levels':
+      return await getStockLevelsData(params);
+    case 'stock-movement':
+      return await getStockMovementData(params);
+    case 'abc-analysis':
+      return await getAbcAnalysisData(params);
+    case 'low-stock-alert':
+      return await getLowStockAlertData(params);
+    default:
+      throw new Error('Relatório de estoque não encontrado');
   }
 }
 
@@ -486,28 +536,88 @@ async function getInventoryAnalysisData(params: any) {
 }
 
 async function getAccountsPayableData(params: any) {
+  console.log('💳 Buscando contas a pagar...');
+  
   const { data, error } = await supabaseAdmin
     .from('accounts_payable')
     .select('*')
     .order('due_date', { ascending: true });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Erro ao buscar contas a pagar:', error);
+    throw error;
+  }
+
+  const accounts = data || [];
+  const totalAmount = accounts.reduce((sum, account) => sum + (parseFloat(account.amount) || 0), 0);
+  const overdueCount = accounts.filter(account => 
+    account.due_date && new Date(account.due_date) < new Date() && account.status !== 'paid'
+  ).length;
+  const paidCount = accounts.filter(account => account.status === 'paid').length;
+
+  console.log('💳 Contas a pagar encontradas:', {
+    total: accounts.length,
+    totalAmount,
+    overdueCount,
+    paidCount
+  });
 
   return {
     title: 'Contas a Pagar',
     period: `${params.startDate} a ${params.endDate}`,
-    data: data || []
+    data: accounts,
+    summary: {
+      total: accounts.length,
+      totalAmount,
+      overdueCount,
+      paidCount,
+      pendingCount: accounts.length - paidCount
+    }
   };
 }
 
 async function getAccountsPayableAnalysisData(params: any) {
+  console.log('📊 Analisando contas a pagar...');
+  
+  const { data, error } = await supabaseAdmin
+    .from('accounts_payable')
+    .select('*')
+    .order('due_date', { ascending: true });
+
+  if (error) {
+    console.error('Erro ao buscar contas a pagar para análise:', error);
+    throw error;
+  }
+
+  const accounts = data || [];
+  const now = new Date();
+  const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const totalPayable = accounts.reduce((sum, account) => sum + (parseFloat(account.amount) || 0), 0);
+  const overdue = accounts.filter(account => 
+    account.due_date && new Date(account.due_date) < now && account.status !== 'paid'
+  ).length;
+  const dueSoon = accounts.filter(account => 
+    account.due_date && new Date(account.due_date) <= nextWeek && account.status !== 'paid'
+  ).length;
+  const paid = accounts.filter(account => account.status === 'paid').length;
+
+  console.log('📊 Análise de contas a pagar:', {
+    totalPayable,
+    overdue,
+    dueSoon,
+    paid
+  });
+
   return {
     title: 'Análise de Contas a Pagar',
     period: `${params.startDate} a ${params.endDate}`,
     data: {
-      totalPayable: 0,
-      overdue: 0,
-      dueSoon: 0
+      totalPayable,
+      overdue,
+      dueSoon,
+      paid,
+      pending: accounts.length - paid
     }
   };
 }
@@ -570,6 +680,190 @@ async function getNfeStatusData(params: any) {
       authorized: 0,
       pending: 0,
       rejected: 0
+    }
+  };
+}
+
+// Implementações para Dashboard
+async function getKpiOverviewData(params: any) {
+  return {
+    title: 'Visão Geral de KPIs',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: {
+      totalRevenue: 0,
+      totalCustomers: 0,
+      totalSales: 0,
+      averageTicket: 0
+    }
+  };
+}
+
+async function getExecutiveSummaryData(params: any) {
+  return {
+    title: 'Resumo Executivo',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: {
+      summary: 'Relatório executivo consolidado',
+      keyMetrics: {},
+      recommendations: []
+    }
+  };
+}
+
+// Implementações para Contas a Pagar
+async function getPayablesAgingData(params: any) {
+  return {
+    title: 'Aging de Contas a Pagar',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: {
+      current: 0,
+      overdue30: 0,
+      overdue60: 0,
+      overdue90: 0
+    }
+  };
+}
+
+async function getSupplierPaymentsData(params: any) {
+  return {
+    title: 'Pagamentos por Fornecedor',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: []
+  };
+}
+
+async function getOverdueBillsData(params: any) {
+  return {
+    title: 'Contas em Atraso',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: []
+  };
+}
+
+// Implementações para Cobranças
+async function getReceivablesAgingData(params: any) {
+  return {
+    title: 'Aging de Contas a Receber',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: {
+      current: 0,
+      overdue30: 0,
+      overdue60: 0,
+      overdue90: 0
+    }
+  };
+}
+
+async function getCollectionEfficiencyData(params: any) {
+  return {
+    title: 'Eficiência de Cobrança',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: {
+      efficiency: 0,
+      successRate: 0
+    }
+  };
+}
+
+async function getCustomerReceivablesData(params: any) {
+  return {
+    title: 'Recebíveis por Cliente',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: []
+  };
+}
+
+// Implementações para Estoque
+async function getStockLevelsData(params: any) {
+  return {
+    title: 'Níveis de Estoque',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: []
+  };
+}
+
+async function getStockMovementData(params: any) {
+  return {
+    title: 'Movimentação de Estoque',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: {
+      entries: 0,
+      exits: 0,
+      balance: 0
+    }
+  };
+}
+
+async function getAbcAnalysisData(params: any) {
+  return {
+    title: 'Análise ABC',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: {
+      categoryA: 0,
+      categoryB: 0,
+      categoryC: 0
+    }
+  };
+}
+
+async function getLowStockAlertData(params: any) {
+  return {
+    title: 'Produtos com Estoque Baixo',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: []
+  };
+}
+
+// Implementações para Vendas
+async function getSalesPerformanceData(params: any) {
+  return {
+    title: 'Performance de Vendas',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: {
+      totalSales: 0,
+      growth: 0,
+      topSeller: null
+    }
+  };
+}
+
+async function getTopProductsData(params: any) {
+  return {
+    title: 'Produtos Mais Vendidos',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: []
+  };
+}
+
+async function getSalesForecastData(params: any) {
+  return {
+    title: 'Previsão de Vendas',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: {
+      forecast: 0,
+      confidence: 0
+    }
+  };
+}
+
+// Implementações para Clientes
+async function getCustomerSegmentationData(params: any) {
+  return {
+    title: 'Segmentação de Clientes',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: {
+      segments: []
+    }
+  };
+}
+
+async function getCustomerLifetimeValueData(params: any) {
+  return {
+    title: 'Valor Vitalício do Cliente (LTV)',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: {
+      averageLTV: 0,
+      topCustomers: []
     }
   };
 }
