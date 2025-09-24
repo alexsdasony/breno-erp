@@ -1641,8 +1641,7 @@ async function getCustomerSegmentationData(params: any) {
       id,
       name,
       created_at,
-      segment_id,
-      segments(name)
+      segment_id
     `)
     .eq('role', 'customer')
     .eq('is_deleted', false);
@@ -1658,8 +1657,7 @@ async function getCustomerSegmentationData(params: any) {
   const { data: salesData, error: salesError } = await supabaseAdmin
     .from('sales')
     .select('customer_id, total_amount, total, sale_date')
-    .eq('is_deleted', false)
-    .eq('status', 'completed');
+    .eq('is_deleted', false);
 
   if (salesError) {
     console.error('Erro ao buscar vendas para segmentação:', salesError);
@@ -1686,7 +1684,7 @@ async function getCustomerSegmentationData(params: any) {
       salesCount,
       averageTicket,
       daysSinceLastSale,
-      segment_name: customer.segments?.[0]?.name || 'Sem segmento'
+      segment_name: 'Sem segmento'
     };
   });
 
@@ -1733,8 +1731,7 @@ async function getCustomerLifetimeValueData(params: any) {
     .select(`
       id,
       name,
-      created_at,
-      segments(name)
+      created_at
     `)
     .eq('role', 'customer')
     .eq('is_deleted', false);
@@ -1750,8 +1747,7 @@ async function getCustomerLifetimeValueData(params: any) {
   const { data: salesData, error: salesError } = await supabaseAdmin
     .from('sales')
     .select('customer_id, total_amount, total, sale_date, created_at')
-    .eq('is_deleted', false)
-    .eq('status', 'completed');
+    .eq('is_deleted', false);
 
   if (salesError) {
     console.error('Erro ao buscar vendas para LTV:', salesError);
@@ -1788,7 +1784,7 @@ async function getCustomerLifetimeValueData(params: any) {
       avgDaysBetweenSales: Math.round(avgDaysBetweenSales),
       projectedFutureSales,
       ltv,
-      segment_name: customer.segments?.[0]?.name || 'Sem segmento'
+      segment_name: 'Sem segmento'
     };
   });
 
