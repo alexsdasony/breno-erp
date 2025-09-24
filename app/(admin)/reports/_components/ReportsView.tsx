@@ -377,9 +377,86 @@ export default function ReportsView() {
     )
   );
 
-  const handleGenerateReport = (moduleId: string, reportId: string) => {
-    // Mock function - aqui seria implementada a lógica real
-    console.log(`Gerando relatório ${reportId} do módulo ${moduleId}`);
+  const handleGenerateReport = async (moduleId: string, reportId: string, action: 'view' | 'download') => {
+    try {
+      console.log(`Gerando relatório ${reportId} do módulo ${moduleId} - Ação: ${action}`);
+      
+      // Definir período padrão (últimos 30 dias)
+      const endDate = new Date().toISOString().split('T')[0];
+      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      
+      // Determinar formato baseado na ação
+      const format = action === 'download' ? 'pdf' : 'json';
+      
+      const response = await fetch(`/api/reports?module=${moduleId}&report=${reportId}&format=${format}&startDate=${startDate}&endDate=${endDate}`);
+      
+      if (!response.ok) {
+        throw new Error('Erro ao gerar relatório');
+      }
+      
+      const data = await response.json();
+      
+      if (action === 'view') {
+        // Abrir relatório em nova aba para visualização
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+          newWindow.document.write(`
+            <html>
+              <head>
+                <title>Relatório - ${data.data?.title || reportId}</title>
+                <style>
+                  body { font-family: Arial, sans-serif; margin: 20px; }
+                  .header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+                  .content { margin: 20px 0; }
+                  table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                  th { background-color: #f2f2f2; }
+                </style>
+              </head>
+              <body>
+                <div class="header">
+                  <h1>${data.data?.title || 'Relatório'}</h1>
+                  <p>Período: ${data.data?.period || 'N/A'}</p>
+                </div>
+                <div class="content">
+                  <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                </div>
+              </body>
+            </html>
+          `);
+          newWindow.document.close();
+        }
+      } else {
+        // Implementar download
+        if (format === 'pdf') {
+          // Para PDF, implementar download
+          const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `relatorio_${moduleId}_${reportId}_${new Date().toISOString().split('T')[0]}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        } else {
+          // Para outros formatos
+          const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `relatorio_${moduleId}_${reportId}_${new Date().toISOString().split('T')[0]}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        }
+      }
+      
+    } catch (error) {
+      console.error('Erro ao gerar relatório:', error);
+      alert('Erro ao gerar relatório. Tente novamente.');
+    }
   };
 
   return (
@@ -518,7 +595,8 @@ export default function ReportsView() {
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-white/10"
-                          onClick={() => handleGenerateReport(module.id, report.id)}
+                          onClick={() => handleGenerateReport(module.id, report.id, 'view')}
+                          title="Visualizar relatório"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -526,7 +604,8 @@ export default function ReportsView() {
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-white/10"
-                          onClick={() => handleGenerateReport(module.id, report.id)}
+                          onClick={() => handleGenerateReport(module.id, report.id, 'download')}
+                          title="Baixar relatório"
                         >
                           <Download className="h-4 w-4" />
                         </Button>

@@ -52,14 +52,14 @@ export function useAccountsPayable() {
           
           if (directData.accounts_payable && directData.accounts_payable.length > 0) {
             const directList = directData.accounts_payable || [];
-            return directList.map(normalizeAccountsPayable);
+            return directList;
           }
         } catch (error) {
           console.error('Erro na busca direta:', error);
         }
       }
       
-      return list.map(normalizeAccountsPayable);
+      return list;
     } catch (error) {
       console.error('Erro ao buscar contas a pagar:', error);
       return [];
