@@ -84,14 +84,14 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     // Mapear status para valores aceitos pela tabela financial_documents
     const statusMap: Record<string, string> = {
-      'pending': 'paid',
+      'pending': 'pending',
       'paid': 'paid',
-      'overdue': 'paid',
-      'cancelled': 'paid',
-      'pendente': 'paid',
+      'overdue': 'overdue',
+      'cancelled': 'cancelled',
+      'pendente': 'pending',
       'pago': 'paid',
-      'vencido': 'paid',
-      'cancelado': 'paid'
+      'vencido': 'overdue',
+      'cancelado': 'cancelled'
     };
     
     // Mapear forma de pagamento para payment_method_id (se necessário)
