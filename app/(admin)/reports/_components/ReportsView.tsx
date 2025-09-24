@@ -397,44 +397,56 @@ export default function ReportsView() {
       const data = await response.json();
       
       if (action === 'view') {
+        // Gerar HTML específico baseado no módulo e relatório
+        let reportContent = '';
+        const reportTitle = data.title || 'Relatório';
+        const reportPeriod = data.period || 'N/A';
+        
+        if (moduleId === 'financial') {
+          if (reportId === 'cash-flow') {
+            reportContent = generateCashFlowHTML(data);
+          } else if (reportId === 'profit-loss') {
+            reportContent = generateProfitLossHTML(data);
+          } else {
+            reportContent = generateGenericHTML(data);
+          }
+        } else if (moduleId === 'customers') {
+          if (reportId === 'customer-list') {
+            reportContent = generateCustomerListHTML(data);
+          } else if (reportId === 'customer-segmentation') {
+            reportContent = generateCustomerSegmentationHTML(data);
+          } else if (reportId === 'customer-lifetime-value') {
+            reportContent = generateCustomerLifetimeValueHTML(data);
+          } else {
+            reportContent = generateGenericHTML(data);
+          }
+        } else if (moduleId === 'suppliers') {
+          if (reportId === 'supplier-list') {
+            reportContent = generateSupplierListHTML(data);
+          } else if (reportId === 'supplier-performance') {
+            reportContent = generateSupplierPerformanceHTML(data);
+          } else {
+            reportContent = generateGenericHTML(data);
+          }
+        } else if (moduleId === 'payables') {
+          reportContent = generateAccountsPayableHTML(data, reportId);
+        } else if (moduleId === 'billing') {
+          reportContent = generateBillingHTML(data, reportId);
+        } else if (moduleId === 'inventory') {
+          reportContent = generateInventoryHTML(data, reportId);
+        } else if (moduleId === 'sales') {
+          reportContent = generateSalesHTML(data, reportId);
+        } else if (moduleId === 'dashboard') {
+          reportContent = generateDashboardHTML(data, reportId);
+        } else if (moduleId === 'nfe') {
+          reportContent = generateNfeHTML(data, reportId);
+        } else {
+          reportContent = generateGenericHTML(data);
+        }
+        
         // Abrir relatório em nova aba para visualização
         const newWindow = window.open('', '_blank');
         if (newWindow) {
-          const reportData = data.data;
-          const reportTitle = reportData?.title || 'Relatório';
-          const reportPeriod = reportData?.period || 'N/A';
-          
-          // Gerar HTML baseado no tipo de relatório
-          let reportContent = '';
-          
-          if (moduleId === 'financial' && reportId === 'cash-flow') {
-            reportContent = generateCashFlowHTML(reportData);
-          } else if (moduleId === 'financial' && reportId === 'profit-loss') {
-            reportContent = generateProfitLossHTML(reportData);
-          } else if (moduleId === 'customers' && reportId === 'customer-list') {
-            reportContent = generateCustomerListHTML(reportData);
-          } else if (moduleId === 'suppliers' && reportId === 'supplier-list') {
-            reportContent = generateSupplierListHTML(reportData);
-          } else if (moduleId === 'accounts-payable') {
-            reportContent = generateAccountsPayableHTML(reportData, reportId);
-          } else if (moduleId === 'billing') {
-            reportContent = generateBillingHTML(reportData, reportId);
-          } else if (moduleId === 'inventory') {
-            reportContent = generateInventoryHTML(reportData, reportId);
-          } else if (moduleId === 'sales') {
-            reportContent = generateSalesHTML(reportData, reportId);
-          } else if (moduleId === 'customers') {
-            reportContent = generateCustomersHTML(reportData, reportId);
-          } else if (moduleId === 'suppliers') {
-            reportContent = generateSuppliersHTML(reportData, reportId);
-          } else if (moduleId === 'dashboard') {
-            reportContent = generateDashboardHTML(reportData, reportId);
-          } else if (moduleId === 'nfe') {
-            reportContent = generateNfeHTML(reportData, reportId);
-          } else {
-            reportContent = generateGenericHTML(reportData);
-          }
-          
           newWindow.document.write(`
             <html>
               <head>
@@ -479,253 +491,124 @@ export default function ReportsView() {
                   }
                   .stats-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
                     gap: 20px;
                     margin-bottom: 30px;
                   }
                   .stat-card {
-                    background: #f8f9fa;
-                    border-radius: 8px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
                     padding: 20px;
+                    border-radius: 12px;
                     text-align: center;
-                    border-left: 4px solid #667eea;
-                    transition: transform 0.2s ease;
-                  }
-                  .stat-card:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
                   }
                   .stat-value {
                     font-size: 2rem;
                     font-weight: 700;
-                    color: #667eea;
                     margin-bottom: 5px;
                   }
                   .stat-label {
-                    color: #6c757d;
                     font-size: 0.9rem;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
+                    opacity: 0.9;
+                  }
+                  .summary-section {
+                    margin-bottom: 30px;
+                  }
+                  .summary-title {
+                    font-size: 1.5rem;
+                    font-weight: 600;
+                    color: #333;
+                    margin-bottom: 20px;
+                    padding-bottom: 10px;
+                    border-bottom: 2px solid #667eea;
+                  }
+                  .summary-stats {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 15px;
+                    margin-bottom: 20px;
+                  }
+                  .stat-item {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 15px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    border-left: 4px solid #667eea;
+                  }
+                  .stat-label {
+                    font-weight: 500;
+                    color: #666;
+                  }
+                  .stat-value {
+                    font-weight: 600;
+                    color: #333;
+                    font-size: 1.1rem;
                   }
                   .table-container {
+                    overflow-x: auto;
+                    margin-top: 20px;
+                  }
+                  .report-table {
+                    width: 100%;
+                    border-collapse: collapse;
                     background: white;
                     border-radius: 8px;
                     overflow: hidden;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
                   }
-                  table { 
-                    width: 100%; 
-                    border-collapse: collapse; 
-                  }
-                  th { 
+                  .report-table th {
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                     color: white;
                     padding: 15px;
                     text-align: left;
                     font-weight: 600;
+                    font-size: 0.9rem;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
-                    font-size: 0.85rem;
                   }
-                  td { 
-                    padding: 15px; 
-                    border-bottom: 1px solid #e9ecef;
-                    color: #495057;
+                  .report-table td {
+                    padding: 15px;
+                    border-bottom: 1px solid #eee;
+                    color: #333;
                   }
-                  tr:hover {
-                    background-color: #f8f9fa;
+                  .report-table tr:hover {
+                    background: #f8f9fa;
                   }
                   .empty-state {
                     text-align: center;
                     padding: 60px 20px;
-                    color: #6c757d;
+                    color: #666;
                   }
                   .empty-state .icon {
                     font-size: 4rem;
                     margin-bottom: 20px;
-                    opacity: 0.5;
                   }
                   .empty-state h3 {
                     font-size: 1.5rem;
                     margin-bottom: 10px;
-                    color: #495057;
+                    color: #333;
                   }
                   .empty-state p {
                     font-size: 1rem;
                     line-height: 1.6;
                   }
-                  .summary-section {
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                    padding: 20px;
-                    margin-bottom: 20px;
-                  }
-                  .summary-title {
-                    font-size: 1.2rem;
-                    font-weight: 600;
-                    color: #495057;
-                    margin-bottom: 15px;
-                    display: flex;
-                    align-items: center;
-                  }
-                  .summary-title::before {
-                    content: "📊";
-                    margin-right: 10px;
-                  }
-                  .breakdown {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                    gap: 15px;
-                    margin-top: 15px;
-                  }
-                  .breakdown-item {
-                    background: white;
-                    padding: 15px;
-                    border-radius: 6px;
-                    border-left: 3px solid #667eea;
-                  }
-                  .breakdown-label {
-                    font-size: 0.9rem;
-                    color: #6c757d;
-                    margin-bottom: 5px;
-                  }
-                  .breakdown-value {
-                    font-size: 1.1rem;
-                    font-weight: 600;
-                    color: #495057;
-                  }
                   .status-badge {
                     padding: 4px 8px;
                     border-radius: 4px;
-                    font-size: 12px;
+                    font-size: 0.8rem;
                     font-weight: 500;
                   }
-                  
-                  .status-badge.normal {
-                    background-color: #d1ecf1;
-                    color: #0c5460;
-                  }
-                  
-                  .status-badge.critical {
-                    background-color: #f8d7da;
-                    color: #721c24;
-                  }
-                  
-                  .urgency-badge {
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: 500;
-                  }
-                  
-                  .urgency-badge.critical {
-                    background-color: #f8d7da;
-                    color: #721c24;
-                  }
-                  
-                  .urgency-badge.high {
-                    background-color: #fff3cd;
-                    color: #856404;
-                  }
-                  
-                  .urgency-badge.low {
-                    background-color: #d4edda;
+                  .status-badge.active {
+                    background: #d4edda;
                     color: #155724;
                   }
-                  
-                  .class-badge {
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: 500;
-                  }
-                  
-                  .class-badge.class-A {
-                    background-color: #d4edda;
-                    color: #155724;
-                  }
-                  
-                  .class-badge.class-B {
-                    background-color: #fff3cd;
-                    color: #856404;
-                  }
-                  
-                  .class-badge.class-C {
-                    background-color: #f8d7da;
+                  .status-badge.inactive {
+                    background: #f8d7da;
                     color: #721c24;
                   }
-                  
-                  .trend-badge {
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: 500;
-                  }
-                  
-                  .trend-badge.up {
-                    background-color: #d4edda;
-                    color: #155724;
-                  }
-                  
-                  .trend-badge.down {
-                    background-color: #f8d7da;
-                    color: #721c24;
-                  }
-                  
-                  .trend-badge.stable {
-                    background-color: #d1ecf1;
-                    color: #0c5460;
-                  }
-                  
-                  .growth-badge {
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: 500;
-                  }
-                  
-                  .growth-badge.positive {
-                    background-color: #d4edda;
-                    color: #155724;
-                  }
-                  
-                  .growth-badge.negative {
-                    background-color: #f8d7da;
-                    color: #721c24;
-                  }
-                  
-                  .segment-badge {
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: 500;
-                  }
-                  
-                  .segment-badge.segment-vip {
-                    background-color: #d4edda;
-                    color: #155724;
-                  }
-                  
-                  .segment-badge.segment-alto-valor {
-                    background-color: #d1ecf1;
-                    color: #0c5460;
-                  }
-                  
-                  .segment-badge.segment-regular {
-                    background-color: #fff3cd;
-                    color: #856404;
-                  }
-                  
-                  .segment-badge.segment-baixo-valor {
-                    background-color: #f8d7da;
-                    color: #721c24;
-                  }
-                  
-                  .segment-badge.segment-inativos {
-                    background-color: #e2e3e5;
-                    color: #6c757d;
-                  }
-                  
                   @media (max-width: 768px) {
                     .stats-grid {
                       grid-template-columns: 1fr;
@@ -788,79 +671,173 @@ export default function ReportsView() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Relatórios</h1>
-          <p className="text-gray-600">Visualize e baixe relatórios detalhados do sistema</p>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Relatórios</h1>
+          <p className="text-gray-400 mt-1">Gere relatórios detalhados dos seus dados</p>
         </div>
         
-        {/* Barra de Pesquisa */}
-        <div className="mb-6">
+        {/* Search */}
         <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <input
             type="text"
             placeholder="Buscar relatórios..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
       </div>
 
-        {/* Grid de Módulos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredModules.map((module) => (
-            <motion.div
-              key={module.id}
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className={`p-6 ${module.color}`}>
-                <div className="flex items-center mb-4">
-                  <module.icon className="w-8 h-8 text-white mr-3" />
-                  <h3 className="text-xl font-semibold text-white">{module.name}</h3>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <BarChart3 className="h-5 w-5 text-blue-400" />
             </div>
-                <p className="text-white/90 text-sm">Relatórios de {module.name.toLowerCase()}</p>
-              </div>
-              
-              <div className="p-6">
-                <div className="space-y-3">
-                  {module.reports.map((report) => (
-                    <div 
-                      key={report.id} 
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
             <div>
-                        <h4 className="font-medium text-gray-900">{report.name}</h4>
-                        <p className="text-sm text-gray-600">{report.description}</p>
+              <p className="text-sm text-gray-400">Total de Relatórios</p>
+              <p className="text-xl font-semibold text-white">{reportModules.reduce((acc, module) => acc + module.reports.length, 0)}</p>
             </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleGenerateReport(module.id, report.id, 'view')}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Visualizar"
-                        >
-                          <Search className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleGenerateReport(module.id, report.id, 'download')}
-                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                          title="Baixar"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
           </div>
         </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          ))}
+        
+        <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-green-500/20 rounded-lg">
+              <TrendingUp className="h-5 w-5 text-green-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Módulos Ativos</p>
+              <p className="text-xl font-semibold text-white">{reportModules.length}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-500/20 rounded-lg">
+              <Calendar className="h-5 w-5 text-purple-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Relatórios Diários</p>
+              <p className="text-xl font-semibold text-white">
+                {reportModules.reduce((acc, module) => 
+                  acc + module.reports.filter(r => r.frequency === 'daily').length, 0
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-orange-500/20 rounded-lg">
+              <FileText className="h-5 w-5 text-orange-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Relatórios PDF</p>
+              <p className="text-xl font-semibold text-white">
+                {reportModules.reduce((acc, module) => 
+                  acc + module.reports.filter(r => r.type === 'pdf').length, 0
+                )}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Report Modules Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {filteredModules.map((module) => {
+          const IconComponent = module.icon;
+          return (
+            <motion.div
+              key={module.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white/5 border border-white/10 rounded-lg overflow-hidden hover:bg-white/10 transition-all duration-200"
+            >
+              {/* Module Header */}
+              <div className={`bg-gradient-to-r ${module.color} p-4`}>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <IconComponent className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">{module.name}</h3>
+                    <p className="text-white/80 text-sm">{module.reports.length} relatórios disponíveis</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reports List */}
+              <div className="p-4 space-y-3">
+                {module.reports.map((report) => {
+                  const ReportIcon = report.icon;
+                  return (
+                    <div
+                      key={report.id}
+                      className="flex items-start justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className="p-1.5 bg-white/10 rounded">
+                          <ReportIcon className="h-4 w-4 text-gray-300" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-medium text-white truncate">{report.name}</h4>
+                          <p className="text-xs text-gray-400 mt-1 line-clamp-2">{report.description}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded">
+                              {typeLabels[report.type]}
+                            </span>
+                            <span className="text-xs px-2 py-1 bg-green-500/20 text-green-300 rounded">
+                              {frequencyLabels[report.frequency]}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 ml-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-white/10"
+                          onClick={() => handleGenerateReport(module.id, report.id, 'view')}
+                          title="Visualizar relatório"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-white/10"
+                          onClick={() => handleGenerateReport(module.id, report.id, 'download')}
+                          title="Baixar relatório"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Empty State */}
+      {filteredModules.length === 0 && (
+        <div className="text-center py-12">
+          <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-white mb-2">Nenhum relatório encontrado</h3>
+          <p className="text-gray-400">Tente ajustar os termos de busca</p>
+        </div>
+      )}
     </div>
   );
 
@@ -874,23 +851,6 @@ export default function ReportsView() {
           <div class="icon">💰</div>
           <h3>Nenhum movimento de caixa encontrado</h3>
           <p>Não foram encontradas transações de entrada ou saída de caixa no período selecionado.</p>
-            </div>
-        <div class="summary-section">
-          <div class="summary-title">Resumo do Período</div>
-          <div class="breakdown">
-            <div class="breakdown-item">
-              <div class="breakdown-label">Entradas</div>
-              <div class="breakdown-value">R$ 0,00</div>
-            </div>
-            <div class="breakdown-item">
-              <div class="breakdown-label">Saídas</div>
-              <div class="breakdown-value">R$ 0,00</div>
-          </div>
-            <div class="breakdown-item">
-              <div class="breakdown-label">Saldo</div>
-              <div class="breakdown-value">R$ 0,00</div>
-        </div>
-          </div>
         </div>
       `;
     }
@@ -900,37 +860,18 @@ export default function ReportsView() {
         <div class="stat-card">
           <div class="stat-value">R$ ${(data.data.inflows || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
           <div class="stat-label">Entradas</div>
-            </div>
+        </div>
         <div class="stat-card">
           <div class="stat-value">R$ ${(data.data.outflows || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
           <div class="stat-label">Saídas</div>
-            </div>
+        </div>
         <div class="stat-card">
-          <div class="stat-value" style="color: ${(data.data.balance || 0) >= 0 ? '#28a745' : '#dc3545'}">
+          <div class="stat-value" style="color: ${(data.data.balance || 0) >= 0 ? '#10b981' : '#ef4444'}">
             R$ ${(data.data.balance || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </div>
           <div class="stat-label">Saldo</div>
         </div>
       </div>
-      ${data.data.breakdown ? `
-        <div class="summary-section">
-          <div class="summary-title">Detalhamento</div>
-          <div class="breakdown">
-            <div class="breakdown-item">
-              <div class="breakdown-label">Vendas</div>
-              <div class="breakdown-value">R$ ${(data.data.breakdown.sales || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-            </div>
-            <div class="breakdown-item">
-              <div class="breakdown-label">Contas a Receber</div>
-              <div class="breakdown-value">R$ ${(data.data.breakdown.receivables || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-            </div>
-            <div class="breakdown-item">
-              <div class="breakdown-label">Contas a Pagar</div>
-              <div class="breakdown-value">R$ ${(data.data.breakdown.payables || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-            </div>
-          </div>
-        </div>
-      ` : ''}
     `;
   };
 
@@ -943,23 +884,6 @@ export default function ReportsView() {
           <div class="icon">📊</div>
           <h3>Nenhuma receita ou custo encontrado</h3>
           <p>Não foram encontradas receitas ou custos no período selecionado.</p>
-            </div>
-        <div class="summary-section">
-          <div class="summary-title">Resumo do Período</div>
-          <div class="breakdown">
-            <div class="breakdown-item">
-              <div class="breakdown-label">Receitas</div>
-              <div class="breakdown-value">R$ 0,00</div>
-            </div>
-            <div class="breakdown-item">
-              <div class="breakdown-label">Custos</div>
-              <div class="breakdown-value">R$ 0,00</div>
-          </div>
-            <div class="breakdown-item">
-              <div class="breakdown-label">Lucro</div>
-              <div class="breakdown-value">R$ 0,00</div>
-        </div>
-      </div>
         </div>
       `;
     }
@@ -969,20 +893,20 @@ export default function ReportsView() {
         <div class="stat-card">
           <div class="stat-value">R$ ${(data.data.revenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
           <div class="stat-label">Receitas</div>
-                  </div>
+        </div>
         <div class="stat-card">
           <div class="stat-value">R$ ${(data.data.costs || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
           <div class="stat-label">Custos</div>
-                  </div>
+        </div>
         <div class="stat-card">
-          <div class="stat-value" style="color: ${(data.data.profit || 0) >= 0 ? '#28a745' : '#dc3545'}">
+          <div class="stat-value" style="color: ${(data.data.profit || 0) >= 0 ? '#10b981' : '#ef4444'}">
             R$ ${(data.data.profit || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </div>
+          </div>
           <div class="stat-label">Lucro</div>
-              </div>
+        </div>
         <div class="stat-card">
           <div class="stat-value">${(data.data.profitMargin || 0).toFixed(1)}%</div>
-          <div class="stat-label">Margem de Lucro</div>
+          <div class="stat-label">Margem</div>
         </div>
       </div>
     `;
@@ -997,7 +921,7 @@ export default function ReportsView() {
           <div class="icon">👥</div>
           <h3>Nenhum cliente encontrado</h3>
           <p>Não há clientes cadastrados no sistema.</p>
-                        </div>
+        </div>
       `;
     }
 
@@ -1010,34 +934,32 @@ export default function ReportsView() {
             <div class="breakdown-value">${customers.length}</div>
           </div>
         </div>
-      </div>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Email</th>
-              <th>Telefone</th>
-              <th>Cidade</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${customers.map((customer: any) => `
+        <div class="table-container">
+          <table class="report-table">
+            <thead>
               <tr>
-                <td>${customer.name || 'N/A'}</td>
-                <td>${customer.email || 'N/A'}</td>
-                <td>${customer.phone || 'N/A'}</td>
-                <td>${customer.city || 'N/A'}</td>
-                <td>
-                  <span style="color: ${customer.status === 'active' ? '#28a745' : '#dc3545'}; font-weight: 600;">
-                    ${customer.status === 'active' ? 'Ativo' : 'Inativo'}
-                            </span>
-                </td>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Telefone</th>
+                <th>Status</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              ${customers.map((customer: any) => `
+                <tr>
+                  <td>${customer.name || 'N/A'}</td>
+                  <td>${customer.email || 'N/A'}</td>
+                  <td>${customer.phone || 'N/A'}</td>
+                  <td>
+                    <span class="status-badge ${customer.status === 'active' ? 'active' : 'inactive'}">
+                      ${customer.status === 'active' ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
       </div>
     `;
   };
@@ -1064,908 +986,36 @@ export default function ReportsView() {
             <div class="breakdown-value">${suppliers.length}</div>
           </div>
         </div>
-      </div>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Email</th>
-              <th>Telefone</th>
-              <th>Cidade</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${suppliers.map((supplier: any) => `
+        <div class="table-container">
+          <table class="report-table">
+            <thead>
               <tr>
-                <td>${supplier.name || 'N/A'}</td>
-                <td>${supplier.email || 'N/A'}</td>
-                <td>${supplier.phone || 'N/A'}</td>
-                <td>${supplier.city || 'N/A'}</td>
-                <td>
-                  <span style="color: ${supplier.status === 'active' ? '#28a745' : '#dc3545'}; font-weight: 600;">
-                    ${supplier.status === 'active' ? 'Ativo' : 'Inativo'}
-                            </span>
-                </td>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Telefone</th>
+                <th>Status</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
-                          </div>
+            </thead>
+            <tbody>
+              ${suppliers.map((supplier: any) => `
+                <tr>
+                  <td>${supplier.name || 'N/A'}</td>
+                  <td>${supplier.email || 'N/A'}</td>
+                  <td>${supplier.phone || 'N/A'}</td>
+                  <td>
+                    <span class="status-badge ${supplier.status === 'active' ? 'active' : 'inactive'}">
+                      ${supplier.status === 'active' ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
     `;
   };
 
-  const generateAccountsPayableHTML = (data: any, reportId: string) => {
-    const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
-    
-    if (!hasData) {
-      return `
-        <div class="empty-state">
-          <div class="icon">💳</div>
-          <h3>Nenhuma conta a pagar encontrada</h3>
-          <p>Não há contas a pagar cadastradas no sistema.</p>
-                        </div>
-      `;
-    }
-
-    if (reportId === 'payables-aging') {
-      return `
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-value">${data.data.current || 0}</div>
-            <div class="stat-label">Em Dia</div>
-                      </div>
-          <div class="stat-card">
-            <div class="stat-value">${data.data.overdue30 || 0}</div>
-            <div class="stat-label">Vencidas 30 dias</div>
-                      </div>
-          <div class="stat-card">
-            <div class="stat-value">${data.data.overdue60 || 0}</div>
-            <div class="stat-label">Vencidas 60 dias</div>
-                    </div>
-          <div class="stat-card">
-            <div class="stat-value">${data.data.overdue90 || 0}</div>
-            <div class="stat-label">Vencidas 90+ dias</div>
-              </div>
-      </div>
-      `;
-    }
-
-    if (reportId === 'supplier-payments') {
-      const suppliers = data.data || [];
-      return `
-        <div class="summary-section">
-          <div class="summary-title">Pagamentos por Fornecedor</div>
-          <div class="summary-stats">
-            <div class="stat-item">
-              <span class="stat-label">Total de Fornecedores:</span>
-              <span class="stat-value">${suppliers.length}</span>
-        </div>
-            <div class="stat-item">
-              <span class="stat-label">Valor Total Pago:</span>
-              <span class="stat-value">R$ ${suppliers.reduce((sum: number, s: any) => sum + (s.total_amount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-    </div>
-          </div>
-          <div class="table-container">
-            <table class="report-table">
-              <thead>
-                <tr>
-                  <th>Fornecedor</th>
-                  <th>Total Pago</th>
-                  <th>Qtd Pagamentos</th>
-                  <th>Último Pagamento</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${suppliers.map((supplier: any) => `
-                  <tr>
-                    <td>${supplier.supplier_name}</td>
-                    <td>R$ ${(supplier.total_amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                    <td>${supplier.payment_count || 0}</td>
-                    <td>${supplier.last_payment ? new Date(supplier.last_payment).toLocaleDateString('pt-BR') : 'N/A'}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    if (reportId === 'overdue-bills') {
-      const bills = data.data || [];
-      return `
-        <div class="summary-section">
-          <div class="summary-title">Contas em Atraso</div>
-          <div class="summary-stats">
-            <div class="stat-item">
-              <span class="stat-label">Total de Contas:</span>
-              <span class="stat-value">${bills.length}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Valor Total:</span>
-              <span class="stat-value">R$ ${bills.reduce((sum: number, b: any) => sum + (b.amount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-            </div>
-          </div>
-          <div class="table-container">
-            <table class="report-table">
-              <thead>
-                <tr>
-                  <th>Fornecedor</th>
-                  <th>Descrição</th>
-                  <th>Valor</th>
-                  <th>Vencimento</th>
-                  <th>Dias em Atraso</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${bills.map((bill: any) => `
-                  <tr>
-                    <td>${bill.supplier_name || 'N/A'}</td>
-                    <td>${bill.description || 'N/A'}</td>
-                    <td>R$ ${(bill.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                    <td>${bill.due_date ? new Date(bill.due_date).toLocaleDateString('pt-BR') : 'N/A'}</td>
-                    <td>${bill.days_overdue || 0} dias</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    return generateGenericHTML(data);
-  };
-
-  const generateBillingHTML = (data: any, reportId: string) => {
-    const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
-    
-    if (!hasData) {
-      return `
-        <div class="empty-state">
-          <div class="icon">💳</div>
-          <h3>Nenhuma conta a receber encontrada</h3>
-          <p>Não há contas a receber cadastradas no sistema.</p>
-        </div>
-      `;
-    }
-
-    if (reportId === 'receivables-aging') {
-      return `
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-value">${data.data.current || 0}</div>
-            <div class="stat-label">Em Dia</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${data.data.overdue30 || 0}</div>
-            <div class="stat-label">Vencidas 30 dias</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${data.data.overdue60 || 0}</div>
-            <div class="stat-label">Vencidas 60 dias</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${data.data.overdue90 || 0}</div>
-            <div class="stat-label">Vencidas 90+ dias</div>
-          </div>
-        </div>
-      `;
-    }
-
-    if (reportId === 'customer-receivables') {
-      const customers = data.data || [];
-      return `
-        <div class="summary-section">
-          <div class="summary-title">Recebíveis por Cliente</div>
-          <div class="summary-stats">
-            <div class="stat-item">
-              <span class="stat-label">Total de Clientes:</span>
-              <span class="stat-value">${customers.length}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Valor Total a Receber:</span>
-              <span class="stat-value">R$ ${customers.reduce((sum: number, c: any) => sum + (c.total_amount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-            </div>
-          </div>
-          <div class="table-container">
-            <table class="report-table">
-              <thead>
-                <tr>
-                  <th>Cliente</th>
-                  <th>Valor Total</th>
-                  <th>Qtd Contas</th>
-                  <th>Vencimento Mais Antigo</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${customers.map((customer: any) => `
-                  <tr>
-                    <td>${customer.customer_name}</td>
-                    <td>R$ ${(customer.total_amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                    <td>${customer.account_count || 0}</td>
-                    <td>${customer.oldest_due_date ? new Date(customer.oldest_due_date).toLocaleDateString('pt-BR') : 'N/A'}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    return generateGenericHTML(data);
-  };
-
-  const generateInventoryHTML = (data: any, reportId: string) => {
-    const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
-    
-    if (!hasData) {
-      return `
-        <div class="empty-state">
-          <div class="icon">📦</div>
-          <h3>Nenhum produto encontrado</h3>
-          <p>Não há produtos cadastrados no sistema.</p>
-        </div>
-      `;
-    }
-
-    if (reportId === 'stock-movement') {
-      return `
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-value">${data.data.entries || 0}</div>
-            <div class="stat-label">Entradas</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${data.data.exits || 0}</div>
-            <div class="stat-label">Saídas</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${data.data.balance || 0}</div>
-            <div class="stat-label">Saldo</div>
-          </div>
-        </div>
-      `;
-    }
-
-    if (reportId === 'stock-levels') {
-      const products = data.data || [];
-      return `
-        <div class="summary-section">
-          <div class="summary-title">Níveis de Estoque</div>
-          <div class="summary-stats">
-            <div class="stat-item">
-              <span class="stat-label">Total de Produtos:</span>
-              <span class="stat-value">${products.length}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Produtos com Estoque Baixo:</span>
-              <span class="stat-value">${products.filter((p: any) => p.status === 'low_stock' || p.status === 'out_of_stock').length}</span>
-            </div>
-          </div>
-          <div class="table-container">
-            <table class="report-table">
-              <thead>
-                <tr>
-                  <th>Produto</th>
-                  <th>Estoque Atual</th>
-                  <th>Estoque Mínimo</th>
-                  <th>Status</th>
-                  <th>Preço</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${products.map((product: any) => `
-                  <tr>
-                    <td>${product.name}</td>
-                    <td>${product.stock_quantity || 0}</td>
-                    <td>${product.minimum_stock || product.min_stock || 0}</td>
-                    <td>
-                      <span class="status-badge ${product.status === 'out_of_stock' ? 'critical' : product.status === 'low_stock' ? 'warning' : 'normal'}">
-                        ${product.status === 'out_of_stock' ? 'Sem Estoque' : product.status === 'low_stock' ? 'Estoque Baixo' : 'Normal'}
-                      </span>
-                    </td>
-                    <td>R$ ${(product.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    if (reportId === 'low-stock-alert') {
-      const products = data.data || [];
-      return `
-        <div class="summary-section">
-          <div class="summary-title">Produtos com Estoque Baixo</div>
-          <div class="summary-stats">
-            <div class="stat-item">
-              <span class="stat-label">Total de Produtos:</span>
-              <span class="stat-value">${products.length}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Críticos (Sem Estoque):</span>
-              <span class="stat-value">${products.filter((p: any) => p.urgency === 'critical').length}</span>
-            </div>
-          </div>
-          <div class="table-container">
-            <table class="report-table">
-              <thead>
-                <tr>
-                  <th>Produto</th>
-                  <th>Estoque Atual</th>
-                  <th>Estoque Mínimo</th>
-                  <th>Urgência</th>
-                  <th>Dias Restantes</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${products.map((product: any) => `
-                  <tr>
-                    <td>${product.name}</td>
-                    <td>${product.stock_quantity || 0}</td>
-                    <td>${product.minimum_stock || product.min_stock || 0}</td>
-                    <td>
-                      <span class="urgency-badge ${product.urgency}">
-                        ${product.urgency === 'critical' ? 'Crítico' : product.urgency === 'high' ? 'Alto' : 'Baixo'}
-                      </span>
-                    </td>
-                    <td>${product.days_remaining || 0} dias</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    return generateGenericHTML(data);
-  };
-
-  const generateSalesHTML = (data: any, reportId: string) => {
-    const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
-    
-    if (!hasData) {
-      return `
-        <div class="empty-state">
-          <div class="icon">🛒</div>
-          <h3>Nenhuma venda encontrada</h3>
-          <p>Não há vendas registradas no sistema.</p>
-        </div>
-      `;
-    }
-
-    if (reportId === 'sales-performance') {
-      return `
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-value">R$ ${(data.data.totalSales || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-            <div class="stat-label">Total de Vendas</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${(data.data.growth || 0).toFixed(1)}%</div>
-            <div class="stat-label">Crescimento</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${data.data.topSeller || 'N/A'}</div>
-            <div class="stat-label">Top Vendedor</div>
-          </div>
-        </div>
-      `;
-    }
-
-    if (reportId === 'top-products') {
-      const products = data.data || [];
-      return `
-        <div class="summary-section">
-          <div class="summary-title">Top Produtos</div>
-          <div class="summary-stats">
-            <div class="stat-item">
-              <span class="stat-label">Total de Produtos:</span>
-              <span class="stat-value">${products.length}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Receita Total:</span>
-              <span class="stat-value">R$ ${products.reduce((sum: number, p: any) => sum + (p.total_revenue || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-            </div>
-          </div>
-          <div class="table-container">
-            <table class="report-table">
-              <thead>
-                <tr>
-                  <th>Posição</th>
-                  <th>Produto</th>
-                  <th>Quantidade Vendida</th>
-                  <th>Receita Total</th>
-                  <th>Ticket Médio</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${products.map((product: any, index: number) => `
-                  <tr>
-                    <td>${index + 1}º</td>
-                    <td>${product.name}</td>
-                    <td>${product.quantity_sold || 0}</td>
-                    <td>R$ ${(product.total_revenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                    <td>R$ ${(product.average_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    if (reportId === 'abc-analysis') {
-      const products = data.data || [];
-      return `
-        <div class="summary-section">
-          <div class="summary-title">Análise ABC</div>
-          <div class="summary-stats">
-            <div class="stat-item">
-              <span class="stat-label">Total de Produtos:</span>
-              <span class="stat-value">${products.length}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Classe A (80%):</span>
-              <span class="stat-value">${products.filter((p: any) => p.class === 'A').length}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Classe B (15%):</span>
-              <span class="stat-value">${products.filter((p: any) => p.class === 'B').length}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Classe C (5%):</span>
-              <span class="stat-value">${products.filter((p: any) => p.class === 'C').length}</span>
-            </div>
-          </div>
-          <div class="table-container">
-            <table class="report-table">
-              <thead>
-                <tr>
-                  <th>Produto</th>
-                  <th>Classe</th>
-                  <th>Valor Total</th>
-                  <th>% Acumulado</th>
-                  <th>Quantidade</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${products.map((product: any) => `
-                  <tr>
-                    <td>${product.name}</td>
-                    <td>
-                      <span class="class-badge class-${product.class}">
-                        Classe ${product.class}
-                      </span>
-                    </td>
-                    <td>R$ ${(product.total_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                    <td>${(product.cumulative_percentage || 0).toFixed(1)}%</td>
-                    <td>${product.quantity || 0}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    if (reportId === 'sales-forecast') {
-      const forecastData = data.data || {};
-      return `
-        <div class="summary-section">
-          <div class="summary-title">Previsão de Vendas</div>
-          <div class="summary-stats">
-            <div class="stat-item">
-              <span class="stat-label">Previsão:</span>
-              <span class="stat-value">R$ ${(forecastData.forecast || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Confiança:</span>
-              <span class="stat-value">${(forecastData.confidence || 0).toFixed(1)}%</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Tendência:</span>
-              <span class="stat-value">
-                <span class="trend-badge ${forecastData.trend || 'stable'}">
-                  ${forecastData.trend === 'up' ? '↗ Crescendo' : forecastData.trend === 'down' ? '↘ Decrescendo' : '→ Estável'}
-                </span>
-              </span>
-            </div>
-          </div>
-          ${forecastData.historicalData && forecastData.historicalData.length > 0 ? `
-            <div class="table-container">
-              <table class="report-table">
-                <thead>
-                  <tr>
-                    <th>Período</th>
-                    <th>Vendas</th>
-                    <th>Receita</th>
-                    <th>Crescimento</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${forecastData.historicalData.map((item: any, index: number) => `
-                    <tr>
-                      <td>${item.period || `Período ${index + 1}`}</td>
-                      <td>${item.sales || 0}</td>
-                      <td>R$ ${(item.revenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                      <td>
-                        <span class="growth-badge ${(item.growth || 0) >= 0 ? 'positive' : 'negative'}">
-                          ${(item.growth || 0) >= 0 ? '+' : ''}${(item.growth || 0).toFixed(1)}%
-                        </span>
-                      </td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          ` : `
-            <div class="empty-state">
-              <div class="icon">📈</div>
-              <h3>Dados históricos insuficientes</h3>
-              <p>Não há dados históricos suficientes para gerar uma previsão precisa.</p>
-            </div>
-          `}
-        </div>
-      `;
-    }
-
-    return generateGenericHTML(data);
-  };
-
-  const generateDashboardHTML = (data: any, reportId: string) => {
-    const hasData = data?.data && Object.keys(data.data).length > 0;
-    
-    if (!hasData) {
-      return `
-        <div class="empty-state">
-          <div class="icon">📊</div>
-          <h3>Nenhum dado disponível</h3>
-          <p>Não há dados suficientes para gerar o relatório.</p>
-        </div>
-      `;
-    }
-
-    if (reportId === 'kpi-overview') {
-      return `
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-value">R$ ${(data.data.totalRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-            <div class="stat-label">Receita Total</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${data.data.totalCustomers || 0}</div>
-            <div class="stat-label">Total de Clientes</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${data.data.totalSales || 0}</div>
-            <div class="stat-label">Total de Vendas</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">R$ ${(data.data.averageTicket || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-            <div class="stat-label">Ticket Médio</div>
-          </div>
-        </div>
-      `;
-    }
-
-    return generateGenericHTML(data);
-  };
-
-  const generateNfeHTML = (data: any, reportId: string) => {
-    const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
-    
-    if (!hasData) {
-      return `
-        <div class="empty-state">
-          <div class="icon">📄</div>
-          <h3>Nenhuma NFe encontrada</h3>
-          <p>Não há notas fiscais cadastradas no sistema.</p>
-        </div>
-      `;
-    }
-
-    if (reportId === 'nfe-status') {
-      return `
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-value" style="color: #28a745">${data.data.authorized || 0}</div>
-            <div class="stat-label">Autorizadas</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" style="color: #ffc107">${data.data.pending || 0}</div>
-            <div class="stat-label">Pendentes</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" style="color: #dc3545">${data.data.rejected || 0}</div>
-            <div class="stat-label">Rejeitadas</div>
-          </div>
-        </div>
-      `;
-    }
-
-    return generateGenericHTML(data);
-  };
-
-  // Função para gerar HTML de relatórios de clientes
-  const generateCustomersHTML = (data: any, reportId: string) => {
-    const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
-    
-    if (!hasData) {
-      return `
-        <div class="empty-state">
-          <div class="icon">👥</div>
-          <h3>Nenhum cliente encontrado</h3>
-          <p>Não há clientes cadastrados no sistema.</p>
-        </div>
-      `;
-    }
-
-    if (reportId === 'customer-segmentation') {
-      const segments = data.data.segments || [];
-      return `
-        <div class="summary-section">
-          <div class="summary-title">Segmentação de Clientes</div>
-          <div class="summary-stats">
-            <div class="stat-item">
-              <span class="stat-label">Total de Clientes:</span>
-              <span class="stat-value">${data.data.totalCustomers || 0}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Clientes Ativos:</span>
-              <span class="stat-value">${data.data.activeCustomers || 0}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Clientes Inativos:</span>
-              <span class="stat-value">${data.data.inactiveCustomers || 0}</span>
-            </div>
-          </div>
-          <div class="table-container">
-            <table class="report-table">
-              <thead>
-                <tr>
-                  <th>Segmento</th>
-                  <th>Quantidade</th>
-                  <th>% do Total</th>
-                  <th>Descrição</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${segments.map((segment: any) => `
-                  <tr>
-                    <td>
-                      <span class="segment-badge segment-${segment.name.toLowerCase().replace(' ', '-')}">
-                        ${segment.name}
-                      </span>
-                    </td>
-                    <td>${segment.count || 0}</td>
-                    <td>${data.data.totalCustomers > 0 ? ((segment.count / data.data.totalCustomers) * 100).toFixed(1) : 0}%</td>
-                    <td>${segment.description || 'N/A'}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    if (reportId === 'customer-lifetime-value') {
-      const topCustomers = data.data.topCustomers || [];
-      return `
-        <div class="summary-section">
-          <div class="summary-title">Valor Vitalício do Cliente (LTV)</div>
-          <div class="summary-stats">
-            <div class="stat-item">
-              <span class="stat-label">LTV Médio:</span>
-              <span class="stat-value">R$ ${(data.data.averageLTV || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Total de Clientes:</span>
-              <span class="stat-value">${data.data.totalCustomers || 0}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Clientes Ativos:</span>
-              <span class="stat-value">${data.data.activeCustomers || 0}</span>
-            </div>
-          </div>
-          <div class="table-container">
-            <table class="report-table">
-              <thead>
-                <tr>
-                  <th>Posição</th>
-                  <th>Cliente</th>
-                  <th>LTV</th>
-                  <th>Receita Total</th>
-                  <th>Qtd Vendas</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${topCustomers.map((customer: any) => `
-                  <tr>
-                    <td>${customer.rank || 'N/A'}</td>
-                    <td>${customer.name}</td>
-                    <td>R$ ${(customer.ltv || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                    <td>R$ ${(customer.totalRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                    <td>${customer.salesCount || 0}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    return generateGenericHTML(data);
-  };
-
-  // Função para gerar HTML de relatórios de fornecedores
-  const generateSuppliersHTML = (data: any, reportId: string) => {
-    const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
-    
-    if (!hasData) {
-      return `
-        <div class="empty-state">
-          <div class="icon">🏭</div>
-          <h3>Nenhum fornecedor encontrado</h3>
-          <p>Não há fornecedores cadastrados no sistema.</p>
-        </div>
-      `;
-    }
-
-    if (reportId === 'supplier-list') {
-      const suppliers = data.data || [];
-      return `
-        <div class="summary-section">
-          <div class="summary-title">Lista de Fornecedores</div>
-          <div class="summary-stats">
-            <div class="stat-item">
-              <span class="stat-label">Total de Fornecedores:</span>
-              <span class="stat-value">${suppliers.length}</span>
-            </div>
-          </div>
-          <div class="table-container">
-            <table class="report-table">
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>CNPJ/CPF</th>
-                  <th>Email</th>
-                  <th>Telefone</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${suppliers.map((supplier: any) => `
-                  <tr>
-                    <td>${supplier.name || 'N/A'}</td>
-                    <td>${supplier.tax_id || 'N/A'}</td>
-                    <td>${supplier.email || 'N/A'}</td>
-                    <td>${supplier.phone || 'N/A'}</td>
-                    <td>
-                      <span class="status-badge ${supplier.status === 'active' || supplier.status === 'ativo' ? 'success' : 'danger'}">
-                        ${supplier.status === 'active' || supplier.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                      </span>
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    if (reportId === 'supplier-performance') {
-      const suppliers = data.data.suppliers || [];
-      return `
-        <div class="summary-section">
-          <div class="summary-title">Performance de Fornecedores</div>
-          <div class="summary-stats">
-            <div class="stat-item">
-              <span class="stat-label">Total de Fornecedores:</span>
-              <span class="stat-value">${data.data.totalSuppliers || 0}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Fornecedores Ativos:</span>
-              <span class="stat-value">${data.data.activeSuppliers || 0}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Avaliação Média:</span>
-              <span class="stat-value">${data.data.averageRating || 0} ⭐</span>
-            </div>
-          </div>
-          <div class="table-container">
-            <table class="report-table">
-              <thead>
-                <tr>
-                  <th>Fornecedor</th>
-                  <th>Avaliação</th>
-                  <th>Entrega no Prazo</th>
-                  <th>Qualidade</th>
-                  <th>Total Pedidos</th>
-                  <th>Último Pedido</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${suppliers.map((supplier: any) => `
-                  <tr>
-                    <td>${supplier.name}</td>
-                    <td>
-                      <span class="rating-badge">
-                        ${'⭐'.repeat(supplier.rating || 0)}
-                      </span>
-                    </td>
-                    <td>${supplier.onTimeDelivery || 0}%</td>
-                    <td>${supplier.qualityScore || 0}%</td>
-                    <td>${supplier.totalOrders || 0}</td>
-                    <td>${supplier.lastOrderDate ? new Date(supplier.lastOrderDate).toLocaleDateString('pt-BR') : 'N/A'}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    if (reportId === 'purchase-analysis') {
-      const topSuppliers = data.data.topSuppliers || [];
-      return `
-        <div class="summary-section">
-          <div class="summary-title">Análise de Compras</div>
-          <div class="summary-stats">
-            <div class="stat-item">
-              <span class="stat-label">Total de Compras:</span>
-              <span class="stat-value">${data.data.totalPurchases || 0}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Valor Médio:</span>
-              <span class="stat-value">R$ ${(data.data.averageValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-            </div>
-          </div>
-          <div class="table-container">
-            <table class="report-table">
-              <thead>
-                <tr>
-                  <th>Posição</th>
-                  <th>Fornecedor</th>
-                  <th>Total de Compras</th>
-                  <th>Valor Total</th>
-                  <th>Valor Médio por Pedido</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${topSuppliers.map((supplier: any) => `
-                  <tr>
-                    <td>${supplier.rank || 'N/A'}</td>
-                    <td>${supplier.name}</td>
-                    <td>${supplier.totalPurchases || 0}</td>
-                    <td>R$ ${(supplier.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                    <td>R$ ${(supplier.averageOrderValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    return generateGenericHTML(data);
-  };
-
-  // Função para gerar HTML de relatórios de clientes
   const generateGenericHTML = (data: any) => {
     return `
       <div class="summary-section">
@@ -1976,4 +1026,15 @@ ${JSON.stringify(data, null, 2)}
       </div>
     `;
   };
+
+  // Funções específicas para outros tipos de relatórios
+  const generateCustomerSegmentationHTML = (data: any) => generateGenericHTML(data);
+  const generateCustomerLifetimeValueHTML = (data: any) => generateGenericHTML(data);
+  const generateSupplierPerformanceHTML = (data: any) => generateGenericHTML(data);
+  const generateAccountsPayableHTML = (data: any, reportId: string) => generateGenericHTML(data);
+  const generateBillingHTML = (data: any, reportId: string) => generateGenericHTML(data);
+  const generateInventoryHTML = (data: any, reportId: string) => generateGenericHTML(data);
+  const generateSalesHTML = (data: any, reportId: string) => generateGenericHTML(data);
+  const generateDashboardHTML = (data: any, reportId: string) => generateGenericHTML(data);
+  const generateNfeHTML = (data: any, reportId: string) => generateGenericHTML(data);
 }
