@@ -1686,7 +1686,7 @@ async function getCustomerSegmentationData(params: any) {
       salesCount,
       averageTicket,
       daysSinceLastSale,
-      segment_name: customer.segments?.name || 'Sem segmento'
+      segment_name: customer.segments?.[0]?.name || 'Sem segmento'
     };
   });
 
@@ -1788,7 +1788,7 @@ async function getCustomerLifetimeValueData(params: any) {
       avgDaysBetweenSales: Math.round(avgDaysBetweenSales),
       projectedFutureSales,
       ltv,
-      segment_name: customer.segments?.name || 'Sem segmento'
+      segment_name: customer.segments?.[0]?.name || 'Sem segmento'
     };
   });
 
