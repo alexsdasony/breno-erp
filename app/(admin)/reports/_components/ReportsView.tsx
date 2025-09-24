@@ -590,6 +590,67 @@ export default function ReportsView() {
                     font-weight: 600;
                     color: #495057;
                   }
+                  .status-badge {
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    font-weight: 500;
+                  }
+                  
+                  .status-badge.normal {
+                    background-color: #d1ecf1;
+                    color: #0c5460;
+                  }
+                  
+                  .status-badge.critical {
+                    background-color: #f8d7da;
+                    color: #721c24;
+                  }
+                  
+                  .urgency-badge {
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    font-weight: 500;
+                  }
+                  
+                  .urgency-badge.critical {
+                    background-color: #f8d7da;
+                    color: #721c24;
+                  }
+                  
+                  .urgency-badge.high {
+                    background-color: #fff3cd;
+                    color: #856404;
+                  }
+                  
+                  .urgency-badge.low {
+                    background-color: #d4edda;
+                    color: #155724;
+                  }
+                  
+                  .class-badge {
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    font-weight: 500;
+                  }
+                  
+                  .class-badge.class-A {
+                    background-color: #d4edda;
+                    color: #155724;
+                  }
+                  
+                  .class-badge.class-B {
+                    background-color: #fff3cd;
+                    color: #856404;
+                  }
+                  
+                  .class-badge.class-C {
+                    background-color: #f8d7da;
+                    color: #721c24;
+                  }
+                  
                   @media (max-width: 768px) {
                     .stats-grid {
                       grid-template-columns: 1fr;
@@ -919,6 +980,90 @@ export default function ReportsView() {
       `;
     }
 
+    if (reportId === 'supplier-payments') {
+      const suppliers = data.data || [];
+      return `
+        <div class="summary-section">
+          <div class="summary-title">Pagamentos por Fornecedor</div>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total de Fornecedores:</span>
+              <span class="stat-value">${suppliers.length}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Valor Total Pago:</span>
+              <span class="stat-value">R$ ${suppliers.reduce((sum: number, s: any) => sum + (s.total_amount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Fornecedor</th>
+                  <th>Total Pago</th>
+                  <th>Qtd Pagamentos</th>
+                  <th>Último Pagamento</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${suppliers.map((supplier: any) => `
+                  <tr>
+                    <td>${supplier.supplier_name}</td>
+                    <td>R$ ${(supplier.total_amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td>${supplier.payment_count || 0}</td>
+                    <td>${supplier.last_payment ? new Date(supplier.last_payment).toLocaleDateString('pt-BR') : 'N/A'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    if (reportId === 'overdue-bills') {
+      const bills = data.data || [];
+      return `
+        <div class="summary-section">
+          <div class="summary-title">Contas em Atraso</div>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total de Contas:</span>
+              <span class="stat-value">${bills.length}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Valor Total:</span>
+              <span class="stat-value">R$ ${bills.reduce((sum: number, b: any) => sum + (b.amount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Fornecedor</th>
+                  <th>Descrição</th>
+                  <th>Valor</th>
+                  <th>Vencimento</th>
+                  <th>Dias em Atraso</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${bills.map((bill: any) => `
+                  <tr>
+                    <td>${bill.supplier_name || 'N/A'}</td>
+                    <td>${bill.description || 'N/A'}</td>
+                    <td>R$ ${(bill.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td>${bill.due_date ? new Date(bill.due_date).toLocaleDateString('pt-BR') : 'N/A'}</td>
+                    <td>${bill.days_overdue || 0} dias</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
     return generateGenericHTML(data);
   };
 
@@ -953,6 +1098,47 @@ export default function ReportsView() {
           <div class="stat-card">
             <div class="stat-value">${data.data.overdue90 || 0}</div>
             <div class="stat-label">Vencidas 90+ dias</div>
+          </div>
+        </div>
+      `;
+    }
+
+    if (reportId === 'customer-receivables') {
+      const customers = data.data || [];
+      return `
+        <div class="summary-section">
+          <div class="summary-title">Recebíveis por Cliente</div>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total de Clientes:</span>
+              <span class="stat-value">${customers.length}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Valor Total a Receber:</span>
+              <span class="stat-value">R$ ${customers.reduce((sum: number, c: any) => sum + (c.total_amount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Valor Total</th>
+                  <th>Qtd Contas</th>
+                  <th>Vencimento Mais Antigo</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${customers.map((customer: any) => `
+                  <tr>
+                    <td>${customer.customer_name}</td>
+                    <td>R$ ${(customer.total_amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td>${customer.account_count || 0}</td>
+                    <td>${customer.oldest_due_date ? new Date(customer.oldest_due_date).toLocaleDateString('pt-BR') : 'N/A'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
           </div>
         </div>
       `;
@@ -993,6 +1179,100 @@ export default function ReportsView() {
       `;
     }
 
+    if (reportId === 'stock-levels') {
+      const products = data.data || [];
+      return `
+        <div class="summary-section">
+          <div class="summary-title">Níveis de Estoque</div>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total de Produtos:</span>
+              <span class="stat-value">${products.length}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Produtos com Estoque Baixo:</span>
+              <span class="stat-value">${products.filter((p: any) => p.status === 'low_stock' || p.status === 'out_of_stock').length}</span>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Estoque Atual</th>
+                  <th>Estoque Mínimo</th>
+                  <th>Status</th>
+                  <th>Preço</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${products.map((product: any) => `
+                  <tr>
+                    <td>${product.name}</td>
+                    <td>${product.stock_quantity || 0}</td>
+                    <td>${product.minimum_stock || product.min_stock || 0}</td>
+                    <td>
+                      <span class="status-badge ${product.status === 'out_of_stock' ? 'critical' : product.status === 'low_stock' ? 'warning' : 'normal'}">
+                        ${product.status === 'out_of_stock' ? 'Sem Estoque' : product.status === 'low_stock' ? 'Estoque Baixo' : 'Normal'}
+                      </span>
+                    </td>
+                    <td>R$ ${(product.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    if (reportId === 'low-stock-alert') {
+      const products = data.data || [];
+      return `
+        <div class="summary-section">
+          <div class="summary-title">Produtos com Estoque Baixo</div>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total de Produtos:</span>
+              <span class="stat-value">${products.length}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Críticos (Sem Estoque):</span>
+              <span class="stat-value">${products.filter((p: any) => p.urgency === 'critical').length}</span>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Estoque Atual</th>
+                  <th>Estoque Mínimo</th>
+                  <th>Urgência</th>
+                  <th>Dias Restantes</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${products.map((product: any) => `
+                  <tr>
+                    <td>${product.name}</td>
+                    <td>${product.stock_quantity || 0}</td>
+                    <td>${product.minimum_stock || product.min_stock || 0}</td>
+                    <td>
+                      <span class="urgency-badge ${product.urgency}">
+                        ${product.urgency === 'critical' ? 'Crítico' : product.urgency === 'high' ? 'Alto' : 'Baixo'}
+                      </span>
+                    </td>
+                    <td>${product.days_remaining || 0} dias</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
     return generateGenericHTML(data);
   };
 
@@ -1023,6 +1303,104 @@ export default function ReportsView() {
           <div class="stat-card">
             <div class="stat-value">${data.data.topSeller || 'N/A'}</div>
             <div class="stat-label">Top Vendedor</div>
+          </div>
+        </div>
+      `;
+    }
+
+    if (reportId === 'top-products') {
+      const products = data.data || [];
+      return `
+        <div class="summary-section">
+          <div class="summary-title">Top Produtos</div>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total de Produtos:</span>
+              <span class="stat-value">${products.length}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Receita Total:</span>
+              <span class="stat-value">R$ ${products.reduce((sum: number, p: any) => sum + (p.total_revenue || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Posição</th>
+                  <th>Produto</th>
+                  <th>Quantidade Vendida</th>
+                  <th>Receita Total</th>
+                  <th>Ticket Médio</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${products.map((product: any, index: number) => `
+                  <tr>
+                    <td>${index + 1}º</td>
+                    <td>${product.name}</td>
+                    <td>${product.quantity_sold || 0}</td>
+                    <td>R$ ${(product.total_revenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td>R$ ${(product.average_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    if (reportId === 'abc-analysis') {
+      const products = data.data || [];
+      return `
+        <div class="summary-section">
+          <div class="summary-title">Análise ABC</div>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total de Produtos:</span>
+              <span class="stat-value">${products.length}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Classe A (80%):</span>
+              <span class="stat-value">${products.filter((p: any) => p.class === 'A').length}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Classe B (15%):</span>
+              <span class="stat-value">${products.filter((p: any) => p.class === 'B').length}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Classe C (5%):</span>
+              <span class="stat-value">${products.filter((p: any) => p.class === 'C').length}</span>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Classe</th>
+                  <th>Valor Total</th>
+                  <th>% Acumulado</th>
+                  <th>Quantidade</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${products.map((product: any) => `
+                  <tr>
+                    <td>${product.name}</td>
+                    <td>
+                      <span class="class-badge class-${product.class}">
+                        Classe ${product.class}
+                      </span>
+                    </td>
+                    <td>R$ ${(product.total_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td>${(product.cumulative_percentage || 0).toFixed(1)}%</td>
+                    <td>${product.quantity || 0}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
           </div>
         </div>
       `;
