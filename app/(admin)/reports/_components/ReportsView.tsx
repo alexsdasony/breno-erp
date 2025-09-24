@@ -1619,6 +1619,275 @@ export default function ReportsView() {
     return generateGenericHTML(data);
   };
 
+  // Função para gerar HTML de relatórios de clientes
+  const generateCustomersHTML = (data: any, reportId: string) => {
+    const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
+    
+    if (!hasData) {
+      return `
+        <div class="empty-state">
+          <div class="icon">👥</div>
+          <h3>Nenhum cliente encontrado</h3>
+          <p>Não há clientes cadastrados no sistema.</p>
+        </div>
+      `;
+    }
+
+    if (reportId === 'customer-segmentation') {
+      const segments = data.data.segments || [];
+      return `
+        <div class="summary-section">
+          <div class="summary-title">Segmentação de Clientes</div>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total de Clientes:</span>
+              <span class="stat-value">${data.data.totalCustomers || 0}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Clientes Ativos:</span>
+              <span class="stat-value">${data.data.activeCustomers || 0}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Clientes Inativos:</span>
+              <span class="stat-value">${data.data.inactiveCustomers || 0}</span>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Segmento</th>
+                  <th>Quantidade</th>
+                  <th>% do Total</th>
+                  <th>Descrição</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${segments.map((segment: any) => `
+                  <tr>
+                    <td>
+                      <span class="segment-badge segment-${segment.name.toLowerCase().replace(' ', '-')}">
+                        ${segment.name}
+                      </span>
+                    </td>
+                    <td>${segment.count || 0}</td>
+                    <td>${data.data.totalCustomers > 0 ? ((segment.count / data.data.totalCustomers) * 100).toFixed(1) : 0}%</td>
+                    <td>${segment.description || 'N/A'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    if (reportId === 'customer-lifetime-value') {
+      const topCustomers = data.data.topCustomers || [];
+      return `
+        <div class="summary-section">
+          <div class="summary-title">Valor Vitalício do Cliente (LTV)</div>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">LTV Médio:</span>
+              <span class="stat-value">R$ ${(data.data.averageLTV || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Total de Clientes:</span>
+              <span class="stat-value">${data.data.totalCustomers || 0}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Clientes Ativos:</span>
+              <span class="stat-value">${data.data.activeCustomers || 0}</span>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Posição</th>
+                  <th>Cliente</th>
+                  <th>LTV</th>
+                  <th>Receita Total</th>
+                  <th>Qtd Vendas</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${topCustomers.map((customer: any) => `
+                  <tr>
+                    <td>${customer.rank || 'N/A'}</td>
+                    <td>${customer.name}</td>
+                    <td>R$ ${(customer.ltv || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td>R$ ${(customer.totalRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td>${customer.salesCount || 0}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    return generateGenericHTML(data);
+  };
+
+  // Função para gerar HTML de relatórios de fornecedores
+  const generateSuppliersHTML = (data: any, reportId: string) => {
+    const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
+    
+    if (!hasData) {
+      return `
+        <div class="empty-state">
+          <div class="icon">🏭</div>
+          <h3>Nenhum fornecedor encontrado</h3>
+          <p>Não há fornecedores cadastrados no sistema.</p>
+        </div>
+      `;
+    }
+
+    if (reportId === 'supplier-list') {
+      const suppliers = data.data || [];
+      return `
+        <div class="summary-section">
+          <div class="summary-title">Lista de Fornecedores</div>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total de Fornecedores:</span>
+              <span class="stat-value">${suppliers.length}</span>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>CNPJ/CPF</th>
+                  <th>Email</th>
+                  <th>Telefone</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${suppliers.map((supplier: any) => `
+                  <tr>
+                    <td>${supplier.name || 'N/A'}</td>
+                    <td>${supplier.tax_id || 'N/A'}</td>
+                    <td>${supplier.email || 'N/A'}</td>
+                    <td>${supplier.phone || 'N/A'}</td>
+                    <td>
+                      <span class="status-badge ${supplier.status === 'active' || supplier.status === 'ativo' ? 'success' : 'danger'}">
+                        ${supplier.status === 'active' || supplier.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    if (reportId === 'supplier-performance') {
+      const suppliers = data.data.suppliers || [];
+      return `
+        <div class="summary-section">
+          <div class="summary-title">Performance de Fornecedores</div>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total de Fornecedores:</span>
+              <span class="stat-value">${data.data.totalSuppliers || 0}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Fornecedores Ativos:</span>
+              <span class="stat-value">${data.data.activeSuppliers || 0}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Avaliação Média:</span>
+              <span class="stat-value">${data.data.averageRating || 0} ⭐</span>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Fornecedor</th>
+                  <th>Avaliação</th>
+                  <th>Entrega no Prazo</th>
+                  <th>Qualidade</th>
+                  <th>Total Pedidos</th>
+                  <th>Último Pedido</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${suppliers.map((supplier: any) => `
+                  <tr>
+                    <td>${supplier.name}</td>
+                    <td>
+                      <span class="rating-badge">
+                        ${'⭐'.repeat(supplier.rating || 0)}
+                      </span>
+                    </td>
+                    <td>${supplier.onTimeDelivery || 0}%</td>
+                    <td>${supplier.qualityScore || 0}%</td>
+                    <td>${supplier.totalOrders || 0}</td>
+                    <td>${supplier.lastOrderDate ? new Date(supplier.lastOrderDate).toLocaleDateString('pt-BR') : 'N/A'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    if (reportId === 'purchase-analysis') {
+      const topSuppliers = data.data.topSuppliers || [];
+      return `
+        <div class="summary-section">
+          <div class="summary-title">Análise de Compras</div>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total de Compras:</span>
+              <span class="stat-value">${data.data.totalPurchases || 0}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Valor Médio:</span>
+              <span class="stat-value">R$ ${(data.data.averageValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Posição</th>
+                  <th>Fornecedor</th>
+                  <th>Total de Compras</th>
+                  <th>Valor Total</th>
+                  <th>Valor Médio por Pedido</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${topSuppliers.map((supplier: any) => `
+                  <tr>
+                    <td>${supplier.rank || 'N/A'}</td>
+                    <td>${supplier.name}</td>
+                    <td>${supplier.totalPurchases || 0}</td>
+                    <td>R$ ${(supplier.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td>R$ ${(supplier.averageOrderValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    return generateGenericHTML(data);
+  };
+
   const generateGenericHTML = (data: any) => {
     return `
       <div class="summary-section">
@@ -1801,272 +2070,3 @@ ${JSON.stringify(data, null, 2)}
     </div>
   );
 }
-
-// Função para gerar HTML de relatórios de clientes
-const generateCustomersHTML = (data: any, reportId: string) => {
-  const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
-  
-  if (!hasData) {
-    return `
-      <div class="empty-state">
-        <div class="icon">👥</div>
-        <h3>Nenhum cliente encontrado</h3>
-        <p>Não há clientes cadastrados no sistema.</p>
-      </div>
-    `;
-  }
-
-  if (reportId === 'customer-segmentation') {
-    const segments = data.data.segments || [];
-    return `
-      <div class="summary-section">
-        <div class="summary-title">Segmentação de Clientes</div>
-        <div class="summary-stats">
-          <div class="stat-item">
-            <span class="stat-label">Total de Clientes:</span>
-            <span class="stat-value">${data.data.totalCustomers || 0}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Clientes Ativos:</span>
-            <span class="stat-value">${data.data.activeCustomers || 0}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Clientes Inativos:</span>
-            <span class="stat-value">${data.data.inactiveCustomers || 0}</span>
-          </div>
-        </div>
-        <div class="table-container">
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th>Segmento</th>
-                <th>Quantidade</th>
-                <th>% do Total</th>
-                <th>Descrição</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${segments.map((segment: any) => `
-                <tr>
-                  <td>
-                    <span class="segment-badge segment-${segment.name.toLowerCase().replace(' ', '-')}">
-                      ${segment.name}
-                    </span>
-                  </td>
-                  <td>${segment.count || 0}</td>
-                  <td>${data.data.totalCustomers > 0 ? ((segment.count / data.data.totalCustomers) * 100).toFixed(1) : 0}%</td>
-                  <td>${segment.description || 'N/A'}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }
-
-  if (reportId === 'customer-lifetime-value') {
-    const topCustomers = data.data.topCustomers || [];
-    return `
-      <div class="summary-section">
-        <div class="summary-title">Valor Vitalício do Cliente (LTV)</div>
-        <div class="summary-stats">
-          <div class="stat-item">
-            <span class="stat-label">LTV Médio:</span>
-            <span class="stat-value">R$ ${(data.data.averageLTV || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Total de Clientes:</span>
-            <span class="stat-value">${data.data.totalCustomers || 0}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Clientes Ativos:</span>
-            <span class="stat-value">${data.data.activeCustomers || 0}</span>
-          </div>
-        </div>
-        <div class="table-container">
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th>Posição</th>
-                <th>Cliente</th>
-                <th>LTV</th>
-                <th>Receita Total</th>
-                <th>Qtd Vendas</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${topCustomers.map((customer: any) => `
-                <tr>
-                  <td>${customer.rank || 'N/A'}</td>
-                  <td>${customer.name}</td>
-                  <td>R$ ${(customer.ltv || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                  <td>R$ ${(customer.totalRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                  <td>${customer.salesCount || 0}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }
-
-  return generateGenericHTML(data);
-};
-
-// Função para gerar HTML de relatórios de fornecedores
-const generateSuppliersHTML = (data: any, reportId: string) => {
-  const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
-  
-  if (!hasData) {
-    return `
-      <div class="empty-state">
-        <div class="icon">🏭</div>
-        <h3>Nenhum fornecedor encontrado</h3>
-        <p>Não há fornecedores cadastrados no sistema.</p>
-      </div>
-    `;
-  }
-
-  if (reportId === 'supplier-list') {
-    const suppliers = data.data || [];
-    return `
-      <div class="summary-section">
-        <div class="summary-title">Lista de Fornecedores</div>
-        <div class="summary-stats">
-          <div class="stat-item">
-            <span class="stat-label">Total de Fornecedores:</span>
-            <span class="stat-value">${suppliers.length}</span>
-          </div>
-        </div>
-        <div class="table-container">
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>CNPJ/CPF</th>
-                <th>Email</th>
-                <th>Telefone</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${suppliers.map((supplier: any) => `
-                <tr>
-                  <td>${supplier.name || 'N/A'}</td>
-                  <td>${supplier.tax_id || 'N/A'}</td>
-                  <td>${supplier.email || 'N/A'}</td>
-                  <td>${supplier.phone || 'N/A'}</td>
-                  <td>
-                    <span class="status-badge ${supplier.status === 'active' || supplier.status === 'ativo' ? 'success' : 'danger'}">
-                      ${supplier.status === 'active' || supplier.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                    </span>
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }
-
-  if (reportId === 'supplier-performance') {
-    const suppliers = data.data.suppliers || [];
-    return `
-      <div class="summary-section">
-        <div class="summary-title">Performance de Fornecedores</div>
-        <div class="summary-stats">
-          <div class="stat-item">
-            <span class="stat-label">Total de Fornecedores:</span>
-            <span class="stat-value">${data.data.totalSuppliers || 0}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Fornecedores Ativos:</span>
-            <span class="stat-value">${data.data.activeSuppliers || 0}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Avaliação Média:</span>
-            <span class="stat-value">${data.data.averageRating || 0} ⭐</span>
-          </div>
-        </div>
-        <div class="table-container">
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th>Fornecedor</th>
-                <th>Avaliação</th>
-                <th>Entrega no Prazo</th>
-                <th>Qualidade</th>
-                <th>Total Pedidos</th>
-                <th>Último Pedido</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${suppliers.map((supplier: any) => `
-                <tr>
-                  <td>${supplier.name}</td>
-                  <td>
-                    <span class="rating-badge">
-                      ${'⭐'.repeat(supplier.rating || 0)}
-                    </span>
-                  </td>
-                  <td>${supplier.onTimeDelivery || 0}%</td>
-                  <td>${supplier.qualityScore || 0}%</td>
-                  <td>${supplier.totalOrders || 0}</td>
-                  <td>${supplier.lastOrderDate ? new Date(supplier.lastOrderDate).toLocaleDateString('pt-BR') : 'N/A'}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }
-
-  if (reportId === 'purchase-analysis') {
-    const topSuppliers = data.data.topSuppliers || [];
-    return `
-      <div class="summary-section">
-        <div class="summary-title">Análise de Compras</div>
-        <div class="summary-stats">
-          <div class="stat-item">
-            <span class="stat-label">Total de Compras:</span>
-            <span class="stat-value">${data.data.totalPurchases || 0}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Valor Médio:</span>
-            <span class="stat-value">R$ ${(data.data.averageValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-          </div>
-        </div>
-        <div class="table-container">
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th>Posição</th>
-                <th>Fornecedor</th>
-                <th>Total de Compras</th>
-                <th>Valor Total</th>
-                <th>Valor Médio por Pedido</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${topSuppliers.map((supplier: any) => `
-                <tr>
-                  <td>${supplier.rank || 'N/A'}</td>
-                  <td>${supplier.name}</td>
-                  <td>${supplier.totalPurchases || 0}</td>
-                  <td>R$ ${(supplier.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                  <td>R$ ${(supplier.averageOrderValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }
-
-  return generateGenericHTML(data);
-};
