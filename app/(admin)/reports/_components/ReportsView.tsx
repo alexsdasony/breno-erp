@@ -1972,5 +1972,101 @@ const generateSuppliersHTML = (data: any, reportId: string) => {
     `;
   }
 
+  if (reportId === 'supplier-performance') {
+    const suppliers = data.data.suppliers || [];
+    return `
+      <div class="summary-section">
+        <div class="summary-title">Performance de Fornecedores</div>
+        <div class="summary-stats">
+          <div class="stat-item">
+            <span class="stat-label">Total de Fornecedores:</span>
+            <span class="stat-value">${data.data.totalSuppliers || 0}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Fornecedores Ativos:</span>
+            <span class="stat-value">${data.data.activeSuppliers || 0}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Avaliação Média:</span>
+            <span class="stat-value">${data.data.averageRating || 0} ⭐</span>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Fornecedor</th>
+                <th>Avaliação</th>
+                <th>Entrega no Prazo</th>
+                <th>Qualidade</th>
+                <th>Total Pedidos</th>
+                <th>Último Pedido</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${suppliers.map((supplier: any) => `
+                <tr>
+                  <td>${supplier.name}</td>
+                  <td>
+                    <span class="rating-badge">
+                      ${'⭐'.repeat(supplier.rating || 0)}
+                    </span>
+                  </td>
+                  <td>${supplier.onTimeDelivery || 0}%</td>
+                  <td>${supplier.qualityScore || 0}%</td>
+                  <td>${supplier.totalOrders || 0}</td>
+                  <td>${supplier.lastOrderDate ? new Date(supplier.lastOrderDate).toLocaleDateString('pt-BR') : 'N/A'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  if (reportId === 'purchase-analysis') {
+    const topSuppliers = data.data.topSuppliers || [];
+    return `
+      <div class="summary-section">
+        <div class="summary-title">Análise de Compras</div>
+        <div class="summary-stats">
+          <div class="stat-item">
+            <span class="stat-label">Total de Compras:</span>
+            <span class="stat-value">${data.data.totalPurchases || 0}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Valor Médio:</span>
+            <span class="stat-value">R$ ${(data.data.averageValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Posição</th>
+                <th>Fornecedor</th>
+                <th>Total de Compras</th>
+                <th>Valor Total</th>
+                <th>Valor Médio por Pedido</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${topSuppliers.map((supplier: any) => `
+                <tr>
+                  <td>${supplier.rank || 'N/A'}</td>
+                  <td>${supplier.name}</td>
+                  <td>${supplier.totalPurchases || 0}</td>
+                  <td>R$ ${(supplier.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                  <td>R$ ${(supplier.averageOrderValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
   return generateGenericHTML(data);
 };
