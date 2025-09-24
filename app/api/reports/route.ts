@@ -712,158 +712,1113 @@ async function getExecutiveSummaryData(params: any) {
 
 // Implementações para Contas a Pagar
 async function getPayablesAgingData(params: any) {
+  console.log('📊 Analisando aging de contas a pagar...');
+  
+  const { data, error } = await supabaseAdmin
+    .from('financial_documents')
+    .select('*')
+    .eq('direction', 'payable')
+    .order('due_date', { ascending: true });
+
+  if (error) {
+    console.error('Erro ao buscar contas a pagar para aging:', error);
+    throw error;
+  }
+
+  const accounts = data || [];
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+
+  let current = 0;
+  let overdue30 = 0;
+  let overdue60 = 0;
+  let overdue90 = 0;
+
+  accounts.forEach(account => {
+    if (account.due_date) {
+      const dueDate = new Date(account.due_date);
+      if (account.status === 'paid') return; // Pular contas pagas
+      
+      if (dueDate >= now) {
+        current++;
+      } else if (dueDate >= thirtyDaysAgo) {
+        overdue30++;
+      } else if (dueDate >= sixtyDaysAgo) {
+        overdue60++;
+      } else {
+        overdue90++;
+      }
+    }
+  });
+
+  console.log('📊 Aging de contas a pagar:', {
+    current,
+    overdue30,
+    overdue60,
+    overdue90
+  });
+
   return {
     title: 'Aging de Contas a Pagar',
     period: `${params.startDate} a ${params.endDate}`,
     data: {
-      current: 0,
-      overdue30: 0,
-      overdue60: 0,
-      overdue90: 0
+      current,
+      overdue30,
+      overdue60,
+      overdue90
     }
   };
 }
 
 async function getSupplierPaymentsData(params: any) {
+  console.log('📊 Analisando pagamentos por fornecedor...');
+  
+  const { data, error } = await supabaseAdmin
+    .from('financial_documents')
+    .select(`
+      *,
+      partner:partners(name, id)
+    `)
+    .eq('direction', 'payable')
+    .eq('status', 'paid')
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    console.error('Erro ao buscar pagamentos por fornecedor:', error);
+    throw error;
+  }
+
+  const payments = data || [];
+  
+  // Agrupar por fornecedor
+  const supplierPayments: Record<string, any> = {};
+  
+  payments.forEach(payment => {
+    const supplierId = payment.partner_id || 'sem-fornecedor';
+    const supplierName = payment.partner?.name || 'Fornecedor não identificado';
+    
+    if (!supplierPayments[supplierId]) {
+      supplierPayments[supplierId] = {
+        supplier_id: supplierId,
+        supplier_name: supplierName,
+        total_amount: 0,
+        payment_count: 0,
+        last_payment: null,
+        payments: []
+      };
+    }
+    
+    supplierPayments[supplierId].total_amount += parseFloat(payment.amount) || 0;
+    supplierPayments[supplierId].payment_count++;
+    supplierPayments[supplierId].last_payment = payment.updated_at;
+    supplierPayments[supplierId].payments.push({
+      id: payment.id,
+      amount: payment.amount,
+      description: payment.description,
+      payment_date: payment.updated_at
+    });
+  });
+
+  const result = Object.values(supplierPayments).sort((a: any, b: any) => b.total_amount - a.total_amount);
+
+  console.log('📊 Pagamentos por fornecedor:', {
+    totalSuppliers: result.length,
+    totalAmount: result.reduce((sum: number, s: any) => sum + s.total_amount, 0)
+  });
+
   return {
     title: 'Pagamentos por Fornecedor',
     period: `${params.startDate} a ${params.endDate}`,
-    data: []
+    data: result
   };
 }
 
 async function getOverdueBillsData(params: any) {
+  console.log('📊 Analisando contas em atraso...');
+  
+  const { data, error } = await supabaseAdmin
+    .from('financial_documents')
+    .select(`
+      *,
+      partner:partners(name, id)
+    `)
+    .eq('direction', 'payable')
+    .neq('status', 'paid')
+    .order('due_date', { ascending: true });
+
+  if (error) {
+    console.error('Erro ao buscar contas em atraso:', error);
+    throw error;
+  }
+
+  const accounts = data || [];
+  const now = new Date();
+  
+  // Filtrar apenas contas vencidas
+  const overdueAccounts = accounts.filter(account => {
+    if (!account.due_date) return false;
+    const dueDate = new Date(account.due_date);
+    return dueDate < now;
+  });
+
+  // Calcular dias de atraso
+  const overdueWithDays = overdueAccounts.map(account => {
+    const dueDate = new Date(account.due_date);
+    const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return {
+      ...account,
+      days_overdue: daysOverdue,
+      supplier_name: account.partner?.name || 'Fornecedor não identificado'
+    };
+  });
+
+  // Ordenar por dias de atraso (maior atraso primeiro)
+  overdueWithDays.sort((a, b) => b.days_overdue - a.days_overdue);
+
+  console.log('📊 Contas em atraso:', {
+    totalOverdue: overdueWithDays.length,
+    totalAmount: overdueWithDays.reduce((sum, account) => sum + (parseFloat(account.amount) || 0), 0)
+  });
+
   return {
     title: 'Contas em Atraso',
     period: `${params.startDate} a ${params.endDate}`,
-    data: []
+    data: overdueWithDays
   };
 }
 
 // Implementações para Cobranças
 async function getReceivablesAgingData(params: any) {
+  console.log('📊 Analisando aging de contas a receber...');
+  
+  const { data, error } = await supabaseAdmin
+    .from('financial_documents')
+    .select('*')
+    .eq('direction', 'receivable')
+    .order('due_date', { ascending: true });
+
+  if (error) {
+    console.error('Erro ao buscar contas a receber para aging:', error);
+    throw error;
+  }
+
+  const accounts = data || [];
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+
+  let current = 0;
+  let overdue30 = 0;
+  let overdue60 = 0;
+  let overdue90 = 0;
+
+  accounts.forEach(account => {
+    if (account.due_date) {
+      const dueDate = new Date(account.due_date);
+      if (account.status === 'paid') return; // Pular contas pagas
+      
+      if (dueDate >= now) {
+        current++;
+      } else if (dueDate >= thirtyDaysAgo) {
+        overdue30++;
+      } else if (dueDate >= sixtyDaysAgo) {
+        overdue60++;
+      } else {
+        overdue90++;
+      }
+    }
+  });
+
+  console.log('📊 Aging de contas a receber:', {
+    current,
+    overdue30,
+    overdue60,
+    overdue90
+  });
+
   return {
     title: 'Aging de Contas a Receber',
     period: `${params.startDate} a ${params.endDate}`,
     data: {
-      current: 0,
-      overdue30: 0,
-      overdue60: 0,
-      overdue90: 0
+      current,
+      overdue30,
+      overdue60,
+      overdue90
     }
   };
 }
 
 async function getCollectionEfficiencyData(params: any) {
+  console.log('📊 Analisando eficiência de cobrança...');
+  
+  const { data, error } = await supabaseAdmin
+    .from('financial_documents')
+    .select('*')
+    .eq('direction', 'receivable');
+
+  if (error) {
+    console.error('Erro ao buscar dados de cobrança:', error);
+    throw error;
+  }
+
+  const accounts = data || [];
+  const totalAccounts = accounts.length;
+  const paidAccounts = accounts.filter(account => account.status === 'paid').length;
+  const overdueAccounts = accounts.filter(account => {
+    if (!account.due_date || account.status === 'paid') return false;
+    const dueDate = new Date(account.due_date);
+    return dueDate < new Date();
+  }).length;
+
+  const efficiency = totalAccounts > 0 ? (paidAccounts / totalAccounts) * 100 : 0;
+  const successRate = totalAccounts > 0 ? ((totalAccounts - overdueAccounts) / totalAccounts) * 100 : 0;
+
+  console.log('📊 Eficiência de cobrança:', {
+    totalAccounts,
+    paidAccounts,
+    overdueAccounts,
+    efficiency: efficiency.toFixed(2),
+    successRate: successRate.toFixed(2)
+  });
+
   return {
     title: 'Eficiência de Cobrança',
     period: `${params.startDate} a ${params.endDate}`,
     data: {
-      efficiency: 0,
-      successRate: 0
+      efficiency: parseFloat(efficiency.toFixed(2)),
+      successRate: parseFloat(successRate.toFixed(2)),
+      totalAccounts,
+      paidAccounts,
+      overdueAccounts
     }
   };
 }
 
 async function getCustomerReceivablesData(params: any) {
+  console.log('📊 Analisando recebíveis por cliente...');
+  
+  const { data, error } = await supabaseAdmin
+    .from('financial_documents')
+    .select(`
+      *,
+      partner:partners(name, id)
+    `)
+    .eq('direction', 'receivable')
+    .neq('status', 'paid')
+    .order('due_date', { ascending: true });
+
+  if (error) {
+    console.error('Erro ao buscar recebíveis por cliente:', error);
+    throw error;
+  }
+
+  const accounts = data || [];
+  
+  // Agrupar por cliente
+  const customerReceivables: Record<string, any> = {};
+  
+  accounts.forEach(account => {
+    const customerId = account.partner_id || 'sem-cliente';
+    const customerName = account.partner?.name || 'Cliente não identificado';
+    
+    if (!customerReceivables[customerId]) {
+      customerReceivables[customerId] = {
+        customer_id: customerId,
+        customer_name: customerName,
+        total_amount: 0,
+        account_count: 0,
+        oldest_due_date: null,
+        accounts: []
+      };
+    }
+    
+    customerReceivables[customerId].total_amount += parseFloat(account.amount) || 0;
+    customerReceivables[customerId].account_count++;
+    
+    if (!customerReceivables[customerId].oldest_due_date || 
+        new Date(account.due_date) < new Date(customerReceivables[customerId].oldest_due_date)) {
+      customerReceivables[customerId].oldest_due_date = account.due_date;
+    }
+    
+    customerReceivables[customerId].accounts.push({
+      id: account.id,
+      amount: account.amount,
+      description: account.description,
+      due_date: account.due_date,
+      status: account.status
+    });
+  });
+
+  const result = Object.values(customerReceivables).sort((a: any, b: any) => b.total_amount - a.total_amount);
+
+  console.log('📊 Recebíveis por cliente:', {
+    totalCustomers: result.length,
+    totalAmount: result.reduce((sum: number, c: any) => sum + c.total_amount, 0)
+  });
+
   return {
     title: 'Recebíveis por Cliente',
     period: `${params.startDate} a ${params.endDate}`,
-    data: []
+    data: result
   };
 }
 
 // Implementações para Estoque
 async function getStockLevelsData(params: any) {
+  console.log('📊 Analisando níveis de estoque...');
+  
+  const { data, error } = await supabaseAdmin
+    .from('products')
+    .select('*')
+    .eq('is_deleted', false)
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Erro ao buscar produtos para níveis de estoque:', error);
+    throw error;
+  }
+
+  const products = data || [];
+  
+  // Calcular status do estoque
+  const productsWithStatus = products.map(product => {
+    const currentStock = product.stock_quantity || 0;
+    const minStock = product.minimum_stock || product.min_stock || 0;
+    
+    let status = 'normal';
+    if (currentStock === 0) {
+      status = 'out_of_stock';
+    } else if (currentStock <= minStock) {
+      status = 'low_stock';
+    }
+    
+    return {
+      ...product,
+      status,
+      stock_percentage: minStock > 0 ? (currentStock / minStock) * 100 : 100
+    };
+  });
+
+  console.log('📊 Níveis de estoque:', {
+    totalProducts: products.length,
+    outOfStock: productsWithStatus.filter(p => p.status === 'out_of_stock').length,
+    lowStock: productsWithStatus.filter(p => p.status === 'low_stock').length,
+    normalStock: productsWithStatus.filter(p => p.status === 'normal').length
+  });
+
   return {
     title: 'Níveis de Estoque',
     period: `${params.startDate} a ${params.endDate}`,
-    data: []
+    data: productsWithStatus
   };
 }
 
 async function getStockMovementData(params: any) {
+  console.log('📊 Analisando movimentação de estoque...');
+  
+  // Buscar vendas para calcular saídas
+  const { data: salesData, error: salesError } = await supabaseAdmin
+    .from('sales')
+    .select(`
+      *,
+      items:sale_items(
+        product_id,
+        quantity,
+        unit_price,
+        total_price
+      )
+    `)
+    .eq('is_deleted', false)
+    .eq('status', 'completed');
+
+  if (salesError) {
+    console.error('Erro ao buscar vendas para movimentação:', salesError);
+    throw salesError;
+  }
+
+  const sales = salesData || [];
+  
+  // Calcular saídas (vendas)
+  let totalExits = 0;
+  let totalExitValue = 0;
+  
+  sales.forEach(sale => {
+    if (sale.items && Array.isArray(sale.items)) {
+      sale.items.forEach((item: any) => {
+        totalExits += item.quantity || 0;
+        totalExitValue += parseFloat(item.total_price) || 0;
+      });
+    } else {
+      // Para vendas antigas sem items
+      totalExits += sale.quantity || 0;
+      totalExitValue += parseFloat(sale.total) || 0;
+    }
+  });
+
+  // Buscar produtos para calcular entradas (assumindo que entradas são ajustes manuais)
+  const { data: productsData, error: productsError } = await supabaseAdmin
+    .from('products')
+    .select('stock_quantity, price')
+    .eq('is_deleted', false);
+
+  if (productsError) {
+    console.error('Erro ao buscar produtos para movimentação:', productsError);
+    throw productsError;
+  }
+
+  const products = productsData || [];
+  
+  // Calcular entradas (estoque atual - saídas)
+  let totalEntries = 0;
+  let totalEntryValue = 0;
+  
+  products.forEach(product => {
+    const currentStock = product.stock_quantity || 0;
+    totalEntries += currentStock;
+    totalEntryValue += currentStock * (parseFloat(product.price) || 0);
+  });
+
+  const balance = totalEntries - totalExits;
+  const balanceValue = totalEntryValue - totalExitValue;
+
+  console.log('📊 Movimentação de estoque:', {
+    entries: totalEntries,
+    exits: totalExits,
+    balance,
+    entryValue: totalEntryValue,
+    exitValue: totalExitValue,
+    balanceValue
+  });
+
   return {
     title: 'Movimentação de Estoque',
     period: `${params.startDate} a ${params.endDate}`,
     data: {
-      entries: 0,
-      exits: 0,
-      balance: 0
+      entries: totalEntries,
+      exits: totalExits,
+      balance,
+      entryValue: totalEntryValue,
+      exitValue: totalExitValue,
+      balanceValue
     }
   };
 }
 
 async function getAbcAnalysisData(params: any) {
+  console.log('📊 Analisando classificação ABC...');
+  
+  // Buscar vendas para calcular valor por produto
+  const { data: salesData, error: salesError } = await supabaseAdmin
+    .from('sales')
+    .select(`
+      *,
+      items:sale_items(
+        product_id,
+        quantity,
+        unit_price,
+        total_price
+      )
+    `)
+    .eq('is_deleted', false)
+    .eq('status', 'completed');
+
+  if (salesError) {
+    console.error('Erro ao buscar vendas para análise ABC:', salesError);
+    throw salesError;
+  }
+
+  const sales = salesData || [];
+  
+  // Calcular valor total por produto
+  const productValues: Record<string, number> = {};
+  
+  sales.forEach(sale => {
+    if (sale.items && Array.isArray(sale.items)) {
+      sale.items.forEach((item: any) => {
+        const productId = item.product_id || 'unknown';
+        productValues[productId] = (productValues[productId] || 0) + (parseFloat(item.total_price) || 0);
+      });
+    } else {
+      // Para vendas antigas sem items
+      const productId = sale.product || 'unknown';
+      productValues[productId] = (productValues[productId] || 0) + (parseFloat(sale.total) || 0);
+    }
+  });
+
+  // Ordenar produtos por valor
+  const sortedProducts = Object.entries(productValues)
+    .map(([productId, value]) => ({ productId, value }))
+    .sort((a, b) => b.value - a.value);
+
+  const totalValue = sortedProducts.reduce((sum, p) => sum + p.value, 0);
+  
+  // Classificar em ABC (80-15-5)
+  let cumulativeValue = 0;
+  const categoryA: any[] = [];
+  const categoryB: any[] = [];
+  const categoryC: any[] = [];
+
+  sortedProducts.forEach(product => {
+    cumulativeValue += product.value;
+    const percentage = (cumulativeValue / totalValue) * 100;
+    
+    if (percentage <= 80) {
+      categoryA.push(product);
+    } else if (percentage <= 95) {
+      categoryB.push(product);
+    } else {
+      categoryC.push(product);
+    }
+  });
+
+  console.log('📊 Análise ABC:', {
+    totalProducts: sortedProducts.length,
+    totalValue,
+    categoryA: categoryA.length,
+    categoryB: categoryB.length,
+    categoryC: categoryC.length
+  });
+
   return {
     title: 'Análise ABC',
     period: `${params.startDate} a ${params.endDate}`,
     data: {
-      categoryA: 0,
-      categoryB: 0,
-      categoryC: 0
+      categoryA: categoryA.length,
+      categoryB: categoryB.length,
+      categoryC: categoryC.length,
+      totalProducts: sortedProducts.length,
+      totalValue,
+      products: {
+        A: categoryA,
+        B: categoryB,
+        C: categoryC
+      }
     }
   };
 }
 
 async function getLowStockAlertData(params: any) {
+  console.log('📊 Analisando produtos com estoque baixo...');
+  
+  const { data, error } = await supabaseAdmin
+    .from('products')
+    .select('*')
+    .eq('is_deleted', false)
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Erro ao buscar produtos para alerta de estoque baixo:', error);
+    throw error;
+  }
+
+  const products = data || [];
+  
+  // Filtrar produtos com estoque baixo ou zerado
+  const lowStockProducts = products.filter(product => {
+    const currentStock = product.stock_quantity || 0;
+    const minStock = product.minimum_stock || product.min_stock || 0;
+    
+    return currentStock <= minStock;
+  });
+
+  // Adicionar informações de urgência
+  const productsWithUrgency = lowStockProducts.map(product => {
+    const currentStock = product.stock_quantity || 0;
+    const minStock = product.minimum_stock || product.min_stock || 0;
+    
+    let urgency = 'low';
+    if (currentStock === 0) {
+      urgency = 'critical';
+    } else if (currentStock <= minStock * 0.5) {
+      urgency = 'high';
+    }
+    
+    return {
+      ...product,
+      urgency,
+      days_remaining: minStock > 0 ? Math.floor((currentStock / minStock) * 30) : 0
+    };
+  });
+
+  // Ordenar por urgência e estoque
+  productsWithUrgency.sort((a, b) => {
+    const urgencyOrder = { critical: 3, high: 2, low: 1 };
+    const aUrgency = urgencyOrder[a.urgency as keyof typeof urgencyOrder] || 0;
+    const bUrgency = urgencyOrder[b.urgency as keyof typeof urgencyOrder] || 0;
+    
+    if (aUrgency !== bUrgency) {
+      return bUrgency - aUrgency;
+    }
+    
+    return (a.stock_quantity || 0) - (b.stock_quantity || 0);
+  });
+
+  console.log('📊 Produtos com estoque baixo:', {
+    totalProducts: products.length,
+    lowStockProducts: lowStockProducts.length,
+    critical: productsWithUrgency.filter(p => p.urgency === 'critical').length,
+    high: productsWithUrgency.filter(p => p.urgency === 'high').length,
+    low: productsWithUrgency.filter(p => p.urgency === 'low').length
+  });
+
   return {
     title: 'Produtos com Estoque Baixo',
     period: `${params.startDate} a ${params.endDate}`,
-    data: []
+    data: productsWithUrgency
   };
 }
 
 // Implementações para Vendas
 async function getSalesPerformanceData(params: any) {
+  console.log('📊 Analisando performance de vendas...');
+  
+  const { data, error } = await supabaseAdmin
+    .from('sales')
+    .select('*')
+    .eq('is_deleted', false)
+    .eq('status', 'completed')
+    .order('sale_date', { ascending: false });
+
+  if (error) {
+    console.error('Erro ao buscar vendas para performance:', error);
+    throw error;
+  }
+
+  const sales = data || [];
+  
+  // Calcular métricas
+  const totalSales = sales.length;
+  const totalRevenue = sales.reduce((sum, sale) => sum + (parseFloat(sale.total_amount) || parseFloat(sale.total) || 0), 0);
+  const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
+  
+  // Calcular crescimento (comparar com período anterior)
+  const startDate = new Date(params.startDate);
+  const endDate = new Date(params.endDate);
+  const periodDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  const previousStartDate = new Date(startDate.getTime() - periodDays * 24 * 60 * 60 * 1000);
+  const previousEndDate = new Date(startDate.getTime() - 24 * 60 * 60 * 1000);
+  
+  const { data: previousSales } = await supabaseAdmin
+    .from('sales')
+    .select('total_amount, total')
+    .eq('is_deleted', false)
+    .eq('status', 'completed')
+    .gte('sale_date', previousStartDate.toISOString().split('T')[0])
+    .lte('sale_date', previousEndDate.toISOString().split('T')[0]);
+
+  const previousRevenue = (previousSales || []).reduce((sum, sale) => sum + (parseFloat(sale.total_amount) || parseFloat(sale.total) || 0), 0);
+  const growth = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
+
+  // Encontrar top vendedor (assumindo que há um campo vendedor ou usando customer_name)
+  const sellerCounts: Record<string, number> = {};
+  sales.forEach(sale => {
+    const seller = sale.customer_name || 'Vendedor não identificado';
+    sellerCounts[seller] = (sellerCounts[seller] || 0) + 1;
+  });
+  
+  const topSeller = Object.entries(sellerCounts)
+    .sort(([,a], [,b]) => b - a)[0]?.[0] || 'N/A';
+
+  console.log('📊 Performance de vendas:', {
+    totalSales,
+    totalRevenue,
+    averageTicket,
+    growth: growth.toFixed(2),
+    topSeller
+  });
+
   return {
     title: 'Performance de Vendas',
     period: `${params.startDate} a ${params.endDate}`,
     data: {
-      totalSales: 0,
-      growth: 0,
-      topSeller: null
+      totalSales,
+      totalRevenue,
+      averageTicket,
+      growth: parseFloat(growth.toFixed(2)),
+      topSeller,
+      previousRevenue
     }
   };
 }
 
 async function getTopProductsData(params: any) {
+  console.log('📊 Analisando produtos mais vendidos...');
+  
+  const { data, error } = await supabaseAdmin
+    .from('sales')
+    .select(`
+      *,
+      items:sale_items(
+        product_id,
+        quantity,
+        unit_price,
+        total_price
+      )
+    `)
+    .eq('is_deleted', false)
+    .eq('status', 'completed')
+    .order('sale_date', { ascending: false });
+
+  if (error) {
+    console.error('Erro ao buscar vendas para produtos mais vendidos:', error);
+    throw error;
+  }
+
+  const sales = data || [];
+  
+  // Calcular vendas por produto
+  const productSales: Record<string, any> = {};
+  
+  sales.forEach(sale => {
+    if (sale.items && Array.isArray(sale.items)) {
+      sale.items.forEach((item: any) => {
+        const productId = item.product_id || 'unknown';
+        const productName = `Produto ${productId}`;
+        
+        if (!productSales[productId]) {
+          productSales[productId] = {
+            product_id: productId,
+            product_name: productName,
+            total_quantity: 0,
+            total_revenue: 0,
+            sales_count: 0,
+            average_price: 0
+          };
+        }
+        
+        productSales[productId].total_quantity += item.quantity || 0;
+        productSales[productId].total_revenue += parseFloat(item.total_price) || 0;
+        productSales[productId].sales_count++;
+      });
+    } else {
+      // Para vendas antigas sem items
+      const productId = sale.product || 'unknown';
+      const productName = sale.product || 'Produto não identificado';
+      
+      if (!productSales[productId]) {
+        productSales[productId] = {
+          product_id: productId,
+          product_name: productName,
+          total_quantity: 0,
+          total_revenue: 0,
+          sales_count: 0,
+          average_price: 0
+        };
+      }
+      
+      productSales[productId].total_quantity += sale.quantity || 0;
+      productSales[productId].total_revenue += parseFloat(sale.total) || 0;
+      productSales[productId].sales_count++;
+    }
+  });
+
+  // Calcular preço médio e ordenar
+  const result = Object.values(productSales).map((product: any) => ({
+    ...product,
+    average_price: product.total_quantity > 0 ? product.total_revenue / product.total_quantity : 0
+  })).sort((a: any, b: any) => b.total_quantity - a.total_quantity);
+
+  console.log('📊 Produtos mais vendidos:', {
+    totalProducts: result.length,
+    topProduct: result[0]?.product_name || 'N/A',
+    totalQuantity: result.reduce((sum, p) => sum + p.total_quantity, 0)
+  });
+
   return {
     title: 'Produtos Mais Vendidos',
     period: `${params.startDate} a ${params.endDate}`,
-    data: []
+    data: result
   };
 }
 
 async function getSalesForecastData(params: any) {
+  console.log('📊 Analisando previsão de vendas...');
+  
+  // Buscar vendas dos últimos 3 meses para calcular tendência
+  const endDate = new Date(params.endDate);
+  const threeMonthsAgo = new Date(endDate.getTime() - 90 * 24 * 60 * 60 * 1000);
+  
+  const { data, error } = await supabaseAdmin
+    .from('sales')
+    .select('sale_date, total_amount, total')
+    .eq('is_deleted', false)
+    .eq('status', 'completed')
+    .gte('sale_date', threeMonthsAgo.toISOString().split('T')[0])
+    .lte('sale_date', endDate.toISOString().split('T')[0])
+    .order('sale_date', { ascending: true });
+
+  if (error) {
+    console.error('Erro ao buscar vendas para previsão:', error);
+    throw error;
+  }
+
+  const sales = data || [];
+  
+  if (sales.length === 0) {
+    return {
+      title: 'Previsão de Vendas',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        forecast: 0,
+        confidence: 0,
+        trend: 'stable',
+        historicalData: []
+      }
+    };
+  }
+
+  // Agrupar vendas por mês
+  const monthlySales: Record<string, number> = {};
+  sales.forEach(sale => {
+    const month = sale.sale_date.substring(0, 7); // YYYY-MM
+    const amount = parseFloat(sale.total_amount) || parseFloat(sale.total) || 0;
+    monthlySales[month] = (monthlySales[month] || 0) + amount;
+  });
+
+  // Calcular tendência
+  const months = Object.keys(monthlySales).sort();
+  const values = months.map(month => monthlySales[month]);
+  
+  let trend = 'stable';
+  let growthRate = 0;
+  
+  if (values.length >= 2) {
+    const firstValue = values[0];
+    const lastValue = values[values.length - 1];
+    growthRate = firstValue > 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
+    
+    if (growthRate > 5) trend = 'growing';
+    else if (growthRate < -5) trend = 'declining';
+  }
+
+  // Calcular previsão para próximo mês
+  const averageMonthly = values.reduce((sum, val) => sum + val, 0) / values.length;
+  const forecast = averageMonthly * (1 + growthRate / 100);
+  
+  // Calcular confiança baseada na consistência dos dados
+  const variance = values.length > 1 ? 
+    values.reduce((sum, val) => sum + Math.pow(val - averageMonthly, 2), 0) / values.length : 0;
+  const confidence = Math.max(0, Math.min(100, 100 - (variance / averageMonthly) * 100));
+
+  console.log('📊 Previsão de vendas:', {
+    monthsAnalyzed: months.length,
+    averageMonthly,
+    growthRate: growthRate.toFixed(2),
+    forecast,
+    confidence: confidence.toFixed(2),
+    trend
+  });
+
   return {
     title: 'Previsão de Vendas',
     period: `${params.startDate} a ${params.endDate}`,
     data: {
-      forecast: 0,
-      confidence: 0
+      forecast: parseFloat(forecast.toFixed(2)),
+      confidence: parseFloat(confidence.toFixed(2)),
+      trend,
+      growthRate: parseFloat(growthRate.toFixed(2)),
+      averageMonthly: parseFloat(averageMonthly.toFixed(2)),
+      historicalData: months.map(month => ({
+        month,
+        revenue: monthlySales[month]
+      }))
     }
   };
 }
 
 // Implementações para Clientes
 async function getCustomerSegmentationData(params: any) {
+  console.log('📊 Analisando segmentação de clientes...');
+  
+  // Buscar clientes e suas vendas
+  const { data: customersData, error: customersError } = await supabaseAdmin
+    .from('partners')
+    .select(`
+      id,
+      name,
+      created_at,
+      segment_id,
+      segments(name)
+    `)
+    .eq('role', 'customer')
+    .eq('is_deleted', false);
+
+  if (customersError) {
+    console.error('Erro ao buscar clientes para segmentação:', customersError);
+    throw customersError;
+  }
+
+  const customers = customersData || [];
+  
+  // Buscar vendas por cliente
+  const { data: salesData, error: salesError } = await supabaseAdmin
+    .from('sales')
+    .select('customer_id, total_amount, total, sale_date')
+    .eq('is_deleted', false)
+    .eq('status', 'completed');
+
+  if (salesError) {
+    console.error('Erro ao buscar vendas para segmentação:', salesError);
+    throw salesError;
+  }
+
+  const sales = salesData || [];
+  
+  // Calcular métricas por cliente
+  const customerMetrics = customers.map(customer => {
+    const customerSales = sales.filter(sale => sale.customer_id === customer.id);
+    const totalRevenue = customerSales.reduce((sum, sale) => sum + (parseFloat(sale.total_amount) || parseFloat(sale.total) || 0), 0);
+    const salesCount = customerSales.length;
+    const averageTicket = salesCount > 0 ? totalRevenue / salesCount : 0;
+    
+    // Calcular dias desde última compra
+    const lastSale = customerSales.sort((a, b) => new Date(b.sale_date).getTime() - new Date(a.sale_date).getTime())[0];
+    const daysSinceLastSale = lastSale ? 
+      Math.floor((new Date().getTime() - new Date(lastSale.sale_date).getTime()) / (1000 * 60 * 60 * 24)) : 999;
+    
+    return {
+      ...customer,
+      totalRevenue,
+      salesCount,
+      averageTicket,
+      daysSinceLastSale,
+      segment_name: customer.segments?.name || 'Sem segmento'
+    };
+  });
+
+  // Segmentar clientes (RFM simplificado)
+  const segments = {
+    vip: customerMetrics.filter(c => c.totalRevenue > 10000 && c.salesCount > 5),
+    high_value: customerMetrics.filter(c => c.totalRevenue > 5000 && c.salesCount > 3),
+    regular: customerMetrics.filter(c => c.totalRevenue > 1000 && c.salesCount > 1),
+    low_value: customerMetrics.filter(c => c.totalRevenue <= 1000 || c.salesCount <= 1),
+    inactive: customerMetrics.filter(c => c.daysSinceLastSale > 90)
+  };
+
+  console.log('📊 Segmentação de clientes:', {
+    totalCustomers: customers.length,
+    vip: segments.vip.length,
+    highValue: segments.high_value.length,
+    regular: segments.regular.length,
+    lowValue: segments.low_value.length,
+    inactive: segments.inactive.length
+  });
+
   return {
     title: 'Segmentação de Clientes',
     period: `${params.startDate} a ${params.endDate}`,
     data: {
-      segments: []
+      segments: [
+        { name: 'VIP', count: segments.vip.length, customers: segments.vip },
+        { name: 'Alto Valor', count: segments.high_value.length, customers: segments.high_value },
+        { name: 'Regular', count: segments.regular.length, customers: segments.regular },
+        { name: 'Baixo Valor', count: segments.low_value.length, customers: segments.low_value },
+        { name: 'Inativos', count: segments.inactive.length, customers: segments.inactive }
+      ],
+      totalCustomers: customers.length
     }
   };
 }
 
 async function getCustomerLifetimeValueData(params: any) {
+  console.log('📊 Analisando valor vitalício do cliente (LTV)...');
+  
+  // Buscar clientes e suas vendas
+  const { data: customersData, error: customersError } = await supabaseAdmin
+    .from('partners')
+    .select(`
+      id,
+      name,
+      created_at,
+      segments(name)
+    `)
+    .eq('role', 'customer')
+    .eq('is_deleted', false);
+
+  if (customersError) {
+    console.error('Erro ao buscar clientes para LTV:', customersError);
+    throw customersError;
+  }
+
+  const customers = customersData || [];
+  
+  // Buscar todas as vendas
+  const { data: salesData, error: salesError } = await supabaseAdmin
+    .from('sales')
+    .select('customer_id, total_amount, total, sale_date, created_at')
+    .eq('is_deleted', false)
+    .eq('status', 'completed');
+
+  if (salesError) {
+    console.error('Erro ao buscar vendas para LTV:', salesError);
+    throw salesError;
+  }
+
+  const sales = salesData || [];
+  
+  // Calcular LTV por cliente
+  const customerLTV = customers.map(customer => {
+    const customerSales = sales.filter(sale => sale.customer_id === customer.id);
+    const totalRevenue = customerSales.reduce((sum, sale) => sum + (parseFloat(sale.total_amount) || parseFloat(sale.total) || 0), 0);
+    const salesCount = customerSales.length;
+    const averageTicket = salesCount > 0 ? totalRevenue / salesCount : 0;
+    
+    // Calcular tempo de relacionamento (em dias)
+    const firstSale = customerSales.sort((a, b) => new Date(a.sale_date).getTime() - new Date(b.sale_date).getTime())[0];
+    const lastSale = customerSales.sort((a, b) => new Date(b.sale_date).getTime() - new Date(a.sale_date).getTime())[0];
+    
+    const relationshipDays = firstSale && lastSale ? 
+      Math.floor((new Date(lastSale.sale_date).getTime() - new Date(firstSale.sale_date).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    
+    // Calcular LTV (receita total + projeção futura baseada na frequência)
+    const avgDaysBetweenSales = relationshipDays > 0 && salesCount > 1 ? relationshipDays / (salesCount - 1) : 30;
+    const projectedFutureSales = avgDaysBetweenSales > 0 ? (365 / avgDaysBetweenSales) * averageTicket : 0;
+    const ltv = totalRevenue + projectedFutureSales;
+    
+    return {
+      ...customer,
+      totalRevenue,
+      salesCount,
+      averageTicket,
+      relationshipDays,
+      avgDaysBetweenSales: Math.round(avgDaysBetweenSales),
+      projectedFutureSales,
+      ltv,
+      segment_name: customer.segments?.name || 'Sem segmento'
+    };
+  });
+
+  // Ordenar por LTV
+  const sortedByLTV = customerLTV.sort((a, b) => b.ltv - a.ltv);
+  const topCustomers = sortedByLTV.slice(0, 10);
+  
+  // Calcular LTV médio
+  const averageLTV = customerLTV.length > 0 ? 
+    customerLTV.reduce((sum, c) => sum + c.ltv, 0) / customerLTV.length : 0;
+
+  console.log('📊 Valor vitalício do cliente (LTV):', {
+    totalCustomers: customers.length,
+    averageLTV: averageLTV.toFixed(2),
+    topCustomerLTV: topCustomers[0]?.ltv || 0,
+    topCustomerName: topCustomers[0]?.name || 'N/A'
+  });
+
   return {
     title: 'Valor Vitalício do Cliente (LTV)',
     period: `${params.startDate} a ${params.endDate}`,
     data: {
-      averageLTV: 0,
-      topCustomers: []
+      averageLTV: parseFloat(averageLTV.toFixed(2)),
+      topCustomers,
+      totalCustomers: customers.length,
+      ltvDistribution: {
+        high: customerLTV.filter(c => c.ltv > averageLTV * 2).length,
+        medium: customerLTV.filter(c => c.ltv > averageLTV && c.ltv <= averageLTV * 2).length,
+        low: customerLTV.filter(c => c.ltv <= averageLTV).length
+      }
     }
   };
 }
