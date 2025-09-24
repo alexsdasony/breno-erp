@@ -651,6 +651,45 @@ export default function ReportsView() {
                     color: #721c24;
                   }
                   
+                  .trend-badge {
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    font-weight: 500;
+                  }
+                  
+                  .trend-badge.up {
+                    background-color: #d4edda;
+                    color: #155724;
+                  }
+                  
+                  .trend-badge.down {
+                    background-color: #f8d7da;
+                    color: #721c24;
+                  }
+                  
+                  .trend-badge.stable {
+                    background-color: #d1ecf1;
+                    color: #0c5460;
+                  }
+                  
+                  .growth-badge {
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    font-weight: 500;
+                  }
+                  
+                  .growth-badge.positive {
+                    background-color: #d4edda;
+                    color: #155724;
+                  }
+                  
+                  .growth-badge.negative {
+                    background-color: #f8d7da;
+                    color: #721c24;
+                  }
+                  
                   @media (max-width: 768px) {
                     .stats-grid {
                       grid-template-columns: 1fr;
@@ -1402,6 +1441,67 @@ export default function ReportsView() {
               </tbody>
             </table>
           </div>
+        </div>
+      `;
+    }
+
+    if (reportId === 'sales-forecast') {
+      const forecastData = data.data || {};
+      return `
+        <div class="summary-section">
+          <div class="summary-title">Previsão de Vendas</div>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">Previsão:</span>
+              <span class="stat-value">R$ ${(forecastData.forecast || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Confiança:</span>
+              <span class="stat-value">${(forecastData.confidence || 0).toFixed(1)}%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Tendência:</span>
+              <span class="stat-value">
+                <span class="trend-badge ${forecastData.trend || 'stable'}">
+                  ${forecastData.trend === 'up' ? '↗ Crescendo' : forecastData.trend === 'down' ? '↘ Decrescendo' : '→ Estável'}
+                </span>
+              </span>
+            </div>
+          </div>
+          ${forecastData.historicalData && forecastData.historicalData.length > 0 ? `
+            <div class="table-container">
+              <table class="report-table">
+                <thead>
+                  <tr>
+                    <th>Período</th>
+                    <th>Vendas</th>
+                    <th>Receita</th>
+                    <th>Crescimento</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${forecastData.historicalData.map((item: any, index: number) => `
+                    <tr>
+                      <td>${item.period || `Período ${index + 1}`}</td>
+                      <td>${item.sales || 0}</td>
+                      <td>R$ ${(item.revenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                      <td>
+                        <span class="growth-badge ${(item.growth || 0) >= 0 ? 'positive' : 'negative'}">
+                          ${(item.growth || 0) >= 0 ? '+' : ''}${(item.growth || 0).toFixed(1)}%
+                        </span>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          ` : `
+            <div class="empty-state">
+              <div class="icon">📈</div>
+              <h3>Dados históricos insuficientes</h3>
+              <p>Não há dados históricos suficientes para gerar uma previsão precisa.</p>
+            </div>
+          `}
         </div>
       `;
     }
