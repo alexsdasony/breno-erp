@@ -380,29 +380,155 @@ async function getProfitLossData(params: any) {
 }
 
 async function getBalanceSheetData(params: any) {
-  // Implementar lógica de balanço patrimonial
-  return {
-    title: 'Balanço Patrimonial',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: {
-      assets: 0,
-      liabilities: 0,
-      equity: 0
-    }
-  };
+  console.log('📊 Calculando balanço patrimonial...');
+  
+  try {
+    // Buscar dados reais para o balanço
+    const { data: salesData } = await supabaseAdmin
+      .from('sales')
+      .select('total')
+      .eq('status', 'completed');
+
+    const { data: payablesData } = await supabaseAdmin
+      .from('accounts_payable')
+      .select('amount')
+      .eq('status', 'pending');
+
+    const { data: receivablesData } = await supabaseAdmin
+      .from('accounts_receivable')
+      .select('amount')
+      .eq('status', 'pending');
+
+    const { data: productsData } = await supabaseAdmin
+      .from('products')
+      .select('price, stock_quantity')
+      .eq('is_deleted', false);
+
+    // Calcular ativos
+    const totalSales = salesData?.reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0) || 0;
+    const totalReceivables = receivablesData?.reduce((sum, rec) => sum + (parseFloat(rec.amount) || 0), 0) || 0;
+    const totalInventory = productsData?.reduce((sum, product) => sum + ((parseFloat(product.price) || 0) * (product.stock_quantity || 0)), 0) || 0;
+    
+    const assets = totalSales + totalReceivables + totalInventory;
+
+    // Calcular passivos
+    const totalPayables = payablesData?.reduce((sum, pay) => sum + (parseFloat(pay.amount) || 0), 0) || 0;
+    const liabilities = totalPayables;
+
+    // Calcular patrimônio líquido
+    const equity = assets - liabilities;
+
+    return {
+      title: 'Balanço Patrimonial',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        assets,
+        liabilities,
+        equity,
+        breakdown: {
+          cash: totalSales,
+          receivables: totalReceivables,
+          inventory: totalInventory,
+          payables: totalPayables
+        }
+      }
+    };
+  } catch (error) {
+    console.error('❌ Erro ao calcular balanço patrimonial:', error);
+    return {
+      title: 'Balanço Patrimonial',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        assets: 0,
+        liabilities: 0,
+        equity: 0,
+        breakdown: {
+          cash: 0,
+          receivables: 0,
+          inventory: 0,
+          payables: 0
+        }
+      }
+    };
+  }
 }
 
 async function getFinancialAnalysisData(params: any) {
-  // Implementar análise financeira
-  return {
-    title: 'Análise Financeira',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: {
-      liquidity: 0,
-      profitability: 0,
-      indebtedness: 0
-    }
-  };
+  console.log('📊 Calculando análise financeira...');
+  
+  try {
+    // Buscar dados reais para análise financeira
+    const { data: salesData } = await supabaseAdmin
+      .from('sales')
+      .select('total, date')
+      .eq('status', 'completed')
+      .gte('date', params.startDate || '2024-01-01')
+      .lte('date', params.endDate || '2024-12-31');
+
+    const { data: payablesData } = await supabaseAdmin
+      .from('accounts_payable')
+      .select('amount, due_date')
+      .eq('status', 'pending');
+
+    const { data: receivablesData } = await supabaseAdmin
+      .from('accounts_receivable')
+      .select('amount, due_date')
+      .eq('status', 'pending');
+
+    const { data: productsData } = await supabaseAdmin
+      .from('products')
+      .select('price, stock_quantity, cost')
+      .eq('is_deleted', false);
+
+    // Calcular métricas financeiras
+    const totalRevenue = salesData?.reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0) || 0;
+    const totalPayables = payablesData?.reduce((sum, pay) => sum + (parseFloat(pay.amount) || 0), 0) || 0;
+    const totalReceivables = receivablesData?.reduce((sum, rec) => sum + (parseFloat(rec.amount) || 0), 0) || 0;
+    const totalInventory = productsData?.reduce((sum, product) => sum + ((parseFloat(product.price) || 0) * (product.stock_quantity || 0)), 0) || 0;
+    const totalCosts = productsData?.reduce((sum, product) => sum + ((parseFloat(product.cost) || 0) * (product.stock_quantity || 0)), 0) || 0;
+
+    // Calcular índices financeiros
+    const liquidity = totalPayables > 0 ? (totalReceivables + totalInventory) / totalPayables : 0;
+    const profitability = totalRevenue > 0 ? ((totalRevenue - totalCosts) / totalRevenue) * 100 : 0;
+    const indebtedness = totalPayables > 0 ? (totalPayables / (totalReceivables + totalInventory)) * 100 : 0;
+
+    return {
+      title: 'Análise Financeira',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        liquidity,
+        profitability,
+        indebtedness,
+        metrics: {
+          totalRevenue,
+          totalCosts,
+          totalPayables,
+          totalReceivables,
+          totalInventory,
+          netProfit: totalRevenue - totalCosts
+        }
+      }
+    };
+  } catch (error) {
+    console.error('❌ Erro ao calcular análise financeira:', error);
+    return {
+      title: 'Análise Financeira',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        liquidity: 0,
+        profitability: 0,
+        indebtedness: 0,
+        metrics: {
+          totalRevenue: 0,
+          totalCosts: 0,
+          totalPayables: 0,
+          totalReceivables: 0,
+          totalInventory: 0,
+          netProfit: 0
+        }
+      }
+    };
+  }
 }
 
 async function getCustomerListData(params: any) {
@@ -734,15 +860,63 @@ async function getProductListData(params: any) {
 }
 
 async function getInventoryAnalysisData(params: any) {
-  return {
-    title: 'Análise de Estoque',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: {
-      totalProducts: 0,
-      lowStock: 0,
-      outOfStock: 0
+  console.log('📊 Analisando estoque...');
+  
+  try {
+    // Buscar dados reais de produtos
+    const { data: productsData, error: productsError } = await supabaseAdmin
+      .from('products')
+      .select('id, name, stock_quantity, min_stock, price')
+      .eq('is_deleted', false);
+
+    if (productsError) {
+      console.error('❌ Erro ao buscar produtos:', productsError);
+      throw productsError;
     }
-  };
+
+    const products = productsData || [];
+    const totalProducts = products.length;
+    
+    // Calcular produtos com estoque baixo
+    const lowStock = products.filter(p => {
+      const stock = p.stock_quantity || 0;
+      const minStock = p.min_stock || 0;
+      return stock > 0 && stock <= minStock;
+    }).length;
+    
+    // Calcular produtos sem estoque
+    const outOfStock = products.filter(p => (p.stock_quantity || 0) === 0).length;
+    
+    // Calcular valor total do estoque
+    const totalValue = products.reduce((sum, product) => {
+      return sum + ((parseFloat(product.price) || 0) * (product.stock_quantity || 0));
+    }, 0);
+
+    return {
+      title: 'Análise de Estoque',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        totalProducts,
+        lowStock,
+        outOfStock,
+        totalValue,
+        averageStock: totalProducts > 0 ? products.reduce((sum, p) => sum + (p.stock_quantity || 0), 0) / totalProducts : 0
+      }
+    };
+  } catch (error) {
+    console.error('❌ Erro ao analisar estoque:', error);
+    return {
+      title: 'Análise de Estoque',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        totalProducts: 0,
+        lowStock: 0,
+        outOfStock: 0,
+        totalValue: 0,
+        averageStock: 0
+      }
+    };
+  }
 }
 
 async function getAccountsPayableData(params: any) {
@@ -848,15 +1022,62 @@ async function getAccountsReceivableData(params: any) {
 }
 
 async function getAccountsReceivableAnalysisData(params: any) {
-  return {
-    title: 'Análise de Contas a Receber',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: {
-      totalReceivable: 0,
-      overdue: 0,
-      dueSoon: 0
+  console.log('📊 Analisando contas a receber...');
+  
+  try {
+    // Buscar dados reais de contas a receber
+    const { data: receivablesData, error: receivablesError } = await supabaseAdmin
+      .from('accounts_receivable')
+      .select('amount, due_date, status')
+      .order('due_date', { ascending: true });
+
+    if (receivablesError) {
+      console.error('❌ Erro ao buscar contas a receber:', receivablesError);
+      throw receivablesError;
     }
-  };
+
+    const receivables = receivablesData || [];
+    const totalReceivable = receivables.reduce((sum, rec) => sum + (parseFloat(rec.amount) || 0), 0);
+    
+    // Calcular contas vencidas
+    const today = new Date();
+    const overdue = receivables.filter(rec => {
+      const dueDate = new Date(rec.due_date);
+      return dueDate < today && rec.status !== 'paid';
+    }).length;
+    
+    // Calcular contas que vencem em breve (próximos 7 dias)
+    const dueSoon = receivables.filter(rec => {
+      const dueDate = new Date(rec.due_date);
+      const daysDiff = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      return daysDiff >= 0 && daysDiff <= 7 && rec.status !== 'paid';
+    }).length;
+
+    return {
+      title: 'Análise de Contas a Receber',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        totalReceivable,
+        overdue,
+        dueSoon,
+        totalCount: receivables.length,
+        paidCount: receivables.filter(rec => rec.status === 'paid').length
+      }
+    };
+  } catch (error) {
+    console.error('❌ Erro ao analisar contas a receber:', error);
+    return {
+      title: 'Análise de Contas a Receber',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        totalReceivable: 0,
+        overdue: 0,
+        dueSoon: 0,
+        totalCount: 0,
+        paidCount: 0
+      }
+    };
+  }
 }
 
 async function getNfeIssuedData(params: any) {
