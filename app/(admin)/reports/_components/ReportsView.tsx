@@ -390,11 +390,21 @@ export default function ReportsView() {
       
       const response = await fetch(`/api/reports?module=${moduleId}&report=${reportId}&format=${format}&startDate=${startDate}&endDate=${endDate}`);
       
+      console.log('📊 Response status:', response.status);
+      console.log('📊 Response ok:', response.ok);
+      
       if (!response.ok) {
-        throw new Error('Erro ao gerar relatório');
+        const errorText = await response.text();
+        console.error('❌ Erro na resposta:', errorText);
+        throw new Error(`Erro ao gerar relatório: ${response.status} - ${errorText}`);
       }
       
-      const data = await response.json();
+      const responseData = await response.json();
+      console.log('📊 Dados recebidos:', responseData);
+      
+      // Extrair dados da resposta da API
+      const data = responseData.data || responseData;
+      console.log('📊 Dados extraídos:', data);
       
       if (action === 'view') {
         // Gerar HTML específico baseado no módulo e relatório
