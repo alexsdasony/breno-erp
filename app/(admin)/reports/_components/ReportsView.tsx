@@ -423,6 +423,10 @@ export default function ReportsView() {
             reportContent = generateInventoryHTML(reportData, reportId);
           } else if (moduleId === 'sales') {
             reportContent = generateSalesHTML(reportData, reportId);
+          } else if (moduleId === 'customers') {
+            reportContent = generateCustomersHTML(reportData, reportId);
+          } else if (moduleId === 'suppliers') {
+            reportContent = generateSuppliersHTML(reportData, reportId);
           } else if (moduleId === 'dashboard') {
             reportContent = generateDashboardHTML(reportData, reportId);
           } else if (moduleId === 'nfe') {
@@ -688,6 +692,38 @@ export default function ReportsView() {
                   .growth-badge.negative {
                     background-color: #f8d7da;
                     color: #721c24;
+                  }
+                  
+                  .segment-badge {
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    font-weight: 500;
+                  }
+                  
+                  .segment-badge.segment-vip {
+                    background-color: #d4edda;
+                    color: #155724;
+                  }
+                  
+                  .segment-badge.segment-alto-valor {
+                    background-color: #d1ecf1;
+                    color: #0c5460;
+                  }
+                  
+                  .segment-badge.segment-regular {
+                    background-color: #fff3cd;
+                    color: #856404;
+                  }
+                  
+                  .segment-badge.segment-baixo-valor {
+                    background-color: #f8d7da;
+                    color: #721c24;
+                  }
+                  
+                  .segment-badge.segment-inativos {
+                    background-color: #e2e3e5;
+                    color: #6c757d;
                   }
                   
                   @media (max-width: 768px) {
@@ -1765,3 +1801,176 @@ ${JSON.stringify(data, null, 2)}
     </div>
   );
 }
+
+// Função para gerar HTML de relatórios de clientes
+const generateCustomersHTML = (data: any, reportId: string) => {
+  const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
+  
+  if (!hasData) {
+    return `
+      <div class="empty-state">
+        <div class="icon">👥</div>
+        <h3>Nenhum cliente encontrado</h3>
+        <p>Não há clientes cadastrados no sistema.</p>
+      </div>
+    `;
+  }
+
+  if (reportId === 'customer-segmentation') {
+    const segments = data.data.segments || [];
+    return `
+      <div class="summary-section">
+        <div class="summary-title">Segmentação de Clientes</div>
+        <div class="summary-stats">
+          <div class="stat-item">
+            <span class="stat-label">Total de Clientes:</span>
+            <span class="stat-value">${data.data.totalCustomers || 0}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Clientes Ativos:</span>
+            <span class="stat-value">${data.data.activeCustomers || 0}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Clientes Inativos:</span>
+            <span class="stat-value">${data.data.inactiveCustomers || 0}</span>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Segmento</th>
+                <th>Quantidade</th>
+                <th>% do Total</th>
+                <th>Descrição</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${segments.map((segment: any) => `
+                <tr>
+                  <td>
+                    <span class="segment-badge segment-${segment.name.toLowerCase().replace(' ', '-')}">
+                      ${segment.name}
+                    </span>
+                  </td>
+                  <td>${segment.count || 0}</td>
+                  <td>${data.data.totalCustomers > 0 ? ((segment.count / data.data.totalCustomers) * 100).toFixed(1) : 0}%</td>
+                  <td>${segment.description || 'N/A'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  if (reportId === 'customer-lifetime-value') {
+    const topCustomers = data.data.topCustomers || [];
+    return `
+      <div class="summary-section">
+        <div class="summary-title">Valor Vitalício do Cliente (LTV)</div>
+        <div class="summary-stats">
+          <div class="stat-item">
+            <span class="stat-label">LTV Médio:</span>
+            <span class="stat-value">R$ ${(data.data.averageLTV || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Total de Clientes:</span>
+            <span class="stat-value">${data.data.totalCustomers || 0}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Clientes Ativos:</span>
+            <span class="stat-value">${data.data.activeCustomers || 0}</span>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Posição</th>
+                <th>Cliente</th>
+                <th>LTV</th>
+                <th>Receita Total</th>
+                <th>Qtd Vendas</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${topCustomers.map((customer: any) => `
+                <tr>
+                  <td>${customer.rank || 'N/A'}</td>
+                  <td>${customer.name}</td>
+                  <td>R$ ${(customer.ltv || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                  <td>R$ ${(customer.totalRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                  <td>${customer.salesCount || 0}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  return generateGenericHTML(data);
+};
+
+// Função para gerar HTML de relatórios de fornecedores
+const generateSuppliersHTML = (data: any, reportId: string) => {
+  const hasData = data?.data && (Array.isArray(data.data) ? data.data.length > 0 : Object.keys(data.data).length > 0);
+  
+  if (!hasData) {
+    return `
+      <div class="empty-state">
+        <div class="icon">🏭</div>
+        <h3>Nenhum fornecedor encontrado</h3>
+        <p>Não há fornecedores cadastrados no sistema.</p>
+      </div>
+    `;
+  }
+
+  if (reportId === 'supplier-list') {
+    const suppliers = data.data || [];
+    return `
+      <div class="summary-section">
+        <div class="summary-title">Lista de Fornecedores</div>
+        <div class="summary-stats">
+          <div class="stat-item">
+            <span class="stat-label">Total de Fornecedores:</span>
+            <span class="stat-value">${suppliers.length}</span>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>CNPJ/CPF</th>
+                <th>Email</th>
+                <th>Telefone</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${suppliers.map((supplier: any) => `
+                <tr>
+                  <td>${supplier.name || 'N/A'}</td>
+                  <td>${supplier.tax_id || 'N/A'}</td>
+                  <td>${supplier.email || 'N/A'}</td>
+                  <td>${supplier.phone || 'N/A'}</td>
+                  <td>
+                    <span class="status-badge ${supplier.status === 'active' || supplier.status === 'ativo' ? 'success' : 'danger'}">
+                      ${supplier.status === 'active' || supplier.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  return generateGenericHTML(data);
+};
