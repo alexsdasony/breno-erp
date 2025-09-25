@@ -553,26 +553,617 @@ export default function ReportsView() {
   };
 
   const generateGenericHTML = (data: any) => {
-    return `
-      <div class="summary-section">
-        <div class="summary-title">Dados do Relatório</div>
-        <pre style="background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.4;">
-${JSON.stringify(data, null, 2)}
-        </pre>
-      </div>
-    `;
+    const hasData = data?.data && Object.keys(data.data).length > 0;
+    
+    if (!hasData || (data.data && Object.values(data.data).every(val => val === 0 || val === null || val === '' || (Array.isArray(val) && val.length === 0)))) {
+      return `
+        <div class="empty-state">
+          <div class="icon">📊</div>
+          <h3>Nenhum dado encontrado</h3>
+          <p>Não foram encontrados dados para o período selecionado.</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Total de Registros</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">R$ 0,00</div>
+            <div class="stat-label">Valor Total</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Itens Processados</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">0%</div>
+            <div class="stat-label">Taxa de Sucesso</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Se há dados, mostrar em formato elegante
+    let content = '<div class="stats-grid">';
+    
+    const dataObj = data.data || {};
+    let cardCount = 0;
+    
+    Object.entries(dataObj).forEach(([key, value]: [string, any]) => {
+      if (cardCount >= 8) return; // Limitar a 8 cards
+      
+      let displayValue = value;
+      let label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      
+      if (typeof value === 'number') {
+        if (key.toLowerCase().includes('value') || key.toLowerCase().includes('amount') || key.toLowerCase().includes('total')) {
+          displayValue = `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        } else if (key.toLowerCase().includes('percentage') || key.toLowerCase().includes('rate')) {
+          displayValue = `${value}%`;
+        } else {
+          displayValue = value.toLocaleString('pt-BR');
+        }
+      } else if (Array.isArray(value)) {
+        displayValue = value.length;
+        label = `Total de ${label}`;
+      } else if (typeof value === 'string') {
+        displayValue = value;
+      } else if (typeof value === 'object' && value !== null) {
+        displayValue = Object.keys(value).length;
+        label = `Itens em ${label}`;
+      }
+      
+      content += `
+        <div class="stat-card">
+          <div class="stat-value">${displayValue}</div>
+          <div class="stat-label">${label}</div>
+        </div>
+      `;
+      cardCount++;
+    });
+    
+    content += '</div>';
+    
+    return content;
   };
 
   // Funções específicas para outros tipos de relatórios
-  const generateCustomerSegmentationHTML = (data: any) => generateGenericHTML(data);
-  const generateCustomerLifetimeValueHTML = (data: any) => generateGenericHTML(data);
-  const generateSupplierPerformanceHTML = (data: any) => generateGenericHTML(data);
-  const generateAccountsPayableHTML = (data: any, reportId: string) => generateGenericHTML(data);
-  const generateBillingHTML = (data: any, reportId: string) => generateGenericHTML(data);
-  const generateInventoryHTML = (data: any, reportId: string) => generateGenericHTML(data);
-  const generateSalesHTML = (data: any, reportId: string) => generateGenericHTML(data);
-  const generateDashboardHTML = (data: any, reportId: string) => generateGenericHTML(data);
-  const generateNfeHTML = (data: any, reportId: string) => generateGenericHTML(data);
+  const generateCustomerSegmentationHTML = (data: any) => {
+    const hasData = data?.data?.segments && data.data.segments.length > 0;
+    
+    if (!hasData) {
+      return `
+        <div class="empty-state">
+          <div class="icon">👥</div>
+          <h3>Nenhuma segmentação encontrada</h3>
+          <p>Não há clientes para segmentar no período selecionado.</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Total de Clientes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Segmentos Ativos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Clientes Premium</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Novos Clientes</div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">${data.data.totalCustomers || 0}</div>
+          <div class="stat-label">Total de Clientes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${data.data.segments.length}</div>
+          <div class="stat-label">Segmentos</div>
+        </div>
+      </div>
+      <div class="summary-section">
+        <div class="summary-title">Segmentos de Clientes</div>
+        <div class="summary-stats">
+          ${data.data.segments.map((segment: any) => `
+            <div class="stat-item">
+              <span class="stat-label">${segment.name}</span>
+              <span class="stat-value">${segment.count} clientes</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  };
+  
+  const generateCustomerLifetimeValueHTML = (data: any) => {
+    const hasData = data?.data?.customers && data.data.customers.length > 0;
+    
+    if (!hasData) {
+      return `
+        <div class="empty-state">
+          <div class="icon">💰</div>
+          <h3>Nenhum LTV calculado</h3>
+          <p>Não há dados suficientes para calcular o Lifetime Value dos clientes.</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">R$ 0,00</div>
+            <div class="stat-label">LTV Médio</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">R$ 0,00</div>
+            <div class="stat-label">Maior LTV</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Clientes Analisados</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">0 meses</div>
+            <div class="stat-label">Tempo Médio</div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">R$ ${(data.data.averageLtv || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+          <div class="stat-label">LTV Médio</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">R$ ${(data.data.maxLtv || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+          <div class="stat-label">Maior LTV</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${data.data.customers.length}</div>
+          <div class="stat-label">Clientes Analisados</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${data.data.averageLifetime || 0} meses</div>
+          <div class="stat-label">Tempo Médio</div>
+        </div>
+      </div>
+    `;
+  };
+  
+  const generateSupplierPerformanceHTML = (data: any) => {
+    const hasData = data?.data?.suppliers && data.data.suppliers.length > 0;
+    
+    if (!hasData) {
+      return `
+        <div class="empty-state">
+          <div class="icon">🏭</div>
+          <h3>Nenhuma performance encontrada</h3>
+          <p>Não há dados de performance de fornecedores no período.</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Fornecedores Ativos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">0%</div>
+            <div class="stat-label">Taxa de Entrega</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">R$ 0,00</div>
+            <div class="stat-label">Volume Total</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Pedidos Realizados</div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">${data.data.suppliers.length}</div>
+          <div class="stat-label">Fornecedores Ativos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${data.data.averageRating || 0}⭐</div>
+          <div class="stat-label">Avaliação Média</div>
+        </div>
+      </div>
+    `;
+  };
+  const generateAccountsPayableHTML = (data: any, reportId: string) => {
+    if (reportId === 'aging-analysis') {
+      const hasData = data?.data && Object.keys(data.data).length > 0;
+      
+      if (!hasData) {
+        return `
+          <div class="empty-state">
+            <div class="icon">📋</div>
+            <h3>Nenhuma conta a pagar encontrada</h3>
+            <p>Não há contas em aberto no período selecionado.</p>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">R$ 0,00</div>
+              <div class="stat-label">Total em Aberto</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Contas Vencidas</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">R$ 0,00</div>
+              <div class="stat-label">Valor Vencido</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Contas a Vencer</div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">R$ ${(data.data.totalAmount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            <div class="stat-label">Total em Aberto</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.overdueCount || 0}</div>
+            <div class="stat-label">Contas Vencidas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">R$ ${(data.data.overdueAmount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            <div class="stat-label">Valor Vencido</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.upcomingCount || 0}</div>
+            <div class="stat-label">Contas a Vencer</div>
+          </div>
+        </div>
+      `;
+    }
+    
+    return generateGenericHTML(data);
+  };
+  
+  const generateBillingHTML = (data: any, reportId: string) => {
+    if (reportId === 'collection-efficiency') {
+      const hasData = data?.data?.efficiency !== undefined;
+      
+      if (!hasData) {
+        return `
+          <div class="empty-state">
+            <div class="icon">💳</div>
+            <h3>Nenhum dado de cobrança encontrado</h3>
+            <p>Não há informações de eficiência de cobrança no período.</p>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">0%</div>
+              <div class="stat-label">Eficiência</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Contas Pagas</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Total de Contas</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0%</div>
+              <div class="stat-label">Taxa de Sucesso</div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${data.data.efficiency}%</div>
+            <div class="stat-label">Eficiência</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.paidAccounts || 0}</div>
+            <div class="stat-label">Contas Pagas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.totalAccounts || 0}</div>
+            <div class="stat-label">Total de Contas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.successRate}%</div>
+            <div class="stat-label">Taxa de Sucesso</div>
+          </div>
+        </div>
+      `;
+    }
+    
+    return generateGenericHTML(data);
+  };
+  const generateInventoryHTML = (data: any, reportId: string) => {
+    if (reportId === 'stock-levels') {
+      const hasData = data?.data?.totalProducts > 0;
+      
+      if (!hasData) {
+        return `
+          <div class="empty-state">
+            <div class="icon">📦</div>
+            <h3>Nenhum produto no estoque</h3>
+            <p>Não há produtos cadastrados no sistema.</p>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Total de Produtos</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Estoque Normal</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Estoque Baixo</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Sem Estoque</div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${data.data.totalProducts}</div>
+            <div class="stat-label">Total de Produtos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.normalStock || 0}</div>
+            <div class="stat-label">Estoque Normal</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.lowStock || 0}</div>
+            <div class="stat-label">Estoque Baixo</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.outOfStock || 0}</div>
+            <div class="stat-label">Sem Estoque</div>
+          </div>
+        </div>
+      `;
+    }
+    
+    return generateGenericHTML(data);
+  };
+  
+  const generateSalesHTML = (data: any, reportId: string) => {
+    if (reportId === 'sales-performance') {
+      const hasData = data?.data?.totalSales > 0;
+      
+      if (!hasData) {
+        return `
+          <div class="empty-state">
+            <div class="icon">📈</div>
+            <h3>Nenhuma venda encontrada</h3>
+            <p>Não há vendas registradas no período selecionado.</p>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Total de Vendas</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">R$ 0,00</div>
+              <div class="stat-label">Receita Total</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">R$ 0,00</div>
+              <div class="stat-label">Ticket Médio</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0%</div>
+              <div class="stat-label">Crescimento</div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${data.data.totalSales}</div>
+            <div class="stat-label">Total de Vendas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">R$ ${(data.data.totalRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            <div class="stat-label">Receita Total</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">R$ ${(data.data.averageTicket || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            <div class="stat-label">Ticket Médio</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.growth || 0}%</div>
+            <div class="stat-label">Crescimento</div>
+          </div>
+        </div>
+      `;
+    }
+    
+    return generateGenericHTML(data);
+  };
+  
+  const generateDashboardHTML = (data: any, reportId: string) => {
+    if (reportId === 'kpi-overview') {
+      const hasData = data?.data && Object.keys(data.data).length > 0;
+      
+      if (!hasData) {
+        return `
+          <div class="empty-state">
+            <div class="icon">📊</div>
+            <h3>Nenhum KPI disponível</h3>
+            <p>Não há dados suficientes para calcular os KPIs no período.</p>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">R$ 0,00</div>
+              <div class="stat-label">Receita Total</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Vendas Realizadas</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Novos Clientes</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">R$ 0,00</div>
+              <div class="stat-label">Ticket Médio</div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">R$ ${(data.data.totalRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            <div class="stat-label">Receita Total</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.totalSales || 0}</div>
+            <div class="stat-label">Vendas Realizadas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.newCustomers || 0}</div>
+            <div class="stat-label">Novos Clientes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">R$ ${(data.data.averageTicket || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            <div class="stat-label">Ticket Médio</div>
+          </div>
+        </div>
+      `;
+    }
+    
+    return generateGenericHTML(data);
+  };
+  
+  const generateNfeHTML = (data: any, reportId: string) => {
+    if (reportId === 'nfe-issued') {
+      const hasData = data?.data?.totalIssued > 0;
+      
+      if (!hasData) {
+        return `
+          <div class="empty-state">
+            <div class="icon">📄</div>
+            <h3>Nenhuma NFe emitida</h3>
+            <p>Não há NFes emitidas no período selecionado.</p>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">NFes Emitidas</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">R$ 0,00</div>
+              <div class="stat-label">Valor Total</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Autorizadas</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Rejeitadas</div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${data.data.totalIssued}</div>
+            <div class="stat-label">NFes Emitidas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">R$ ${(data.data.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            <div class="stat-label">Valor Total</div>
+          </div>
+        </div>
+      `;
+    } else if (reportId === 'nfe-status') {
+      const hasData = data?.data?.total > 0;
+      
+      if (!hasData) {
+        return `
+          <div class="empty-state">
+            <div class="icon">📊</div>
+            <h3>Nenhuma NFe para análise</h3>
+            <p>Não há NFes com status para análise no período.</p>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Total de NFes</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Autorizadas</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Pendentes</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">0</div>
+              <div class="stat-label">Rejeitadas</div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${data.data.total}</div>
+            <div class="stat-label">Total de NFes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.authorized || 0}</div>
+            <div class="stat-label">Autorizadas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.pending || 0}</div>
+            <div class="stat-label">Pendentes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${data.data.rejected || 0}</div>
+            <div class="stat-label">Rejeitadas</div>
+          </div>
+        </div>
+      `;
+    }
+    
+    return generateGenericHTML(data);
+  };
 
   const handleGenerateReport = async (moduleId: string, reportId: string, action: 'view' | 'download') => {
     try {
