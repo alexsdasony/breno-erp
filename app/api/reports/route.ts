@@ -121,6 +121,7 @@ async function generateCustomersReport(reportId: string, params: any) {
     case 'customer-list':
       return await getCustomerListData(params);
     case 'customer-segmentation':
+      console.log('🎯 Chamando getCustomerSegmentationData com params:', params);
       return await getCustomerSegmentationData(params);
     case 'customer-lifetime-value':
       return await getCustomerLifetimeValueData(params);
@@ -307,6 +308,7 @@ async function getCustomerListData(params: any) {
 }
 
 async function getCustomerSegmentationData(params: any) {
+  console.log('🚀 INICIANDO getCustomerSegmentationData');
   console.log('📊 Analisando segmentação de clientes...');
   
   try {
