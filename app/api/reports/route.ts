@@ -731,7 +731,7 @@ async function getSalesPerformanceData(params: any) {
         averageTicket,
         growth: Math.round(growth * 100) / 100,
         previousRevenue,
-        salesByDay: completedSales.reduce((acc, sale) => {
+        salesByDay: completedSales.reduce((acc: {[key: string]: number}, sale) => {
           const day = sale.date.split('T')[0];
           acc[day] = (acc[day] || 0) + parseFloat(sale.total);
           return acc;
