@@ -276,8 +276,8 @@ async function getCustomerListData(params: any) {
       }) || [];
     }
 
-    const activeCustomers = filteredCustomers.filter(c => c.status === 'active').length;
-    const inactiveCustomers = filteredCustomers.filter(c => c.status === 'inactive').length;
+    const activeCustomers = filteredCustomers.filter(c => c.status === 'active' || c.status === 'ativo').length;
+    const inactiveCustomers = filteredCustomers.filter(c => c.status === 'inactive' || c.status === 'inativo').length;
 
     console.log('👥 Clientes encontrados:', filteredCustomers.length);
     console.log('👥 Clientes ativos:', activeCustomers);
@@ -309,11 +309,8 @@ async function getCustomerListData(params: any) {
 }
 
 async function getCustomerSegmentationData(params: any) {
-  console.log('🚀 INICIANDO getCustomerSegmentationData');
-  console.log('📊 Analisando segmentação de clientes...');
-  
   try {
-    // Primeiro, buscar todos os clientes
+    // Buscar todos os clientes
     const { data: customers, error: customersError } = await supabaseAdmin
       .from('partners')
       .select('id, name, status, created_at, segment_id')
@@ -322,11 +319,17 @@ async function getCustomerSegmentationData(params: any) {
 
     if (customersError) {
       console.error('❌ Erro ao buscar clientes:', customersError);
-      throw customersError;
+      return {
+        title: 'Segmentação de Clientes',
+        period: `${params.startDate} a ${params.endDate}`,
+        data: {
+          segments: [],
+          totalCustomers: 0,
+          totalSegments: 0,
+          error: 'Erro ao buscar clientes'
+        }
+      };
     }
-
-    console.log('📊 Clientes encontrados:', customers?.length || 0);
-    console.log('📊 Primeiros clientes:', customers?.slice(0, 3));
 
     // Buscar todos os segmentos disponíveis
     const { data: segmentsData, error: segmentsError } = await supabaseAdmin
@@ -336,9 +339,6 @@ async function getCustomerSegmentationData(params: any) {
     if (segmentsError) {
       console.error('❌ Erro ao buscar segmentos:', segmentsError);
     }
-
-    console.log('📊 Segmentos encontrados:', segmentsData?.length || 0);
-    console.log('📊 Primeiros segmentos:', segmentsData?.slice(0, 3));
 
     // Agrupar clientes por segmento
     const segmentMap: {[key: string]: {id: string; name: string; count: number; activeCount: number}} = {};
@@ -357,7 +357,7 @@ async function getCustomerSegmentationData(params: any) {
             };
           }
           segmentMap[segment.id].count++;
-          if (customer.status === 'active') {
+          if (customer.status === 'active' || customer.status === 'ativo') {
             segmentMap[segment.id].activeCount++;
           }
         } else {
@@ -377,9 +377,6 @@ async function getCustomerSegmentationData(params: any) {
         activeCount: withoutSegment
       });
     }
-
-    console.log('📊 Segmentos encontrados:', segments.length);
-    console.log('📊 Total de clientes:', customers?.length || 0);
 
     return {
       title: 'Segmentação de Clientes',
