@@ -1103,7 +1103,7 @@ async function getNfeIssuedData(params: any) {
     
     // Agrupar por mês baseado em vendas reais
     const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-    const salesByMonth = {};
+    const salesByMonth: { [key: string]: { count: number; value: number } } = {};
     
     sales.forEach(sale => {
       const date = new Date(sale.date);
