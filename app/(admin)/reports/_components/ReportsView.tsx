@@ -377,6 +377,203 @@ export default function ReportsView() {
     )
   );
 
+  // Funções para gerar HTML específico de cada relatório
+  const generateCashFlowHTML = (data: any) => {
+    const hasData = data?.data?.inflows > 0 || data?.data?.outflows > 0;
+    
+    if (!hasData) {
+      return `
+        <div class="empty-state">
+          <div class="icon">💰</div>
+          <h3>Nenhum movimento de caixa encontrado</h3>
+          <p>Não foram encontradas transações de entrada ou saída de caixa no período selecionado.</p>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">R$ ${(data.data.inflows || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+          <div class="stat-label">Entradas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">R$ ${(data.data.outflows || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+          <div class="stat-label">Saídas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color: ${(data.data.balance || 0) >= 0 ? '#10b981' : '#ef4444'}">
+            R$ ${(data.data.balance || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </div>
+          <div class="stat-label">Saldo</div>
+        </div>
+      </div>
+    `;
+  };
+
+  const generateProfitLossHTML = (data: any) => {
+    const hasData = data?.data?.revenue > 0 || data?.data?.costs > 0;
+    
+    if (!hasData) {
+      return `
+        <div class="empty-state">
+          <div class="icon">📊</div>
+          <h3>Nenhuma receita ou custo encontrado</h3>
+          <p>Não foram encontradas receitas ou custos no período selecionado.</p>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">R$ ${(data.data.revenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+          <div class="stat-label">Receitas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">R$ ${(data.data.costs || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+          <div class="stat-label">Custos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color: ${(data.data.profit || 0) >= 0 ? '#10b981' : '#ef4444'}">
+            R$ ${(data.data.profit || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </div>
+          <div class="stat-label">Lucro</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${(data.data.profitMargin || 0).toFixed(1)}%</div>
+          <div class="stat-label">Margem</div>
+        </div>
+      </div>
+    `;
+  };
+
+  const generateCustomerListHTML = (data: any) => {
+    const customers = data?.data || [];
+    
+    if (customers.length === 0) {
+      return `
+        <div class="empty-state">
+          <div class="icon">👥</div>
+          <h3>Nenhum cliente encontrado</h3>
+          <p>Não há clientes cadastrados no sistema.</p>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="summary-section">
+        <div class="summary-title">Resumo</div>
+        <div class="breakdown">
+          <div class="breakdown-item">
+            <div class="breakdown-label">Total de Clientes</div>
+            <div class="breakdown-value">${customers.length}</div>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Telefone</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${customers.map((customer: any) => `
+                <tr>
+                  <td>${customer.name || 'N/A'}</td>
+                  <td>${customer.email || 'N/A'}</td>
+                  <td>${customer.phone || 'N/A'}</td>
+                  <td>
+                    <span class="status-badge ${customer.status === 'active' ? 'active' : 'inactive'}">
+                      ${customer.status === 'active' ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  };
+
+  const generateSupplierListHTML = (data: any) => {
+    const suppliers = data?.data || [];
+    
+    if (suppliers.length === 0) {
+      return `
+        <div class="empty-state">
+          <div class="icon">🏭</div>
+          <h3>Nenhum fornecedor encontrado</h3>
+          <p>Não há fornecedores cadastrados no sistema.</p>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="summary-section">
+        <div class="summary-title">Resumo</div>
+        <div class="breakdown">
+          <div class="breakdown-item">
+            <div class="breakdown-label">Total de Fornecedores</div>
+            <div class="breakdown-value">${suppliers.length}</div>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Telefone</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${suppliers.map((supplier: any) => `
+                <tr>
+                  <td>${supplier.name || 'N/A'}</td>
+                  <td>${supplier.email || 'N/A'}</td>
+                  <td>${supplier.phone || 'N/A'}</td>
+                  <td>
+                    <span class="status-badge ${supplier.status === 'active' ? 'active' : 'inactive'}">
+                      ${supplier.status === 'active' ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  };
+
+  const generateGenericHTML = (data: any) => {
+    return `
+      <div class="summary-section">
+        <div class="summary-title">Dados do Relatório</div>
+        <pre style="background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.4;">
+${JSON.stringify(data, null, 2)}
+        </pre>
+      </div>
+    `;
+  };
+
+  // Funções específicas para outros tipos de relatórios
+  const generateCustomerSegmentationHTML = (data: any) => generateGenericHTML(data);
+  const generateCustomerLifetimeValueHTML = (data: any) => generateGenericHTML(data);
+  const generateSupplierPerformanceHTML = (data: any) => generateGenericHTML(data);
+  const generateAccountsPayableHTML = (data: any, reportId: string) => generateGenericHTML(data);
+  const generateBillingHTML = (data: any, reportId: string) => generateGenericHTML(data);
+  const generateInventoryHTML = (data: any, reportId: string) => generateGenericHTML(data);
+  const generateSalesHTML = (data: any, reportId: string) => generateGenericHTML(data);
+  const generateDashboardHTML = (data: any, reportId: string) => generateGenericHTML(data);
+  const generateNfeHTML = (data: any, reportId: string) => generateGenericHTML(data);
+
   const handleGenerateReport = async (moduleId: string, reportId: string, action: 'view' | 'download') => {
     try {
       console.log(`Gerando relatório ${reportId} do módulo ${moduleId} - Ação: ${action}`);
@@ -850,201 +1047,4 @@ export default function ReportsView() {
       )}
     </div>
   );
-
-  // Funções para gerar HTML específico de cada relatório
-  const generateCashFlowHTML = (data: any) => {
-    const hasData = data?.data?.inflows > 0 || data?.data?.outflows > 0;
-    
-    if (!hasData) {
-      return `
-        <div class="empty-state">
-          <div class="icon">💰</div>
-          <h3>Nenhum movimento de caixa encontrado</h3>
-          <p>Não foram encontradas transações de entrada ou saída de caixa no período selecionado.</p>
-        </div>
-      `;
-    }
-
-    return `
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value">R$ ${(data.data.inflows || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          <div class="stat-label">Entradas</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">R$ ${(data.data.outflows || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          <div class="stat-label">Saídas</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" style="color: ${(data.data.balance || 0) >= 0 ? '#10b981' : '#ef4444'}">
-            R$ ${(data.data.balance || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </div>
-          <div class="stat-label">Saldo</div>
-        </div>
-      </div>
-    `;
-  };
-
-  const generateProfitLossHTML = (data: any) => {
-    const hasData = data?.data?.revenue > 0 || data?.data?.costs > 0;
-    
-    if (!hasData) {
-      return `
-        <div class="empty-state">
-          <div class="icon">📊</div>
-          <h3>Nenhuma receita ou custo encontrado</h3>
-          <p>Não foram encontradas receitas ou custos no período selecionado.</p>
-        </div>
-      `;
-    }
-
-    return `
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value">R$ ${(data.data.revenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          <div class="stat-label">Receitas</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">R$ ${(data.data.costs || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          <div class="stat-label">Custos</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" style="color: ${(data.data.profit || 0) >= 0 ? '#10b981' : '#ef4444'}">
-            R$ ${(data.data.profit || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </div>
-          <div class="stat-label">Lucro</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${(data.data.profitMargin || 0).toFixed(1)}%</div>
-          <div class="stat-label">Margem</div>
-        </div>
-      </div>
-    `;
-  };
-
-  const generateCustomerListHTML = (data: any) => {
-    const customers = data?.data || [];
-    
-    if (customers.length === 0) {
-      return `
-        <div class="empty-state">
-          <div class="icon">👥</div>
-          <h3>Nenhum cliente encontrado</h3>
-          <p>Não há clientes cadastrados no sistema.</p>
-        </div>
-      `;
-    }
-
-    return `
-      <div class="summary-section">
-        <div class="summary-title">Resumo</div>
-        <div class="breakdown">
-          <div class="breakdown-item">
-            <div class="breakdown-label">Total de Clientes</div>
-            <div class="breakdown-value">${customers.length}</div>
-          </div>
-        </div>
-        <div class="table-container">
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Telefone</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${customers.map((customer: any) => `
-                <tr>
-                  <td>${customer.name || 'N/A'}</td>
-                  <td>${customer.email || 'N/A'}</td>
-                  <td>${customer.phone || 'N/A'}</td>
-                  <td>
-                    <span class="status-badge ${customer.status === 'active' ? 'active' : 'inactive'}">
-                      ${customer.status === 'active' ? 'Ativo' : 'Inativo'}
-                    </span>
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  };
-
-  const generateSupplierListHTML = (data: any) => {
-    const suppliers = data?.data || [];
-    
-    if (suppliers.length === 0) {
-      return `
-        <div class="empty-state">
-          <div class="icon">🏭</div>
-          <h3>Nenhum fornecedor encontrado</h3>
-          <p>Não há fornecedores cadastrados no sistema.</p>
-        </div>
-      `;
-    }
-
-    return `
-      <div class="summary-section">
-        <div class="summary-title">Resumo</div>
-        <div class="breakdown">
-          <div class="breakdown-item">
-            <div class="breakdown-label">Total de Fornecedores</div>
-            <div class="breakdown-value">${suppliers.length}</div>
-          </div>
-        </div>
-        <div class="table-container">
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Telefone</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${suppliers.map((supplier: any) => `
-                <tr>
-                  <td>${supplier.name || 'N/A'}</td>
-                  <td>${supplier.email || 'N/A'}</td>
-                  <td>${supplier.phone || 'N/A'}</td>
-                  <td>
-                    <span class="status-badge ${supplier.status === 'active' ? 'active' : 'inactive'}">
-                      ${supplier.status === 'active' ? 'Ativo' : 'Inativo'}
-                    </span>
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  };
-
-  const generateGenericHTML = (data: any) => {
-    return `
-      <div class="summary-section">
-        <div class="summary-title">Dados do Relatório</div>
-        <pre style="background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.4;">
-${JSON.stringify(data, null, 2)}
-        </pre>
-      </div>
-    `;
-  };
-
-  // Funções específicas para outros tipos de relatórios
-  const generateCustomerSegmentationHTML = (data: any) => generateGenericHTML(data);
-  const generateCustomerLifetimeValueHTML = (data: any) => generateGenericHTML(data);
-  const generateSupplierPerformanceHTML = (data: any) => generateGenericHTML(data);
-  const generateAccountsPayableHTML = (data: any, reportId: string) => generateGenericHTML(data);
-  const generateBillingHTML = (data: any, reportId: string) => generateGenericHTML(data);
-  const generateInventoryHTML = (data: any, reportId: string) => generateGenericHTML(data);
-  const generateSalesHTML = (data: any, reportId: string) => generateGenericHTML(data);
-  const generateDashboardHTML = (data: any, reportId: string) => generateGenericHTML(data);
-  const generateNfeHTML = (data: any, reportId: string) => generateGenericHTML(data);
 }
