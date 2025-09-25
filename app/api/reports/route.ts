@@ -234,9 +234,759 @@ async function generateNfeReport(reportId: string, params: any) {
 }
 
 // Implementações das funções de dados
+
+// === RELATÓRIOS DE CLIENTES ===
+async function getCustomerListData(params: any) {
+  console.log('👥 Listando clientes...');
+  console.log('📅 Período:', params.startDate, 'a', params.endDate);
+  
+  try {
+    const { data: customers, error } = await supabaseAdmin
+      .from('partners')
+      .select(`
+        id,
+        name,
+        email,
+        phone,
+        tax_id,
+        status,
+        created_at,
+        city,
+        state
+      `)
+      .eq('role', 'customer')
+      .eq('is_deleted', false)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Erro ao buscar clientes:', error);
+      throw error;
+    }
+
+    // Filtrar por período se necessário
+    let filteredCustomers = customers || [];
+    if (params.startDate && params.endDate) {
+      filteredCustomers = customers?.filter(customer => {
+        const customerDate = new Date(customer.created_at);
+        const startDate = new Date(params.startDate);
+        const endDate = new Date(params.endDate);
+        return customerDate >= startDate && customerDate <= endDate;
+      }) || [];
+    }
+
+    const activeCustomers = filteredCustomers.filter(c => c.status === 'active').length;
+    const inactiveCustomers = filteredCustomers.filter(c => c.status === 'inactive').length;
+
+    console.log('👥 Clientes encontrados:', filteredCustomers.length);
+    console.log('👥 Clientes ativos:', activeCustomers);
+    console.log('👥 Clientes inativos:', inactiveCustomers);
+
+    return {
+      title: 'Lista de Clientes',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        customers: filteredCustomers,
+        totalCustomers: filteredCustomers.length,
+        activeCustomers,
+        inactiveCustomers
+      }
+    };
+  } catch (error) {
+    console.error('Erro na lista de clientes:', error);
+    return {
+      title: 'Lista de Clientes',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        customers: [],
+        totalCustomers: 0,
+        activeCustomers: 0,
+        inactiveCustomers: 0
+      }
+    };
+  }
+}
+
+async function getCustomerSegmentationData(params: any) {
+  console.log('📊 Analisando segmentação de clientes...');
+  
+  try {
+    // Primeiro, buscar todos os clientes
+    const { data: customers, error: customersError } = await supabaseAdmin
+      .from('partners')
+      .select('id, name, status, created_at, segment_id')
+      .eq('role', 'customer')
+      .eq('is_deleted', false);
+
+    if (customersError) {
+      console.error('❌ Erro ao buscar clientes:', customersError);
+      throw customersError;
+    }
+
+    // Buscar todos os segmentos disponíveis
+    const { data: segmentsData, error: segmentsError } = await supabaseAdmin
+      .from('segments')
+      .select('id, name');
+
+    if (segmentsError) {
+      console.error('❌ Erro ao buscar segmentos:', segmentsError);
+    }
+
+    // Agrupar clientes por segmento
+    const segmentMap = {};
+    let withoutSegment = 0;
+
+    customers?.forEach(customer => {
+      if (customer.segment_id && segmentsData) {
+        const segment = segmentsData.find(s => s.id === customer.segment_id);
+        if (segment) {
+          if (!segmentMap[segment.id]) {
+            segmentMap[segment.id] = {
+              id: segment.id,
+              name: segment.name,
+              count: 0,
+              activeCount: 0
+            };
+          }
+          segmentMap[segment.id].count++;
+          if (customer.status === 'active') {
+            segmentMap[segment.id].activeCount++;
+          }
+        } else {
+          withoutSegment++;
+        }
+      } else {
+        withoutSegment++;
+      }
+    });
+
+    const segments = Object.values(segmentMap);
+    if (withoutSegment > 0) {
+      segments.push({
+        id: 'sem-segmento',
+        name: 'Sem Segmento',
+        count: withoutSegment,
+        activeCount: withoutSegment
+      });
+    }
+
+    console.log('📊 Segmentos encontrados:', segments.length);
+    console.log('📊 Total de clientes:', customers?.length || 0);
+
+    return {
+      title: 'Segmentação de Clientes',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        segments,
+        totalCustomers: customers?.length || 0,
+        totalSegments: segments.length
+      }
+    };
+  } catch (error) {
+    console.error('Erro na segmentação de clientes:', error);
+    return {
+      title: 'Segmentação de Clientes',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        segments: [],
+        totalCustomers: 0,
+        totalSegments: 0
+      }
+    };
+  }
+}
+
+async function getCustomerLifetimeValueData(params: any) {
+  console.log('💰 Calculando LTV de clientes...');
+  
+  try {
+    const { data: customers, error: customersError } = await supabaseAdmin
+      .from('partners')
+      .select('id, name, created_at, status')
+      .eq('role', 'customer')
+      .eq('is_deleted', false);
+
+    if (customersError) {
+      console.error('❌ Erro ao buscar clientes:', customersError);
+      throw customersError;
+    }
+
+    // Buscar vendas para calcular LTV
+    const { data: sales, error: salesError } = await supabaseAdmin
+      .from('sales')
+      .select('customer_id, total, date, status')
+      .eq('status', 'completed');
+
+    if (salesError) {
+      console.error('❌ Erro ao buscar vendas:', salesError);
+    }
+
+    const customerLtvData = customers?.map(customer => {
+      const customerSales = sales?.filter(sale => sale.customer_id === customer.id) || [];
+      const totalRevenue = customerSales.reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0);
+      const totalOrders = customerSales.length;
+      const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      
+      // Calcular tempo de vida (em meses)
+      const firstSale = customerSales.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+      const lastSale = customerSales.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+      
+      let lifetimeMonths = 1;
+      if (firstSale && lastSale && firstSale !== lastSale) {
+        const diffTime = new Date(lastSale.date).getTime() - new Date(firstSale.date).getTime();
+        lifetimeMonths = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24 * 30)));
+      }
+
+      const ltv = totalRevenue; // LTV simples baseado na receita total
+
+      return {
+        id: customer.id,
+        name: customer.name,
+        totalRevenue,
+        totalOrders,
+        avgOrderValue,
+        lifetimeMonths,
+        ltv
+      };
+    }) || [];
+
+    const averageLtv = customerLtvData.length > 0 ? 
+      customerLtvData.reduce((sum, c) => sum + c.ltv, 0) / customerLtvData.length : 0;
+    
+    const maxLtv = customerLtvData.length > 0 ? 
+      Math.max(...customerLtvData.map(c => c.ltv)) : 0;
+
+    console.log('💰 LTV calculado para:', customerLtvData.length, 'clientes');
+
+    return {
+      title: 'Lifetime Value de Clientes',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        customers: customerLtvData,
+        averageLtv,
+        maxLtv,
+        totalCustomers: customerLtvData.length,
+        averageLifetime: customerLtvData.length > 0 ? 
+          customerLtvData.reduce((sum, c) => sum + c.lifetimeMonths, 0) / customerLtvData.length : 0
+      }
+    };
+  } catch (error) {
+    console.error('Erro no LTV de clientes:', error);
+    return {
+      title: 'Lifetime Value de Clientes',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        customers: [],
+        averageLtv: 0,
+        maxLtv: 0,
+        totalCustomers: 0,
+        averageLifetime: 0
+      }
+    };
+  }
+}
+
+// === RELATÓRIOS DE FORNECEDORES ===
+async function getSupplierListData(params: any) {
+  console.log('🏭 Listando fornecedores...');
+  
+  try {
+    const { data: suppliers, error } = await supabaseAdmin
+      .from('partners')
+      .select(`
+        id,
+        name,
+        email,
+        phone,
+        tax_id,
+        status,
+        created_at,
+        city,
+        state,
+        profissao
+      `)
+      .eq('role', 'supplier')
+      .eq('is_deleted', false)
+      .gte('created_at', params.startDate || '2024-01-01')
+      .lte('created_at', params.endDate || '2024-12-31')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Erro ao buscar fornecedores:', error);
+      throw error;
+    }
+
+    console.log('🏭 Fornecedores encontrados:', suppliers?.length || 0);
+
+    return {
+      title: 'Lista de Fornecedores',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        suppliers: suppliers || [],
+        totalSuppliers: suppliers?.length || 0,
+        activeSuppliers: suppliers?.filter(s => s.status === 'active').length || 0,
+        inactiveSuppliers: suppliers?.filter(s => s.status === 'inactive').length || 0
+      }
+    };
+  } catch (error) {
+    console.error('Erro na lista de fornecedores:', error);
+    return {
+      title: 'Lista de Fornecedores',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        suppliers: [],
+        totalSuppliers: 0,
+        activeSuppliers: 0,
+        inactiveSuppliers: 0
+      }
+    };
+  }
+}
+
+async function getSupplierPerformanceData(params: any) {
+  console.log('📊 Analisando performance de fornecedores...');
+  
+  try {
+    const { data: suppliers, error } = await supabaseAdmin
+      .from('partners')
+      .select('id, name, status, created_at')
+      .eq('role', 'supplier')
+      .eq('is_deleted', false);
+
+    if (error) {
+      console.error('❌ Erro ao buscar fornecedores:', error);
+      throw error;
+    }
+
+    // Buscar pagamentos para fornecedores (accounts_payable)
+    const { data: payments, error: paymentsError } = await supabaseAdmin
+      .from('accounts_payable')
+      .select('supplier_id, amount, status, payment_date, due_date')
+      .gte('payment_date', params.startDate || '2024-01-01')
+      .lte('payment_date', params.endDate || '2024-12-31');
+
+    if (paymentsError) {
+      console.error('❌ Erro ao buscar pagamentos:', paymentsError);
+    }
+
+    const suppliersWithPerformance = suppliers?.map(supplier => {
+      const supplierPayments = payments?.filter(p => p.supplier_id === supplier.id) || [];
+      const totalAmount = supplierPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+      const totalPayments = supplierPayments.length;
+      const paidOnTime = supplierPayments.filter(p => 
+        p.status === 'paid' && 
+        p.payment_date && 
+        p.due_date && 
+        new Date(p.payment_date) <= new Date(p.due_date)
+      ).length;
+      const onTimeRate = totalPayments > 0 ? (paidOnTime / totalPayments) * 100 : 0;
+
+      return {
+        id: supplier.id,
+        name: supplier.name,
+        status: supplier.status,
+        totalAmount,
+        totalPayments,
+        onTimeRate,
+        rating: Math.round(onTimeRate / 20) // Rating de 0-5 baseado na performance
+      };
+    }) || [];
+
+    console.log('📊 Performance calculada para:', suppliersWithPerformance.length, 'fornecedores');
+
+    return {
+      title: 'Performance de Fornecedores',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        suppliers: suppliersWithPerformance,
+        totalSuppliers: suppliersWithPerformance.length,
+        averageRating: suppliersWithPerformance.length > 0 ? 
+          suppliersWithPerformance.reduce((sum, s) => sum + s.rating, 0) / suppliersWithPerformance.length : 0
+      }
+    };
+  } catch (error) {
+    console.error('Erro na performance de fornecedores:', error);
+    return {
+      title: 'Performance de Fornecedores',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        suppliers: [],
+        totalSuppliers: 0,
+        averageRating: 0
+      }
+    };
+  }
+}
+
+async function getPurchaseAnalysisData(params: any) {
+  console.log('💳 Analisando compras...');
+  
+  try {
+    const { data: purchases, error } = await supabaseAdmin
+      .from('accounts_payable')
+      .select(`
+        id,
+        supplier_id,
+        amount,
+        status,
+        due_date,
+        payment_date,
+        description
+      `)
+      .gte('due_date', params.startDate || '2024-01-01')
+      .lte('due_date', params.endDate || '2024-12-31');
+
+    if (error) {
+      console.error('❌ Erro ao buscar compras:', error);
+      throw error;
+    }
+
+    const totalPurchases = purchases?.length || 0;
+    const totalAmount = purchases?.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0) || 0;
+    const paidPurchases = purchases?.filter(p => p.status === 'paid').length || 0;
+    const pendingPurchases = purchases?.filter(p => p.status === 'pending').length || 0;
+    const overduePurchases = purchases?.filter(p => 
+      p.status !== 'paid' && new Date(p.due_date) < new Date()
+    ).length || 0;
+
+    console.log('💳 Compras analisadas:', totalPurchases);
+
+    return {
+      title: 'Análise de Compras',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        totalPurchases,
+        totalAmount,
+        paidPurchases,
+        pendingPurchases,
+        overduePurchases,
+        averagePurchase: totalPurchases > 0 ? totalAmount / totalPurchases : 0,
+        paymentRate: totalPurchases > 0 ? (paidPurchases / totalPurchases) * 100 : 0
+      }
+    };
+  } catch (error) {
+    console.error('Erro na análise de compras:', error);
+    return {
+      title: 'Análise de Compras',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        totalPurchases: 0,
+        totalAmount: 0,
+        paidPurchases: 0,
+        pendingPurchases: 0,
+        overduePurchases: 0,
+        averagePurchase: 0,
+        paymentRate: 0
+      }
+    };
+  }
+}
+
 async function getCashFlowData(params: any) {
   console.log('💰 Calculando fluxo de caixa...');
   
+// === RELATÓRIOS DE VENDAS ===
+async function getSalesPerformanceData(params: any) {
+  console.log('📈 Analisando performance de vendas...');
+  
+  try {
+    const { data: sales, error } = await supabaseAdmin
+      .from('sales')
+      .select('id, total, date, status, customer_id')
+      .gte('date', params.startDate || '2024-01-01')
+      .lte('date', params.endDate || '2024-12-31');
+
+    if (error) {
+      console.error('❌ Erro ao buscar vendas:', error);
+      throw error;
+    }
+
+    const completedSales = sales?.filter(s => s.status === 'completed') || [];
+    const totalSales = completedSales.length;
+    const totalRevenue = completedSales.reduce((sum, s) => sum + (parseFloat(s.total) || 0), 0);
+    const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
+
+    // Calcular crescimento (simples comparação com período anterior)
+    const periodDays = Math.floor((new Date(params.endDate).getTime() - new Date(params.startDate).getTime()) / (1000 * 60 * 60 * 24));
+    const previousStartDate = new Date(new Date(params.startDate).getTime() - (periodDays * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+    const previousEndDate = new Date(new Date(params.startDate).getTime() - (24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+
+    const { data: previousSales } = await supabaseAdmin
+      .from('sales')
+      .select('total, status')
+      .gte('date', previousStartDate)
+      .lte('date', previousEndDate)
+      .eq('status', 'completed');
+
+    const previousRevenue = previousSales?.reduce((sum, s) => sum + (parseFloat(s.total) || 0), 0) || 0;
+    const growth = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
+
+    console.log('📈 Performance de vendas:', { totalSales, totalRevenue, growth });
+
+    return {
+      title: 'Performance de Vendas',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        totalSales,
+        totalRevenue,
+        averageTicket,
+        growth: Math.round(growth * 100) / 100,
+        previousRevenue,
+        salesByDay: completedSales.reduce((acc, sale) => {
+          const day = sale.date.split('T')[0];
+          acc[day] = (acc[day] || 0) + parseFloat(sale.total);
+          return acc;
+        }, {})
+      }
+    };
+  } catch (error) {
+    console.error('Erro na performance de vendas:', error);
+    return {
+      title: 'Performance de Vendas',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        totalSales: 0,
+        totalRevenue: 0,
+        averageTicket: 0,
+        growth: 0,
+        previousRevenue: 0,
+        salesByDay: {}
+      }
+    };
+  }
+}
+
+async function getTopProductsData(params: any) {
+  console.log('🏆 Analisando produtos mais vendidos...');
+  
+  try {
+    const { data: salesItems, error } = await supabaseAdmin
+      .from('sale_items')
+      .select(`
+        product_id,
+        quantity,
+        total,
+        sales!inner (
+          date,
+          status
+        )
+      `)
+      .gte('sales.date', params.startDate || '2024-01-01')
+      .lte('sales.date', params.endDate || '2024-12-31')
+      .eq('sales.status', 'completed');
+
+    if (error) {
+      console.error('❌ Erro ao buscar itens de venda:', error);
+      throw error;
+    }
+
+    // Buscar informações dos produtos
+    const { data: products, error: productsError } = await supabaseAdmin
+      .from('products')
+      .select('id, name, price');
+
+    if (productsError) {
+      console.error('❌ Erro ao buscar produtos:', productsError);
+    }
+
+    // Agrupar por produto
+    const productStats = {};
+    salesItems?.forEach(item => {
+      if (!productStats[item.product_id]) {
+        const product = products?.find(p => p.id === item.product_id);
+        productStats[item.product_id] = {
+          id: item.product_id,
+          name: product?.name || 'Produto não identificado',
+          price: product?.price || 0,
+          totalQuantity: 0,
+          totalRevenue: 0,
+          salesCount: 0
+        };
+      }
+      
+      productStats[item.product_id].totalQuantity += parseInt(item.quantity) || 0;
+      productStats[item.product_id].totalRevenue += parseFloat(item.total) || 0;
+      productStats[item.product_id].salesCount += 1;
+    });
+
+    const topProducts = Object.values(productStats)
+      .sort((a: any, b: any) => b.totalQuantity - a.totalQuantity)
+      .slice(0, 10);
+
+    console.log('🏆 Top produtos encontrados:', topProducts.length);
+
+    return {
+      title: 'Produtos Mais Vendidos',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        products: topProducts,
+        totalProducts: Object.keys(productStats).length,
+        topProduct: topProducts[0]?.name || 'N/A',
+        totalQuantity: Object.values(productStats).reduce((sum: number, p: any) => sum + p.totalQuantity, 0)
+      }
+    };
+  } catch (error) {
+    console.error('Erro nos top produtos:', error);
+    return {
+      title: 'Produtos Mais Vendidos',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        products: [],
+        totalProducts: 0,
+        topProduct: 'N/A',
+        totalQuantity: 0
+      }
+    };
+  }
+}
+
+async function getSalesForecastData(params: any) {
+  console.log('🔮 Calculando previsão de vendas...');
+  
+  try {
+    const { data: sales, error } = await supabaseAdmin
+      .from('sales')
+      .select('total, date, status')
+      .eq('status', 'completed')
+      .order('date', { ascending: true });
+
+    if (error) {
+      console.error('❌ Erro ao buscar vendas para previsão:', error);
+      throw error;
+    }
+
+    const salesByMonth = {};
+    sales?.forEach(sale => {
+      const month = sale.date.substring(0, 7); // YYYY-MM
+      salesByMonth[month] = (salesByMonth[month] || 0) + parseFloat(sale.total);
+    });
+
+    const months = Object.keys(salesByMonth).sort();
+    const values = months.map(month => salesByMonth[month]);
+    
+    // Cálculo simples de tendência (média dos últimos 3 meses)
+    const lastThreeMonths = values.slice(-3);
+    const avgLastThreeMonths = lastThreeMonths.length > 0 ? 
+      lastThreeMonths.reduce((sum, val) => sum + val, 0) / lastThreeMonths.length : 0;
+    
+    // Previsão simples baseada na média
+    const forecast = avgLastThreeMonths;
+    const trend = values.length >= 2 ? 
+      values[values.length - 1] > values[values.length - 2] ? 'crescimento' : 
+      values[values.length - 1] < values[values.length - 2] ? 'queda' : 'estável' : 'estável';
+
+    const confidence = values.length >= 3 ? 75 : values.length >= 2 ? 50 : 25;
+
+    console.log('🔮 Previsão calculada:', { forecast, trend, confidence });
+
+    return {
+      title: 'Previsão de Vendas',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        forecast: Math.round(forecast),
+        confidence,
+        trend,
+        historicalData: months.map(month => ({
+          month,
+          value: salesByMonth[month]
+        })),
+        monthlyAverage: avgLastThreeMonths
+      }
+    };
+  } catch (error) {
+    console.error('Erro na previsão de vendas:', error);
+    return {
+      title: 'Previsão de Vendas',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        forecast: 0,
+        confidence: 0,
+        trend: 'estável',
+        historicalData: [],
+        monthlyAverage: 0
+      }
+    };
+  }
+}
+
+async function getCustomerAnalysisData(params: any) {
+  console.log('👤 Analisando clientes...');
+  
+  try {
+    const { data: customers, error } = await supabaseAdmin
+      .from('partners')
+      .select('id, name, created_at, status')
+      .eq('role', 'customer')
+      .eq('is_deleted', false);
+
+    if (error) {
+      console.error('❌ Erro ao buscar clientes:', error);
+      throw error;
+    }
+
+    const { data: sales, error: salesError } = await supabaseAdmin
+      .from('sales')
+      .select('customer_id, total, date, status')
+      .eq('status', 'completed')
+      .gte('date', params.startDate || '2024-01-01')
+      .lte('date', params.endDate || '2024-12-31');
+
+    if (salesError) {
+      console.error('❌ Erro ao buscar vendas:', salesError);
+    }
+
+    const customerStats = customers?.map(customer => {
+      const customerSales = sales?.filter(s => s.customer_id === customer.id) || [];
+      const totalRevenue = customerSales.reduce((sum, s) => sum + (parseFloat(s.total) || 0), 0);
+      const totalOrders = customerSales.length;
+      
+      return {
+        id: customer.id,
+        name: customer.name,
+        status: customer.status,
+        totalRevenue,
+        totalOrders,
+        avgOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
+        lastPurchase: customerSales.length > 0 ? 
+          customerSales.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0].date : null
+      };
+    }) || [];
+
+    const totalCustomers = customerStats.length;
+    const activeCustomers = customerStats.filter(c => c.totalOrders > 0).length;
+    const avgRevenuePerCustomer = totalCustomers > 0 ? 
+      customerStats.reduce((sum, c) => sum + c.totalRevenue, 0) / totalCustomers : 0;
+
+    console.log('👤 Análise de clientes completa:', { totalCustomers, activeCustomers });
+
+    return {
+      title: 'Análise de Clientes',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        customers: customerStats.slice(0, 50), // Limitar a 50 para performance
+        totalCustomers,
+        activeCustomers,
+        inactiveCustomers: totalCustomers - activeCustomers,
+        avgRevenuePerCustomer,
+        topCustomer: customerStats.sort((a, b) => b.totalRevenue - a.totalRevenue)[0]
+      }
+    };
+  } catch (error) {
+    console.error('Erro na análise de clientes:', error);
+    return {
+      title: 'Análise de Clientes',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        customers: [],
+        totalCustomers: 0,
+        activeCustomers: 0,
+        inactiveCustomers: 0,
+        avgRevenuePerCustomer: 0,
+        topCustomer: null
+      }
+    };
+  }
+}
+
   // Buscar vendas (entradas de caixa)
   const { data: sales, error: salesError } = await supabaseAdmin
     .from('sales')
