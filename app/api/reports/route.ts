@@ -789,7 +789,7 @@ async function getTopProductsData(params: any) {
     }
 
     // Agrupar por produto
-    const productStats = {};
+    const productStats: {[key: string]: {id: string; name: string; price: number; totalQuantity: number; totalRevenue: number; salesCount: number}} = {};
     salesItems?.forEach(item => {
       if (!productStats[item.product_id]) {
         const product = products?.find(p => p.id === item.product_id);
@@ -854,7 +854,7 @@ async function getSalesForecastData(params: any) {
       throw error;
     }
 
-    const salesByMonth = {};
+    const salesByMonth: {[key: string]: number} = {};
     sales?.forEach(sale => {
       const month = sale.date.substring(0, 7); // YYYY-MM
       salesByMonth[month] = (salesByMonth[month] || 0) + parseFloat(sale.total);
