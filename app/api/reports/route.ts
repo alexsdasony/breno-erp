@@ -322,6 +322,9 @@ async function getCustomerSegmentationData(params: any) {
       throw customersError;
     }
 
+    console.log('📊 Clientes encontrados:', customers?.length || 0);
+    console.log('📊 Primeiros clientes:', customers?.slice(0, 3));
+
     // Buscar todos os segmentos disponíveis
     const { data: segmentsData, error: segmentsError } = await supabaseAdmin
       .from('segments')
@@ -330,6 +333,9 @@ async function getCustomerSegmentationData(params: any) {
     if (segmentsError) {
       console.error('❌ Erro ao buscar segmentos:', segmentsError);
     }
+
+    console.log('📊 Segmentos encontrados:', segmentsData?.length || 0);
+    console.log('📊 Primeiros segmentos:', segmentsData?.slice(0, 3));
 
     // Agrupar clientes por segmento
     const segmentMap: {[key: string]: {id: string; name: string; count: number; activeCount: number}} = {};
