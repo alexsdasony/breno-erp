@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('📊 API Route GET /api/reports');
+    console.log('🚀 INICIANDO API Route GET /api/reports');
     
     const { searchParams } = new URL(request.url);
     const moduleId = searchParams.get('module');
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     
-    console.log('📝 Parâmetros:', { moduleId, reportId, format, startDate, endDate });
+    console.log('📝 Parâmetros recebidos:', { moduleId, reportId, format, startDate, endDate });
     
     if (!moduleId || !reportId) {
       return NextResponse.json(
@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
         data = await generateSalesReport(reportId, { startDate, endDate });
         break;
       case 'customers':
+        console.log('🎯 Chamando generateCustomersReport para reportId:', reportId);
         data = await generateCustomersReport(reportId, { startDate, endDate });
         break;
       case 'suppliers':
