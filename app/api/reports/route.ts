@@ -332,7 +332,7 @@ async function getCustomerSegmentationData(params: any) {
     }
 
     // Agrupar clientes por segmento
-    const segmentMap = {};
+    const segmentMap: {[key: string]: {id: string; name: string; count: number; activeCount: number}} = {};
     let withoutSegment = 0;
 
     customers?.forEach(customer => {
