@@ -153,7 +153,7 @@ async function generateSalesReport(reportId: string, params: any) {
     case 'sales-forecast':
       return await getSalesForecastData(params);
     case 'customer-analysis':
-      return await getCustomerAnalysisData(params);
+      return await getCustomerListData(params);
     default:
       throw new Error('Relatório de vendas não encontrado');
   }
