@@ -309,13 +309,18 @@ async function getCustomerListData(params: any) {
 }
 
 async function getCustomerSegmentationData(params: any) {
+  console.log('🚀 INICIANDO getCustomerSegmentationData');
   try {
     // Buscar todos os clientes
+    console.log('📊 Buscando clientes...');
     const { data: customers, error: customersError } = await supabaseAdmin
       .from('partners')
       .select('id, name, status, created_at, segment_id')
       .eq('role', 'customer')
       .eq('is_deleted', false);
+    
+    console.log('📊 Clientes encontrados:', customers?.length || 0);
+    console.log('📊 Erro clientes:', customersError);
 
     if (customersError) {
       return {
@@ -345,9 +350,13 @@ async function getCustomerSegmentationData(params: any) {
     }
 
     // Buscar todos os segmentos disponíveis
+    console.log('📊 Buscando segmentos...');
     const { data: segmentsData, error: segmentsError } = await supabaseAdmin
       .from('segments')
       .select('id, name');
+    
+    console.log('📊 Segmentos encontrados:', segmentsData?.length || 0);
+    console.log('📊 Erro segmentos:', segmentsError);
 
     if (segmentsError) {
       // Continuar mesmo com erro nos segmentos
@@ -395,6 +404,12 @@ async function getCustomerSegmentationData(params: any) {
         }
       });
     }
+
+    console.log('📊 Resultado final:', {
+      segments: segments.length,
+      totalCustomers: customers.length,
+      totalSegments: segments.length
+    });
 
     return {
       title: 'Segmentação de Clientes',
