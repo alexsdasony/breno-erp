@@ -318,7 +318,6 @@ async function getCustomerSegmentationData(params: any) {
       .eq('is_deleted', false);
 
     if (customersError) {
-      console.error('❌ Erro ao buscar clientes:', customersError);
       return {
         title: 'Segmentação de Clientes',
         period: `${params.startDate} a ${params.endDate}`,
@@ -331,35 +330,39 @@ async function getCustomerSegmentationData(params: any) {
       };
     }
 
+    // Se não há clientes, retornar dados vazios
+    if (!customers || customers.length === 0) {
+      return {
+        title: 'Segmentação de Clientes',
+        period: `${params.startDate} a ${params.endDate}`,
+        data: {
+          segments: [],
+          totalCustomers: 0,
+          totalSegments: 0,
+          error: 'Nenhum cliente encontrado'
+        }
+      };
+    }
+
     // Buscar todos os segmentos disponíveis
     const { data: segmentsData, error: segmentsError } = await supabaseAdmin
       .from('segments')
       .select('id, name');
 
     if (segmentsError) {
-      console.error('❌ Erro ao buscar segmentos:', segmentsError);
+      // Continuar mesmo com erro nos segmentos
     }
 
-    // Agrupar clientes por segmento
-    const segmentMap: {[key: string]: {id: string; name: string; count: number; activeCount: number}} = {};
+    // Criar segmentos básicos baseados nos clientes
+    const segments = [];
     let withoutSegment = 0;
+    let withSegment = 0;
 
-    customers?.forEach(customer => {
+    customers.forEach(customer => {
       if (customer.segment_id && segmentsData) {
         const segment = segmentsData.find(s => s.id === customer.segment_id);
         if (segment) {
-          if (!segmentMap[segment.id]) {
-            segmentMap[segment.id] = {
-              id: segment.id,
-              name: segment.name,
-              count: 0,
-              activeCount: 0
-            };
-          }
-          segmentMap[segment.id].count++;
-          if (customer.status === 'active' || customer.status === 'ativo') {
-            segmentMap[segment.id].activeCount++;
-          }
+          withSegment++;
         } else {
           withoutSegment++;
         }
@@ -368,7 +371,7 @@ async function getCustomerSegmentationData(params: any) {
       }
     });
 
-    const segments = Object.values(segmentMap);
+    // Adicionar segmento "Sem Segmento" se houver clientes sem segmento
     if (withoutSegment > 0) {
       segments.push({
         id: 'sem-segmento',
@@ -378,12 +381,27 @@ async function getCustomerSegmentationData(params: any) {
       });
     }
 
+    // Adicionar segmentos reais se existirem
+    if (segmentsData && segmentsData.length > 0) {
+      segmentsData.forEach(segment => {
+        const segmentCustomers = customers.filter(c => c.segment_id === segment.id);
+        if (segmentCustomers.length > 0) {
+          segments.push({
+            id: segment.id,
+            name: segment.name,
+            count: segmentCustomers.length,
+            activeCount: segmentCustomers.filter(c => c.status === 'active' || c.status === 'ativo').length
+          });
+        }
+      });
+    }
+
     return {
       title: 'Segmentação de Clientes',
       period: `${params.startDate} a ${params.endDate}`,
       data: {
         segments,
-        totalCustomers: customers?.length || 0,
+        totalCustomers: customers.length,
         totalSegments: segments.length
       }
     };
