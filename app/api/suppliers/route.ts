@@ -15,8 +15,11 @@ export async function GET(request: NextRequest) {
     
     let query = supabaseAdmin
       .from('partners')
-      .select('*', { count: 'exact' })
-      .eq('type', 'supplier')
+      .select(`
+        *,
+        partner_roles!inner(role)
+      `, { count: 'exact' })
+      .eq('partner_roles.role', 'supplier')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -69,15 +72,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📝 Dados recebidos:', body);
     
-    // Inserir o partner com type = 'supplier'
-    const partnerData = {
-      ...body,
-      type: 'supplier'
-    };
-    
+    // Primeiro inserir o partner
     const { data: partner, error: partnerError } = await supabaseAdmin
       .from('partners')
-      .insert([partnerData])
+      .insert([body])
       .select()
       .single();
 
@@ -87,6 +85,23 @@ export async function POST(request: NextRequest) {
         { 
           error: 'Erro ao criar fornecedor',
           details: partnerError.message 
+        },
+        { status: 500 }
+      );
+    }
+
+    // Depois inserir o role
+    const { data, error } = await supabaseAdmin
+      .from('partner_roles')
+      .insert([{ partner_id: partner.id, role: 'supplier' }])
+      .select();
+
+    if (error) {
+      console.error('❌ Erro ao criar role do fornecedor:', error);
+      return NextResponse.json(
+        { 
+          error: 'Erro ao criar role do fornecedor',
+          details: error.message 
         },
         { status: 500 }
       );

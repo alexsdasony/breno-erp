@@ -57,15 +57,15 @@ export async function GET(request: NextRequest) {
       // Total de clientes
       supabaseAdmin
         .from('partners')
-        .select('id')
-        .eq('type', 'customer')
+        .select('id, partner_roles!inner(role)')
+        .eq('partner_roles.role', 'customer')
         .match(segmentFilter),
       
       // Total de fornecedores
       supabaseAdmin
         .from('partners')
-        .select('id')
-        .eq('type', 'supplier')
+        .select('id, partner_roles!inner(role)')
+        .eq('partner_roles.role', 'supplier')
         .match(segmentFilter),
       
       // Total de produtos

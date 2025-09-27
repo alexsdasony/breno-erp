@@ -16,8 +16,11 @@ export async function GET(request: NextRequest) {
     
     let query = supabaseAdmin
       .from('partners')
-      .select('*', { count: 'exact' })
-      .eq('type', 'customer')
+      .select(`
+        *,
+        partner_roles!inner(role)
+      `, { count: 'exact' })
+      .eq('partner_roles.role', 'customer')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -75,15 +78,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📝 Dados recebidos:', body);
     
-    // Inserir o partner com type = 'customer'
-    const partnerData = {
-      ...body,
-      type: 'customer'
-    };
-    
+    // Primeiro inserir o partner
     const { data: partner, error: partnerError } = await supabaseAdmin
       .from('partners')
-      .insert([partnerData])
+      .insert([body])
       .select()
       .single();
 
@@ -93,6 +91,23 @@ export async function POST(request: NextRequest) {
         { 
           error: 'Erro ao criar cliente',
           details: partnerError.message 
+        },
+        { status: 500 }
+      );
+    }
+
+    // Depois inserir o role
+    const { data, error } = await supabaseAdmin
+      .from('partner_roles')
+      .insert([{ partner_id: partner.id, role: 'customer' }])
+      .select();
+
+    if (error) {
+      console.error('❌ Erro ao criar role do cliente:', error);
+      return NextResponse.json(
+        { 
+          error: 'Erro ao criar role do cliente',
+          details: error.message 
         },
         { status: 500 }
       );
