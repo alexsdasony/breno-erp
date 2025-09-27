@@ -305,12 +305,19 @@ async function getCustomerListData(params: any) {
 }
 
 async function getCustomerSegmentationData(params: any) {
+  console.log('🚀 INICIANDO getCustomerSegmentationData');
   try {
     // Buscar todos os clientes da tabela customers
+    console.log('📊 Buscando clientes da tabela customers...');
     const { data: customers, error: customersError } = await supabaseAdmin
       .from('customers')
       .select('id, name, status, created_at, segment_id')
       .eq('is_deleted', false);
+    
+    console.log('📊 Resultado da busca de clientes:');
+    console.log('- Clientes encontrados:', customers?.length || 0);
+    console.log('- Erro:', customersError);
+    console.log('- Primeiros clientes:', customers?.slice(0, 3));
 
     if (customersError) {
       return {
@@ -340,13 +347,15 @@ async function getCustomerSegmentationData(params: any) {
     }
 
     // Buscar todos os segmentos disponíveis
-    console.log('📊 Buscando segmentos...');
+    console.log('📊 Buscando segmentos da tabela segments...');
     const { data: segmentsData, error: segmentsError } = await supabaseAdmin
       .from('segments')
       .select('id, name');
     
-    console.log('📊 Segmentos encontrados:', segmentsData?.length || 0);
-    console.log('📊 Erro segmentos:', segmentsError);
+    console.log('📊 Resultado da busca de segmentos:');
+    console.log('- Segmentos encontrados:', segmentsData?.length || 0);
+    console.log('- Erro:', segmentsError);
+    console.log('- Primeiros segmentos:', segmentsData?.slice(0, 3));
 
     if (segmentsError) {
       // Continuar mesmo com erro nos segmentos
