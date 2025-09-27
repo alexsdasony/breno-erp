@@ -1314,56 +1314,6 @@ async function getFinancialAnalysisData(params: any) {
 }
 
 
-async function getCustomerAnalysisData(params: any) {
-  console.log('👥 Analisando dados de clientes...');
-  
-  try {
-    // Buscar dados reais de clientes
-    const { data: customersData, error: customersError } = await supabaseAdmin
-      .from('customers')
-      .select('id, name, status, created_at')
-      .eq('is_deleted', false);
-
-    if (customersError) {
-      console.error('❌ Erro ao buscar clientes:', customersError);
-      throw customersError;
-    }
-
-    const customers = customersData || [];
-    const totalCustomers = customers.length;
-    const activeCustomers = customers.filter(c => c.status === 'active' || c.status === 'ativo').length;
-    
-    // Calcular novos clientes no período
-    const startDate = new Date(params.startDate || '2024-01-01');
-    const newCustomers = customers.filter(c => {
-      const createdDate = new Date(c.created_at);
-      return createdDate >= startDate;
-    }).length;
-
-    return {
-      title: 'Análise de Clientes',
-      period: `${params.startDate} a ${params.endDate}`,
-      data: {
-        totalCustomers,
-        activeCustomers,
-        newCustomers,
-        inactiveCustomers: totalCustomers - activeCustomers
-      }
-    };
-  } catch (error) {
-    console.error('❌ Erro ao analisar clientes:', error);
-    return {
-      title: 'Análise de Clientes',
-      period: `${params.startDate} a ${params.endDate}`,
-      data: {
-        totalCustomers: 0,
-        activeCustomers: 0,
-        newCustomers: 0,
-        inactiveCustomers: 0
-      }
-    };
-  }
-}
 
 
 
