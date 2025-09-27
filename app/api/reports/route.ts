@@ -241,7 +241,7 @@ async function generateNfeReport(reportId: string, params: any) {
 async function getCustomerListData(params: any) {
   try {
     const { data: customers, error } = await supabaseAdmin
-      .from('customers')
+      .from('partners')
       .select(`
         id,
         name,
@@ -253,6 +253,7 @@ async function getCustomerListData(params: any) {
         city,
         state
       `)
+      .eq('type', 'customer')
       .eq('is_deleted', false)
       .order('created_at', { ascending: false });
 
@@ -305,19 +306,13 @@ async function getCustomerListData(params: any) {
 }
 
 async function getCustomerSegmentationData(params: any) {
-  console.log('🚀 INICIANDO getCustomerSegmentationData');
   try {
-    // Buscar todos os clientes da tabela customers
-    console.log('📊 Buscando clientes da tabela customers...');
+    // Buscar todos os clientes da tabela partners com type = 'customer'
     const { data: customers, error: customersError } = await supabaseAdmin
-      .from('customers')
+      .from('partners')
       .select('id, name, status, created_at, segment_id')
+      .eq('type', 'customer')
       .eq('is_deleted', false);
-    
-    console.log('📊 Resultado da busca de clientes:');
-    console.log('- Clientes encontrados:', customers?.length || 0);
-    console.log('- Erro:', customersError);
-    console.log('- Primeiros clientes:', customers?.slice(0, 3));
 
     if (customersError) {
       return {
@@ -436,8 +431,9 @@ async function getCustomerSegmentationData(params: any) {
 async function getCustomerLifetimeValueData(params: any) {
   try {
     const { data: customers, error: customersError } = await supabaseAdmin
-      .from('customers')
+      .from('partners')
       .select('id, name, created_at, status')
+      .eq('type', 'customer')
       .eq('is_deleted', false);
 
     if (customersError) {
@@ -522,11 +518,9 @@ async function getCustomerLifetimeValueData(params: any) {
 
 // === RELATÓRIOS DE FORNECEDORES ===
 async function getSupplierListData(params: any) {
-  console.log('🏭 Listando fornecedores...');
-  
   try {
     const { data: suppliers, error } = await supabaseAdmin
-      .from('suppliers')
+      .from('partners')
       .select(`
         id,
         name,
@@ -539,6 +533,7 @@ async function getSupplierListData(params: any) {
         state,
         ramo_atividade
       `)
+      .eq('type', 'supplier')
       .eq('is_deleted', false)
       .gte('created_at', params.startDate || '2024-01-01')
       .lte('created_at', params.endDate || '2024-12-31')
@@ -581,8 +576,9 @@ async function getSupplierPerformanceData(params: any) {
   
   try {
     const { data: suppliers, error } = await supabaseAdmin
-      .from('suppliers')
+      .from('partners')
       .select('id, name, status, created_at')
+      .eq('type', 'supplier')
       .eq('is_deleted', false);
 
     if (error) {
@@ -946,8 +942,9 @@ async function getCustomerAnalysisData(params: any) {
   
   try {
     const { data: customers, error } = await supabaseAdmin
-      .from('customers')
+      .from('partners')
       .select('id, name, created_at, status')
+      .eq('type', 'customer')
       .eq('is_deleted', false);
 
     if (error) {
@@ -1837,8 +1834,9 @@ async function getKpiOverviewData(params: any) {
   try {
     // Buscar dados reais
     const { data: customersData } = await supabaseAdmin
-      .from('customers')
+      .from('partners')
       .select('id')
+      .eq('type', 'customer')
       .eq('is_deleted', false);
 
     const { data: salesData } = await supabaseAdmin
@@ -1889,8 +1887,9 @@ async function getExecutiveSummaryData(params: any) {
   try {
     // Buscar dados para o resumo
     const { data: customersData } = await supabaseAdmin
-      .from('customers')
+      .from('partners')
       .select('id, status')
+      .eq('type', 'customer')
       .eq('is_deleted', false);
 
     const { data: salesData } = await supabaseAdmin
