@@ -446,7 +446,7 @@ async function getCustomerLifetimeValueData(params: any) {
     const { data: sales, error: salesError } = await supabaseAdmin
       .from('sales')
       .select('customer_id, total, date, status')
-      .eq('status', 'completed');
+      .in('status', ['Concluída', 'completed']);
 
     if (salesError) {
       console.error('❌ Erro ao buscar vendas:', salesError);
@@ -731,7 +731,7 @@ async function getSalesPerformanceData(params: any) {
       throw error;
     }
 
-    const completedSales = sales?.filter(s => s.status === 'completed') || [];
+    const completedSales = sales?.filter(s => s.status === 'Concluída' || s.status === 'completed') || [];
     const totalSales = completedSales.length;
     const totalRevenue = completedSales.reduce((sum, s) => sum + (parseFloat(s.total) || 0), 0);
     const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
@@ -746,7 +746,7 @@ async function getSalesPerformanceData(params: any) {
       .select('total, status')
       .gte('date', previousStartDate)
       .lte('date', previousEndDate)
-      .eq('status', 'completed');
+      .in('status', ['Concluída', 'completed']);
 
     const previousRevenue = previousSales?.reduce((sum, s) => sum + (parseFloat(s.total) || 0), 0) || 0;
     const growth = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
@@ -803,7 +803,7 @@ async function getTopProductsData(params: any) {
       `)
       .gte('sales.date', params.startDate || '2024-01-01')
       .lte('sales.date', params.endDate || '2024-12-31')
-      .eq('sales.status', 'completed');
+      .in('sales.status', ['Concluída', 'completed']);
 
     if (error) {
       console.error('❌ Erro ao buscar itens de venda:', error);
@@ -877,7 +877,7 @@ async function getSalesForecastData(params: any) {
     const { data: sales, error } = await supabaseAdmin
       .from('sales')
       .select('total, date, status')
-      .eq('status', 'completed')
+      .in('status', ['Concluída', 'completed'])
       .order('date', { ascending: true });
 
     if (error) {
@@ -957,7 +957,7 @@ async function getCustomerAnalysisData(params: any) {
     const { data: sales, error: salesError } = await supabaseAdmin
       .from('sales')
       .select('customer_id, total, date, status')
-      .eq('status', 'completed')
+      .in('status', ['Concluída', 'completed'])
       .gte('date', params.startDate || '2024-01-01')
       .lte('date', params.endDate || '2024-12-31');
 
@@ -1169,7 +1169,7 @@ async function getBalanceSheetData(params: any) {
     const { data: salesData } = await supabaseAdmin
       .from('sales')
       .select('total')
-      .eq('status', 'completed');
+      .in('status', ['Concluída', 'completed']);
 
     const { data: payablesData } = await supabaseAdmin
       .from('accounts_payable')
@@ -1244,7 +1244,7 @@ async function getFinancialAnalysisData(params: any) {
     const { data: salesData } = await supabaseAdmin
       .from('sales')
       .select('total, date')
-      .eq('status', 'completed')
+      .in('status', ['Concluída', 'completed'])
       .gte('date', params.startDate || '2024-01-01')
       .lte('date', params.endDate || '2024-12-31');
 
@@ -1347,7 +1347,7 @@ async function getSalesAnalysisData(params: any) {
       .select('total, date, status, items:sale_items(product_id, product_name, quantity)')
       .gte('date', params.startDate || '2024-01-01')
       .lte('date', params.endDate || '2024-12-31')
-      .eq('status', 'completed');
+      .in('status', ['Concluída', 'completed']);
 
     if (salesError) {
       console.error('❌ Erro ao buscar vendas:', salesError);
@@ -1646,7 +1646,7 @@ async function getNfeIssuedData(params: any) {
     const { data: salesData, error: salesError } = await supabaseAdmin
       .from('sales')
       .select('total, date')
-      .eq('status', 'completed')
+      .in('status', ['Concluída', 'completed'])
       .gte('date', params.startDate || '2024-01-01')
       .lte('date', params.endDate || '2024-12-31');
 
@@ -1720,7 +1720,7 @@ async function getTaxSummaryData(params: any) {
     const { data: salesData, error: salesError } = await supabaseAdmin
       .from('sales')
       .select('total, date')
-      .eq('status', 'completed')
+      .in('status', ['Concluída', 'completed'])
       .gte('date', params.startDate || '2024-01-01')
       .lte('date', params.endDate || '2024-12-31');
 
@@ -1784,7 +1784,7 @@ async function getNfeStatusData(params: any) {
     const { data: salesData, error: salesError } = await supabaseAdmin
       .from('sales')
       .select('id, status, date')
-      .eq('status', 'completed')
+      .in('status', ['Concluída', 'completed'])
       .gte('date', params.startDate || '2024-01-01')
       .lte('date', params.endDate || '2024-12-31');
 
@@ -1849,7 +1849,7 @@ async function getKpiOverviewData(params: any) {
     const { data: salesData } = await supabaseAdmin
       .from('sales')
       .select('total, status')
-      .eq('status', 'completed');
+      .in('status', ['Concluída', 'completed']);
 
     const totalCustomers = customersData?.length || 0;
     const totalSales = salesData?.length || 0;
@@ -1902,7 +1902,7 @@ async function getExecutiveSummaryData(params: any) {
     const { data: salesData } = await supabaseAdmin
       .from('sales')
       .select('total, status, date')
-      .eq('status', 'completed');
+      .in('status', ['Concluída', 'completed']);
 
     const totalCustomers = customersData?.length || 0;
     const activeCustomers = customersData?.filter(c => c.status === 'active' || c.status === 'ativo').length || 0;
@@ -2375,7 +2375,7 @@ async function getStockMovementData(params: any) {
       )
     `)
     .eq('is_deleted', false)
-    .eq('status', 'completed');
+    .in('status', ['Concluída', 'completed']);
 
   if (salesError) {
     console.error('Erro ao buscar vendas para movimentação:', salesError);
@@ -2466,7 +2466,7 @@ async function getAbcAnalysisData(params: any) {
       )
     `)
     .eq('is_deleted', false)
-    .eq('status', 'completed');
+    .in('status', ['Concluída', 'completed']);
 
   if (salesError) {
     console.error('Erro ao buscar vendas para análise ABC:', salesError);
