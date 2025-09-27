@@ -601,13 +601,13 @@ async function getSupplierPerformanceData(params: any) {
 
     const suppliersWithPerformance = suppliers?.map(supplier => {
       const supplierPayments = payments?.filter(p => p.supplier_id === supplier.id) || [];
-      const totalAmount = supplierPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+      const totalAmount = supplierPayments.reduce((sum, p) => sum + (parseFloat(p.valor) || 0), 0);
       const totalPayments = supplierPayments.length;
       const paidOnTime = supplierPayments.filter(p => 
-        p.status === 'paid' && 
-        p.payment_date && 
-        p.due_date && 
-        new Date(p.payment_date) <= new Date(p.due_date)
+        p.status === 'paga' && 
+        p.data_pagamento && 
+        p.data_vencimento && 
+        new Date(p.data_pagamento) <= new Date(p.data_vencimento)
       ).length;
       const onTimeRate = totalPayments > 0 ? (paidOnTime / totalPayments) * 100 : 0;
 
@@ -672,11 +672,11 @@ async function getPurchaseAnalysisData(params: any) {
     }
 
     const totalPurchases = purchases?.length || 0;
-    const totalAmount = purchases?.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0) || 0;
-    const paidPurchases = purchases?.filter(p => p.status === 'paid').length || 0;
-    const pendingPurchases = purchases?.filter(p => p.status === 'pending').length || 0;
+    const totalAmount = purchases?.reduce((sum, p) => sum + (parseFloat(p.valor) || 0), 0) || 0;
+    const paidPurchases = purchases?.filter(p => p.status === 'paga').length || 0;
+    const pendingPurchases = purchases?.filter(p => p.status === 'pendente').length || 0;
     const overduePurchases = purchases?.filter(p => 
-      p.status !== 'paid' && new Date(p.due_date) < new Date()
+      p.status !== 'paga' && new Date(p.data_vencimento) < new Date()
     ).length || 0;
 
     console.log('💳 Compras analisadas:', totalPurchases);
@@ -1061,7 +1061,7 @@ async function getCustomerAnalysisData(params: any) {
   const totalInflows = salesInflows + receivablesInflows;
 
   // Calcular saídas
-  const totalOutflows = (payables || []).reduce((sum, pay) => sum + (parseFloat(pay.amount) || 0), 0);
+  const totalOutflows = (payables || []).reduce((sum, pay) => sum + (parseFloat(pay.valor) || 0), 0);
 
   // Calcular saldo
   const balance = totalInflows - totalOutflows;
@@ -1127,7 +1127,7 @@ async function getProfitLossData(params: any) {
   const totalRevenue = (sales || []).reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0);
 
   // Calcular custos
-  const totalCosts = (purchases || []).reduce((sum, purchase) => sum + (parseFloat(purchase.amount) || 0), 0);
+  const totalCosts = (purchases || []).reduce((sum, purchase) => sum + (parseFloat(purchase.valor) || 0), 0);
 
   // Calcular lucro
   const profit = totalRevenue - totalCosts;
@@ -1195,7 +1195,7 @@ async function getBalanceSheetData(params: any) {
     const assets = totalSales + totalReceivables + totalInventory;
 
     // Calcular passivos
-    const totalPayables = payablesData?.reduce((sum, pay) => sum + (parseFloat(pay.amount) || 0), 0) || 0;
+    const totalPayables = payablesData?.reduce((sum, pay) => sum + (parseFloat(pay.valor) || 0), 0) || 0;
     const liabilities = totalPayables;
 
     // Calcular patrimônio líquido
@@ -1266,7 +1266,7 @@ async function getFinancialAnalysisData(params: any) {
 
     // Calcular métricas financeiras
     const totalRevenue = salesData?.reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0) || 0;
-    const totalPayables = payablesData?.reduce((sum, pay) => sum + (parseFloat(pay.amount) || 0), 0) || 0;
+    const totalPayables = payablesData?.reduce((sum, pay) => sum + (parseFloat(pay.valor) || 0), 0) || 0;
     const totalReceivables = receivablesData?.reduce((sum, rec) => sum + (parseFloat(rec.amount) || 0), 0) || 0;
     const totalInventory = productsData?.reduce((sum, product) => sum + ((parseFloat(product.price) || 0) * (product.stock_quantity || 0)), 0) || 0;
     const totalCosts = productsData?.reduce((sum, product) => sum + ((parseFloat(product.cost) || 0) * (product.stock_quantity || 0)), 0) || 0;
@@ -1489,11 +1489,11 @@ async function getAccountsPayableData(params: any) {
   }
 
   const accounts = data || [];
-  const totalAmount = accounts.reduce((sum, account) => sum + (parseFloat(account.amount) || 0), 0);
+  const totalAmount = accounts.reduce((sum, account) => sum + (parseFloat(account.valor) || 0), 0);
   const overdueCount = accounts.filter(account => 
-    account.due_date && new Date(account.due_date) < new Date() && account.status !== 'paid'
+    account.data_vencimento && new Date(account.data_vencimento) < new Date() && account.status !== 'paga'
   ).length;
-  const paidCount = accounts.filter(account => account.status === 'paid').length;
+  const paidCount = accounts.filter(account => account.status === 'paga').length;
 
   console.log('💳 Contas a pagar encontradas:', {
     total: accounts.length,
@@ -1533,14 +1533,14 @@ async function getAccountsPayableAnalysisData(params: any) {
   const now = new Date();
   const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-  const totalPayable = accounts.reduce((sum, account) => sum + (parseFloat(account.amount) || 0), 0);
+  const totalPayable = accounts.reduce((sum, account) => sum + (parseFloat(account.valor) || 0), 0);
   const overdue = accounts.filter(account => 
-    account.due_date && new Date(account.due_date) < now && account.status !== 'paid'
+    account.data_vencimento && new Date(account.data_vencimento) < now && account.status !== 'paga'
   ).length;
   const dueSoon = accounts.filter(account => 
-    account.due_date && new Date(account.due_date) <= nextWeek && account.status !== 'paid'
+    account.data_vencimento && new Date(account.data_vencimento) <= nextWeek && account.status !== 'paga'
   ).length;
-  const paid = accounts.filter(account => account.status === 'paid').length;
+  const paid = accounts.filter(account => account.status === 'paga').length;
 
   console.log('📊 Análise de contas a pagar:', {
     totalPayable,
@@ -2053,13 +2053,13 @@ async function getSupplierPaymentsData(params: any) {
       };
     }
     
-    supplierPayments[supplierId].total_amount += parseFloat(payment.amount) || 0;
+    supplierPayments[supplierId].total_amount += parseFloat(payment.valor) || 0;
     supplierPayments[supplierId].payment_count++;
     supplierPayments[supplierId].last_payment = payment.updated_at;
     supplierPayments[supplierId].payments.push({
       id: payment.id,
-      amount: payment.amount,
-      description: payment.description,
+      amount: payment.valor,
+      description: payment.descricao,
       payment_date: payment.updated_at
     });
   });
@@ -2122,7 +2122,7 @@ async function getOverdueBillsData(params: any) {
 
   console.log('📊 Contas em atraso:', {
     totalOverdue: overdueWithDays.length,
-    totalAmount: overdueWithDays.reduce((sum, account) => sum + (parseFloat(account.amount) || 0), 0)
+    totalAmount: overdueWithDays.reduce((sum, account) => sum + (parseFloat(account.valor) || 0), 0)
   });
 
   return {
