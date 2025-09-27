@@ -591,9 +591,9 @@ async function getSupplierPerformanceData(params: any) {
     // Buscar pagamentos para fornecedores (accounts_payable)
     const { data: payments, error: paymentsError } = await supabaseAdmin
       .from('accounts_payable')
-      .select('supplier_id, amount, status, payment_date, due_date')
-      .gte('payment_date', params.startDate || '2024-01-01')
-      .lte('payment_date', params.endDate || '2024-12-31');
+      .select('supplier_id, valor, status, data_pagamento, data_vencimento')
+      .gte('data_pagamento', params.startDate || '2024-01-01')
+      .lte('data_pagamento', params.endDate || '2024-12-31');
 
     if (paymentsError) {
       console.error('❌ Erro ao buscar pagamentos:', paymentsError);
@@ -657,14 +657,14 @@ async function getPurchaseAnalysisData(params: any) {
       .select(`
         id,
         supplier_id,
-        amount,
+        valor,
         status,
-        due_date,
-        payment_date,
-        description
+        data_vencimento,
+        data_pagamento,
+        descricao
       `)
-      .gte('due_date', params.startDate || '2024-01-01')
-      .lte('due_date', params.endDate || '2024-12-31');
+      .gte('data_vencimento', params.startDate || '2024-01-01')
+      .lte('data_vencimento', params.endDate || '2024-12-31');
 
     if (error) {
       console.error('❌ Erro ao buscar compras:', error);
@@ -1032,10 +1032,11 @@ async function getCustomerAnalysisData(params: any) {
 
   // Buscar contas a receber pagas
   const { data: receivables, error: receivablesError } = await supabaseAdmin
-    .from('accounts_receivable')
-    .select('amount, payment_date, status')
-    .gte('payment_date', params.startDate || '2024-01-01')
-    .lte('payment_date', params.endDate || '2024-12-31')
+    .from('financial_documents')
+    .select('amount, due_date, status')
+    .eq('direction', 'receivable')
+    .gte('due_date', params.startDate || '2024-01-01')
+    .lte('due_date', params.endDate || '2024-12-31')
     .eq('status', 'paid');
 
   if (receivablesError) {
@@ -1045,10 +1046,10 @@ async function getCustomerAnalysisData(params: any) {
   // Buscar contas a pagar (saídas de caixa)
   const { data: payables, error: payablesError } = await supabaseAdmin
     .from('accounts_payable')
-    .select('amount, payment_date, status')
-    .gte('payment_date', params.startDate || '2024-01-01')
-    .lte('payment_date', params.endDate || '2024-12-31')
-    .eq('status', 'paid');
+    .select('valor, data_pagamento, status')
+    .gte('data_pagamento', params.startDate || '2024-01-01')
+    .lte('data_pagamento', params.endDate || '2024-12-31')
+    .eq('status', 'paga');
 
   if (payablesError) {
     console.error('Erro ao buscar contas a pagar:', payablesError);
@@ -1112,11 +1113,11 @@ async function getProfitLossData(params: any) {
   // Buscar custos (compras de produtos)
   const { data: purchases, error: purchasesError } = await supabaseAdmin
     .from('accounts_payable')
-    .select('amount, description, payment_date, status')
-    .gte('payment_date', params.startDate || '2024-01-01')
-    .lte('payment_date', params.endDate || '2024-12-31')
-    .eq('status', 'paid')
-    .ilike('description', '%produto%');
+    .select('valor, descricao, data_pagamento, status')
+    .gte('data_pagamento', params.startDate || '2024-01-01')
+    .lte('data_pagamento', params.endDate || '2024-12-31')
+    .eq('status', 'paga')
+    .ilike('descricao', '%produto%');
 
   if (purchasesError) {
     console.error('Erro ao buscar compras:', purchasesError);
@@ -1172,13 +1173,14 @@ async function getBalanceSheetData(params: any) {
 
     const { data: payablesData } = await supabaseAdmin
       .from('accounts_payable')
-      .select('amount')
-      .eq('status', 'pending');
+      .select('valor')
+      .eq('status', 'pendente');
 
     const { data: receivablesData } = await supabaseAdmin
-      .from('accounts_receivable')
+      .from('financial_documents')
       .select('amount')
-      .eq('status', 'pending');
+      .eq('direction', 'receivable')
+      .eq('status', 'open');
 
     const { data: productsData } = await supabaseAdmin
       .from('products')
@@ -1248,13 +1250,14 @@ async function getFinancialAnalysisData(params: any) {
 
     const { data: payablesData } = await supabaseAdmin
       .from('accounts_payable')
-      .select('amount, due_date')
-      .eq('status', 'pending');
+      .select('valor, data_vencimento')
+      .eq('status', 'pendente');
 
     const { data: receivablesData } = await supabaseAdmin
-      .from('accounts_receivable')
+      .from('financial_documents')
       .select('amount, due_date')
-      .eq('status', 'pending');
+      .eq('direction', 'receivable')
+      .eq('status', 'open');
 
     const { data: productsData } = await supabaseAdmin
       .from('products')
@@ -1478,7 +1481,7 @@ async function getAccountsPayableData(params: any) {
   const { data, error } = await supabaseAdmin
     .from('accounts_payable')
     .select('*')
-    .order('due_date', { ascending: true });
+    .order('data_vencimento', { ascending: true });
 
   if (error) {
     console.error('Erro ao buscar contas a pagar:', error);
@@ -1519,7 +1522,7 @@ async function getAccountsPayableAnalysisData(params: any) {
   const { data, error } = await supabaseAdmin
     .from('accounts_payable')
     .select('*')
-    .order('due_date', { ascending: true });
+    .order('data_vencimento', { ascending: true });
 
   if (error) {
     console.error('Erro ao buscar contas a pagar para análise:', error);
@@ -1561,8 +1564,9 @@ async function getAccountsPayableAnalysisData(params: any) {
 
 async function getAccountsReceivableData(params: any) {
   const { data, error } = await supabaseAdmin
-    .from('accounts_receivable')
+    .from('financial_documents')
     .select('*')
+    .eq('direction', 'receivable')
     .order('due_date', { ascending: true });
 
   if (error) throw error;
@@ -1580,8 +1584,9 @@ async function getAccountsReceivableAnalysisData(params: any) {
   try {
     // Buscar dados reais de contas a receber
     const { data: receivablesData, error: receivablesError } = await supabaseAdmin
-      .from('accounts_receivable')
+      .from('financial_documents')
       .select('amount, due_date, status')
+      .eq('direction', 'receivable')
       .order('due_date', { ascending: true });
 
     if (receivablesError) {
@@ -1955,10 +1960,9 @@ async function getPayablesAgingData(params: any) {
   console.log('📊 Analisando aging de contas a pagar...');
   
   const { data, error } = await supabaseAdmin
-    .from('financial_documents')
+    .from('accounts_payable')
     .select('*')
-    .eq('direction', 'payable')
-    .order('due_date', { ascending: true });
+    .order('data_vencimento', { ascending: true });
 
   if (error) {
     console.error('Erro ao buscar contas a pagar para aging:', error);
@@ -2016,13 +2020,12 @@ async function getSupplierPaymentsData(params: any) {
   console.log('📊 Analisando pagamentos por fornecedor...');
   
   const { data, error } = await supabaseAdmin
-    .from('financial_documents')
+    .from('accounts_payable')
     .select(`
       *,
-      partner:partners(name, id)
+      supplier:suppliers(name, id)
     `)
-    .eq('direction', 'payable')
-    .eq('status', 'paid')
+    .eq('status', 'paga')
     .order('updated_at', { ascending: false });
 
   if (error) {
@@ -2079,14 +2082,13 @@ async function getOverdueBillsData(params: any) {
   console.log('📊 Analisando contas em atraso...');
   
   const { data, error } = await supabaseAdmin
-    .from('financial_documents')
+    .from('accounts_payable')
     .select(`
       *,
-      partner:partners(name, id)
+      supplier:suppliers(name, id)
     `)
-    .eq('direction', 'payable')
-    .neq('status', 'paid')
-    .order('due_date', { ascending: true });
+    .neq('status', 'paga')
+    .order('data_vencimento', { ascending: true });
 
   if (error) {
     console.error('Erro ao buscar contas em atraso:', error);
