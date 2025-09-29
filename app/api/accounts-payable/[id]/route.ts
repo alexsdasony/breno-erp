@@ -81,8 +81,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     console.log("🚀 [AP UPDATE] Iniciando atualização");
     console.log("🔍 [AP UPDATE] id:", id);
     console.log("📥 Payload recebido:", body);
-    console.log("🔍 Status recebido:", body.status);
-    console.log("🔍 Status mapeado:", statusMap[body.status]);
 
     // Mapear status para valores aceitos pela tabela financial_documents
     // Constraint: status IN ('draft','open','partially_paid','paid','canceled')
@@ -96,6 +94,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       'vencido': 'open', // Mapear vencido para open (será calculado na aplicação)
       'cancelado': 'canceled'
     };
+    
+    console.log("🔍 Status recebido:", body.status);
+    console.log("🔍 Status mapeado:", statusMap[body.status]);
     
     // Mapear forma de pagamento para payment_method_id (se necessário)
     const paymentMethodMap: Record<string, string> = {
