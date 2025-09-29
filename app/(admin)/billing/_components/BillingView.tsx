@@ -9,7 +9,7 @@ import { useAppData } from '@/hooks/useAppData';
 import CustomerAutocomplete from './CustomerAutocomplete';
 
 export default function BillingView() {
-  const { items, loading, hasMore, loadMore } = useBillings();
+  const { items, loading, hasMore, loadMore, create, update, remove } = useBillings();
   const { activeSegmentId } = useAppData();
 
   // Estados para filtros e formulário
