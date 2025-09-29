@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     let query = supabaseAdmin
       .from('billings')
       .select('*')
+      .eq('is_deleted', false) // Filtrar apenas registros não deletados
       .order('created_at', { ascending: false });
 
     // Filtrar por segmento se fornecido
@@ -35,12 +36,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log('📊 Total de cobranças encontradas:', (billings || []).length);
+    console.log('📊 Primeiras 3 cobranças:', (billings || []).slice(0, 3));
+
     // Aplicar paginação
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     const paginatedBillings = (billings || []).slice(startIndex, endIndex);
 
-    console.log('📊 Cobranças encontradas:', (billings || []).length);
+    console.log('📊 Cobranças paginadas:', paginatedBillings.length);
 
     return NextResponse.json({
       success: true,
