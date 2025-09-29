@@ -72,7 +72,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         due_date: body.due_date,
         status: body.status || 'Pendente',
         payment_date: body.payment_date || null,
-        description: body.description || null,
         segment_id: body.segment_id || null
       })
       .eq('id', id)

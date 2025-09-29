@@ -23,8 +23,7 @@ export default function BillingView() {
     customer_name: '',
     amount: '',
     dueDate: '',
-    status: 'Pendente',
-    description: ''
+    status: 'Pendente'
   });
 
   // Função para obter cor do status
@@ -119,8 +118,7 @@ export default function BillingView() {
       customer_name: billing.customer_name || '',
       amount: billing.amount || '',
       dueDate: billing.due_date || '',
-      status: billing.status || 'Pendente',
-      description: billing.description || ''
+      status: billing.status || 'Pendente'
     });
     setShowForm(true);
     console.log('📝 Formulário preenchido:', {
@@ -128,8 +126,7 @@ export default function BillingView() {
       customer_name: billing.customer_name || '',
       amount: billing.amount || '',
       dueDate: billing.due_date || '',
-      status: billing.status || 'Pendente',
-      description: billing.description || ''
+      status: billing.status || 'Pendente'
     });
   };
 
@@ -155,8 +152,7 @@ export default function BillingView() {
       customer_name: '',
       amount: '',
       dueDate: '',
-      status: 'Pendente',
-      description: ''
+      status: 'Pendente'
     });
   };
 
@@ -185,8 +181,7 @@ export default function BillingView() {
         customer_name: formData.customer_name,
         amount: parseFloat(formData.amount),
         due_date: formData.dueDate,
-        status: getBillingStatus(formData.status),
-        description: formData.description
+        status: getBillingStatus(formData.status)
       };
       
       if (editingBilling) {
@@ -347,16 +342,6 @@ export default function BillingView() {
                   <option value="Vencida">Vencida</option>
                   <option value="Cancelada">Cancelada</option>
                 </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">Descrição</label>
-                <input
-                  type="text"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  placeholder="Descrição da cobrança"
-                />
               </div>
               <div className="md:col-span-2 flex space-x-3">
                 <Button type="submit">Salvar Cobrança</Button>
