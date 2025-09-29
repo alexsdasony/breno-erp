@@ -134,8 +134,8 @@ export default function BillingView() {
     setShowForm(false);
     setEditingBilling(null);
     setFormData({
-      customerId: '',
-      customerName: '',
+      customer_id: '',
+      customer_name: '',
       amount: '',
       dueDate: '',
       status: 'Pendente',
