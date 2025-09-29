@@ -112,6 +112,7 @@ export default function BillingView() {
 
   // Handlers
   const handleEdit = (billing: any) => {
+    console.log('📝 Editando cobrança:', billing);
     setEditingBilling(billing);
     setFormData({
       customer_id: billing.customer_id || '',
@@ -122,6 +123,14 @@ export default function BillingView() {
       description: billing.description || ''
     });
     setShowForm(true);
+    console.log('📝 Formulário preenchido:', {
+      customer_id: billing.customer_id || '',
+      customer_name: billing.customer_name || '',
+      amount: billing.amount || '',
+      dueDate: billing.due_date || '',
+      status: billing.status || 'Pendente',
+      description: billing.description || ''
+    });
   };
 
   const handleDelete = async (billingId: string | undefined) => {
@@ -182,15 +191,21 @@ export default function BillingView() {
       
       if (editingBilling) {
         // Atualizar cobrança existente
+        console.log('🔄 Atualizando cobrança:', { id: editingBilling.id, data: billingData });
         const updatedBilling = await update(editingBilling.id, billingData);
         if (updatedBilling) {
-          console.log('Cobrança atualizada:', updatedBilling);
+          console.log('✅ Cobrança atualizada:', updatedBilling);
+        } else {
+          console.log('❌ Falha ao atualizar cobrança');
         }
       } else {
         // Criar nova cobrança
+        console.log('➕ Criando nova cobrança:', billingData);
         const newBilling = await create(billingData);
         if (newBilling) {
-          console.log('Cobrança criada:', newBilling);
+          console.log('✅ Cobrança criada:', newBilling);
+        } else {
+          console.log('❌ Falha ao criar cobrança');
         }
       }
       

@@ -52,12 +52,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     console.log('💳 Atualizando cobrança:', { id, body });
 
     // Validar dados obrigatórios
-    if (!body.customer_id || !body.amount || !body.due_date) {
+    if (!body.amount || !body.due_date) {
       return NextResponse.json(
         { 
           success: false, 
           error: 'Dados obrigatórios não fornecidos',
-          details: 'customer_id, amount e due_date são obrigatórios'
+          details: 'amount e due_date são obrigatórios'
         },
         { status: 400 }
       );
