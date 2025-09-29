@@ -113,12 +113,12 @@ export default function BillingView() {
   const handleEdit = (billing: any) => {
     setEditingBilling(billing);
     setFormData({
-      customerId: billing.customerId || '',
-      customerName: billing.customer_name || '',
+      customer_id: billing.customer_id || '',
+      customer_name: billing.customer_name || '',
       amount: billing.amount || '',
       dueDate: billing.due_date || '',
       status: billing.status || 'Pendente',
-      description: ''
+      description: billing.description || ''
     });
     setShowForm(true);
   };
