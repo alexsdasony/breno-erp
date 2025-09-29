@@ -47,6 +47,14 @@ export default function BillingView() {
   };
 
   // Função para verificar se está vencida
+  const isOverdue = (dueDate: string, status: string) => {
+    if (status?.toLowerCase() === 'paga') return false;
+    const today = new Date();
+    const due = new Date(dueDate);
+    return due < today;
+  };
+
+  // Função para obter status considerando vencimento
   const getStatusWithDueDate = (billing: any) => {
     const status = billing.status?.toLowerCase() || 'pendente';
     if (status === 'pendente') {
@@ -351,21 +359,28 @@ export default function BillingView() {
                   className="hover:bg-muted/50 transition-colors"
                 >
                   <td className="p-3">
-                    <div className="font-medium">{billing.customer_name || 'Cliente'}</div>
+                    <div className="font-medium">
+                      {billing.customer_name || `Cliente ${billing.id.slice(0, 8)}`}
+                    </div>
                     <div className="text-sm text-muted-foreground">
-                       ID: {billing.id.slice(0, 8)}
-                     </div>
+                      {billing.customer_id ? `ID: ${billing.customer_id.slice(0, 8)}` : 'Cliente não identificado'}
+                    </div>
                   </td>
                   <td className="p-3 text-right font-medium">
                     {formatCurrency(Number(billing.amount || 0))}
                   </td>
                   <td className="p-3 text-center text-sm">
-                    {formatDate(billing.due_date || new Date().toISOString())}
+                    <div>{formatDate(billing.due_date || new Date().toISOString())}</div>
+                    {billing.payment_date && (
+                      <div className="text-xs text-green-600">
+                        Pago em: {formatDate(billing.payment_date)}
+                      </div>
+                    )}
                   </td>
                   <td className="p-3 text-center">
-                    <div className={`flex items-center justify-center ${getStatusColor(billing.status)}`}>
-                      {getStatusIcon(billing.status)}
-                      <span className="text-sm font-medium">{billing.status}</span>
+                    <div className={`flex items-center justify-center ${getStatusColor(getStatusWithDueDate(billing))}`}>
+                      {getStatusIcon(getStatusWithDueDate(billing))}
+                      <span className="text-sm font-medium">{getStatusWithDueDate(billing)}</span>
                     </div>
                   </td>
                   <td className="p-3 text-center">
