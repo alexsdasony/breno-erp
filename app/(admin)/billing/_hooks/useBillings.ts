@@ -28,16 +28,7 @@ export function useBillings() {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
   const { data, activeSegmentId } = useAppData();
 
-  // Filtrar cobranças por segmento ativo
-  const filteredBillings = useMemo(() => {
-    if (!data.billings) return [];
-    
-    if (!activeSegmentId || activeSegmentId === '0') {
-      return data.billings;
-    }
-    
-    return data.billings.filter((billing: any) => billing.segment_id === activeSegmentId);
-  }, [data.billings, activeSegmentId]);
+  // O filtro por segmento é feito na API, não no frontend
 
   const fetchPage = useCallback(async (page: number) => {
     const response = await listBillings({ page, pageSize: PAGE_SIZE, segment_id: activeSegmentId });
@@ -143,7 +134,7 @@ export function useBillings() {
 
   return { 
     ...state, 
-    items: filteredBillings, // Usar dados filtrados por segmento
+    items: state.items, // Usar dados do estado local
     ...api 
   };
 }
