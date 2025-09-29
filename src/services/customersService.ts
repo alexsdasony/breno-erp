@@ -20,6 +20,16 @@ export async function getCustomers(params: Record<string, any> = {}): Promise<Ap
   } as ApiResponse<{ customers: Customer[] }>;
 }
 
+export async function searchCustomers(query: string): Promise<Customer[]> {
+  try {
+    const response = await getCustomers({ search: query });
+    return response.data?.customers || [];
+  } catch (error) {
+    console.error('Erro ao buscar clientes:', error);
+    return [];
+  }
+}
+
 export async function getCustomerById(id: string): Promise<ApiResponse<{ customer: Customer }>> {
   const response = await apiService.get<{ success: boolean; customer: Customer }>(`/customers/${id}`);
   return {

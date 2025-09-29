@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useBillings } from '../_hooks/useBillings';
 import { Plus, Filter, FileDown, Edit, Trash2, Eye, Search, AlertTriangle, CheckCircle, Clock, DollarSign } from 'lucide-react';
 import { useAppData } from '@/hooks/useAppData';
+import CustomerAutocomplete from './CustomerAutocomplete';
 
 export default function BillingView() {
   const { items, loading, hasMore, loadMore } = useBillings();
@@ -17,8 +18,8 @@ export default function BillingView() {
   const [showForm, setShowForm] = React.useState(false);
   const [editingBilling, setEditingBilling] = React.useState<any | null>(null);
   const [formData, setFormData] = React.useState({
-    customerId: '',
-    customerName: '',
+    customer_id: '',
+    customer_name: '',
     amount: '',
     dueDate: '',
     status: 'Pendente',
@@ -144,9 +145,35 @@ export default function BillingView() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implementar create/update
-    console.log('Submitting:', formData);
-    handleCancel();
+    
+    if (!formData.customer_id) {
+      alert('Por favor, selecione um cliente');
+      return;
+    }
+    
+    try {
+      const billingData = {
+        customer_id: formData.customer_id,
+        customer_name: formData.customer_name,
+        amount: parseFloat(formData.amount),
+        due_date: formData.dueDate,
+        status: formData.status,
+        description: formData.description
+      };
+      
+      if (editingBilling) {
+        // TODO: Implementar update
+        console.log('Updating billing:', billingData);
+      } else {
+        // TODO: Implementar create
+        console.log('Creating billing:', billingData);
+      }
+      
+      handleCancel();
+    } catch (error) {
+      console.error('Erro ao salvar cobrança:', error);
+      alert('Erro ao salvar cobrança');
+    }
   };
 
   return (
@@ -239,12 +266,10 @@ export default function BillingView() {
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Cliente</label>
-                <input
-                  type="text"
-                  value={formData.customerName}
-                  onChange={(e) => setFormData({...formData, customerName: e.target.value})}
-                  className="w-full p-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary"
-                  placeholder="Nome do cliente"
+                <CustomerAutocomplete
+                  value={formData.customer_id}
+                  onChange={(customerId, customerName) => setFormData({...formData, customer_id: customerId, customer_name: customerName})}
+                  placeholder="Digite o nome do cliente..."
                   required
                 />
               </div>
