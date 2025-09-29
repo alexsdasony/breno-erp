@@ -7,6 +7,7 @@ import { useBillings } from '../_hooks/useBillings';
 import { Plus, Filter, FileDown, Edit, Trash2, Eye, Search, AlertTriangle, CheckCircle, Clock, DollarSign } from 'lucide-react';
 import { useAppData } from '@/hooks/useAppData';
 import CustomerAutocomplete from './CustomerAutocomplete';
+import { BillingStatus } from '@/types/enums';
 
 export default function BillingView() {
   const { items, loading, hasMore, loadMore, create, update, remove } = useBillings();
@@ -159,12 +160,23 @@ export default function BillingView() {
     }
     
     try {
+      // Converter status string para BillingStatus
+      const getBillingStatus = (status: string): BillingStatus => {
+        switch (status) {
+          case 'Pendente': return BillingStatus.PENDENTE;
+          case 'Pago': return BillingStatus.PAGO;
+          case 'Atrasado': return BillingStatus.ATRASADO;
+          case 'Cancelado': return BillingStatus.CANCELADO;
+          default: return BillingStatus.PENDENTE;
+        }
+      };
+
       const billingData = {
         customer_id: formData.customer_id,
         customer_name: formData.customer_name,
         amount: parseFloat(formData.amount),
         due_date: formData.dueDate,
-        status: formData.status,
+        status: getBillingStatus(formData.status),
         description: formData.description
       };
       
