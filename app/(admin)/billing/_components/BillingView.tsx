@@ -125,8 +125,15 @@ export default function BillingView() {
 
   const handleDelete = async (billingId: string | undefined) => {
      if (billingId && window.confirm('Tem certeza que deseja excluir esta cobrança?')) {
-       // TODO: Implementar delete
-       console.log('Deleting billing:', billingId);
+       try {
+         const success = await remove(billingId);
+         if (success) {
+           setShowForm(false);
+           setEditingBilling(null);
+         }
+       } catch (error) {
+         console.error('Erro ao excluir cobrança:', error);
+       }
      }
    };
 
@@ -162,11 +169,17 @@ export default function BillingView() {
       };
       
       if (editingBilling) {
-        // TODO: Implementar update
-        console.log('Updating billing:', billingData);
+        // Atualizar cobrança existente
+        const updatedBilling = await update(editingBilling.id, billingData);
+        if (updatedBilling) {
+          console.log('Cobrança atualizada:', updatedBilling);
+        }
       } else {
-        // TODO: Implementar create
-        console.log('Creating billing:', billingData);
+        // Criar nova cobrança
+        const newBilling = await create(billingData);
+        if (newBilling) {
+          console.log('Cobrança criada:', newBilling);
+        }
       }
       
       handleCancel();
