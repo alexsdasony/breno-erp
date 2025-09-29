@@ -83,15 +83,16 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     console.log("📥 Payload recebido:", body);
 
     // Mapear status para valores aceitos pela tabela financial_documents
+    // Constraint: status IN ('draft','open','partially_paid','paid','canceled')
     const statusMap: Record<string, string> = {
-      'pending': 'pending',
+      'pending': 'open',
       'paid': 'paid',
-      'overdue': 'overdue',
-      'cancelled': 'cancelled',
-      'pendente': 'pending',
+      'overdue': 'open', // Mapear overdue para open (será calculado na aplicação)
+      'cancelled': 'canceled',
+      'pendente': 'open',
       'pago': 'paid',
-      'vencido': 'overdue',
-      'cancelado': 'cancelled'
+      'vencido': 'open', // Mapear vencido para open (será calculado na aplicação)
+      'cancelado': 'canceled'
     };
     
     // Mapear forma de pagamento para payment_method_id (se necessário)
