@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     // Preparar dados para inserção da venda com estrutura consistente
     const insertData = {
       customer_id: saleData.customer_id,
-      customer_name: customer.name, // Garantir que o nome do cliente seja salvo
+      customer_name: saleData.customer_name || customer.name, // Usar o nome enviado pelo frontend ou o do banco
       sale_date: saleData.sale_date || new Date().toISOString().split('T')[0],
       total_amount: saleData.total_amount || 0,
       payment_method: saleData.payment_method || 'dinheiro',

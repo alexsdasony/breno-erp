@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     const { data, error, count } = await query;
 
     console.log('📥 Resultado da listagem:', { count, error });
+    console.log('👥 Primeiros 3 clientes encontrados:', data?.slice(0, 3));
 
     if (error) {
       console.error('❌ Erro ao buscar clientes:', error);
