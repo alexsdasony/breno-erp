@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         suggestedName = emailName
           .replace(/[._-]/g, ' ')
           .split(' ')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
           .join(' ');
       }
       
