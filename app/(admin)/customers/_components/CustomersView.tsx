@@ -67,13 +67,40 @@ export default function CustomersView() {
 
   // Filtered customers
   const filteredCustomers = useMemo(() => {
+    console.log('🔍 [FILTER] Filtrando clientes:', { 
+      totalItems: items.length, 
+      statusFilter, 
+      searchTerm,
+      activeSegmentId 
+    });
+    console.log('🔍 [FILTER] Primeiros 3 clientes:', items.slice(0, 3).map(c => ({ 
+      name: c.name, 
+      status: c.status 
+    })));
+    
     return items.filter((customer: any) => {
       const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
                            customer.tax_id?.includes(searchTerm);
-      const matchesStatus = statusFilter === 'all' || customer.status === statusFilter;
+      
+      // Converter status do banco para formato do filtro
+      const customerStatus = customer.status === 'active' ? 'active' : 
+                           customer.status === 'inactive' ? 'inactive' : 
+                           customer.status === 'ativo' ? 'active' : 
+                           customer.status === 'inativo' ? 'inactive' : 
+                           customer.status;
+      
+      const matchesStatus = statusFilter === 'all' || customerStatus === statusFilter;
       const matchesSegment = !activeSegmentId || activeSegmentId === '0' || 
                             (customer.segment_id && customer.segment_id === activeSegmentId);
+      
+      console.log('🔍 [FILTER] Cliente:', { 
+        name: customer.name, 
+        originalStatus: customer.status, 
+        convertedStatus: customerStatus, 
+        matchesStatus,
+        statusFilter 
+      });
       
       return matchesSearch && matchesStatus && matchesSegment;
     });
@@ -82,10 +109,36 @@ export default function CustomersView() {
   // Calculate KPIs
   const kpis = useMemo(() => {
     const totalCustomers = filteredCustomers.length;
-    const activeCustomers = filteredCustomers.filter((c: any) => c.status === 'active').length;
-    const inactiveCustomers = filteredCustomers.filter((c: any) => c.status === 'inactive').length;
+    
+    // Usar a mesma conversão de status para KPIs
+    const activeCustomers = filteredCustomers.filter((c: any) => {
+      const status = c.status === 'active' ? 'active' : 
+                    c.status === 'inactive' ? 'inactive' : 
+                    c.status === 'ativo' ? 'active' : 
+                    c.status === 'inativo' ? 'inactive' : 
+                    c.status;
+      return status === 'active';
+    }).length;
+    
+    const inactiveCustomers = filteredCustomers.filter((c: any) => {
+      const status = c.status === 'active' ? 'active' : 
+                    c.status === 'inactive' ? 'inactive' : 
+                    c.status === 'ativo' ? 'active' : 
+                    c.status === 'inativo' ? 'inactive' : 
+                    c.status;
+      return status === 'inactive';
+    }).length;
+    
     const totalValue = filteredCustomers.reduce((sum: number, c: any) => sum + (c.total_value || 0), 0);
     const averageValue = totalCustomers > 0 ? totalValue / totalCustomers : 0;
+    
+    console.log('🔍 [KPIS] Calculando KPIs:', { 
+      totalCustomers, 
+      activeCustomers, 
+      inactiveCustomers,
+      totalValue,
+      averageValue 
+    });
     
     return {
       totalCustomers,
