@@ -140,6 +140,11 @@ export function useCustomerForm(customerId?: string) {
       warnings.rg = 'RG não informado';
     }
 
+    // Validação de estado civil
+    if (data.estado_civil && !['solteiro', 'casado', 'divorciado', 'viuvo', 'uniao_estavel'].includes(data.estado_civil)) {
+      errors.estado_civil = 'Estado civil inválido';
+    }
+
     // === ABA CONTATO ===
     if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
       errors.email = 'Email inválido';

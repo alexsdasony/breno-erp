@@ -64,6 +64,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     console.log('👥 [CUSTOMER UPDATE] Iniciando atualização');
     console.log('🔍 [CUSTOMER UPDATE] id:', id);
     console.log('📥 Payload recebido:', body);
+    console.log('🔍 [CUSTOMER UPDATE] estado_civil recebido:', body.estado_civil);
 
     // Mapear status para valores aceitos pela constraint do banco
     // Permitir alternância entre ativo e inativo
@@ -95,7 +96,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     // Campos adicionais do formulário completo
     if (body.rg !== null && body.rg !== undefined) normalizedBody.rg = body.rg;
     if (body.data_nascimento !== null && body.data_nascimento !== undefined) normalizedBody.data_nascimento = body.data_nascimento;
-    if (body.estado_civil !== null && body.estado_civil !== undefined) normalizedBody.estado_civil = body.estado_civil;
+    if (body.estado_civil !== null && body.estado_civil !== undefined) {
+      normalizedBody.estado_civil = body.estado_civil;
+      console.log('✅ [CUSTOMER UPDATE] estado_civil incluído:', body.estado_civil);
+    }
     if (body.profissao !== null && body.profissao !== undefined) normalizedBody.profissao = body.profissao;
     if (body.empresa !== null && body.empresa !== undefined) normalizedBody.empresa = body.empresa;
     if (body.cargo !== null && body.cargo !== undefined) normalizedBody.cargo = body.cargo;
