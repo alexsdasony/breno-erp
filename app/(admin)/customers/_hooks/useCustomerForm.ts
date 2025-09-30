@@ -257,7 +257,16 @@ export function useCustomerForm(customerId?: string) {
           possui_patrimonio: customer.possui_patrimonio || false,
           valor_patrimonio: customer.valor_patrimonio || 0,
           descricao_patrimonio: customer.descricao_patrimonio || '',
-          status: (customer.status === 'active' ? 'ativo' : customer.status === 'inactive' ? 'inativo' : customer.status === 'pendente' ? 'ativo' : customer.status === 'ativo' ? 'ativo' : customer.status === 'inativo' ? 'inativo' : customer.status === 'suspenso' ? 'suspenso' : 'ativo') as 'ativo' | 'inativo' | 'suspenso',
+          status: (() => {
+            const status = customer.status as string;
+            if (status === 'active') return 'ativo';
+            if (status === 'inactive') return 'inativo';
+            if (status === 'pendente') return 'ativo';
+            if (status === 'ativo') return 'ativo';
+            if (status === 'inativo') return 'inativo';
+            if (status === 'suspenso') return 'suspenso';
+            return 'ativo';
+          })() as 'ativo' | 'inativo' | 'suspenso',
           data_cadastro: customer.data_cadastro || '',
           responsavel_cadastro: customer.responsavel_cadastro || '',
           observacoes: customer.observacoes || '',
