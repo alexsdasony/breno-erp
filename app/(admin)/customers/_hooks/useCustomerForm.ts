@@ -257,7 +257,7 @@ export function useCustomerForm(customerId?: string) {
           possui_patrimonio: customer.possui_patrimonio || false,
           valor_patrimonio: customer.valor_patrimonio || 0,
           descricao_patrimonio: customer.descricao_patrimonio || '',
-          status: (customer.status === 'active' ? 'ativo' : customer.status === 'inactive' ? 'inativo' : customer.status === 'pendente' ? 'ativo' : 'ativo') as 'ativo' | 'inativo' | 'suspenso',
+          status: (customer.status === 'active' ? 'ativo' : customer.status === 'inactive' ? 'inativo' : customer.status === 'pendente' ? 'ativo' : customer.status === 'ativo' ? 'ativo' : customer.status === 'inativo' ? 'inativo' : customer.status === 'suspenso' ? 'suspenso' : 'ativo') as 'ativo' | 'inativo' | 'suspenso',
           data_cadastro: customer.data_cadastro || '',
           responsavel_cadastro: customer.responsavel_cadastro || '',
           observacoes: customer.observacoes || '',
