@@ -52,7 +52,8 @@ export async function GET(request: NextRequest) {
       { data: suppliers, error: suppliersError },
       { data: products, error: productsError },
       { data: accountsPayable, error: payablesError },
-      { data: accountsReceivable, error: receivablesError }
+      { data: accountsReceivable, error: receivablesError },
+      { data: sales, error: salesError }
     ] = await Promise.all([
       // Total de clientes
       supabaseAdmin
@@ -85,7 +86,15 @@ export async function GET(request: NextRequest) {
         .from('accounts_receivable')
         .select('valor, status, data_vencimento')
         .match(segmentFilter)
-        .then(result => result.error ? { data: [], error: null } : result)
+        .then(result => result.error ? { data: [], error: null } : result),
+      
+      // Vendas reais
+      supabaseAdmin
+        .from('sales')
+        .select('id, total_amount, created_at, status')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .match(segmentFilter)
     ]);
 
     if (customersError) console.error('❌ Erro ao buscar clientes:', customersError);
@@ -93,6 +102,7 @@ export async function GET(request: NextRequest) {
     if (productsError) console.error('❌ Erro ao buscar produtos:', productsError);
     if (payablesError) console.error('❌ Erro ao buscar contas a pagar:', payablesError);
     if (receivablesError) console.error('❌ Erro ao buscar contas a receber:', receivablesError);
+    if (salesError) console.error('❌ Erro ao buscar vendas:', salesError);
 
     // Calcular métricas
     const totalCustomers = customers?.length || 0;
@@ -120,27 +130,67 @@ export async function GET(request: NextRequest) {
     const totalReceivablesValue = accountsReceivable?.reduce((sum, ar) => 
       sum + (Number(ar.valor) || 0), 0) || 0;
 
-    // Gerar série de dados para gráficos (últimos 7 dias)
+    // Calcular métricas reais de vendas
+    const totalSales = sales?.length || 0;
+    const totalRevenue = sales?.reduce((sum, sale) => 
+      sum + (Number(sale.total_amount) || 0), 0) || 0;
+    const avgTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
+
+    console.log('📊 Dados reais de vendas:', { 
+      totalSales, 
+      totalRevenue, 
+      avgTicket,
+      salesCount: sales?.length || 0 
+    });
+
+    // Gerar série de dados reais para gráficos (últimos 7 dias)
     const seriesDays = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
       const dateStr = date.toISOString().split('T')[0];
       
+      // Buscar vendas do dia específico
+      const daySales = sales?.filter(sale => {
+        const saleDate = new Date(sale.created_at).toISOString().split('T')[0];
+        return saleDate === dateStr;
+      }) || [];
+      
+      const dayRevenue = daySales.reduce((sum, sale) => 
+        sum + (Number(sale.total_amount) || 0), 0);
+      
+      // Buscar contas a pagar do dia
+      const dayPayables = accountsPayable?.filter(ap => {
+        const payableDate = new Date(ap.data_vencimento).toISOString().split('T')[0];
+        return payableDate === dateStr;
+      }) || [];
+      
+      const dayPayablesValue = dayPayables.reduce((sum, ap) => 
+        sum + (Number(ap.valor) || 0), 0);
+      
+      // Buscar contas a receber do dia
+      const dayReceivables = accountsReceivable?.filter(ar => {
+        const receivableDate = new Date(ar.data_vencimento).toISOString().split('T')[0];
+        return receivableDate === dateStr;
+      }) || [];
+      
+      const dayReceivablesValue = dayReceivables.reduce((sum, ar) => 
+        sum + (Number(ar.valor) || 0), 0);
+      
       seriesDays.push({
         date: dateStr,
-        sales: Math.floor(Math.random() * 10), // Mock data
-        revenue: Math.floor(Math.random() * 1000),
-        payables: Math.floor(Math.random() * 500),
-        receivables: Math.floor(Math.random() * 800),
-        cash_in: Math.floor(Math.random() * 1200),
-        cash_out: Math.floor(Math.random() * 600)
+        sales: daySales.length,
+        revenue: dayRevenue,
+        payables: dayPayablesValue,
+        receivables: dayReceivablesValue,
+        cash_in: dayRevenue + dayReceivablesValue,
+        cash_out: dayPayablesValue
       });
     }
 
     const metrics = {
-      total_sales: Math.floor(Math.random() * 100), // Mock data
-      total_revenue: Math.floor(Math.random() * 50000),
-      avg_ticket: Math.floor(Math.random() * 500),
+      total_sales: totalSales,
+      total_revenue: totalRevenue,
+      avg_ticket: avgTicket,
       total_customers: totalCustomers,
       active_customers: activeCustomers,
       total_suppliers: totalSuppliers,
