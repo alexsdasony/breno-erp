@@ -4,8 +4,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-  
-  try {
+    
     console.log('💳 API Route PUT /api/payment-methods/' + id);
     
     const body = await request.json();
