@@ -19,10 +19,13 @@ export function PaymentMethodsProvider({ children }: { children: React.ReactNode
   const load = async () => {
     setLoading(true);
     try {
+      console.log('💳 Carregando métodos de pagamento...');
       const response = await listPaymentMethods({ page: 1, limit: 100 });
+      console.log('💳 Resposta da API:', response);
       setPaymentMethods(response?.data?.payment_methods || []);
+      console.log('💳 Métodos de pagamento definidos:', response?.data?.payment_methods || []);
     } catch (e) {
-      // silencioso
+      console.error('💳 Erro ao carregar métodos de pagamento:', e);
       setPaymentMethods([]);
     } finally {
       setLoading(false);

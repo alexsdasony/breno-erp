@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true });
 
     console.log('📥 Retornando métodos de pagamento do banco');
+    console.log('📥 Métodos encontrados:', paymentMethods?.length || 0);
+    console.log('📥 Dados dos métodos:', paymentMethods);
 
     return NextResponse.json({
       success: true,

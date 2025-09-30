@@ -49,7 +49,13 @@ export function SalesForm({ editingSale, onSubmit, onCancel }: SalesFormProps) {
   // Usando os contextos
   const { searchCustomers, loading: loadingCustomers } = useCustomersContext();
   const { searchProducts, loading: loadingProducts } = useProductsContext();
-  const { paymentMethods } = usePaymentMethodsContext();
+  const { paymentMethods, loading: loadingPaymentMethods } = usePaymentMethodsContext();
+  
+  // Debug: Log dos métodos de pagamento
+  React.useEffect(() => {
+    console.log('💳 Métodos de pagamento carregados:', paymentMethods);
+    console.log('💳 Loading métodos de pagamento:', loadingPaymentMethods);
+  }, [paymentMethods, loadingPaymentMethods]);
   
   // Estados para autocomplete
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -354,12 +360,20 @@ export function SalesForm({ editingSale, onSubmit, onCancel }: SalesFormProps) {
             value={formData.payment_method}
             onChange={handleInputChange}
             className="w-full p-3 bg-muted border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+            disabled={loadingPaymentMethods}
           >
-            {paymentMethods.map((method) => (
-              <option key={method.id} value={method.id}>
-                {method.name}
-              </option>
-            ))}
+            {loadingPaymentMethods ? (
+              <option value="">Carregando métodos de pagamento...</option>
+            ) : (
+              <>
+                <option value="">Selecione um método de pagamento</option>
+                {paymentMethods.map((method) => (
+                  <option key={method.id} value={method.id}>
+                    {method.name}
+                  </option>
+                ))}
+              </>
+            )}
           </select>
         </div>
 
