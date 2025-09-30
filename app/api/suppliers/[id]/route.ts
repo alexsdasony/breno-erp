@@ -7,7 +7,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const body = await request.json();
     console.log('🏭 [SUPPLIER UPDATE] Iniciando atualização');
     console.log('🔍 [SUPPLIER UPDATE] id:', id);
-    console.log('📥 Payload recebido:', body);
+    console.log('📥 Payload recebido:', JSON.stringify(body, null, 2));
+    console.log('🔍 Campos específicos:');
+    console.log('  - ramo_atividade (profissao):', body.profissao);
+    console.log('  - segment_id:', body.segment_id);
 
     // Mapear status para valores aceitos pela constraint do banco
     // Baseado no erro, 'ativo' não é aceito, vamos tentar outros valores

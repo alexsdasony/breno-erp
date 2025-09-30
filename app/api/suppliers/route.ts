@@ -70,7 +70,10 @@ export async function POST(request: NextRequest) {
     console.log('🏭 API Route POST /api/suppliers');
     
     const body = await request.json();
-    console.log('📝 Dados recebidos:', body);
+    console.log('📝 Dados recebidos:', JSON.stringify(body, null, 2));
+    console.log('🔍 Campos específicos:');
+    console.log('  - ramo_atividade (profissao):', body.profissao);
+    console.log('  - segment_id:', body.segment_id);
     
     // Primeiro inserir o partner
     const { data: partner, error: partnerError } = await supabaseAdmin
