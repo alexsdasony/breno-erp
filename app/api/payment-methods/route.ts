@@ -90,7 +90,6 @@ export async function POST(request: NextRequest) {
       .insert({
         name: name.trim(),
         nfe_code: nfe_code || null,
-        active: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
