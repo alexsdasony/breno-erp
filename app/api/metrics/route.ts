@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       // Total de clientes
       supabaseAdmin
         .from('partners')
-        .select('id, partner_roles!inner(role)')
+        .select('id, status, partner_roles!inner(role)')
         .eq('partner_roles.role', 'customer')
         .match(segmentFilter),
       
@@ -96,6 +96,7 @@ export async function GET(request: NextRequest) {
 
     // Calcular métricas
     const totalCustomers = customers?.length || 0;
+    const activeCustomers = customers?.filter(c => c.status === 'active').length || 0;
     const totalSuppliers = suppliers?.length || 0;
     const totalProducts = products?.length || 0;
     
@@ -141,6 +142,7 @@ export async function GET(request: NextRequest) {
       total_revenue: Math.floor(Math.random() * 50000),
       avg_ticket: Math.floor(Math.random() * 500),
       total_customers: totalCustomers,
+      active_customers: activeCustomers,
       total_suppliers: totalSuppliers,
       total_products: totalProducts,
       low_stock_count: lowStockCount,

@@ -226,6 +226,8 @@ export function useCustomerForm(customerId?: string) {
       }
       
       const customer = response.data.customer;
+      console.log('🔍 [FORM] Cliente carregado:', customer);
+      console.log('🔍 [FORM] Status original:', customer.status);
 
       if (customer) {
         const formData: CustomerFormData = {
@@ -255,12 +257,14 @@ export function useCustomerForm(customerId?: string) {
           possui_patrimonio: customer.possui_patrimonio || false,
           valor_patrimonio: customer.valor_patrimonio || 0,
           descricao_patrimonio: customer.descricao_patrimonio || '',
-          status: (customer.status === 'pendente' ? 'ativo' : customer.status) as 'ativo' | 'inativo' | 'suspenso' || 'ativo',
+          status: (customer.status === 'active' ? 'ativo' : customer.status === 'inactive' ? 'inativo' : customer.status === 'pendente' ? 'ativo' : 'ativo') as 'ativo' | 'inativo' | 'suspenso',
           data_cadastro: customer.data_cadastro || '',
           responsavel_cadastro: customer.responsavel_cadastro || '',
           observacoes: customer.observacoes || '',
           documents: []
         };
+
+        console.log('🔍 [FORM] Status convertido:', formData.status);
 
         setState((prev: CustomerFormState) => ({
           ...prev,
@@ -298,6 +302,7 @@ export function useCustomerForm(customerId?: string) {
     try {
       console.log('🔍 [FRONTEND] Dados do formulário antes do envio:', state.data);
       console.log('🔍 [FRONTEND] estado_civil no formulário:', state.data.estado_civil);
+      console.log('🔍 [FRONTEND] status no formulário:', state.data.status);
       
       const customerData = {
         segment_id: state.data.segment_id,
