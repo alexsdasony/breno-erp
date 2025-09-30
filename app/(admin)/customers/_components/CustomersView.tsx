@@ -136,21 +136,8 @@ export default function CustomersView() {
 
   // Event handlers
   const handleAddNew = () => {
-    setIsEditing(false);
-    setSelectedCustomer(null);
-    setFormData({
-      segment_id: '',
-      name: '',
-      tipo_pessoa: 'pf',
-      tax_id: '',
-      email: '',
-      phone: '',
-      address: '',
-      city: '',
-      state: '',
-      status: 'active'
-    });
-    setShowForm(true);
+    // Redirecionar para a página de criação completa
+    router.push('/customers/new');
   };
 
   const handleCompleteRegistration = () => {
@@ -158,21 +145,8 @@ export default function CustomersView() {
   };
 
   const handleEdit = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setIsEditing(true);
-    setFormData({
-      segment_id: customer.segment_id || '',
-      name: customer.name || '',
-      tipo_pessoa: customer.tipo_pessoa || 'pf',
-      tax_id: customer.tax_id || '',
-      email: customer.email || '',
-      phone: customer.phone || '',
-      address: customer.address || '',
-      city: customer.city || '',
-      state: customer.state || '',
-      status: customer.status || 'active'
-    });
-    setShowForm(true);
+    // Redirecionar para a página de edição completa
+    router.push(`/customers/${customer.id}/edit`);
   };
 
   const handleView = (customer: Customer) => {
