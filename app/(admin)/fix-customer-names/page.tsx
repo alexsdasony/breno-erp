@@ -20,6 +20,7 @@ export default function FixCustomerNamesPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
   const [editingNames, setEditingNames] = useState<Record<string, string>>({});
+  const [autoFixing, setAutoFixing] = useState(false);
 
   useEffect(() => {
     loadCustomers();
@@ -101,6 +102,35 @@ export default function FixCustomerNamesPage() {
     }
   };
 
+  const handleAutoFix = async () => {
+    try {
+      setAutoFixing(true);
+      const response = await fetch('/api/fix-customer-names/auto-fix', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log('✅ Correção automática concluída:', data);
+        alert(`Correção automática concluída!\n\nCorrigidos: ${data.summary.correctionsApplied}\nNão encontrados: ${data.summary.notFound}`);
+        // Recarregar a lista
+        loadCustomers();
+      } else {
+        console.error('Erro na correção automática:', data.error);
+        alert(`Erro na correção automática: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Erro na correção automática:', error);
+      alert('Erro na correção automática');
+    } finally {
+      setAutoFixing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -134,13 +164,45 @@ export default function FixCustomerNamesPage() {
           </div>
           
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-            <h2 className="text-xl font-semibold text-white mb-2">
-              Clientes com nome "CLIENTE" encontrados: {customers.length}
-            </h2>
-            <p className="text-white/80">
-              Estes clientes tiveram seus nomes alterados para "CLIENTE" devido a um problema no sistema. 
-              Use as informações abaixo para identificar e corrigir os nomes.
-            </p>
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-white mb-2">
+                  Clientes com nome "CLIENTE" encontrados: {customers.length}
+                </h2>
+                <p className="text-white/80">
+                  Estes clientes tiveram seus nomes alterados para "CLIENTE" devido a um problema no sistema. 
+                  Use as informações abaixo para identificar e corrigir os nomes.
+                </p>
+              </div>
+              
+              {customers.length > 0 && (
+                <Button
+                  onClick={handleAutoFix}
+                  disabled={autoFixing}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {autoFixing ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Corrigindo...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Correção Automática
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+            
+            <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
+              <h3 className="text-blue-200 font-semibold mb-2">💡 Correção Automática</h3>
+              <p className="text-blue-100 text-sm">
+                A correção automática usa os dados dos arquivos de importação (ARN ADVOGADOS, NAURU, RDS IMOBILIÁRIA) 
+                para identificar e corrigir os nomes baseados no CPF/CNPJ. Clique no botão acima para executar.
+              </p>
+            </div>
           </div>
         </motion.div>
 

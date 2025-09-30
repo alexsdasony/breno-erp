@@ -1,0 +1,392 @@
+[
+  {
+    "name": "WM DA MATA (Menina Vaidosa)",
+    "tipo_pessoa": "pj",
+    "tax_id": "41.299.690/0001-09",
+    "source": "import_clientes_arn_advogados.sql"
+  },
+  {
+    "name": "SD LOGÍSTICA E TRANSPORTE MULTIMODAL EIRELI",
+    "tipo_pessoa": "pj",
+    "tax_id": "06.820.212/0001-00",
+    "source": "import_clientes_arn_advogados.sql"
+  },
+  {
+    "name": "MANOEL CUNHA DA MOTA",
+    "tipo_pessoa": "pf",
+    "tax_id": "404.700.082-53",
+    "source": "import_clientes_arn_advogados.sql"
+  },
+  {
+    "name": "ELIZANGELA SOARES ARAÚJO",
+    "tipo_pessoa": "pf",
+    "tax_id": "315.284.492-15",
+    "source": "import_clientes_arn_advogados.sql"
+  },
+  {
+    "name": "PINK COSMÉTICOS LTDA",
+    "tipo_pessoa": "pj",
+    "tax_id": "37.799.017/0001-60",
+    "source": "import_clientes_arn_advogados.sql"
+  },
+  {
+    "name": "DILCILENE ESTHER COSTA AUZIER",
+    "tipo_pessoa": "pf",
+    "tax_id": "730.858.202-72",
+    "source": "import_clientes_arn_advogados.sql"
+  },
+  {
+    "name": "MIRIAN PRUDÊNCIO DA SILVA",
+    "tipo_pessoa": "pf",
+    "tax_id": "316.916.922-04",
+    "source": "import_clientes_arn_advogados.sql"
+  },
+  {
+    "name": "NATASHA MARINHO DE OLIVEIRA",
+    "tipo_pessoa": "pf",
+    "tax_id": "041.943.682-07",
+    "source": "import_clientes_arn_advogados.sql"
+  },
+  {
+    "name": "ELAINE CRISTINA GUEDES WANDERLEY",
+    "tipo_pessoa": "pf",
+    "tax_id": "718.566.225-49",
+    "source": "import_clientes_arn_advogados.sql"
+  },
+  {
+    "name": "GABRIEL ENOC DE SOUZA SIQUEIRA",
+    "tipo_pessoa": "pf",
+    "tax_id": "016.388.222-39",
+    "source": "import_clientes_arn_advogados.sql"
+  },
+  {
+    "name": "WILLIAM YOSHIAKI AOKI",
+    "tipo_pessoa": "pf",
+    "tax_id": "012.137.082-81",
+    "source": "import_clientes_arn_advogados.sql"
+  },
+  {
+    "name": "PEDRO JÚNIOR DA SILVA GARCIA",
+    "tipo_pessoa": "pf",
+    "tax_id": "009.641.302-62",
+    "source": "import_clientes_arn_advogados.sql"
+  },
+  {
+    "name": "ROSEANE POINHO DE OLIVEIRA",
+    "tipo_pessoa": "pf",
+    "tax_id": "188.070.382-34",
+    "source": "import_clientes_nauru.sql"
+  },
+  {
+    "name": "IMM FABRICAÇÃO DE GELO E COMÉRCIO DE PRODUTOS ALIMENTÍCIOS LTDA",
+    "tipo_pessoa": "pj",
+    "tax_id": "84.512.078/0001-85",
+    "source": "import_clientes_nauru.sql"
+  },
+  {
+    "name": "PEDRO ELIAS DE SOUZA",
+    "tipo_pessoa": "pf",
+    "tax_id": "249.711.032-87",
+    "source": "import_clientes_nauru.sql"
+  },
+  {
+    "name": "MEGAMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA",
+    "tipo_pessoa": "pj",
+    "tax_id": "55.317.744/0001-26",
+    "source": "import_clientes_nauru.sql"
+  },
+  {
+    "name": "WINSTON NEY DE SEIXAS SANTOS",
+    "tipo_pessoa": "pf",
+    "tax_id": "181.485.142-91",
+    "source": "import_clientes_nauru.sql"
+  },
+  {
+    "name": "JUDÁ BEN HUR ROCHA SAMPAIO",
+    "tipo_pessoa": "pf",
+    "tax_id": "971.749.552-15",
+    "source": "import_clientes_nauru.sql"
+  },
+  {
+    "name": "ISRAEL S DE CARVALHO (CARVALHO ENGENHARIA)",
+    "tipo_pessoa": "pj",
+    "tax_id": "13.882.103-0001-74",
+    "source": "import_clientes_nauru.sql"
+  },
+  {
+    "name": "RHEMA NEGÓCIOS IMOBILIÁRIOS LTDA",
+    "tipo_pessoa": "pj",
+    "tax_id": "55.518.933/0001-67",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "SPAZZIO GESTÃO E ADMINISTRAÇÃO LTDA",
+    "tipo_pessoa": "pj",
+    "tax_id": "40.170.291/0001-80",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "E.M RODRIGUES",
+    "tipo_pessoa": "pj",
+    "tax_id": "44.005.614/0001-31",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "RDS PLACE NEGÓCIOS IMOBILIÁRIOS E ADMINISTRADORES LTDA",
+    "tipo_pessoa": "pj",
+    "tax_id": "52.841.370/0001-55",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "CHARLES ALBERTE DE ALMEIDA SANTOS ME (ÓTICA OFICINA DOS ÓCULOS)",
+    "tipo_pessoa": "pj",
+    "tax_id": "84.126.598/0001-50",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "CLÁUDIA TEIXEIRA BRASIL",
+    "tipo_pessoa": "pf",
+    "tax_id": "572.881.432-87",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "VERA LÚCIA FERREIRA QUEIROZ",
+    "tipo_pessoa": "pf",
+    "tax_id": "043.488.852-49",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "JOSINEI NUNES DO NASCIMENTO",
+    "tipo_pessoa": "pf",
+    "tax_id": "524.171.152-04",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "VITÓRIA EMANUELLY RIBEIRO LEMOS",
+    "tipo_pessoa": "pf",
+    "tax_id": "061.660.022-46",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "ALBERTO TEIXEIRA DA SILVA JÚNIOR",
+    "tipo_pessoa": "pf",
+    "tax_id": "033.772.392-35",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "ANILTON MARQUES / LUZIETH FARIAS",
+    "tipo_pessoa": "pf",
+    "tax_id": "123.456.789-00",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "PATRICK JEHMERSON GOMES DE ALMEIDA",
+    "tipo_pessoa": "pf",
+    "tax_id": "987.654.321-00",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "LINDAELZA RAMOS",
+    "tipo_pessoa": "pf",
+    "tax_id": "836.948.702-53",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "JÉSSICA SILVA SANTOS",
+    "tipo_pessoa": "pf",
+    "tax_id": "035.026.122-93",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "LEUDIMARA TAUANA MACIEL",
+    "tipo_pessoa": "pf",
+    "tax_id": "038.454.522-00",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "FRANNY MARIANA GOMEZ CONDE",
+    "tipo_pessoa": "pf",
+    "tax_id": "709.840.122-65",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "MARCOS ADRIANO GAMA",
+    "tipo_pessoa": "pf",
+    "tax_id": "040.603.712-16",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "ALEXANDRE DOS SANTOS CHAVEZ",
+    "tipo_pessoa": "pf",
+    "tax_id": "035.348.852-60",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "LAURA FABIAN DOS SANTOS COSTA",
+    "tipo_pessoa": "pf",
+    "tax_id": "054.841.212-05",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "ALEJANDRO ENRIQUE GUILLEN",
+    "tipo_pessoa": "pf",
+    "tax_id": "110.580.732-89",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "AIRIS MARIA DOS SANTOS",
+    "tipo_pessoa": "pf",
+    "tax_id": "042.094.562-84",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "KEVEN LENO GONCALVES DE SOUZA",
+    "tipo_pessoa": "pf",
+    "tax_id": "010.767.672-90",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "KAILANE FERREIRA PINTO",
+    "tipo_pessoa": "pf",
+    "tax_id": "060.699.022-46",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "ISAAC CAMPOS DE LIMA",
+    "tipo_pessoa": "pf",
+    "tax_id": "703.845.362-98",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "JESSICA EMILY CAMPOS",
+    "tipo_pessoa": "pf",
+    "tax_id": "015.788.942-47",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "FIDELIVROS DISTRIBUIDORA",
+    "tipo_pessoa": "pj",
+    "tax_id": "43.491.255/0001-07",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "MULTICULTURAL EVENTOS LTDA",
+    "tipo_pessoa": "pj",
+    "tax_id": "06.215.079/0001-54",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "JULIANE NUNES MONTEIRO",
+    "tipo_pessoa": "pf",
+    "tax_id": "793.549.962-82",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "NELSA DA SILVA RIBEIRO",
+    "tipo_pessoa": "pj",
+    "tax_id": "37.852.636/0001-71",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "MARIA DO PERPETUO SOCORRO SOUZA PANTOJA",
+    "tipo_pessoa": "pf",
+    "tax_id": "005.136.432-81",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "RICARDO CAMINHA MONTENEGRO",
+    "tipo_pessoa": "pf",
+    "tax_id": "853.803.852-49",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "LEONARDO DA SILVA LEITÃO",
+    "tipo_pessoa": "pf",
+    "tax_id": "046.787.162-03",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "LUCIENE DOS SANTOS OLIVEIRA CASTRO",
+    "tipo_pessoa": "pf",
+    "tax_id": "675.774.582-87",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "ALCIENE GENTIL DA SILVA",
+    "tipo_pessoa": "pf",
+    "tax_id": "656.565.982-68",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "AMAZONVIDA ATIVIDADES MÉDICAS E AMBULATORIAL LTDA",
+    "tipo_pessoa": "pj",
+    "tax_id": "38.492.533/0001-00",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "JH CONSTRUÇÃO LTDA",
+    "tipo_pessoa": "pj",
+    "tax_id": "06.046.143/0001-10",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "ATTACKMED COMÉRCIO DE MAT.",
+    "tipo_pessoa": "pj",
+    "tax_id": "27.986.353/0001-69",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "GESTCONT CONSULTORIA E GERENCIAL MENTO CONTÁBIL",
+    "tipo_pessoa": "pj",
+    "tax_id": "48.999.863/0001-40",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "ZEUS CONSULTORIA EM GESTÃO EMPRESARIAL",
+    "tipo_pessoa": "pj",
+    "tax_id": "20.711.259/0001-58",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "FABIANO LIMA DA SILVEIRA",
+    "tipo_pessoa": "pf",
+    "tax_id": "934.003.492-91",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "EDUARDO CORRÊA DE SENA CAJADO",
+    "tipo_pessoa": "pf",
+    "tax_id": "021.774.582-26",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "MARCIA REGINA PACHECO OLIVEIRA",
+    "tipo_pessoa": "pf",
+    "tax_id": "642.787.602-30",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "MT DESPACHOS ADUANEIROS",
+    "tipo_pessoa": "pj",
+    "tax_id": "31.314.037/0001-18",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "EDIVILSON SOUZA NETO",
+    "tipo_pessoa": "pf",
+    "tax_id": "018.112.482-33",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "CARLOS ALDEMAR ROMERO ALGUACA",
+    "tipo_pessoa": "pf",
+    "tax_id": "709.502.852-42",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  },
+  {
+    "name": "RAIMUNDO NONATO PEIXOTO",
+    "tipo_pessoa": "pf",
+    "tax_id": "407.451.632-20",
+    "source": "import_clientes_rds_imobiliaria_fixed.sql"
+  }
+]
