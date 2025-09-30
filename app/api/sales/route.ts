@@ -155,13 +155,32 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Buscar o nome do método de pagamento se for um ID
+    let paymentMethodName = saleData.payment_method || 'dinheiro';
+    if (saleData.payment_method && saleData.payment_method !== 'dinheiro') {
+      try {
+        const { data: paymentMethod } = await supabaseAdmin
+          .from('payment_methods')
+          .select('name')
+          .eq('id', saleData.payment_method)
+          .single();
+        
+        if (paymentMethod) {
+          paymentMethodName = paymentMethod.name;
+        }
+      } catch (error) {
+        console.warn('⚠️ Erro ao buscar método de pagamento:', error);
+        // Manter o valor original se não conseguir buscar
+      }
+    }
+
     // Preparar dados para inserção da venda com estrutura consistente
     const insertData = {
       customer_id: saleData.customer_id,
       customer_name: saleData.customer_name || customer.name, // Usar o nome enviado pelo frontend ou o do banco
       sale_date: saleData.sale_date || new Date().toISOString().split('T')[0],
       total_amount: saleData.total_amount || 0,
-      payment_method: saleData.payment_method || 'dinheiro',
+      payment_method: paymentMethodName, // Usar o nome do método de pagamento
       status: saleData.status || 'Pendente',
       notes: saleData.notes || null,
       segment_id: saleData.segment_id === '' ? null : saleData.segment_id,

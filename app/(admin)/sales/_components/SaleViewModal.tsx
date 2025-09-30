@@ -42,6 +42,9 @@ const getPaymentMethodIcon = (method: string) => {
       return <div className="w-2 h-2 rounded-full bg-yellow-400 mr-1" />;
     case 'pix':
       return <div className="w-2 h-2 rounded-full bg-purple-400 mr-1" />;
+    case 'boleto bancário':
+    case 'boleto':
+      return <div className="w-2 h-2 rounded-full bg-orange-400 mr-1" />;
     default:
       return <div className="w-2 h-2 rounded-full bg-gray-400 mr-1" />;
   }
