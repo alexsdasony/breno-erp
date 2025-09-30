@@ -67,7 +67,7 @@ export async function createSupplier(payload: SupplierPayload): Promise<ApiRespo
     bairro: payload.bairro || null,
     profissao: payload.ramo_atividade || null, // Mapear ramo_atividade para profissao
     notes: payload.observacoes || null,
-    status: payload.status === 'ativo' ? 'active' : 'inactive',
+    status: payload.status, // Manter o status original
     segment_id: segmentId,
     tipo_pessoa: payload.tipo_contribuinte === 'PF' ? 'fisica' : 'juridica'
   };
@@ -137,7 +137,7 @@ export async function updateSupplier(id: string, payload: SupplierPayload): Prom
     bairro: payload.bairro || null,
     profissao: payload.ramo_atividade || null, // Mapear ramo_atividade para profissao
     notes: payload.observacoes || null,
-    status: payload.status === 'ativo' ? 'active' : 'inactive',
+    status: payload.status, // Manter o status original
     segment_id: segmentId,
     tipo_pessoa: payload.tipo_contribuinte === 'PF' ? 'fisica' : 'juridica'
   };

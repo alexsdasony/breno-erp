@@ -196,6 +196,12 @@ export function useSuppliers() {
       // Alternar status: 'ativo' <-> 'inativo'
       const newStatus = currentSupplier.status === 'ativo' ? 'inativo' : 'ativo';
       
+      console.log('🔄 Toggle status:', {
+        current: currentSupplier.status,
+        new: newStatus,
+        supplierId: id
+      });
+      
       const response = await updateSupplier(id, { status: newStatus } as any);
       if (response.error) {
         throw new Error(response.error);

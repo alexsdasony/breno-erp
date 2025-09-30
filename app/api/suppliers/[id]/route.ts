@@ -12,20 +12,35 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     console.log('  - ramo_atividade (profissao):', body.profissao);
     console.log('  - segment_id:', body.segment_id);
 
-    // Mapear status para valores aceitos pela constraint do banco
-    // Baseado no erro, 'ativo' não é aceito, vamos tentar outros valores
+    // Mapear status corretamente - manter os valores originais
     const statusMap: Record<string, string> = {
-      'ativo': 'active',     // Tentar 'active' em inglês
-      'inativo': 'active',   // Mapear para 'active'
-      'active': 'active',
-      'inactive': 'active'
+      'ativo': 'ativo',
+      'inativo': 'inativo',
+      'active': 'ativo',
+      'inactive': 'inativo'
     };
 
-    // Normalizar o payload
-    const normalizedBody = {
-      ...body,
-      status: body.status ? statusMap[body.status] || 'active' : 'active'
+    // Normalizar o payload - incluir apenas campos não-null para evitar constraint violations
+    const normalizedBody: any = {
+      status: body.status ? statusMap[body.status] || 'ativo' : 'ativo'
     };
+
+    // Incluir apenas campos que não são null para evitar constraint violations
+    if (body.name !== null && body.name !== undefined) normalizedBody.name = body.name;
+    if (body.tax_id !== null && body.tax_id !== undefined) normalizedBody.tax_id = body.tax_id;
+    if (body.email !== null && body.email !== undefined) normalizedBody.email = body.email;
+    if (body.phone !== null && body.phone !== undefined) normalizedBody.phone = body.phone;
+    if (body.address !== null && body.address !== undefined) normalizedBody.address = body.address;
+    if (body.city !== null && body.city !== undefined) normalizedBody.city = body.city;
+    if (body.state !== null && body.state !== undefined) normalizedBody.state = body.state;
+    if (body.zip_code !== null && body.zip_code !== undefined) normalizedBody.zip_code = body.zip_code;
+    if (body.notes !== null && body.notes !== undefined) normalizedBody.notes = body.notes;
+    if (body.segment_id !== null && body.segment_id !== undefined) normalizedBody.segment_id = body.segment_id;
+    if (body.tipo_pessoa !== null && body.tipo_pessoa !== undefined) normalizedBody.tipo_pessoa = body.tipo_pessoa;
+    if (body.numero !== null && body.numero !== undefined) normalizedBody.numero = body.numero;
+    if (body.complemento !== null && body.complemento !== undefined) normalizedBody.complemento = body.complemento;
+    if (body.bairro !== null && body.bairro !== undefined) normalizedBody.bairro = body.bairro;
+    if (body.profissao !== null && body.profissao !== undefined) normalizedBody.profissao = body.profissao;
 
     console.log('🧹 Payload normalizado:', normalizedBody);
 
