@@ -134,18 +134,18 @@ export async function updateCustomer(id: string, customerData: CustomerPayload):
 
   // Mapear dados de Customer para Partner (formato esperado pela API)
   const partnerData = {
-    name: customerData.name || 'Cliente',
-    tax_id: customerData.tax_id || null,
-    email: customerData.email || null,
-    phone: customerData.phone || null,
-    address: customerData.address || null,
-    city: customerData.city || null,
-    state: customerData.state || null,
-    zip_code: customerData.zip_code || null,
-    notes: customerData.notes || null,
+    ...(customerData.name && { name: customerData.name }),
+    ...(customerData.tax_id && { tax_id: customerData.tax_id }),
+    ...(customerData.email && { email: customerData.email }),
+    ...(customerData.phone && { phone: customerData.phone }),
+    ...(customerData.address && { address: customerData.address }),
+    ...(customerData.city && { city: customerData.city }),
+    ...(customerData.state && { state: customerData.state }),
+    ...(customerData.zip_code && { zip_code: customerData.zip_code }),
+    ...(customerData.notes && { notes: customerData.notes }),
     status: customerData.status === 'ativo' ? 'active' : 'inactive',
-    segment_id: segmentId,
-    tipo_pessoa: customerData.tipo_pessoa || 'pf'
+    ...(segmentId && { segment_id: segmentId }),
+    ...(customerData.tipo_pessoa && { tipo_pessoa: customerData.tipo_pessoa })
   };
   
   const response = await apiService.put<{ success: boolean; customer: any }>(`/customers/${id}`, partnerData);
