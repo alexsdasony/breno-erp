@@ -6,23 +6,39 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { name } = await params;
     console.log('🏷️ Buscando segmento por nome:', name);
 
-    const { data: segment, error } = await supabaseAdmin
+    // Buscar segmentos que contenham o nome (pode haver múltiplos)
+    const { data: segments, error: segmentsError } = await supabaseAdmin
       .from('segments')
       .select('*')
-      .ilike('name', name)
-      .single();
+      .ilike('name', `%${name}%`)
+      .order('created_at', { ascending: false });
 
-    if (error) {
-      console.log('❌ Segmento não encontrado:', error.message);
+    if (segmentsError) {
+      console.log('❌ Erro ao buscar segmentos:', segmentsError.message);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Erro ao buscar segmentos',
+          details: segmentsError.message
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!segments || segments.length === 0) {
+      console.log('❌ Nenhum segmento encontrado para:', name);
       return NextResponse.json(
         { 
           success: false, 
           error: 'Segmento não encontrado',
-          details: error.message
+          details: 'Nenhum segmento encontrado com esse nome'
         },
         { status: 404 }
       );
     }
+
+    // Retornar o primeiro segmento encontrado
+    const segment = segments[0];
 
     console.log('✅ Segmento encontrado:', segment);
     return NextResponse.json({

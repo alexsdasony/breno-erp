@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Users, CheckCircle, Clock, DollarSign, Search, Eye, Edit, Trash2,
-  User, Mail, Phone, MapPin, X, AlertCircle, FileText, Building
+  User, Mail, Phone, MapPin, X, AlertCircle, FileText, Building, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import { useSuppliers } from '../_hooks/useSuppliers';
 import { Supplier } from '@/types';
@@ -13,7 +13,7 @@ import { useAppData } from '@/hooks/useAppData';
 import SupplierForm from './SupplierForm';
 
 export default function SuppliersView() {
-  const { items: suppliers, loading, hasMore, loadMore, create, update, remove, load } = useSuppliers();
+  const { items: suppliers, loading, hasMore, loadMore, create, update, remove, load, toggleStatus } = useSuppliers();
   const { segments, activeSegmentId } = useAppData();
   
   // State management
@@ -408,6 +408,16 @@ export default function SuppliersView() {
                           data-testid="edit-supplier-button"
                         >
                           <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          id={`suppliers-toggle-${supplier.id}`} 
+                          variant="ghost" 
+                          size="sm" 
+                          title={supplier.status === 'ativo' ? 'Inativar' : 'Ativar'} 
+                          onClick={() => toggleStatus(supplier.id)}
+                          className={supplier.status === 'ativo' ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'}
+                        >
+                          {supplier.status === 'ativo' ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
                         </Button>
                         <Button 
                           id={`suppliers-delete-${supplier.id}`} 

@@ -17,6 +17,7 @@ export interface UseSuppliersApi {
   update: (id: string, data: SupplierPayload) => Promise<Supplier | null>;
   remove: (id: string) => Promise<boolean>;
   search: (query: string) => Promise<Supplier[]>;
+  toggleStatus: (id: string) => Promise<Supplier | null>;
 }
 
 const PAGE_SIZE = 20;
@@ -184,14 +185,53 @@ export function useSuppliers() {
     }
   }, []);
 
+  const toggleStatus = useCallback(async (id: string) => {
+    try {
+      // Encontrar o fornecedor atual
+      const currentSupplier = state.items.find(supplier => supplier.id === id);
+      if (!currentSupplier) {
+        throw new Error('Fornecedor não encontrado');
+      }
+
+      // Alternar status: 'ativo' <-> 'inativo'
+      const newStatus = currentSupplier.status === 'ativo' ? 'inativo' : 'ativo';
+      
+      const response = await updateSupplier(id, { status: newStatus } as any);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
+      const supplier = response.data?.supplier;
+      if (supplier) {
+        setState((s) => ({
+          ...s,
+          items: s.items.map((it) => (it.id === id ? supplier : it)),
+        }));
+        toast({
+          title: 'Status alterado',
+          description: `Fornecedor ${newStatus === 'ativo' ? 'ativado' : 'inativado'} com sucesso.`
+        });
+        return supplier;
+      }
+      return null;
+    } catch (e) {
+      toast({
+        title: 'Erro ao alterar status',
+        description: 'Tente novamente.',
+        variant: 'destructive'
+      });
+      return null;
+    }
+  }, [state.items, update]);
+
   useEffect(() => {
     void load(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const api: UseSuppliersApi = useMemo(
-    () => ({ load, loadMore, create, update, remove, search }),
-    [load, loadMore, create, update, remove, search]
+    () => ({ load, loadMore, create, update, remove, search, toggleStatus }),
+    [load, loadMore, create, update, remove, search, toggleStatus]
   );
 
   return { ...state, ...api };
