@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,28 +12,104 @@ export async function GET(request: NextRequest) {
     
     console.log('📝 Parâmetros:', { page, limit, offset });
     
-    // Métodos de pagamento padrão
-    const defaultPaymentMethods = [
-      { id: '1', name: 'Dinheiro', description: 'Pagamento em dinheiro', active: true },
-      { id: '2', name: 'Cartão de Crédito', description: 'Pagamento com cartão de crédito', active: true },
-      { id: '3', name: 'Cartão de Débito', description: 'Pagamento com cartão de débito', active: true },
-      { id: '4', name: 'PIX', description: 'Pagamento via PIX', active: true },
-      { id: '5', name: 'Boleto', description: 'Pagamento via boleto bancário', active: true },
-      { id: '6', name: 'Transferência', description: 'Transferência bancária', active: true },
-      { id: '7', name: 'Cheque', description: 'Pagamento via cheque', active: true }
-    ];
+    // Buscar métodos de pagamento do banco de dados
+    const { data: paymentMethods, error } = await supabaseAdmin
+      .from('payment_methods')
+      .select('*')
+      .order('name', { ascending: true })
+      .range(offset, offset + limit - 1);
 
-    console.log('📥 Retornando métodos de pagamento padrão');
+    if (error) {
+      console.error('❌ Erro ao buscar métodos de pagamento:', error);
+      return NextResponse.json(
+        { error: 'Erro ao buscar métodos de pagamento' },
+        { status: 500 }
+      );
+    }
+
+    // Buscar total para paginação
+    const { count } = await supabaseAdmin
+      .from('payment_methods')
+      .select('*', { count: 'exact', head: true });
+
+    console.log('📥 Retornando métodos de pagamento do banco');
 
     return NextResponse.json({
       success: true,
-      paymentMethods: defaultPaymentMethods,
+      paymentMethods: paymentMethods || [],
       pagination: {
         page,
         limit,
-        total: defaultPaymentMethods.length,
-        totalPages: 1
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit)
       }
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro na API de métodos de pagamento:', error);
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    console.log('💳 API Route POST /api/payment-methods');
+    
+    const body = await request.json();
+    console.log('📥 Dados recebidos:', body);
+    
+    const { name, nfe_code } = body;
+    
+    if (!name || !name.trim()) {
+      return NextResponse.json(
+        { error: 'Nome é obrigatório' },
+        { status: 400 }
+      );
+    }
+    
+    // Verificar se já existe um método com o mesmo nome
+    const { data: existing } = await supabaseAdmin
+      .from('payment_methods')
+      .select('id')
+      .eq('name', name.trim())
+      .single();
+    
+    if (existing) {
+      return NextResponse.json(
+        { error: 'Já existe uma forma de pagamento com este nome' },
+        { status: 400 }
+      );
+    }
+    
+    // Criar novo método de pagamento
+    const { data: newPaymentMethod, error } = await supabaseAdmin
+      .from('payment_methods')
+      .insert({
+        name: name.trim(),
+        nfe_code: nfe_code || null,
+        active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Erro ao criar método de pagamento:', error);
+      return NextResponse.json(
+        { error: 'Erro ao criar método de pagamento' },
+        { status: 500 }
+      );
+    }
+    
+    console.log('✅ Método de pagamento criado:', newPaymentMethod);
+    
+    return NextResponse.json({
+      success: true,
+      payment_method: newPaymentMethod
     });
     
   } catch (error) {
