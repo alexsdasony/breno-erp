@@ -296,6 +296,9 @@ export function useCustomerForm(customerId?: string) {
     }
 
     try {
+      console.log('🔍 [FRONTEND] Dados do formulário antes do envio:', state.data);
+      console.log('🔍 [FRONTEND] estado_civil no formulário:', state.data.estado_civil);
+      
       const customerData = {
         segment_id: state.data.segment_id,
         name: state.data.name,

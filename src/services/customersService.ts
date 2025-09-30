@@ -145,8 +145,31 @@ export async function updateCustomer(id: string, customerData: CustomerPayload):
     ...(customerData.notes && { notes: customerData.notes }),
     status: customerData.status === 'ativo' ? 'active' : 'inactive',
     ...(segmentId && { segment_id: segmentId }),
-    ...(customerData.tipo_pessoa && { tipo_pessoa: customerData.tipo_pessoa })
+    ...(customerData.tipo_pessoa && { tipo_pessoa: customerData.tipo_pessoa }),
+    // Campos adicionais do formulário completo
+    ...(customerData.rg && { rg: customerData.rg }),
+    ...(customerData.data_nascimento && { data_nascimento: customerData.data_nascimento }),
+    ...(customerData.estado_civil && { estado_civil: customerData.estado_civil }),
+    ...(customerData.profissao && { profissao: customerData.profissao }),
+    ...(customerData.empresa && { empresa: customerData.empresa }),
+    ...(customerData.cargo && { cargo: customerData.cargo }),
+    ...(customerData.data_admissao && { data_admissao: customerData.data_admissao }),
+    ...(customerData.telefone_comercial && { telefone_comercial: customerData.telefone_comercial }),
+    ...(customerData.celular && { celular: customerData.celular }),
+    ...(customerData.numero && { numero: customerData.numero }),
+    ...(customerData.complemento && { complemento: customerData.complemento }),
+    ...(customerData.bairro && { bairro: customerData.bairro }),
+    ...(customerData.tipo_imovel && { tipo_imovel: customerData.tipo_imovel }),
+    ...(customerData.possui_patrimonio !== undefined && { possui_patrimonio: customerData.possui_patrimonio }),
+    ...(customerData.valor_patrimonio && { valor_patrimonio: customerData.valor_patrimonio }),
+    ...(customerData.descricao_patrimonio && { descricao_patrimonio: customerData.descricao_patrimonio }),
+    ...(customerData.data_cadastro && { data_cadastro: customerData.data_cadastro }),
+    ...(customerData.responsavel_cadastro && { responsavel_cadastro: customerData.responsavel_cadastro }),
+    ...(customerData.observacoes && { observacoes: customerData.observacoes })
   };
+  
+  console.log('🔍 [SERVICE] Dados sendo enviados para API:', partnerData);
+  console.log('🔍 [SERVICE] estado_civil sendo enviado:', customerData.estado_civil);
   
   const response = await apiService.put<{ success: boolean; customer: any }>(`/customers/${id}`, partnerData);
   
