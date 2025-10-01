@@ -12,6 +12,7 @@ interface CustomerAutocompleteProps {
   placeholder?: string;
   className?: string;
   required?: boolean;
+  initialCustomerName?: string;
 }
 
 export default function CustomerAutocomplete({ 
@@ -19,13 +20,21 @@ export default function CustomerAutocomplete({
   onChange, 
   placeholder = "Digite o nome do cliente...",
   className = "",
-  required = false
+  required = false,
+  initialCustomerName = ""
 }: CustomerAutocompleteProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialCustomerName);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  
+  // Atualizar searchTerm quando initialCustomerName mudar
+  useEffect(() => {
+    if (initialCustomerName) {
+      setSearchTerm(initialCustomerName);
+    }
+  }, [initialCustomerName]);
 
   // Buscar clientes quando o termo de busca mudar
   useEffect(() => {
@@ -136,6 +145,26 @@ export default function CustomerAutocomplete({
                   className="w-full px-3 py-2 text-left hover:bg-muted/50 flex items-center space-x-3"
                 >
                   <User className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium">{customer.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {customer.email} • {customer.phone}
+                    </div>
+                  </div>
+                </button>
+              ))
+            ) : searchTerm.trim() ? (
+              <div className="p-3 text-center text-muted-foreground">
+                Nenhum cliente encontrado
+              </div>
+            ) : null}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
                   <div>
                     <div className="font-medium">{customer.name}</div>
                     <div className="text-sm text-muted-foreground">

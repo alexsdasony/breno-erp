@@ -305,6 +305,7 @@ export default function BillingView() {
                   value={formData.customer_id}
                   onChange={(customerId, customerName) => setFormData({...formData, customer_id: customerId, customer_name: customerName})}
                   placeholder="Digite o nome do cliente..."
+                  initialCustomerName={formData.customer_name}
                   required
                 />
               </div>
