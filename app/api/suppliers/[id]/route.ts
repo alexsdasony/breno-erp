@@ -12,17 +12,17 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     console.log('  - ramo_atividade (profissao):', body.profissao);
     console.log('  - segment_id:', body.segment_id);
 
-    // Mapear status corretamente - manter os valores originais
+    // Mapear status corretamente - o banco aceita 'active' e 'inactive' em inglês
     const statusMap: Record<string, string> = {
-      'ativo': 'ativo',
-      'inativo': 'inativo',
-      'active': 'ativo',
-      'inactive': 'inativo'
+      'ativo': 'active',
+      'inativo': 'inactive',
+      'active': 'active',
+      'inactive': 'inactive'
     };
 
     // Normalizar o payload - incluir apenas campos não-null para evitar constraint violations
     const normalizedBody: any = {
-      status: body.status ? statusMap[body.status] || 'ativo' : 'ativo'
+      status: body.status ? statusMap[body.status] || 'active' : 'active'
     };
 
     // Incluir apenas campos que não são null para evitar constraint violations
