@@ -89,6 +89,12 @@ export function SalesForm({ editingSale, onSubmit, onCancel }: SalesFormProps) {
   // Preencher o formulário quando estiver editando uma venda
   useEffect(() => {
     if (editingSale) {
+      console.log('📝 [SALES FORM] Carregando venda para edição:', editingSale);
+      console.log('📝 [SALES FORM] customer_id:', editingSale.customer_id);
+      console.log('📝 [SALES FORM] customer_name:', editingSale.customer_name);
+      console.log('📝 [SALES FORM] payment_method:', (editingSale as any).payment_method);
+      console.log('📝 [SALES FORM] items:', editingSale.items);
+      
       setFormData({
         customer_id: editingSale.customer_id || '',
         customer_name: editingSale.customer_name || '',
@@ -98,8 +104,16 @@ export function SalesForm({ editingSale, onSubmit, onCancel }: SalesFormProps) {
         notes: (editingSale as any).notes || '',
       });
 
+      console.log('📝 [SALES FORM] FormData definido:', {
+        customer_id: editingSale.customer_id || '',
+        customer_name: editingSale.customer_name || '',
+        sale_date: editingSale.date || new Date().toISOString().split('T')[0],
+        payment_method: (editingSale as any).payment_method || 'dinheiro',
+      });
+
       // Mapear itens da venda para o formato do componente
       if (editingSale.items && editingSale.items.length > 0) {
+        console.log('📝 [SALES FORM] Mapeando items:', editingSale.items);
         const mappedItems = editingSale.items.map((item, index) => ({
           id: `existing-${index}`,
           sale_id: item.sale_id,
@@ -111,12 +125,20 @@ export function SalesForm({ editingSale, onSubmit, onCancel }: SalesFormProps) {
           totalPrice: item.quantity * item.unit_price,
         }));
         setSaleItems(mappedItems);
+        console.log('✅ [SALES FORM] Items definidos:', mappedItems);
+      } else {
+        console.log('⚠️ [SALES FORM] Nenhum item encontrado na venda');
       }
 
       // Buscar dados do cliente se necessário
       if (editingSale.customer_id && !customers.some(c => c.id === editingSale.customer_id)) {
+        console.log('📝 [SALES FORM] Buscando dados do cliente:', editingSale.customer_name);
         handleCustomerSearch(editingSale.customer_name || '');
       }
+      
+      console.log('✅ [SALES FORM] Formulário carregado completamente');
+    } else {
+      console.log('⚠️ [SALES FORM] Nenhuma venda para editar');
     }
   }, [editingSale]);
 
