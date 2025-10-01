@@ -192,8 +192,8 @@ export function SalesList({ items, loading, hasMore, loadMore, onEdit, onView, o
                 </td>
                 <td className="p-3">
                   <div className="flex items-center space-x-2">
-                    {getPaymentMethodIcon((sale as any).payment_method || 'dinheiro')}
-                    <span className="text-sm capitalize">{(sale as any).payment_method || 'dinheiro'}</span>
+                    {getPaymentMethodIcon((sale as any).payment_method || 'Dinheiro')}
+                    <span className="text-sm">{(sale as any).payment_method || 'Dinheiro'}</span>
                   </div>
                 </td>
                 <td className="p-3">
