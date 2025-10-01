@@ -187,27 +187,40 @@ export function useSuppliers() {
 
   const toggleStatus = useCallback(async (id: string) => {
     try {
+      console.log('🔄 [TOGGLE] Iniciando toggle status para:', id);
+      
       // Encontrar o fornecedor atual
       const currentSupplier = state.items.find(supplier => supplier.id === id);
       if (!currentSupplier) {
+        console.error('❌ [TOGGLE] Fornecedor não encontrado:', id);
         throw new Error('Fornecedor não encontrado');
       }
+
+      console.log('🔄 [TOGGLE] Fornecedor atual:', currentSupplier);
 
       // Alternar status: 'ativo' <-> 'inativo'
       const newStatus = currentSupplier.status === 'ativo' ? 'inativo' : 'ativo';
       
-      console.log('🔄 Toggle status:', {
+      console.log('🔄 [TOGGLE] Toggle status:', {
         current: currentSupplier.status,
         new: newStatus,
-        supplierId: id
+        supplierId: id,
+        supplierName: currentSupplier.razao_social || currentSupplier.nome_fantasia
       });
       
+      console.log('🔄 [TOGGLE] Chamando updateSupplier com:', { id, status: newStatus });
       const response = await updateSupplier(id, { status: newStatus } as any);
+      
+      console.log('🔄 [TOGGLE] Resposta do updateSupplier:', response);
+      
       if (response.error) {
+        console.error('❌ [TOGGLE] Erro na resposta:', response.error);
         throw new Error(response.error);
       }
       
       const supplier = response.data?.supplier;
+      console.log('🔄 [TOGGLE] Fornecedor retornado:', supplier);
+      
       if (supplier) {
         setState((s) => ({
           ...s,
@@ -217,18 +230,22 @@ export function useSuppliers() {
           title: 'Status alterado',
           description: `Fornecedor ${newStatus === 'ativo' ? 'ativado' : 'inativado'} com sucesso.`
         });
+        console.log('✅ [TOGGLE] Status alterado com sucesso');
         return supplier;
       }
+      
+      console.warn('⚠️ [TOGGLE] Nenhum fornecedor retornado');
       return null;
     } catch (e) {
+      console.error('❌ [TOGGLE] Erro ao alterar status:', e);
       toast({
         title: 'Erro ao alterar status',
-        description: 'Tente novamente.',
+        description: e instanceof Error ? e.message : 'Tente novamente.',
         variant: 'destructive'
       });
       return null;
     }
-  }, [state.items, update]);
+  }, [state.items]);
 
   useEffect(() => {
     void load(true);
