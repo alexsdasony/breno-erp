@@ -57,6 +57,31 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
   const [showPartnerList, setShowPartnerList] = React.useState(false);
   const [loadingPartners, setLoadingPartners] = React.useState(false);
 
+  // Função para converter data BR para ISO (YYYY-MM-DD)
+  const formatDateToISO = (dateStr: string) => {
+    if (!dateStr) return '';
+    // Se já está no formato ISO, retorna como está
+    if (dateStr.includes('-') && dateStr.length === 10) return dateStr;
+    // Se está no formato BR (DD/MM/YYYY), converte para ISO
+    if (dateStr.includes('/')) {
+      const [day, month, year] = dateStr.split('/');
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    return dateStr;
+  };
+
+  // Função para converter data ISO para BR (DD/MM/YYYY)
+  const formatDateToBR = (dateStr: string) => {
+    if (!dateStr) return '';
+    // Se está no formato ISO (YYYY-MM-DD), converte para BR
+    if (dateStr.includes('-') && dateStr.length === 10) {
+      const [year, month, day] = dateStr.split('-');
+      return `${day}/${month}/${year}`;
+    }
+    // Se já está no formato BR, retorna como está
+    return dateStr;
+  };
+
   // Initialize from editingDoc
   React.useEffect(() => {
     if (!open) return;
@@ -64,8 +89,8 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
       setFDirection(editingDoc.direction || '');
       setFDescription(editingDoc.description || '');
       setFAmount(editingDoc.amount != null ? String(editingDoc.amount) : '');
-      setFIssueDate(editingDoc.issue_date || '');
-      setFDueDate(editingDoc.due_date || '');
+      setFIssueDate(formatDateToBR(editingDoc.issue_date || ''));
+      setFDueDate(formatDateToBR(editingDoc.due_date || ''));
       setFStatus(editingDoc.status || 'draft');
       setFPartnerId(editingDoc.partner_id || '');
       setPartnerQuery(editingDoc.partner?.name || editingDoc.partner_name || '');
@@ -168,8 +193,8 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
       direction: fDirection || null,
       description: fDescription || null,
       amount: amountNum,
-      issue_date: fIssueDate || null,
-      due_date: fDueDate || null,
+      issue_date: formatDateToISO(fIssueDate) || null,
+      due_date: formatDateToISO(fDueDate) || null,
       status: fStatus || null,
       partner_id: fPartnerId || null,
       segment_id: fSegmentId || null,
@@ -271,19 +296,33 @@ export default function FinancialFormModal({ open, onClose, loading, editingDoc,
                 <div>
                   <label className="block text-sm font-medium mb-2 text-foreground">Data Emissão</label>
                   <input 
-                    type="date" 
+                    type="text" 
                     className="w-full bg-muted/50 border border-border/50 rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
                     value={fIssueDate} 
-                    onChange={(e) => setFIssueDate(e.target.value)} 
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/\D/g, '');
+                      if (value.length >= 2) value = value.substring(0, 2) + '/' + value.substring(2);
+                      if (value.length >= 5) value = value.substring(0, 5) + '/' + value.substring(5, 9);
+                      setFIssueDate(value);
+                    }}
+                    placeholder="DD/MM/AAAA"
+                    maxLength={10}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2 text-foreground">Vencimento</label>
                   <input 
-                    type="date" 
+                    type="text" 
                     className="w-full bg-muted/50 border border-border/50 rounded-lg p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
                     value={fDueDate} 
-                    onChange={(e) => setFDueDate(e.target.value)} 
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/\D/g, '');
+                      if (value.length >= 2) value = value.substring(0, 2) + '/' + value.substring(2);
+                      if (value.length >= 5) value = value.substring(0, 5) + '/' + value.substring(5, 9);
+                      setFDueDate(value);
+                    }}
+                    placeholder="DD/MM/AAAA"
+                    maxLength={10}
                   />
                 </div>
                 <div>
