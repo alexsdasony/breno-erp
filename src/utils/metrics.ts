@@ -39,6 +39,16 @@ export const calculateMetrics = (data: MetricsData, segmentId: number | null = n
     .filter((fd: any) => fd.direction === 'payable')
     .reduce((sum: number, fd: any) => sum + Number(fd.amount || 0), 0);
 
+  // Debug logs
+  console.log('🔍 [METRICS DEBUG] Financial Documents:', {
+    total: filteredFinancialDocuments.length,
+    receivables: filteredFinancialDocuments.filter((fd: any) => fd.direction === 'receivable').length,
+    payables: filteredFinancialDocuments.filter((fd: any) => fd.direction === 'payable').length,
+    totalRevenue,
+    totalExpenses,
+    netProfit: totalRevenue - totalExpenses
+  });
+
   // Lucro (Receita - Despesas)
   const netProfit = totalRevenue - totalExpenses;
 
