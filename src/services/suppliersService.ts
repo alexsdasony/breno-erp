@@ -111,24 +111,31 @@ export async function updateSupplier(id: string, payload: SupplierPayload): Prom
   const segmentId = payload.segment_id || null;
 
   // Mapear dados de Supplier para Partner (formato esperado pela API)
-  const partnerData = {
-    name: payload.razao_social || payload.nome_fantasia || 'Fornecedor',
-    tax_id: payload.cpf_cnpj || null,
-    email: payload.email || null,
-    phone: payload.telefone_celular || null,
-    address: payload.endereco || null,
-    city: payload.cidade || null,
-    state: payload.uf || null,
-    zip_code: payload.cep || null,
-    numero: payload.numero || null,
-    complemento: payload.complemento || null,
-    bairro: payload.bairro || null,
-    profissao: payload.ramo_atividade || null, // Mapear ramo_atividade para profissao
-    notes: payload.observacoes || null,
-    status: payload.status, // Manter o status original
-    segment_id: segmentId,
-    tipo_pessoa: payload.tipo_contribuinte === 'PF' ? 'fisica' : 'juridica'
+  // Incluir apenas campos fornecidos para não sobrescrever dados existentes
+  const partnerData: any = {
+    status: payload.status // Status sempre é enviado
   };
+  
+  // Adicionar apenas campos que foram fornecidos
+  if (payload.razao_social || payload.nome_fantasia) {
+    partnerData.name = payload.razao_social || payload.nome_fantasia;
+  }
+  if (payload.cpf_cnpj !== undefined) partnerData.tax_id = payload.cpf_cnpj || null;
+  if (payload.email !== undefined) partnerData.email = payload.email || null;
+  if (payload.telefone_celular !== undefined) partnerData.phone = payload.telefone_celular || null;
+  if (payload.endereco !== undefined) partnerData.address = payload.endereco || null;
+  if (payload.cidade !== undefined) partnerData.city = payload.cidade || null;
+  if (payload.uf !== undefined) partnerData.state = payload.uf || null;
+  if (payload.cep !== undefined) partnerData.zip_code = payload.cep || null;
+  if (payload.numero !== undefined) partnerData.numero = payload.numero || null;
+  if (payload.complemento !== undefined) partnerData.complemento = payload.complemento || null;
+  if (payload.bairro !== undefined) partnerData.bairro = payload.bairro || null;
+  if (payload.ramo_atividade !== undefined) partnerData.profissao = payload.ramo_atividade || null;
+  if (payload.observacoes !== undefined) partnerData.notes = payload.observacoes || null;
+  if (segmentId !== undefined && segmentId !== null) partnerData.segment_id = segmentId;
+  if (payload.tipo_contribuinte !== undefined) {
+    partnerData.tipo_pessoa = payload.tipo_contribuinte === 'PF' ? 'fisica' : 'juridica';
+  }
   
   console.log('🔄 [UPDATE SUPPLIER SERVICE] partnerData:', partnerData);
   
