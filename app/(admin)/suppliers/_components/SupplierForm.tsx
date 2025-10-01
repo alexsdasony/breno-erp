@@ -266,10 +266,15 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
 
   useEffect(() => {
     if (supplier) {
+      console.log('📝 [FORM] Carregando dados do fornecedor:', supplier);
+      console.log('📝 [FORM] ramo_atividade:', supplier.ramo_atividade);
+      console.log('📝 [FORM] segment_id:', supplier.segment_id);
+      console.log('📝 [FORM] profissao (se existir):', (supplier as any).profissao);
+      
       setFormData({
         razao_social: supplier.razao_social || supplier.name || '',
         nome_fantasia: supplier.nome_fantasia || '',
-        ramo_atividade: supplier.ramo_atividade || '',
+        ramo_atividade: supplier.ramo_atividade || (supplier as any).profissao || '',
         tipo_contribuinte: supplier.tipo_contribuinte || 'PJ',
         cpf_cnpj: supplier.cpf_cnpj || supplier.cnpj || supplier.cpf || '',
         inscricao_estadual: supplier.inscricao_estadual || '',
@@ -298,6 +303,11 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
         data_cadastro: supplier.data_cadastro || new Date().toISOString().split('T')[0],
         observacoes: supplier.observacoes || '',
         segment_id: supplier.segment_id || '',
+      });
+      
+      console.log('✅ [FORM] FormData após carregar:', {
+        ramo_atividade: supplier.ramo_atividade || (supplier as any).profissao || '',
+        segment_id: supplier.segment_id || ''
       });
     }
   }, [supplier]);
