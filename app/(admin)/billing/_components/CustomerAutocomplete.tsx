@@ -164,23 +164,3 @@ export default function CustomerAutocomplete({
     </div>
   );
 }
-
-                  <div>
-                    <div className="font-medium">{customer.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {customer.email} • {customer.phone}
-                    </div>
-                  </div>
-                </button>
-              ))
-            ) : searchTerm.trim() ? (
-              <div className="p-3 text-center text-muted-foreground">
-                Nenhum cliente encontrado
-              </div>
-            ) : null}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
