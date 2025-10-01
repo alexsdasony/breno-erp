@@ -39,18 +39,12 @@ export async function listSuppliers(params: Record<string, any> = {}): Promise<A
 }
 
 export async function createSupplier(payload: SupplierPayload): Promise<ApiResponse<{ supplier: Supplier }>> {
-  // Buscar UUID do segmento se fornecido
-  let segmentId = null;
-  if (payload.segment_id && payload.segment_id !== 'outros') {
-    try {
-      const segmentResponse = await getSegmentByName(payload.segment_id);
-      if (segmentResponse.success && segmentResponse.data?.segment) {
-        segmentId = segmentResponse.data.segment.id;
-      }
-    } catch (error) {
-      console.warn('Erro ao buscar segmento:', error);
-    }
-  }
+  console.log('🆕 [CREATE SUPPLIER SERVICE] Payload recebido:', payload);
+  console.log('🆕 [CREATE SUPPLIER SERVICE] segment_id:', payload.segment_id);
+  console.log('🆕 [CREATE SUPPLIER SERVICE] ramo_atividade:', payload.ramo_atividade);
+
+  // O segment_id agora já vem como UUID do banco
+  const segmentId = payload.segment_id || null;
 
   // Mapear dados de Supplier para Partner (formato esperado pela API)
   const partnerData = {
@@ -72,7 +66,7 @@ export async function createSupplier(payload: SupplierPayload): Promise<ApiRespo
     tipo_pessoa: payload.tipo_contribuinte === 'PF' ? 'fisica' : 'juridica'
   };
   
-  console.log('🚀 Enviando dados para API /suppliers:', JSON.stringify(partnerData, null, 2));
+  console.log('🚀 [CREATE SUPPLIER SERVICE] Enviando dados para API /suppliers:', JSON.stringify(partnerData, null, 2));
   const response = await apiService.post<{ success: boolean; supplier: any }>('/suppliers', partnerData)
   console.log('📥 Resposta da API:', JSON.stringify(response, null, 2));
   
@@ -109,18 +103,12 @@ export async function createSupplier(payload: SupplierPayload): Promise<ApiRespo
 }
 
 export async function updateSupplier(id: string, payload: SupplierPayload): Promise<ApiResponse<{ supplier: Supplier }>> {
-  // Buscar UUID do segmento se fornecido
-  let segmentId = null;
-  if (payload.segment_id && payload.segment_id !== 'outros') {
-    try {
-      const segmentResponse = await getSegmentByName(payload.segment_id);
-      if (segmentResponse.success && segmentResponse.data?.segment) {
-        segmentId = segmentResponse.data.segment.id;
-      }
-    } catch (error) {
-      console.warn('Erro ao buscar segmento:', error);
-    }
-  }
+  console.log('🔄 [UPDATE SUPPLIER SERVICE] Payload recebido:', payload);
+  console.log('🔄 [UPDATE SUPPLIER SERVICE] segment_id:', payload.segment_id);
+  console.log('🔄 [UPDATE SUPPLIER SERVICE] ramo_atividade:', payload.ramo_atividade);
+
+  // O segment_id agora já vem como UUID do banco
+  const segmentId = payload.segment_id || null;
 
   // Mapear dados de Supplier para Partner (formato esperado pela API)
   const partnerData = {
@@ -141,6 +129,8 @@ export async function updateSupplier(id: string, payload: SupplierPayload): Prom
     segment_id: segmentId,
     tipo_pessoa: payload.tipo_contribuinte === 'PF' ? 'fisica' : 'juridica'
   };
+  
+  console.log('🔄 [UPDATE SUPPLIER SERVICE] partnerData:', partnerData);
   
   const response = await apiService.put<{ success: boolean; supplier: any }>(`/suppliers/${id}`, partnerData)
   
