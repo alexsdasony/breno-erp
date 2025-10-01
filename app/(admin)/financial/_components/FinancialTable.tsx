@@ -16,6 +16,18 @@ type Props = {
 };
 
 export default function FinancialTable({ items, currency, pmMap, onDetails, onEdit, onAskDelete }: Props) {
+  // Função para formatar data ISO para BR (DD/MM/AAAA)
+  const formatDateToBR = (dateStr: string | null | undefined) => {
+    if (!dateStr) return '-';
+    // Se está no formato ISO (YYYY-MM-DD), converte para BR
+    if (dateStr.includes('-') && dateStr.length === 10) {
+      const [year, month, day] = dateStr.split('-');
+      return `${day}/${month}/${year}`;
+    }
+    // Se já está no formato BR, retorna como está
+    return dateStr;
+  };
+
   const typeLabel = (direction?: string | null) => {
     switch (direction) {
       case 'receivable': return (
@@ -62,8 +74,8 @@ export default function FinancialTable({ items, currency, pmMap, onDetails, onEd
           <tbody>
             {items.map((d) => (
               <tr key={d.id} className="border-b border-border hover:bg-muted/30">
-                <td className="p-3">{d.issue_date || '-'}</td>
-                <td className="p-3">{d.due_date || '-'}</td>
+                <td className="p-3">{formatDateToBR(d.issue_date)}</td>
+                <td className="p-3">{formatDateToBR(d.due_date)}</td>
                 <td className="p-3">{typeLabel(d.direction)}</td>
                 <td className="p-3">{getPartnerName(d)}</td>
                 <td className="p-3 text-right">{currency(Number(d.amount || 0))}</td>
