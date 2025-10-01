@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       { data: suppliers, error: suppliersError },
       { data: products, error: productsError },
       { data: accountsPayable, error: payablesError },
-      { data: accountsReceivable, error: receivablesError },
+      { data: billings, error: billingsError },
       { data: sales, error: salesError }
     ] = await Promise.all([
       // Total de clientes
@@ -81,12 +81,12 @@ export async function GET(request: NextRequest) {
         .select('valor, status, data_vencimento')
         .match(segmentFilter),
       
-      // Contas a receber (se existir a tabela)
+      // Cobranças (billings)
       supabaseAdmin
-        .from('accounts_receivable')
-        .select('valor, status, data_vencimento')
-        .match(segmentFilter)
-        .then(result => result.error ? { data: [], error: null } : result),
+        .from('billings')
+        .select('amount, status, due_date')
+        .eq('is_deleted', false)
+        .match(segmentFilter),
       
       // Vendas reais
       supabaseAdmin
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
     if (suppliersError) console.error('❌ Erro ao buscar fornecedores:', suppliersError);
     if (productsError) console.error('❌ Erro ao buscar produtos:', productsError);
     if (payablesError) console.error('❌ Erro ao buscar contas a pagar:', payablesError);
-    if (receivablesError) console.error('❌ Erro ao buscar contas a receber:', receivablesError);
+    if (billingsError) console.error('❌ Erro ao buscar cobranças:', billingsError);
     if (salesError) console.error('❌ Erro ao buscar vendas:', salesError);
 
     // Calcular métricas
@@ -118,17 +118,23 @@ export async function GET(request: NextRequest) {
       ap.status === 'pendente' || ap.status === 'pending'
     ).length || 0;
     
-    // Contas a receber pendentes
-    const pendingReceivables = accountsReceivable?.filter(ar => 
-      ar.status === 'pendente' || ar.status === 'pending'
-    ).length || 0;
+    // Cobranças pendentes (billings)
+    const pendingBillings = billings?.filter(b => {
+      const status = b.status?.toLowerCase() || '';
+      return status === 'pendente' || status === 'pending';
+    }).length || 0;
 
     // Calcular valores totais
     const totalPayablesValue = accountsPayable?.reduce((sum, ap) => 
       sum + (Number(ap.valor) || 0), 0) || 0;
     
-    const totalReceivablesValue = accountsReceivable?.reduce((sum, ar) => 
-      sum + (Number(ar.valor) || 0), 0) || 0;
+    const totalBillingsValue = billings?.reduce((sum, b) => {
+      const status = b.status?.toLowerCase() || '';
+      if (status === 'pendente' || status === 'pending') {
+        return sum + (Number(b.amount) || 0);
+      }
+      return sum;
+    }, 0) || 0;
 
     // Calcular métricas reais de vendas
     const totalSales = sales?.length || 0;
@@ -167,22 +173,22 @@ export async function GET(request: NextRequest) {
       const dayPayablesValue = dayPayables.reduce((sum, ap) => 
         sum + (Number(ap.valor) || 0), 0);
       
-      // Buscar contas a receber do dia
-      const dayReceivables = accountsReceivable?.filter(ar => {
-        const receivableDate = new Date(ar.data_vencimento).toISOString().split('T')[0];
-        return receivableDate === dateStr;
+      // Buscar cobranças do dia (billings)
+      const dayBillings = billings?.filter(b => {
+        const billingDate = new Date(b.due_date).toISOString().split('T')[0];
+        return billingDate === dateStr;
       }) || [];
       
-      const dayReceivablesValue = dayReceivables.reduce((sum, ar) => 
-        sum + (Number(ar.valor) || 0), 0);
+      const dayBillingsValue = dayBillings.reduce((sum, b) => 
+        sum + (Number(b.amount) || 0), 0);
       
       seriesDays.push({
         date: dateStr,
         sales: daySales.length,
         revenue: dayRevenue,
         payables: dayPayablesValue,
-        receivables: dayReceivablesValue,
-        cash_in: dayRevenue + dayReceivablesValue,
+        receivables: dayBillingsValue, // Usar cobranças (billings)
+        cash_in: dayRevenue + dayBillingsValue,
         cash_out: dayPayablesValue
       });
     }
@@ -196,10 +202,10 @@ export async function GET(request: NextRequest) {
       total_suppliers: totalSuppliers,
       total_products: totalProducts,
       low_stock_count: lowStockCount,
-      pending_invoices: pendingReceivables,
+      pending_invoices: pendingBillings, // Usar cobranças (billings)
       pending_payables: pendingPayables,
       total_payables_value: totalPayablesValue,
-      total_receivables_value: totalReceivablesValue,
+      total_receivables_value: totalBillingsValue, // Valor total de cobranças pendentes
       series_days: seriesDays
     };
 
