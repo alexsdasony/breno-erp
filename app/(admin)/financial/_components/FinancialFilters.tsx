@@ -1,7 +1,8 @@
 "use client";
 
 import React from 'react';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export type Segment = { id: string; name?: string; code?: string };
 
@@ -20,6 +21,7 @@ type Props = {
   setPartner: (v: string) => void;
   segments: Segment[];
   filterSearchRef: React.RefObject<HTMLInputElement>;
+  onClearFilters?: () => void;
 };
 
 export default function FinancialFilters({
@@ -31,6 +33,7 @@ export default function FinancialFilters({
   partner, setPartner,
   segments,
   filterSearchRef,
+  onClearFilters,
 }: Props) {
   return (
     <div className="glass-effect rounded-xl p-4 border">
@@ -44,26 +47,51 @@ export default function FinancialFilters({
         </div>
         <div className="md:col-span-2">
           <label className="block text-sm mb-1">Data Inicial</label>
-          <input type="date" className="w-full bg-muted border rounded-lg p-2" value={dateStart} onChange={(e) => setDateStart(e.target.value)} />
+          <input 
+            type="text" 
+            className="w-full bg-muted border rounded-lg p-2" 
+            value={dateStart} 
+            onChange={(e) => {
+              let value = e.target.value.replace(/\D/g, '');
+              if (value.length >= 2) value = value.substring(0, 2) + '/' + value.substring(2);
+              if (value.length >= 5) value = value.substring(0, 5) + '/' + value.substring(5, 9);
+              setDateStart(value);
+            }}
+            placeholder="DD/MM/AAAA"
+            maxLength={10}
+          />
         </div>
         <div className="md:col-span-2">
           <label className="block text-sm mb-1">Data Final</label>
-          <input type="date" className="w-full bg-muted border rounded-lg p-2" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} />
+          <input 
+            type="text" 
+            className="w-full bg-muted border rounded-lg p-2" 
+            value={dateEnd} 
+            onChange={(e) => {
+              let value = e.target.value.replace(/\D/g, '');
+              if (value.length >= 2) value = value.substring(0, 2) + '/' + value.substring(2);
+              if (value.length >= 5) value = value.substring(0, 5) + '/' + value.substring(5, 9);
+              setDateEnd(value);
+            }}
+            placeholder="DD/MM/AAAA"
+            maxLength={10}
+          />
         </div>
         <div className="md:col-span-2">
           <label className="block text-sm mb-1">Tipo</label>
           <select className="w-full bg-muted border rounded-lg p-2" value={type} onChange={(e) => setType(e.target.value)}>
             <option value="">Todos</option>
-            <option value="receipt">Receita</option>
-            <option value="expense">Despesa</option>
-            <option value="transfer">Transferência</option>
+            <option value="receivable">Contas a Receber</option>
+            <option value="payable">Contas a Pagar</option>
           </select>
         </div>
         <div className="md:col-span-1">
           <label className="block text-sm mb-1">Status</label>
           <select className="w-full bg-muted border rounded-lg p-2" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">Todos</option>
-            <option value="pending">Pendente</option>
+            <option value="draft">Rascunho</option>
+            <option value="open">Aberto</option>
+            <option value="partially_paid">Parcialmente Pago</option>
             <option value="paid">Pago</option>
             <option value="canceled">Cancelado</option>
           </select>
@@ -76,6 +104,17 @@ export default function FinancialFilters({
               <option key={s.id} value={s.id}>{s.code ? `${s.code} - ` : ''}{s.name || s.id}</option>
             ))}
           </select>
+        </div>
+        <div className="md:col-span-1 flex items-end">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onClearFilters}
+            className="w-full"
+          >
+            <X className="w-4 h-4 mr-1" />
+            Limpar
+          </Button>
         </div>
       </div>
     </div>

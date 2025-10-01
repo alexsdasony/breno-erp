@@ -45,6 +45,16 @@ export default function FinancialView() {
     setShowForm(false);
   }, []);
 
+  // Função para limpar todos os filtros
+  const clearFilters = React.useCallback(() => {
+    setDateStart('');
+    setDateEnd('');
+    setType('');
+    setPartner('');
+    setSegment('');
+    setStatus('');
+  }, []);
+
   // Atalhos e foco do form movidos para FinancialFormModal
 
   // Foco do formulário movido para FinancialFormModal
@@ -136,19 +146,60 @@ export default function FinancialView() {
 
   // Submissão do formulário movida para FinancialFormModal
 
-  // Filtro em memória (somente UI) - incluindo segmento
+  // Função para converter data BR para ISO
+  const formatDateToISO = (dateStr: string) => {
+    if (!dateStr) return '';
+    if (dateStr.includes('-') && dateStr.length === 10) return dateStr;
+    if (dateStr.includes('/')) {
+      const [day, month, year] = dateStr.split('/');
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    return dateStr;
+  };
+
+  // Filtro em memória - incluindo todos os filtros
   const filtered = React.useMemo(() => {
     const p = partner.trim().toLowerCase();
     return items.filter((it) => {
+      // Filtro por parceiro
       const matchesPartner = !p || `${it.partner_name || it.partner?.name || ''}`.toLowerCase().includes(p) || `${it.partner_id || ''}`.toLowerCase().includes(p);
+      
+      // Filtro por tipo (direction)
       const matchesType = !type || (it.direction || '') === type;
+      
+      // Filtro por status
       const matchesStatus = !status || (it.status || '') === status;
+      
+      // Filtro por segmento ativo
       const matchesSegment = !activeSegmentId || activeSegmentId === '0' ||
                             (it.segment_id && it.segment_id === activeSegmentId);
-      // Datas como UI por enquanto (não aplicados)
-      return matchesPartner && matchesType && matchesStatus && matchesSegment;
+      
+      // Filtro por segmento específico (se selecionado)
+      const matchesSpecificSegment = !segment || (it.segment_id && it.segment_id === segment);
+      
+      // Filtro por data de emissão
+      let matchesDateStart = true;
+      if (dateStart) {
+        const startDate = formatDateToISO(dateStart);
+        const itemDate = it.issue_date;
+        if (itemDate && startDate) {
+          matchesDateStart = new Date(itemDate) >= new Date(startDate);
+        }
+      }
+      
+      // Filtro por data de vencimento
+      let matchesDateEnd = true;
+      if (dateEnd) {
+        const endDate = formatDateToISO(dateEnd);
+        const itemDate = it.due_date;
+        if (itemDate && endDate) {
+          matchesDateEnd = new Date(itemDate) <= new Date(endDate);
+        }
+      }
+      
+      return matchesPartner && matchesType && matchesStatus && matchesSegment && matchesSpecificSegment && matchesDateStart && matchesDateEnd;
     });
-  }, [items, partner, type, status, activeSegmentId]);
+  }, [items, partner, type, status, activeSegmentId, segment, dateStart, dateEnd]);
 
   return (
     <div className="p-6 space-y-6">
@@ -178,7 +229,7 @@ export default function FinancialView() {
         </div>
       </div>
 
-      {/* Filtros avançados (UI-only) */}
+      {/* Filtros avançados */}
       <FinancialFilters
         dateStart={dateStart}
         setDateStart={setDateStart}
@@ -194,6 +245,7 @@ export default function FinancialView() {
         setPartner={setPartner}
         segments={segments}
         filterSearchRef={filterSearchRef}
+        onClearFilters={clearFilters}
       />
 
 
