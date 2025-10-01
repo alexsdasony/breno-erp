@@ -57,6 +57,16 @@ export function SalesForm({ editingSale, onSubmit, onCancel }: SalesFormProps) {
     console.log('💳 Loading métodos de pagamento:', loadingPaymentMethods);
   }, [paymentMethods, loadingPaymentMethods]);
   
+  // Definir primeiro método de pagamento como padrão quando carregar
+  React.useEffect(() => {
+    if (paymentMethods.length > 0 && !editingSale && formData.payment_method === 'dinheiro') {
+      setFormData(prev => ({
+        ...prev,
+        payment_method: paymentMethods[0].id
+      }));
+    }
+  }, [paymentMethods, editingSale]);
+  
   // Estados para autocomplete
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);

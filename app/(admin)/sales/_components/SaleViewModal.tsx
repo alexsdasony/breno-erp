@@ -94,8 +94,8 @@ export function SaleViewModal({ sale, isOpen, onClose }: SaleViewModalProps) {
                 <div>
                   <label className="block text-sm font-medium text-muted-foreground">Forma de Pagamento</label>
                   <div className="flex items-center">
-                    {getPaymentMethodIcon((sale as any).payment_method || 'dinheiro')}
-                    <span className="ml-1 capitalize">{(sale as any).payment_method || 'dinheiro'}</span>
+                    {getPaymentMethodIcon((sale as any).payment_method || 'Dinheiro')}
+                    <span className="ml-1">{(sale as any).payment_method || 'Dinheiro'}</span>
                   </div>
                 </div>
                 <div>
