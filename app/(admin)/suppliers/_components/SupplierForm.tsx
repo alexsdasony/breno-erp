@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Supplier, SupplierPayload } from '../../../../src/types';
+import { useAppData } from '@/hooks/useAppData';
 
 interface SupplierFormProps {
   supplier?: Supplier | null;
@@ -41,6 +42,7 @@ const TABS = [
 ];
 
 export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLoading = false }: SupplierFormProps) {
+  const { segments } = useAppData();
   const [activeTab, setActiveTab] = useState('identificacao');
   const [formData, setFormData] = useState<SupplierPayload>({
     razao_social: '',
@@ -483,14 +485,22 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                           <label htmlFor="ramo_atividade" className="block text-sm font-semibold text-gray-900">
                             Ramo de Atividade
                           </label>
-                          <input
+                          <select
                             id="ramo_atividade"
-                            type="text"
                             value={formData.ramo_atividade || ''}
                             onChange={(e) => handleFieldChange('ramo_atividade', e.target.value)}
-                            placeholder="Ex: Comércio, Indústria, Serviços"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-                          />
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                          >
+                            <option value="">Selecione o ramo de atividade</option>
+                            <option value="comercio">Comércio</option>
+                            <option value="industria">Indústria</option>
+                            <option value="servicos">Serviços</option>
+                            <option value="tecnologia">Tecnologia</option>
+                            <option value="saude">Saúde</option>
+                            <option value="educacao">Educação</option>
+                            <option value="financeiro">Financeiro</option>
+                            <option value="outros">Outros</option>
+                          </select>
                         </div>
 
                         <div className="space-y-2">
@@ -576,14 +586,11 @@ export default function SupplierForm({ supplier, isOpen, onClose, onSubmit, isLo
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                           >
                             <option value="">Selecione o segmento</option>
-                            <option value="comercio">Comércio</option>
-                            <option value="industria">Indústria</option>
-                            <option value="servicos">Serviços</option>
-                            <option value="tecnologia">Tecnologia</option>
-                            <option value="saude">Saúde</option>
-                            <option value="educacao">Educação</option>
-                            <option value="financeiro">Financeiro</option>
-                            <option value="outros">Outros</option>
+                            {segments.map((segment: any) => (
+                              <option key={segment.id} value={segment.id}>
+                                {segment.name}
+                              </option>
+                            ))}
                           </select>
                         </div>
                       </div>
