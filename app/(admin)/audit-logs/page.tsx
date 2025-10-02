@@ -42,8 +42,13 @@ export default function AuditLogsPage() {
         <div>
           <h1 className="text-2xl font-semibold">Logs de Auditoria</h1>
           <p className="text-muted-foreground">
-            Total: {total} registros
+            {total > 50 ? `Mostrando últimos 50 de ${total} registros` : `Total: ${total} registros`}
           </p>
+          {total > 50 && (
+            <p className="text-sm text-amber-600 mt-1">
+              💡 Use os filtros para buscar registros específicos
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Button

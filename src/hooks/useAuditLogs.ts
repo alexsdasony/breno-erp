@@ -62,7 +62,7 @@ export function useAuditLogs() {
           logs: reset ? newLogs : [...prev.logs, ...newLogs],
           loading: false,
           page,
-          hasMore: newLogs.length === 50,
+          hasMore: newLogs.length === 50 && page < Math.ceil(total / 50),
           total
         }));
       }

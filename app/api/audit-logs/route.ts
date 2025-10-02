@@ -14,10 +14,10 @@ export async function GET(request: NextRequest) {
 
     console.log('📋 Audit logs request:', { page, pageSize, tableName, action, userId, startDate, endDate });
 
-    // Construir query base
+    // Construir query base otimizada
     let query = supabaseAdmin
       .from('audit_logs')
-      .select('*', { count: 'exact' })
+      .select('id, user_id, user_email, action, table_name, record_id, old_values, new_values, ip_address, user_agent, created_at', { count: 'exact' })
       .order('created_at', { ascending: false });
 
     // Aplicar filtros
@@ -37,10 +37,16 @@ export async function GET(request: NextRequest) {
       query = query.lte('created_at', endDate);
     }
 
-    // Paginação
+    // Paginação otimizada
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
     query = query.range(from, to);
+
+    // Se não há filtros, limitar a 50 registros por padrão
+    const hasFilters = tableName || action || userId || startDate || endDate;
+    if (!hasFilters && page === 1) {
+      query = query.limit(50);
+    }
 
     const { data: logs, error, count } = await query;
 
