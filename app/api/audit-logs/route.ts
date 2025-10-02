@@ -14,11 +14,11 @@ export async function GET(request: NextRequest) {
 
     console.log('📋 Audit logs request:', { page, pageSize, tableName, action, userId, startDate, endDate });
 
-    // Construir query base otimizada
+    // Construir query base otimizada com ordenação garantida
     let query = supabaseAdmin
       .from('audit_logs')
       .select('id, user_id, user_email, action, table_name, record_id, old_values, new_values, ip_address, user_agent, created_at', { count: 'exact' })
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false }); // ✅ Ordenação garantida
 
     // Aplicar filtros
     if (tableName) {
@@ -37,16 +37,20 @@ export async function GET(request: NextRequest) {
       query = query.lte('created_at', endDate);
     }
 
-    // Paginação otimizada
+    // Paginação otimizada - sempre aplicar limit e offset
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
     query = query.range(from, to);
 
-    // Se não há filtros, limitar a 50 registros por padrão
-    const hasFilters = tableName || action || userId || startDate || endDate;
-    if (!hasFilters && page === 1) {
-      query = query.limit(50);
-    }
+    // Log da query para debug
+    console.log('🔍 Query audit_logs:', {
+      page,
+      pageSize,
+      from,
+      to,
+      hasFilters: !!(tableName || action || userId || startDate || endDate),
+      filters: { tableName, action, userId, startDate, endDate }
+    });
 
     const { data: logs, error, count } = await query;
 
@@ -58,7 +62,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('📋 Logs encontrados:', count);
+    // Logs detalhados para debug
+    console.log('📋 Resultado da query:', {
+      logsCount: logs?.length || 0,
+      totalCount: count,
+      page,
+      pageSize,
+      hasMore: (logs?.length || 0) === pageSize,
+      logs: logs?.slice(0, 2).map(log => ({ id: log.id, action: log.action, created_at: log.created_at })) // Primeiros 2 para debug
+    });
 
     return NextResponse.json({
       success: true,

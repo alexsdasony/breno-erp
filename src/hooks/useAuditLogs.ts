@@ -53,22 +53,47 @@ export function useAuditLogs() {
         ...filters
       });
 
-      const response = await apiService.get(`/audit-logs?${params}`);
+      // ✅ Timeout de segurança para evitar travamentos
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos
+
+      const response = await apiService.get(`/audit-logs?${params}`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       
       if (response.data?.success) {
         const newLogs = response.data.logs || [];
         const total = response.data.pagination?.total || 0;
         
+        // ✅ Fallback: se vier menos que pageSize, não há mais registros
+        const hasMore = newLogs.length === 50; // Só tem mais se retornou exatamente 50
+        
+        console.log('📋 Frontend recebeu:', {
+          newLogsCount: newLogs.length,
+          total,
+          hasMore,
+          page,
+          reset
+        });
+        
         setState(prev => ({
           logs: reset ? newLogs : [...prev.logs, ...newLogs],
           loading: false,
           page,
-          hasMore: newLogs.length === 50 && page < Math.ceil(total / 50),
+          hasMore,
           total
         }));
       }
     } catch (error) {
       console.error('❌ Erro ao buscar logs de auditoria:', error);
+      
+      // ✅ Tratamento específico para timeout
+      if (error.name === 'AbortError') {
+        console.warn('⏰ Timeout na busca de logs de auditoria');
+      }
+      
       setState(prev => ({ ...prev, loading: false }));
     }
   }, [filters]);
