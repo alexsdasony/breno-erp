@@ -3,7 +3,6 @@
 import React from 'react';
 import { useAuditLogs, AuditLog } from '@/hooks/useAuditLogs';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { RefreshCw, Search, Filter, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -98,19 +97,21 @@ export default function AuditLogsPage() {
 
           <div>
             <label className="text-sm font-medium">Data Inicial</label>
-            <Input
+            <input
               type="date"
               value={filters.start_date || ''}
               onChange={(e) => updateFilters({ ...filters, start_date: e.target.value || undefined })}
+              className="w-full px-3 py-2 border border-border rounded-md bg-background text-sm"
             />
           </div>
 
           <div>
             <label className="text-sm font-medium">Data Final</label>
-            <Input
+            <input
               type="date"
               value={filters.end_date || ''}
               onChange={(e) => updateFilters({ ...filters, end_date: e.target.value || undefined })}
+              className="w-full px-3 py-2 border border-border rounded-md bg-background text-sm"
             />
           </div>
         </div>
