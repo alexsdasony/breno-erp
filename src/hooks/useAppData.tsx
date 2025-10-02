@@ -124,10 +124,10 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
   
   // Fetch dashboard metrics from API
   const fetchMetrics = React.useCallback(async () => {
-    if (!currentUser || !activeSegmentId) return;
+    if (!currentUser) return;
     
     try {
-      const response = await apiService.get(`/metrics?filterby=day&tag=7d&segment_id=${activeSegmentId}`);
+      const response = await apiService.get(`/metrics?filterby=day&tag=7d&segment_id=${activeSegmentId || 'null'}`);
       if (response.data?.success && response.data?.metrics) {
         setMetrics(response.data.metrics);
         console.log('📊 Métricas carregadas da API:', response.data.metrics);
