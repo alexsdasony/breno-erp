@@ -41,6 +41,7 @@ export function useAuditLogs() {
   });
 
   const [filters, setFilters] = useState<AuditLogsFilters>({});
+  const [initialLoad, setInitialLoad] = useState(false);
 
   const fetchLogs = useCallback(async (page: number = 1, reset: boolean = false) => {
     setState(prev => ({ ...prev, loading: true }));
@@ -83,14 +84,21 @@ export function useAuditLogs() {
   }, [fetchLogs]);
 
   const updateFilters = useCallback((newFilters: AuditLogsFilters) => {
-    setFilters(newFilters);
-    fetchLogs(1, true);
-  }, [fetchLogs]);
+    // Só atualizar se os filtros realmente mudaram
+    const filtersChanged = JSON.stringify(newFilters) !== JSON.stringify(filters);
+    if (filtersChanged) {
+      setFilters(newFilters);
+      fetchLogs(1, true);
+    }
+  }, [fetchLogs, filters]);
 
-  // Carregar logs iniciais
+  // Carregar logs iniciais apenas uma vez
   useEffect(() => {
-    fetchLogs(1, true);
-  }, [fetchLogs]);
+    if (!initialLoad && !state.loading) {
+      setInitialLoad(true);
+      fetchLogs(1, true);
+    }
+  }, [initialLoad, state.loading, fetchLogs]);
 
   return {
     logs: state.logs,
