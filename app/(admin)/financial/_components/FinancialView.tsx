@@ -67,28 +67,33 @@ export default function FinancialView() {
     return () => window.clearTimeout(t);
   }, []);
 
-  // KPIs simples a partir de items filtrados por segmento
-  const { entradas, saidas, saldo } = React.useMemo(() => {
-    // Filtrar por segmento ativo
-    const filteredItems = items.filter(item => {
-      const matchesSegment = !activeSegmentId || activeSegmentId === '0' ||
-                            (item.segment_id && item.segment_id === activeSegmentId);
-      return matchesSegment;
-    });
+  // KPIs reais buscados da API dedicada
+  const [kpis, setKpis] = React.useState({ entradas: 0, saidas: 0, saldo: 0 });
+  const [kpisLoading, setKpisLoading] = React.useState(false);
 
-    let inSum = 0;
-    let outSum = 0;
-    for (const it of filteredItems) {
-      const val = Number(it.amount || 0);
-      // Usar o campo direction para determinar se é entrada ou saída
-      if (it.direction === 'receivable') {
-        inSum += val; // Contas a receber são entradas
-      } else if (it.direction === 'payable') {
-        outSum += val; // Contas a pagar são saídas
+  // Buscar KPIs reais quando o segmento mudar
+  React.useEffect(() => {
+    const fetchKpis = async () => {
+      setKpisLoading(true);
+      try {
+        const response = await fetch(`/api/financial-kpis?segment_id=${activeSegmentId || 'null'}`);
+        const data = await response.json();
+        
+        if (data.success && data.kpis) {
+          setKpis(data.kpis);
+          console.log('📊 KPIs carregados:', data.kpis);
+        }
+      } catch (error) {
+        console.error('❌ Erro ao carregar KPIs:', error);
+      } finally {
+        setKpisLoading(false);
       }
-    }
-    return { entradas: inSum, saidas: outSum, saldo: inSum - outSum };
-  }, [items, activeSegmentId]);
+    };
+
+    fetchKpis();
+  }, [activeSegmentId]);
+
+  const { entradas, saidas, saldo } = kpis;
 
   // Funções auxiliares
   const currency = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -217,15 +222,21 @@ export default function FinancialView() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="glass-effect rounded-lg p-4 border">
           <div className="text-sm text-muted-foreground">Entradas</div>
-          <div className="text-xl font-semibold text-green-400">{currency(entradas)}</div>
+          <div className="text-xl font-semibold text-green-400">
+            {kpisLoading ? 'Carregando...' : currency(entradas)}
+          </div>
         </div>
         <div className="glass-effect rounded-lg p-4 border">
           <div className="text-sm text-muted-foreground">Saídas</div>
-          <div className="text-xl font-semibold text-red-400">{currency(Math.abs(saidas))}</div>
+          <div className="text-xl font-semibold text-red-400">
+            {kpisLoading ? 'Carregando...' : currency(Math.abs(saidas))}
+          </div>
         </div>
         <div className="glass-effect rounded-lg p-4 border">
           <div className="text-sm text-muted-foreground">Saldo</div>
-          <div className="text-xl font-semibold">{currency(saldo)}</div>
+          <div className="text-xl font-semibold">
+            {kpisLoading ? 'Carregando...' : currency(saldo)}
+          </div>
         </div>
       </div>
 
