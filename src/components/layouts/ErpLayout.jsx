@@ -20,6 +20,15 @@ const ErpLayout = ({ children }) => {
   const { currentUser, logoutUser, segments, activeSegmentId, setActiveSegmentId, authLoading, metrics } = useAppData();
 
   const isAdmin = currentUser?.role === 'admin';
+  
+  // Debug temporário para verificar admin
+  React.useEffect(() => {
+    console.log('🔍 Debug admin:', {
+      currentUser: currentUser?.name,
+      role: currentUser?.role,
+      isAdmin
+    });
+  }, [currentUser, isAdmin]);
 
 
   const menuItems = React.useMemo(() => [
