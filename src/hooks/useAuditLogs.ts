@@ -90,7 +90,7 @@ export function useAuditLogs() {
       console.error('❌ Erro ao buscar logs de auditoria:', error);
       
       // ✅ Tratamento específico para timeout
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         console.warn('⏰ Timeout na busca de logs de auditoria');
       }
       
