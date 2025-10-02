@@ -119,10 +119,31 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
   // Use the corrected hooks
   const { currentUser, loading: authLoading, loginUser, registerUser, logoutUser, updateUserProfile, changeUserPassword, requestPasswordReset, resetPassword } = useAuth();
 
-  // Calculate metrics from local data
-  const metrics = React.useMemo(() => {
-    return calculateMetrics(data, activeSegmentId !== null ? Number(activeSegmentId) : null);
-  }, [data, activeSegmentId]);
+  // Fetch metrics from API
+  const [metrics, setMetrics] = React.useState<any>(null);
+  
+  // Fetch dashboard metrics from API
+  const fetchMetrics = React.useCallback(async () => {
+    if (!currentUser || !activeSegmentId) return;
+    
+    try {
+      const response = await apiService.get(`/metrics?filterby=day&tag=7d&segment_id=${activeSegmentId}`);
+      if (response.data?.success && response.data?.metrics) {
+        setMetrics(response.data.metrics);
+        console.log('📊 Métricas carregadas da API:', response.data.metrics);
+      }
+    } catch (error) {
+      console.error('❌ Erro ao carregar métricas:', error);
+      // Fallback para cálculo local se API falhar
+      const localMetrics = calculateMetrics(data, activeSegmentId !== null ? Number(activeSegmentId) : null);
+      setMetrics(localMetrics);
+    }
+  }, [currentUser, activeSegmentId, data]);
+
+  // Fetch metrics when segment changes
+  React.useEffect(() => {
+    fetchMetrics();
+  }, [fetchMetrics]);
 
   // Atualizar cache em memória quando dados mudarem
   useEffect(() => {
@@ -232,6 +253,9 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         segments: segments // Use the existing segments state
       });
 
+      // Atualizar métricas após carregar dados
+      await fetchMetrics();
+      
       toast({
         title: "Dados atualizados",
         description: "Os dados foram atualizados com sucesso.",
@@ -308,6 +332,9 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         integrations: integrationsResponse.data?.integrations || { imobzi: { apiKey: '', enabled: false } },
         users: usersResponse.data?.users || []
       }));
+
+      // Atualizar métricas após carregar dados
+      await fetchMetrics();
 
       toast({
         title: "Dados do Dashboard atualizados",
