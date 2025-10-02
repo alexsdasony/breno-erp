@@ -131,17 +131,17 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
       console.log('🔍 Chamando API metrics:', url);
       const response = await apiService.get(url);
       console.log('🔍 Resposta completa da API:', response);
-      console.log('🔍 Resposta da API metrics:', response.data);
-      if (response.data?.success && response.data?.metrics) {
-        setMetrics(response.data.metrics);
-        console.log('📊 Métricas carregadas da API:', response.data.metrics);
+      console.log('🔍 Resposta da API metrics:', response);
+      if (response?.success && response?.metrics) {
+        setMetrics(response.metrics);
+        console.log('📊 Métricas carregadas da API:', response.metrics);
         console.log('💰 Valores específicos:', {
-          total_revenue: response.data.metrics.total_revenue,
-          total_expenses: response.data.metrics.total_expenses,
-          net_profit: response.data.metrics.net_profit
+          total_revenue: response.metrics.total_revenue,
+          total_expenses: response.metrics.total_expenses,
+          net_profit: response.metrics.net_profit
         });
       } else {
-        console.warn('⚠️ API metrics não retornou dados válidos:', response.data);
+        console.warn('⚠️ API metrics não retornou dados válidos:', response);
       }
     } catch (error) {
       console.error('❌ Erro ao carregar métricas:', error);
