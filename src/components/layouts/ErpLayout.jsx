@@ -26,7 +26,8 @@ const ErpLayout = ({ children }) => {
     console.log('🔍 Debug admin:', {
       currentUser: currentUser?.name,
       role: currentUser?.role,
-      isAdmin
+      isAdmin,
+      dropdownVisible: true
     });
   }, [currentUser, isAdmin]);
 
