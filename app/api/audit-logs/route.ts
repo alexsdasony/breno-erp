@@ -94,7 +94,9 @@ export async function POST(request: NextRequest) {
         record_id,
         old_values,
         new_values,
-        ip_address: request.ip || 'unknown',
+        ip_address: request.headers.get('x-forwarded-for') || 
+                    request.headers.get('x-real-ip') || 
+                    'unknown',
         user_agent: request.headers.get('user-agent') || 'unknown'
       })
       .select()

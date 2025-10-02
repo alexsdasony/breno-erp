@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export function auditMiddleware(request: NextRequest) {
   // Capturar informações do usuário e requisição
   const userAgent = request.headers.get('user-agent') || 'unknown';
-  const ipAddress = request.ip || 
-    request.headers.get('x-forwarded-for') || 
+  const ipAddress = request.headers.get('x-forwarded-for') || 
     request.headers.get('x-real-ip') || 
     'unknown';
 
