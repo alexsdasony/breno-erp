@@ -44,6 +44,7 @@ export function useAuditLogs() {
   const [initialLoad, setInitialLoad] = useState(false);
 
   const fetchLogs = useCallback(async (page: number = 1, reset: boolean = false) => {
+    console.log('🔍 fetchLogs chamado:', { page, reset, filters });
     setState(prev => ({ ...prev, loading: true }));
     
     try {
@@ -53,23 +54,18 @@ export function useAuditLogs() {
         ...filters
       });
 
-      // ✅ Timeout de segurança para evitar travamentos
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos
-
-      const response = await apiService.get(`/audit-logs?${params}`, {
-        signal: controller.signal
-      });
+      console.log('🔍 Chamando API audit-logs:', `/audit-logs?${params}`);
+      const response = await apiService.get(`/audit-logs?${params}`);
+      console.log('🔍 Resposta da API:', response);
       
-      clearTimeout(timeoutId);
-      
-      if (response.data?.success) {
-        const newLogs = response.data.logs || [];
-        const total = response.data.pagination?.total || 0;
+      if (response?.success) {
+        const newLogs = response.logs || [];
+        const total = response.pagination?.total || 0;
         
         // ✅ Fallback: se vier menos que pageSize, não há mais registros
         const hasMore = newLogs.length === 50; // Só tem mais se retornou exatamente 50
         
+        console.log('🔍 Processando logs:', { newLogsCount: newLogs.length, total, hasMore });
         
         setState(prev => ({
           logs: reset ? newLogs : [...prev.logs, ...newLogs],
@@ -78,15 +74,12 @@ export function useAuditLogs() {
           hasMore,
           total
         }));
+      } else {
+        console.warn('⚠️ API não retornou success:', response);
+        setState(prev => ({ ...prev, loading: false }));
       }
     } catch (error) {
       console.error('❌ Erro ao buscar logs de auditoria:', error);
-      
-      // ✅ Tratamento específico para timeout
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.warn('⏰ Timeout na busca de logs de auditoria');
-      }
-      
       setState(prev => ({ ...prev, loading: false }));
     }
   }, [filters]);
@@ -112,11 +105,11 @@ export function useAuditLogs() {
 
   // Carregar logs iniciais apenas uma vez
   useEffect(() => {
-    if (!initialLoad && !state.loading) {
+    if (!initialLoad) {
       setInitialLoad(true);
       fetchLogs(1, true);
     }
-  }, [initialLoad, state.loading, fetchLogs]);
+  }, [initialLoad]);
 
   return {
     logs: state.logs,
