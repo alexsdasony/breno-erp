@@ -70,13 +70,6 @@ export function useAuditLogs() {
         // ✅ Fallback: se vier menos que pageSize, não há mais registros
         const hasMore = newLogs.length === 50; // Só tem mais se retornou exatamente 50
         
-        console.log('📋 Frontend recebeu:', {
-          newLogsCount: newLogs.length,
-          total,
-          hasMore,
-          page,
-          reset
-        });
         
         setState(prev => ({
           logs: reset ? newLogs : [...prev.logs, ...newLogs],
