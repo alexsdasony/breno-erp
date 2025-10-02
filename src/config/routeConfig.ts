@@ -18,6 +18,7 @@ const routeMapping: Record<string, string> = {
   paymentMethods: '/payment-methods',
   nfe: '/nfe',
   reports: '/reports',
+  'audit-logs': '/audit-logs',
   profile: '/profile'
 };
 

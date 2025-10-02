@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Briefcase, LogOut, UserCircle, ShieldAlert, ChevronsUpDown, Rocket, Book } from 'lucide-react';
+import { Menu, X, Briefcase, LogOut, UserCircle, ShieldAlert, ChevronsUpDown, Rocket, Book, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -23,8 +23,9 @@ const ErpLayout = ({ children }) => {
 
   const menuItems = React.useMemo(() => [
     ...appMenuItems,
+    ...(isAdmin ? [{ id: 'audit-logs', label: 'Logs de Auditoria', icon: FileText }] : []),
     { id: 'profile', label: 'Meu Perfil', icon: UserCircle } 
-  ], []);
+  ], [isAdmin]);
 
   // Determinar o módulo ativo baseado na rota atual
   const activeModule = React.useMemo(() => {
