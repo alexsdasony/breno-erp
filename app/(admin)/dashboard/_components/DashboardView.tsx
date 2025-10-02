@@ -114,7 +114,7 @@ export default function DashboardView() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm text-gray-400">Receita</div>
-                <div className="text-2xl font-semibold">R$ {(Number(metrics.total_revenue ?? 0)).toFixed(2)}</div>
+                <div className="text-2xl font-semibold">R$ {(Number(metrics.total_revenue ?? 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
               </div>
               <div className="h-10 w-10 rounded-md bg-amber-500/20 flex items-center justify-center text-amber-400">
                 <CircleDollarSign size={18} />
@@ -133,7 +133,7 @@ export default function DashboardView() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm text-gray-400">Ticket médio</div>
-                <div className="text-2xl font-semibold">R$ {(Number(metrics.avg_ticket ?? 0)).toFixed(2)}</div>
+                <div className="text-2xl font-semibold">R$ {(Number(metrics.avg_ticket ?? 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
               </div>
               <div className="h-10 w-10 rounded-md bg-emerald-500/20 flex items-center justify-center text-emerald-400">
                 <FileText size={18} />

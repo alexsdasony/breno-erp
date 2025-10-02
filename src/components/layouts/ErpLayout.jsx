@@ -217,19 +217,19 @@ const ErpLayout = ({ children }) => {
                 <div className="text-right">
                   <p className="text-xs text-gray-400">Receita Total</p>
                   <p className="text-sm font-semibold text-green-400">
-                    R$ {metrics?.totalRevenue?.toLocaleString('pt-BR') || '0'}
+                    R$ {metrics?.total_revenue?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0,00'}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-400">Despesas</p>
                   <p className="text-sm font-semibold text-red-400">
-                    R$ {metrics?.totalExpenses?.toLocaleString('pt-BR') || '0'}
+                    R$ {metrics?.total_expenses?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0,00'}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-400">Lucro</p>
                   <p className="text-sm font-semibold text-blue-400">
-                    R$ {metrics?.netProfit?.toLocaleString('pt-BR') || '0'}
+                    R$ {metrics?.net_profit?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0,00'}
                   </p>
                 </div>
               </div>
