@@ -4,7 +4,6 @@ import React from 'react';
 import { useAuditLogs, AuditLog } from '@/hooks/useAuditLogs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RefreshCw, Search, Filter, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -67,42 +66,34 @@ export default function AuditLogsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg bg-muted/50">
           <div>
             <label className="text-sm font-medium">Tabela</label>
-            <Select
+            <select
               value={filters.table_name || ''}
-              onValueChange={(value) => updateFilters({ ...filters, table_name: value || undefined })}
+              onChange={(e) => updateFilters({ ...filters, table_name: e.target.value || undefined })}
+              className="w-full px-3 py-2 border border-border rounded-md bg-background text-sm"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Todas as tabelas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todas as tabelas</SelectItem>
-                <SelectItem value="financial_documents">Documentos Financeiros</SelectItem>
-                <SelectItem value="sales">Vendas</SelectItem>
-                <SelectItem value="partners">Parceiros</SelectItem>
-                <SelectItem value="billings">Cobranças</SelectItem>
-                <SelectItem value="accounts_payable">Contas a Pagar</SelectItem>
-              </SelectContent>
-            </Select>
+              <option value="">Todas as tabelas</option>
+              <option value="financial_documents">Documentos Financeiros</option>
+              <option value="sales">Vendas</option>
+              <option value="partners">Parceiros</option>
+              <option value="billings">Cobranças</option>
+              <option value="accounts_payable">Contas a Pagar</option>
+            </select>
           </div>
           
           <div>
             <label className="text-sm font-medium">Ação</label>
-            <Select
+            <select
               value={filters.action || ''}
-              onValueChange={(value) => updateFilters({ ...filters, action: value || undefined })}
+              onChange={(e) => updateFilters({ ...filters, action: e.target.value || undefined })}
+              className="w-full px-3 py-2 border border-border rounded-md bg-background text-sm"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Todas as ações" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todas as ações</SelectItem>
-                <SelectItem value="CREATE">Criar</SelectItem>
-                <SelectItem value="UPDATE">Atualizar</SelectItem>
-                <SelectItem value="DELETE">Excluir</SelectItem>
-                <SelectItem value="LOGIN">Login</SelectItem>
-                <SelectItem value="LOGOUT">Logout</SelectItem>
-              </SelectContent>
-            </Select>
+              <option value="">Todas as ações</option>
+              <option value="CREATE">Criar</option>
+              <option value="UPDATE">Atualizar</option>
+              <option value="DELETE">Excluir</option>
+              <option value="LOGIN">Login</option>
+              <option value="LOGOUT">Logout</option>
+            </select>
           </div>
 
           <div>
