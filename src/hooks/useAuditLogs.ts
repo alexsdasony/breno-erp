@@ -102,11 +102,11 @@ export function useAuditLogs() {
     if (!state.loading && state.hasMore) {
       fetchLogs(state.page + 1, false);
     }
-  }, [state.loading, state.hasMore, state.page, fetchLogs]);
+  }, [state.loading, state.hasMore, state.page]);
 
   const refresh = useCallback(() => {
     fetchLogs(1, true);
-  }, [fetchLogs]);
+  }, []);
 
   const updateFilters = useCallback((newFilters: AuditLogsFilters) => {
     // Só atualizar se os filtros realmente mudaram
@@ -115,7 +115,7 @@ export function useAuditLogs() {
       setFilters(newFilters);
       fetchLogs(1, true);
     }
-  }, [fetchLogs, filters]);
+  }, []);
 
   // Carregar logs iniciais apenas uma vez
   useEffect(() => {
