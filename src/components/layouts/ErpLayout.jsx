@@ -23,9 +23,8 @@ const ErpLayout = ({ children }) => {
 
   const menuItems = React.useMemo(() => [
     ...appMenuItems,
-    ...(isAdmin ? [{ id: 'audit-logs', label: 'Logs de Auditoria', icon: FileText }] : []),
     { id: 'profile', label: 'Meu Perfil', icon: UserCircle } 
-  ], [isAdmin]);
+  ], []);
 
   // Determinar o módulo ativo baseado na rota atual
   const activeModule = React.useMemo(() => {
@@ -273,6 +272,12 @@ const ErpLayout = ({ children }) => {
                     <Book className="w-4 h-4 mr-2" />
                     Manual do Sistema
                   </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => router.push('/audit-logs')}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Logs de Auditoria
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
                     <LogOut className="w-4 h-4 mr-2" />
