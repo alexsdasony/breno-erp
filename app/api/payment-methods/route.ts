@@ -1,6 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
+// Função para criar log de auditoria
+async function createAuditLog(action: string, tableName: string, recordId: string | null, oldValues: any = null, newValues: any = null, userId: string | null = null, userEmail: string | null = null) {
+  try {
+    const { error } = await supabaseAdmin
+      .from('audit_logs')
+      .insert({
+        action,
+        table_name: tableName,
+        record_id: recordId,
+        old_values: oldValues,
+        new_values: newValues,
+        user_id: userId,
+        user_email: userEmail,
+        ip_address: '127.0.0.1',
+        user_agent: 'Sistema de Auditoria'
+      });
+    
+    if (error) {
+      console.error('❌ Erro ao criar log de auditoria:', error);
+    } else {
+      console.log('✅ Log de auditoria criado:', { action, tableName, recordId });
+    }
+  } catch (error) {
+    console.error('❌ Erro ao criar log de auditoria:', error);
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     console.log('💳 API Route GET /api/payment-methods');
@@ -107,6 +134,20 @@ export async function POST(request: NextRequest) {
     }
     
     console.log('✅ Método de pagamento criado:', newPaymentMethod);
+    
+    // Criar log de auditoria
+    await createAuditLog(
+      'CREATE',
+      'payment_methods',
+      newPaymentMethod.id,
+      null,
+      { 
+        name: newPaymentMethod.name, 
+        nfe_code: newPaymentMethod.nfe_code 
+      },
+      null,
+      'admin@erppro.com'
+    );
     
     return NextResponse.json({
       success: true,
