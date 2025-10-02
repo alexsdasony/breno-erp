@@ -53,7 +53,8 @@ export async function GET(request: NextRequest) {
       { data: products, error: productsError },
       { data: accountsPayable, error: payablesError },
       { data: billings, error: billingsError },
-      { data: sales, error: salesError }
+      { data: sales, error: salesError },
+      { data: financialDocuments, error: financialError }
     ] = await Promise.all([
       // Total de clientes
       supabaseAdmin
@@ -94,6 +95,14 @@ export async function GET(request: NextRequest) {
         .select('id, total_amount, created_at, status')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
+        .match(segmentFilter),
+      
+      // Documentos financeiros (receitas e despesas)
+      supabaseAdmin
+        .from('financial_documents')
+        .select('amount, direction, status, issue_date')
+        .gte('issue_date', startDate.toISOString().split('T')[0])
+        .lte('issue_date', endDate.toISOString().split('T')[0])
         .match(segmentFilter)
     ]);
 
@@ -103,6 +112,7 @@ export async function GET(request: NextRequest) {
     if (payablesError) console.error('❌ Erro ao buscar contas a pagar:', payablesError);
     if (billingsError) console.error('❌ Erro ao buscar cobranças:', billingsError);
     if (salesError) console.error('❌ Erro ao buscar vendas:', salesError);
+    if (financialError) console.error('❌ Erro ao buscar documentos financeiros:', financialError);
 
     // Calcular métricas
     const totalCustomers = customers?.length || 0;
@@ -138,9 +148,27 @@ export async function GET(request: NextRequest) {
 
     // Calcular métricas reais de vendas
     const totalSales = sales?.length || 0;
-    const totalRevenue = sales?.reduce((sum, sale) => 
+    const salesRevenue = sales?.reduce((sum, sale) => 
       sum + (Number(sale.total_amount) || 0), 0) || 0;
-    const avgTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
+    const avgTicket = totalSales > 0 ? salesRevenue / totalSales : 0;
+
+    // Calcular receitas e despesas dos documentos financeiros
+    const financialRevenue = financialDocuments?.filter(fd => fd.direction === 'receivable')
+      .reduce((sum, fd) => sum + (Number(fd.amount) || 0), 0) || 0;
+    
+    const financialExpenses = financialDocuments?.filter(fd => fd.direction === 'payable')
+      .reduce((sum, fd) => sum + (Number(fd.amount) || 0), 0) || 0;
+
+    // Receita total = vendas + documentos financeiros receivables
+    const totalRevenue = salesRevenue + financialRevenue;
+    
+    console.log('💰 Cálculo de receitas e despesas:', {
+      salesRevenue,
+      financialRevenue,
+      financialExpenses,
+      totalRevenue,
+      totalExpenses: financialExpenses
+    });
 
     console.log('📊 Dados reais de vendas:', { 
       totalSales, 
@@ -196,6 +224,8 @@ export async function GET(request: NextRequest) {
     const metrics = {
       total_sales: totalSales,
       total_revenue: totalRevenue,
+      total_expenses: financialExpenses,
+      net_profit: totalRevenue - financialExpenses,
       avg_ticket: avgTicket,
       total_customers: totalCustomers,
       active_customers: activeCustomers,
