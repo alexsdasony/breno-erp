@@ -24,13 +24,14 @@ const ErpLayout = ({ children }) => {
   // Debug dos métricas no cabeçalho
   React.useEffect(() => {
     console.log('🔍 Métricas no cabeçalho:', {
-      metrics,
+      metrics: metrics,
       total_revenue: metrics?.total_revenue,
       total_expenses: metrics?.total_expenses,
       net_profit: metrics?.net_profit,
       currentUser: !!currentUser,
       activeSegmentId
     });
+    console.log('🔍 Métricas completo:', JSON.stringify(metrics, null, 2));
   }, [metrics, currentUser, activeSegmentId]);
 
   const menuItems = React.useMemo(() => [
