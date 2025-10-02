@@ -1,6 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
+// Função para criar log de auditoria
+async function createAuditLog(action: string, tableName: string, recordId: string | null, oldValues: any = null, newValues: any = null, userId: string | null = null, userEmail: string | null = null) {
+  try {
+    const { error } = await supabaseAdmin
+      .from('audit_logs')
+      .insert({
+        action,
+        table_name: tableName,
+        record_id: recordId,
+        old_values: oldValues,
+        new_values: newValues,
+        user_id: userId,
+        user_email: userEmail,
+        ip_address: '127.0.0.1',
+        user_agent: 'Sistema de Auditoria'
+      });
+    
+    if (error) {
+      console.error('❌ Erro ao criar log de auditoria:', error);
+    } else {
+      console.log('✅ Log de auditoria criado:', { action, tableName, recordId });
+    }
+  } catch (error) {
+    console.error('❌ Erro ao criar log de auditoria:', error);
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -214,6 +241,22 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('✅ Venda criada:', sale);
+    
+    // Criar log de auditoria
+    await createAuditLog(
+      'CREATE',
+      'sales',
+      sale.id,
+      null,
+      { 
+        customer_name: sale.customer_name, 
+        total_amount: sale.total_amount, 
+        payment_method: sale.payment_method,
+        status: sale.status 
+      },
+      null,
+      'admin@erppro.com'
+    );
 
     // Inserir os itens da venda se existirem
     if (items && items.length > 0) {
