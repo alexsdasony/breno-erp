@@ -15,7 +15,8 @@ import FinancialTable from './FinancialTable';
 import FinancialFormModal from './FinancialFormModal';
 
 export default function FinancialView() {
-  const { items, loading, refetching, hasMore, loadMore, create, update, remove, load } = useFinancialDocuments();
+  const [pageSize, setPageSize] = React.useState<number>(20);
+  const { items, loading, refetching, hasMore, loadMore, create, update, remove, load } = useFinancialDocuments(pageSize);
   const { paymentMethods } = usePaymentMethodsContext();
   const { activeSegmentId } = useAppData();
 
@@ -70,6 +71,7 @@ export default function FinancialView() {
   // KPIs reais buscados da API dedicada
   const [kpis, setKpis] = React.useState({ entradas: 0, saidas: 0, saldo: 0 });
   const [kpisLoading, setKpisLoading] = React.useState(false);
+  const [totalRecords, setTotalRecords] = React.useState(0);
 
   // Buscar KPIs reais quando o segmento mudar
   React.useEffect(() => {
@@ -81,6 +83,7 @@ export default function FinancialView() {
         
         if (data.success && data.kpis) {
           setKpis(data.kpis);
+          setTotalRecords(data.totalRecords || 0);
           console.log('📊 KPIs carregados:', data.kpis);
         }
       } catch (error) {
@@ -212,6 +215,28 @@ export default function FinancialView() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Financeiro</h1>
         <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-muted-foreground">Registros por página:</label>
+            <select 
+              value={pageSize} 
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                load(true); // Recarregar dados com nova quantidade
+              }}
+              className="px-3 py-1 border border-border rounded-md bg-background text-sm"
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={200}>200</option>
+              <option value={500}>500</option>
+              <option value={1000}>1000</option>
+            </select>
+            <span className="text-sm text-muted-foreground">
+              (Total: {totalRecords} registros)
+            </span>
+          </div>
           <Button variant="outline"><Filter className="w-4 h-4 mr-2" />Filtros</Button>
           <Button variant="outline" disabled><FileDown className="w-4 h-4 mr-2" />Exportar</Button>
           <Button id="financial-new" onClick={openNew}><Plus className="w-4 h-4 mr-2" />Novo</Button>

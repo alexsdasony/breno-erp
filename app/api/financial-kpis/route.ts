@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('📄 Total de documentos encontrados:', allDocuments?.length || 0);
+    const totalRecords = allDocuments?.length || 0;
+    console.log('📄 Total de documentos encontrados:', totalRecords);
 
     // Calcular KPIs totais
     const entradas = allDocuments
@@ -49,7 +50,8 @@ export async function GET(request: NextRequest) {
         entradas,
         saidas,
         saldo
-      }
+      },
+      totalRecords
     });
 
   } catch (error) {

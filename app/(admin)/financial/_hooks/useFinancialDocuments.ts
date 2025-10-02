@@ -27,18 +27,18 @@ const PAGE_SIZE = 20;
 
 // Usando a função normalizeFinancialDocument do service
 
-export function useFinancialDocuments() {
+export function useFinancialDocuments(pageSize: number = PAGE_SIZE) {
   const [state, setState] = useState<State>({ items: [], loading: false, refetching: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
     try {
-      const response = await getFinancialDocuments({ page, pageSize: PAGE_SIZE });
+      const response = await getFinancialDocuments({ page, pageSize });
       const list = response.data?.financialDocuments || [];
       
       // Se não há dados, tentar buscar diretamente da API
       if (list.length === 0) {
         try {
-          const directResponse = await fetch('/api/financial-documents?page=1&pageSize=20', {
+          const directResponse = await fetch(`/api/financial-documents?page=1&pageSize=${pageSize}`, {
             headers: {
               'Content-Type': 'application/json'
             }
@@ -59,7 +59,7 @@ export function useFinancialDocuments() {
       console.error('Erro ao buscar documentos financeiros:', error);
       return [];
     }
-  }, []);
+  }, [pageSize]);
 
   const load = useCallback(async (reset: boolean = false) => {
     setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
