@@ -11,6 +11,17 @@ export default function AuditLogsPage() {
   const { logs, loading, hasMore, total, loadMore, refresh, updateFilters, filters } = useAuditLogs();
   const [showFilters, setShowFilters] = React.useState(false);
 
+  // Debug dos logs de auditoria
+  React.useEffect(() => {
+    console.log('🔍 Debug logs de auditoria:', {
+      logs: logs?.length || 0,
+      loading,
+      hasMore,
+      total,
+      filters
+    });
+  }, [logs, loading, hasMore, total, filters]);
+
   const getActionColor = (action: string) => {
     switch (action) {
       case 'CREATE': return 'text-green-600 bg-green-100';
