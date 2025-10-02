@@ -97,12 +97,10 @@ export async function GET(request: NextRequest) {
         .lte('created_at', endDate.toISOString())
         .match(segmentFilter),
       
-      // Documentos financeiros (receitas e despesas)
+      // Documentos financeiros (receitas e despesas) - buscar todos para cálculo total
       supabaseAdmin
         .from('financial_documents')
         .select('amount, direction, status, issue_date')
-        .gte('issue_date', startDate.toISOString().split('T')[0])
-        .lte('issue_date', endDate.toISOString().split('T')[0])
         .match(segmentFilter)
     ]);
 
@@ -153,11 +151,18 @@ export async function GET(request: NextRequest) {
     const avgTicket = totalSales > 0 ? salesRevenue / totalSales : 0;
 
     // Calcular receitas e despesas dos documentos financeiros
+    console.log('📄 Documentos financeiros encontrados:', financialDocuments?.length || 0);
+    
     const financialRevenue = financialDocuments?.filter(fd => fd.direction === 'receivable')
       .reduce((sum, fd) => sum + (Number(fd.amount) || 0), 0) || 0;
     
     const financialExpenses = financialDocuments?.filter(fd => fd.direction === 'payable')
       .reduce((sum, fd) => sum + (Number(fd.amount) || 0), 0) || 0;
+    
+    console.log('📊 Documentos por direção:', {
+      receivables: financialDocuments?.filter(fd => fd.direction === 'receivable').length || 0,
+      payables: financialDocuments?.filter(fd => fd.direction === 'payable').length || 0
+    });
 
     // Receita total = vendas + documentos financeiros receivables
     const totalRevenue = salesRevenue + financialRevenue;
