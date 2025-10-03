@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     const { data: paymentMethods, error } = await supabaseAdmin
       .from('payment_methods')
       .select('*')
-      .order('name', { ascending: true })
+      .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (error) {
