@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       .from('sales')
       .select('*')
       .eq('is_deleted', false)
-      .order('created_at', { ascending: false });
+      .order('sale_date', { ascending: false });
 
     // Filtrar por segmento se fornecido
     if (segmentId && segmentId !== 'null' && segmentId !== '0') {

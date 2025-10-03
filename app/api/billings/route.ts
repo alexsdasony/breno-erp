@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       .from('billings')
       .select('*')
       .eq('is_deleted', false) // Filtrar apenas registros não deletados
-      .order('created_at', { ascending: false });
+      .order('due_date', { ascending: false });
 
     // Filtrar por segmento se fornecido
     if (segmentId && segmentId !== 'null' && segmentId !== '0') {
