@@ -116,10 +116,10 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE) {
     setState((s) => ({ ...s, refetching: true }));
     try {
       const list = await fetchPage(1);
-      // Ordenar por data de criação decrescente
+      // Ordenar por data de emissão decrescente
       const sortedList = list.sort((a: any, b: any) => {
-        const dateA = new Date(a.created_at || 0).getTime();
-        const dateB = new Date(b.created_at || 0).getTime();
+        const dateA = new Date(a.issue_date || 0).getTime();
+        const dateB = new Date(b.issue_date || 0).getTime();
         return dateB - dateA;
       });
       setState((s) => ({

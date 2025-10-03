@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
         payment_method_data:payment_methods(name, id)
       `)
       .match(segmentFilter)
-      .order('created_at', { ascending: false });
+      .order('issue_date', { ascending: false });
 
     if (financialDocsError) {
       console.error('❌ Erro ao buscar documentos financeiros:', financialDocsError);
