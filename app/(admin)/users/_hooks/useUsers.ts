@@ -31,11 +31,16 @@ export function useUsers(): UseUsersState & UseUsersApi {
   });
 
   const load = useCallback(async (reset: boolean = false) => {
-    setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
+    setState((s) => {
+      const page = reset ? 1 : s.page;
+      return { ...s, loading: true, ...(reset ? { page: 1 } : {}) };
+    });
+    
     try {
-      const page = reset ? 1 : state.page;
-      console.log('Carregando usuários, página:', page);
-      const response = await getUsers({ page, pageSize: PAGE_SIZE });
+      // Usar o estado atual da página
+      const currentPage = reset ? 1 : state.page;
+      console.log('Carregando usuários, página:', currentPage);
+      const response = await getUsers({ page: currentPage, pageSize: PAGE_SIZE });
       console.log('Resposta da API getUsers:', response);
       const users = response.data?.users || [];
       console.log('Usuários carregados:', users);
@@ -63,7 +68,7 @@ export function useUsers(): UseUsersState & UseUsersApi {
       setState((s) => ({
         items: reset ? usersWithStatus : [...s.items, ...usersWithStatus],
         loading: false,
-        page,
+        page: currentPage,
         hasMore: users.length === PAGE_SIZE,
       }));
     } catch (e) {
@@ -75,7 +80,7 @@ export function useUsers(): UseUsersState & UseUsersApi {
         variant: 'destructive'
       });
     }
-  }, [state.page]);
+  }, []);
 
   const loadMore = useCallback(async () => {
     if (state.loading || !state.hasMore) return;
@@ -225,7 +230,7 @@ export function useUsers(): UseUsersState & UseUsersApi {
 
   useEffect(() => {
     load(true);
-  }, []);
+  }, [load]);
 
   return {
     ...state,
