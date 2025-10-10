@@ -59,6 +59,16 @@ export default function UsersView() {
 
   // Check if current user is admin
   const isAdmin = currentUser?.role === 'admin';
+  
+  // Debug logs
+  React.useEffect(() => {
+    console.log('🔍 UsersView - Debug Admin:', {
+      currentUser: currentUser?.name,
+      role: currentUser?.role,
+      isAdmin,
+      authLoading
+    });
+  }, [currentUser, isAdmin, authLoading]);
 
   // Filtered users
   const filteredUsers = useMemo(() => {
@@ -216,6 +226,18 @@ export default function UsersView() {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
+
+  // Aguardar carregamento antes de verificar permissões
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     return (
