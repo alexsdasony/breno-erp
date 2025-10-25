@@ -19,13 +19,11 @@ export async function GET(request: NextRequest) {
     
     // Aplicar filtro de segmento apenas se fornecido
     if (hasSegmentFilter) {
+      // Quando há filtro de segmento: buscar apenas documentos daquele segmento
       query = query.eq('segment_id', segmentId);
     }
-    // Se não há filtro (todos os segmentos), buscar apenas registros COM segment_id
-    // Isso evita incluir registros órfãos que causam diferença na soma
-    else {
-      query = query.not('segment_id', 'is', null);
-    }
+    // Se não há filtro (todos os segmentos): buscar TODOS (incluindo NULL)
+    // Registros com segment_id = NULL são despesas/receitas gerais
     
     const { data: allDocuments, error } = await query;
 

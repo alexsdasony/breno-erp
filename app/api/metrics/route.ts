@@ -98,24 +98,22 @@ export async function GET(request: NextRequest) {
         .lte('created_at', endDate.toISOString())
         .match(segmentFilter),
       
-            // CORREÇÃO: Documentos financeiros - aplicar filtro de segmento corretamente
-      (() => {
-        let query = supabaseAdmin
-          .from('financial_documents')
-          .select('amount, direction, status, issue_date, created_at, segment_id');
-        
-        // Aplicar filtro de segmento apenas se fornecido
-        if (hasSegmentFilter) {
-          query = query.eq('segment_id', segment_id);
-        }
-        // Se não há filtro (todos os segmentos), buscar apenas registros COM segment_id
-        // Isso evita incluir registros órfãos que causam diferença na soma
-        else {
-          query = query.not('segment_id', 'is', null);
-        }
-        
-        return query;
-      })()
+                   // CORREÇÃO: Documentos financeiros - aplicar filtro de segmento corretamente
+       (() => {
+         let query = supabaseAdmin
+           .from('financial_documents')
+           .select('amount, direction, status, issue_date, created_at, segment_id');
+         
+         // Aplicar filtro de segmento apenas se fornecido
+         if (hasSegmentFilter) {
+           // Quando há filtro de segmento: buscar apenas documentos daquele segmento
+           query = query.eq('segment_id', segment_id);
+         }
+         // Se não há filtro (todos os segmentos): buscar TODOS (incluindo NULL)
+         // Registros com segment_id = NULL são despesas/receitas gerais
+         
+         return query;
+       })()
     ]);
 
     if (customersError) console.error('❌ Erro ao buscar clientes:', customersError);
