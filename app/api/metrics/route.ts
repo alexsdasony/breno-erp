@@ -41,10 +41,11 @@ export async function GET(request: NextRequest) {
 
     console.log('📅 Date range:', { startDate: startDate.toISOString(), endDate: endDate.toISOString() });
 
-    // Construir filtros baseados no segmento
-    const segmentFilter = segment_id && segment_id !== 'null' && segment_id !== '0' 
-      ? { segment_id } 
-      : {};
+    // CORREÇÃO: Construir filtros baseados no segmento de forma mais consistente
+    const hasSegmentFilter = segment_id && segment_id !== 'null' && segment_id !== '0';
+    const segmentFilter = hasSegmentFilter ? { segment_id } : {};
+    
+    console.log('🔍 Filtro de segmento aplicado:', { segment_id, hasSegmentFilter, segmentFilter });
 
     // Buscar métricas básicas
     const [
@@ -97,11 +98,24 @@ export async function GET(request: NextRequest) {
         .lte('created_at', endDate.toISOString())
         .match(segmentFilter),
       
-      // Documentos financeiros (receitas e despesas) - buscar todos para cálculo total
-      supabaseAdmin
-        .from('financial_documents')
-        .select('amount, direction, status, issue_date')
-        .match(segmentFilter)
+            // CORREÇÃO: Documentos financeiros - aplicar filtro de segmento corretamente
+      (() => {
+        let query = supabaseAdmin
+          .from('financial_documents')
+          .select('amount, direction, status, issue_date, created_at, segment_id');
+        
+        // Aplicar filtro de segmento apenas se fornecido
+        if (hasSegmentFilter) {
+          query = query.eq('segment_id', segment_id);
+        }
+        // Se não há filtro (todos os segmentos), buscar apenas registros COM segment_id
+        // Isso evita incluir registros órfãos que causam diferença na soma
+        else {
+          query = query.not('segment_id', 'is', null);
+        }
+        
+        return query;
+      })()
     ]);
 
     if (customersError) console.error('❌ Erro ao buscar clientes:', customersError);
@@ -133,7 +147,7 @@ export async function GET(request: NextRequest) {
     }).length || 0;
 
     // Calcular valores totais
-    const totalPayablesValue = accountsPayable?.reduce((sum, ap) => 
+    const accountsPayableValue = accountsPayable?.reduce((sum, ap) => 
       sum + (Number(ap.valor) || 0), 0) || 0;
     
     const totalBillingsValue = billings?.reduce((sum, b) => {
@@ -153,26 +167,37 @@ export async function GET(request: NextRequest) {
     // Calcular receitas e despesas dos documentos financeiros
     console.log('📄 Documentos financeiros encontrados:', financialDocuments?.length || 0);
     
-    const financialRevenue = financialDocuments?.filter(fd => fd.direction === 'receivable')
+    // CORREÇÃO: Usar TODOS os documentos financeiros (removido filtro de data restritivo)
+    // O filtro de data estava causando problemas quando não havia dados no período
+    const filteredFinancialDocs = financialDocuments || [];
+    
+    const financialRevenue = filteredFinancialDocs?.filter(fd => fd.direction === 'receivable')
       .reduce((sum, fd) => sum + (Number(fd.amount) || 0), 0) || 0;
     
-    const financialExpenses = financialDocuments?.filter(fd => fd.direction === 'payable')
+    const financialExpenses = filteredFinancialDocs?.filter(fd => fd.direction === 'payable')
       .reduce((sum, fd) => sum + (Number(fd.amount) || 0), 0) || 0;
     
     console.log('📊 Documentos por direção:', {
-      receivables: financialDocuments?.filter(fd => fd.direction === 'receivable').length || 0,
-      payables: financialDocuments?.filter(fd => fd.direction === 'payable').length || 0
+      total: financialDocuments?.length || 0,
+      filtered: filteredFinancialDocs?.length || 0,
+      receivables: filteredFinancialDocs?.filter(fd => fd.direction === 'receivable').length || 0,
+      payables: filteredFinancialDocs?.filter(fd => fd.direction === 'payable').length || 0
     });
 
-    // Receita total = vendas + documentos financeiros receivables
-    const totalRevenue = salesRevenue + financialRevenue;
+    // CORREÇÃO: Receita total = APENAS documentos financeiros receivables (evitar duplicação com sales)
+    // Se não há documentos financeiros, usar vendas como fallback
+    const totalRevenue = financialRevenue > 0 ? financialRevenue : salesRevenue;
+    
+    // CORREÇÃO: Despesas totais = documentos financeiros payable + contas a pagar
+    const totalExpenses = financialExpenses + accountsPayableValue;
     
     console.log('💰 Cálculo de receitas e despesas:', {
       salesRevenue,
       financialRevenue,
       financialExpenses,
+      accountsPayableValue,
       totalRevenue,
-      totalExpenses: financialExpenses
+      totalExpenses
     });
 
     console.log('📊 Dados reais de vendas:', { 
@@ -229,8 +254,8 @@ export async function GET(request: NextRequest) {
     const metrics = {
       total_sales: totalSales,
       total_revenue: totalRevenue,
-      total_expenses: financialExpenses,
-      net_profit: totalRevenue - financialExpenses,
+      total_expenses: totalExpenses, // CORREÇÃO: Usar totalExpenses (financial + payables)
+      net_profit: totalRevenue - totalExpenses, // CORREÇÃO: Usar totalExpenses
       avg_ticket: avgTicket,
       total_customers: totalCustomers,
       active_customers: activeCustomers,
@@ -239,7 +264,7 @@ export async function GET(request: NextRequest) {
       low_stock_count: lowStockCount,
       pending_invoices: pendingBillings, // Usar cobranças (billings)
       pending_payables: pendingPayables,
-      total_payables_value: totalPayablesValue,
+      total_payables_value: accountsPayableValue,
       total_receivables_value: totalBillingsValue, // Valor total de cobranças pendentes
       series_days: seriesDays
     };

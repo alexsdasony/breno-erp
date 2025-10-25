@@ -749,23 +749,23 @@ export default function AccountsPayableView() {
         {showViewModal && currentAccount && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-lg">
-              <h3 className="text-lg font-semibold mb-4">Detalhes da Conta a Pagar</h3>
+              <h3 className="text-lg font-semibold mb-4 text-gray-900">Detalhes da Conta a Pagar</h3>
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-500">Fornecedor</label>
-                  <p className="text-sm">{currentAccount.display_name || currentAccount.partner_name || currentAccount.supplier_id || 'N/A'}</p>
+                  <p className="text-sm text-gray-900">{currentAccount.display_name || currentAccount.partner_name || currentAccount.supplier_id || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-500">Descrição</label>
-                  <p className="text-sm">{currentAccount.descricao || 'N/A'}</p>
+                  <p className="text-sm text-gray-900">{currentAccount.descricao || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-500">Valor</label>
-                  <p className="text-sm font-semibold">{formatCurrency(currentAccount.valor)}</p>
+                  <p className="text-sm font-semibold text-gray-900">{formatCurrency(currentAccount.valor)}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-500">Data de Vencimento</label>
-                  <p className="text-sm">{formatDate(currentAccount.data_vencimento)}</p>
+                  <p className="text-sm text-gray-900">{formatDate(currentAccount.data_vencimento)}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-500">Status</label>
@@ -777,14 +777,14 @@ export default function AccountsPayableView() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-500">Segmento</label>
-                  <p className="text-sm">
+                  <p className="text-sm text-gray-900">
                     {segments.find(s => s.id === currentAccount.segment_id)?.name || 'N/A'}
                   </p>
                 </div>
                 {currentAccount.observacoes && (
                   <div>
                     <label className="block text-sm font-medium text-gray-500">Observações</label>
-                    <p className="text-sm">{currentAccount.observacoes}</p>
+                    <p className="text-sm text-gray-900">{currentAccount.observacoes}</p>
                   </div>
                 )}
               </div>
