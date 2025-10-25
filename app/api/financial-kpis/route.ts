@@ -8,17 +8,26 @@ export async function GET(request: NextRequest) {
 
     console.log('📊 Financial KPIs request:', { segmentId });
 
-    // Construir filtros baseados no segmento
-    const segmentFilter = segmentId && segmentId !== 'null' && segmentId !== '0' 
-      ? { segment_id: segmentId } 
-      : {};
-
+    // CORREÇÃO: Construir filtros baseados no segmento de forma consistente
+    const hasSegmentFilter = segmentId && segmentId !== 'null' && segmentId !== '0';
+    
     // Buscar TODOS os documentos financeiros sem paginação
-    const { data: allDocuments, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('financial_documents')
       .select('amount, direction, segment_id')
-      .eq('is_deleted', false)
-      .match(segmentFilter);
+      .eq('is_deleted', false);
+    
+    // Aplicar filtro de segmento apenas se fornecido
+    if (hasSegmentFilter) {
+      query = query.eq('segment_id', segmentId);
+    }
+    // Se não há filtro (todos os segmentos), buscar apenas registros COM segment_id
+    // Isso evita incluir registros órfãos que causam diferença na soma
+    else {
+      query = query.not('segment_id', 'is', null);
+    }
+    
+    const { data: allDocuments, error } = await query;
 
     if (error) {
       console.error('❌ Erro ao buscar documentos financeiros:', error);
