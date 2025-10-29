@@ -116,13 +116,18 @@ export default function FinancialView() {
     fetchKpis();
   }, [activeSegmentId]);
 
-  // Recarregar dados quando os filtros de data mudarem
+  // Recarregar dados quando os filtros de data mudarem (com debounce)
   React.useEffect(() => {
-    if (dateStartISO || dateEndISO) {
-      console.log('🔄 Filtros de data alterados, recarregando dados...', { dateStartISO, dateEndISO });
-      load(true);
+    // Só busca se uma data completa foi fornecida (10 caracteres = DD/MM/AAAA)
+    if (dateStart.length === 10 || dateEnd.length === 10) {
+      const timer = setTimeout(() => {
+        console.log('🔄 Filtros de data alterados, recarregando dados...', { dateStartISO, dateEndISO });
+        load(true);
+      }, 500); // Aguarda 500ms após parar de digitar
+      
+      return () => clearTimeout(timer);
     }
-  }, [dateStartISO, dateEndISO]);
+  }, [dateStartISO, dateEndISO, dateStart, dateEnd]);
 
   const { entradas, saidas, saldo } = kpis;
 

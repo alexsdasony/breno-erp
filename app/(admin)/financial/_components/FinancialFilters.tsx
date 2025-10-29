@@ -24,6 +24,17 @@ type Props = {
   onClearFilters?: () => void;
 };
 
+// Função para aplicar máscara de data
+function applyDateMask(value: string): string {
+  // Remove tudo que não é dígito
+  const digits = value.replace(/\D/g, '');
+  
+  // Aplica máscara: DD/MM/AAAA
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return digits.substring(0, 2) + '/' + digits.substring(2);
+  return digits.substring(0, 2) + '/' + digits.substring(2, 4) + '/' + digits.substring(4, 8);
+}
+
 export default function FinancialFilters({
   dateStart, setDateStart,
   dateEnd, setDateEnd,
@@ -52,10 +63,8 @@ export default function FinancialFilters({
             className="w-full bg-muted border rounded-lg p-2" 
             value={dateStart} 
             onChange={(e) => {
-              let value = e.target.value.replace(/\D/g, '');
-              if (value.length >= 2) value = value.substring(0, 2) + '/' + value.substring(2);
-              if (value.length >= 5) value = value.substring(0, 5) + '/' + value.substring(5, 9);
-              setDateStart(value);
+              const masked = applyDateMask(e.target.value);
+              setDateStart(masked);
             }}
             placeholder="DD/MM/AAAA"
             maxLength={10}
@@ -68,10 +77,8 @@ export default function FinancialFilters({
             className="w-full bg-muted border rounded-lg p-2" 
             value={dateEnd} 
             onChange={(e) => {
-              let value = e.target.value.replace(/\D/g, '');
-              if (value.length >= 2) value = value.substring(0, 2) + '/' + value.substring(2);
-              if (value.length >= 5) value = value.substring(0, 5) + '/' + value.substring(5, 9);
-              setDateEnd(value);
+              const masked = applyDateMask(e.target.value);
+              setDateEnd(masked);
             }}
             placeholder="DD/MM/AAAA"
             maxLength={10}
