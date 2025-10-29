@@ -38,8 +38,10 @@ export async function GET(request: NextRequest) {
     const page = isNaN(parseInt(pageParam)) ? 1 : Math.max(1, parseInt(pageParam));
     const pageSize = isNaN(parseInt(pageSizeParam)) ? 20 : Math.max(1, Math.min(100, parseInt(pageSizeParam)));
     const segmentId = searchParams.get('segment_id');
+    const dateStart = searchParams.get('dateStart');
+    const dateEnd = searchParams.get('dateEnd');
 
-    console.log('💰 Financial documents API request:', { page, pageSize, segmentId });
+    console.log('💰 Financial documents API request:', { page, pageSize, segmentId, dateStart, dateEnd });
 
     // Construir filtros baseados no segmento
     const segmentFilter = segmentId && segmentId !== 'null' && segmentId !== '0' 
@@ -47,7 +49,7 @@ export async function GET(request: NextRequest) {
       : {};
 
     // Buscar documentos financeiros da tabela financial_documents
-    const { data: financialDocuments, error: financialDocsError } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('financial_documents')
       .select(`
         *,
@@ -56,6 +58,16 @@ export async function GET(request: NextRequest) {
       `)
       .match(segmentFilter)
       .order('issue_date', { ascending: false });
+
+    // Aplicar filtros de data se fornecidos
+    if (dateStart) {
+      query = query.gte('issue_date', dateStart);
+    }
+    if (dateEnd) {
+      query = query.lte('issue_date', dateEnd);
+    }
+
+    const { data: financialDocuments, error: financialDocsError } = await query;
 
     if (financialDocsError) {
       console.error('❌ Erro ao buscar documentos financeiros:', financialDocsError);

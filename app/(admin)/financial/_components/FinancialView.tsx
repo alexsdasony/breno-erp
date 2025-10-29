@@ -16,15 +16,35 @@ import FinancialFormModal from './FinancialFormModal';
 
 export default function FinancialView() {
   const [pageSize, setPageSize] = React.useState<number>(20);
-  const { items, loading, refetching, hasMore, loadMore, create, update, remove, load } = useFinancialDocuments(pageSize);
-  const { paymentMethods } = usePaymentMethodsContext();
-  const { activeSegmentId } = useAppData();
-
-
-
-  // UI state - filtros (somente UI por enquanto)
+  
+  // UI state - filtros
   const [dateStart, setDateStart] = React.useState<string>('');
   const [dateEnd, setDateEnd] = React.useState<string>('');
+  
+  // Converter datas para formato ISO
+  const dateStartISO = React.useMemo(() => {
+    if (!dateStart) return '';
+    if (dateStart.includes('-') && dateStart.length === 10) return dateStart;
+    if (dateStart.includes('/')) {
+      const [day, month, year] = dateStart.split('/');
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    return '';
+  }, [dateStart]);
+  
+  const dateEndISO = React.useMemo(() => {
+    if (!dateEnd) return '';
+    if (dateEnd.includes('-') && dateEnd.length === 10) return dateEnd;
+    if (dateEnd.includes('/')) {
+      const [day, month, year] = dateEnd.split('/');
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    return '';
+  }, [dateEnd]);
+  
+  const { items, loading, refetching, hasMore, loadMore, create, update, remove, load } = useFinancialDocuments(pageSize, dateStartISO, dateEndISO);
+  const { paymentMethods } = usePaymentMethodsContext();
+  const { activeSegmentId } = useAppData();
   const [type, setType] = React.useState<string>(''); // receita, despesa, transferencia
   const [partner, setPartner] = React.useState<string>('');
   const [segment, setSegment] = React.useState<string>('');
@@ -95,6 +115,14 @@ export default function FinancialView() {
 
     fetchKpis();
   }, [activeSegmentId]);
+
+  // Recarregar dados quando os filtros de data mudarem
+  React.useEffect(() => {
+    if (dateStartISO || dateEndISO) {
+      console.log('🔄 Filtros de data alterados, recarregando dados...', { dateStartISO, dateEndISO });
+      load(true);
+    }
+  }, [dateStartISO, dateEndISO]);
 
   const { entradas, saidas, saldo } = kpis;
 
@@ -191,17 +219,23 @@ export default function FinancialView() {
         const startDate = formatDateToISO(dateStart);
         const itemDate = it.issue_date;
         if (itemDate && startDate) {
-          matchesDateStart = new Date(itemDate) >= new Date(startDate);
+          // Comparar apenas a data (sem hora)
+          const itemDateOnly = new Date(itemDate).setHours(0, 0, 0, 0);
+          const startDateOnly = new Date(startDate).setHours(0, 0, 0, 0);
+          matchesDateStart = itemDateOnly >= startDateOnly;
         }
       }
       
-      // Filtro por data de vencimento
+      // Filtro por data de vencimento (também usando issue_date para intervalo)
       let matchesDateEnd = true;
       if (dateEnd) {
         const endDate = formatDateToISO(dateEnd);
-        const itemDate = it.due_date;
+        const itemDate = it.issue_date;
         if (itemDate && endDate) {
-          matchesDateEnd = new Date(itemDate) <= new Date(endDate);
+          // Comparar apenas a data (sem hora)
+          const itemDateOnly = new Date(itemDate).setHours(0, 0, 0, 0);
+          const endDateOnly = new Date(endDate).setHours(0, 0, 0, 0);
+          matchesDateEnd = itemDateOnly <= endDateOnly;
         }
       }
       
