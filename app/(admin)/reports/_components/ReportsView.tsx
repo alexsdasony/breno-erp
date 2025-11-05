@@ -26,6 +26,9 @@ import {
   Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAppData } from '@/hooks/useAppData';
+import { generateReportPDF } from '@/utils/generatePdf';
+import { toast } from '@/components/ui/use-toast';
 
 interface Report {
   id: string;
@@ -366,6 +369,7 @@ const typeLabels = {
 };
 
 export default function ReportsView() {
+  const { activeSegmentId } = useAppData();
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -449,7 +453,20 @@ export default function ReportsView() {
   };
 
   const generateCustomerListHTML = (data: any) => {
-    const customers = data?.data || [];
+    // Os dados vêm em data.data.customers ou data.customers
+    const customers = data?.data?.customers || data?.customers || [];
+    
+    // Garantir que é um array
+    if (!Array.isArray(customers)) {
+      console.warn('⚠️ customers não é um array:', customers);
+      return `
+        <div class="empty-state">
+          <div class="icon">👥</div>
+          <h3>Erro ao carregar clientes</h3>
+          <p>Os dados não estão no formato esperado.</p>
+        </div>
+      `;
+    }
     
     if (customers.length === 0) {
       return `
@@ -782,8 +799,8 @@ export default function ReportsView() {
     `;
   };
   const generateAccountsPayableHTML = (data: any, reportId: string) => {
-    if (reportId === 'aging-analysis') {
-      const hasData = data?.data && Object.keys(data.data).length > 0;
+    if (reportId === 'payables-aging' || reportId === 'aging-analysis') {
+      const hasData = data?.data && Object.keys(data.data).length > 0 && (data.data.totalAmount > 0 || data.data.total > 0);
       
       if (!hasData) {
         return `
@@ -832,6 +849,31 @@ export default function ReportsView() {
             <div class="stat-label">Contas a Vencer</div>
           </div>
         </div>
+        ${data.data.aging && data.data.aging.length > 0 ? `
+        <div class="summary-section">
+          <div class="summary-title">Detalhamento por Faixa</div>
+          <div class="table-container">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Faixa</th>
+                  <th>Quantidade</th>
+                  <th>Valor Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.data.aging.map((item: any) => `
+                  <tr>
+                    <td>${item.label}</td>
+                    <td>${item.count || 0}</td>
+                    <td>R$ ${(item.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        ` : ''}
       `;
     }
     
@@ -1176,7 +1218,10 @@ export default function ReportsView() {
       // Determinar formato baseado na ação
       const format = action === 'download' ? 'pdf' : 'json';
       
-      const response = await fetch(`/api/reports?module=${moduleId}&report=${reportId}&format=${format}&startDate=${startDate}&endDate=${endDate}`);
+      // Adicionar segment_id se disponível
+      const segmentParam = activeSegmentId ? `&segment_id=${activeSegmentId}` : '';
+      
+      const response = await fetch(`/api/reports?module=${moduleId}&report=${reportId}&format=${format}&startDate=${startDate}&endDate=${endDate}${segmentParam}`);
       
       console.log('📊 Response status:', response.status);
       console.log('📊 Response ok:', response.ok);
@@ -1194,11 +1239,13 @@ export default function ReportsView() {
       const data = responseData.data || responseData;
       console.log('📊 Dados extraídos:', data);
       
+      // Definir título e período (usado tanto para visualização quanto para download)
+      const reportTitle = data.title || 'Relatório';
+      const reportPeriod = data.period || 'N/A';
+      
       if (action === 'view') {
         // Gerar HTML específico baseado no módulo e relatório
         let reportContent = '';
-        const reportTitle = data.title || 'Relatório';
-        const reportPeriod = data.period || 'N/A';
         
         if (moduleId === 'financial') {
           if (reportId === 'cash-flow') {
@@ -1436,20 +1483,78 @@ export default function ReportsView() {
           newWindow.document.close();
         }
       } else {
-        // Implementar download
+        // Download em PDF
         if (format === 'pdf') {
-          // Para PDF, implementar download
-          const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `relatorio_${moduleId}_${reportId}_${new Date().toISOString().split('T')[0]}.json`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          window.URL.revokeObjectURL(url);
+          try {
+            // Gerar HTML para o PDF (mesmo conteúdo da visualização)
+            let reportContent = '';
+            
+            if (moduleId === 'financial') {
+              if (reportId === 'cash-flow') {
+                reportContent = generateCashFlowHTML(data);
+              } else if (reportId === 'profit-loss') {
+                reportContent = generateProfitLossHTML(data);
+              } else {
+                reportContent = generateGenericHTML(data);
+              }
+            } else if (moduleId === 'customers') {
+              if (reportId === 'customer-list') {
+                reportContent = generateCustomerListHTML(data);
+              } else if (reportId === 'customer-segmentation') {
+                reportContent = generateCustomerSegmentationHTML(data);
+              } else if (reportId === 'customer-lifetime-value') {
+                reportContent = generateCustomerLifetimeValueHTML(data);
+              } else {
+                reportContent = generateGenericHTML(data);
+              }
+            } else if (moduleId === 'suppliers') {
+              if (reportId === 'supplier-list') {
+                reportContent = generateSupplierListHTML(data);
+              } else if (reportId === 'supplier-performance') {
+                reportContent = generateSupplierPerformanceHTML(data);
+              } else {
+                reportContent = generateGenericHTML(data);
+              }
+            } else if (moduleId === 'payables') {
+              reportContent = generateAccountsPayableHTML(data, reportId);
+            } else if (moduleId === 'billing') {
+              reportContent = generateBillingHTML(data, reportId);
+            } else if (moduleId === 'inventory') {
+              reportContent = generateInventoryHTML(data, reportId);
+            } else if (moduleId === 'sales') {
+              reportContent = generateSalesHTML(data, reportId);
+            } else if (moduleId === 'dashboard') {
+              reportContent = generateDashboardHTML(data, reportId);
+            } else if (moduleId === 'nfe') {
+              reportContent = generateNfeHTML(data, reportId);
+            } else {
+              reportContent = generateGenericHTML(data);
+            }
+            
+            // Gerar PDF usando a função utilitária
+            generateReportPDF(
+              {
+                title: reportTitle,
+                period: reportPeriod,
+                data: data.data || data
+              },
+              reportContent
+            );
+            
+            toast({
+              title: "PDF gerado com sucesso",
+              description: "O relatório foi baixado em formato PDF.",
+            });
+          } catch (error) {
+            console.error('Erro ao gerar PDF:', error);
+            toast({
+              title: "Erro ao gerar PDF",
+              description: "Não foi possível gerar o PDF. Tente novamente.",
+              variant: "destructive",
+            });
+          }
         } else {
-          // Para outros formatos
+          // Para outros formatos, manter JSON como fallback
           const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');

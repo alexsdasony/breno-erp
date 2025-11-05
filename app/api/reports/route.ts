@@ -3,7 +3,9 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('\n🚀 ============================================');
     console.log('🚀 INICIANDO API Route GET /api/reports');
+    console.log('🚀 ============================================');
     
     const { searchParams } = new URL(request.url);
     const moduleId = searchParams.get('module');
@@ -11,8 +13,9 @@ export async function GET(request: NextRequest) {
     const format = searchParams.get('format') || 'json';
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const segmentId = searchParams.get('segment_id');
     
-    console.log('📝 Parâmetros recebidos:', { moduleId, reportId, format, startDate, endDate });
+    console.log('📝 Parâmetros recebidos:', { moduleId, reportId, format, startDate, endDate, segmentId });
     
     if (!moduleId || !reportId) {
       return NextResponse.json(
@@ -23,35 +26,41 @@ export async function GET(request: NextRequest) {
 
     let data = null;
     
+    // Preparar parâmetros com segment_id
+    const params = { startDate, endDate, segmentId };
+    
     // Gerar dados baseado no tipo de relatório
+    console.log('🎯 Gerando relatório:', { moduleId, reportId });
     switch (moduleId) {
       case 'dashboard':
-        data = await generateDashboardReport(reportId, { startDate, endDate });
+        data = await generateDashboardReport(reportId, params);
         break;
       case 'financial':
-        data = await generateFinancialReport(reportId, { startDate, endDate });
+        data = await generateFinancialReport(reportId, params);
         break;
       case 'accounts-payable':
-        data = await generateAccountsPayableReport(reportId, { startDate, endDate });
+        console.log('💳 Chamando generateAccountsPayableReport...');
+        data = await generateAccountsPayableReport(reportId, params);
+        console.log('💳 Resultado de generateAccountsPayableReport:', data ? '✅ Dados retornados' : '❌ Sem dados');
         break;
       case 'billing':
-        data = await generateBillingReport(reportId, { startDate, endDate });
+        data = await generateBillingReport(reportId, params);
         break;
       case 'inventory':
-        data = await generateInventoryReport(reportId, { startDate, endDate });
+        data = await generateInventoryReport(reportId, params);
         break;
       case 'sales':
-        data = await generateSalesReport(reportId, { startDate, endDate });
+        data = await generateSalesReport(reportId, params);
         break;
       case 'customers':
         console.log('🎯 Chamando generateCustomersReport para reportId:', reportId);
-        data = await generateCustomersReport(reportId, { startDate, endDate });
+        data = await generateCustomersReport(reportId, params);
         break;
       case 'suppliers':
-        data = await generateSuppliersReport(reportId, { startDate, endDate });
+        data = await generateSuppliersReport(reportId, params);
         break;
       case 'nfe':
-        data = await generateNfeReport(reportId, { startDate, endDate });
+        data = await generateNfeReport(reportId, params);
         break;
       default:
         return NextResponse.json(
@@ -171,9 +180,17 @@ async function generateProductsReport(reportId: string, params: any) {
 }
 
 async function generateAccountsPayableReport(reportId: string, params: any) {
+  console.log('💳 generateAccountsPayableReport chamado:', { reportId, params });
   switch (reportId) {
     case 'payables-aging':
-      return await getPayablesAgingData(params);
+      console.log('💳 Chamando getPayablesAgingData...');
+      const result = await getPayablesAgingData(params);
+      console.log('💳 Resultado de getPayablesAgingData:', {
+        title: result.title,
+        dataKeys: Object.keys(result.data || {}),
+        total: result.data?.total || 0
+      });
+      return result;
     case 'supplier-payments':
       return await getSupplierPaymentsData(params);
     case 'overdue-bills':
@@ -235,12 +252,27 @@ async function generateNfeReport(reportId: string, params: any) {
   }
 }
 
+// Função helper para aplicar filtro de segmento
+// Se segmentId for fornecido, busca apenas aquele segmento
+// Se não for fornecido, busca todos (incluindo NULL)
+function applySegmentFilter(query: any, segmentId: string | null | undefined) {
+  // Não aplicar log aqui para evitar muito output, mas manter a lógica
+  if (segmentId && segmentId !== 'null' && segmentId !== '0') {
+    // Quando há filtro de segmento: buscar apenas documentos daquele segmento OU NULL (para compatibilidade)
+    // Isso permite que registros gerais (sem segmento) também apareçam quando filtrado
+    return query.or(`segment_id.eq.${segmentId},segment_id.is.null`);
+  }
+  
+  // Se não há filtro: buscar todos (incluindo NULL)
+  return query;
+}
+
 // Implementações das funções de dados
 
 // === RELATÓRIOS DE CLIENTES ===
 async function getCustomerListData(params: any) {
   try {
-    const { data: customers, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('partners')
       .select(`
         id,
@@ -255,8 +287,11 @@ async function getCustomerListData(params: any) {
         partner_roles!inner(role)
       `)
       .eq('partner_roles.role', 'customer')
-      .eq('is_deleted', false)
-      .order('created_at', { ascending: false });
+      .eq('is_deleted', false);
+    
+    query = applySegmentFilter(query, params.segmentId);
+    
+    const { data: customers, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       console.error('❌ Erro ao buscar clientes:', error);
@@ -309,11 +344,15 @@ async function getCustomerListData(params: any) {
 async function getCustomerSegmentationData(params: any) {
   try {
     // Buscar todos os clientes da tabela partners com type = 'customer'
-    const { data: customers, error: customersError } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('partners')
       .select('id, name, status, created_at, segment_id, partner_roles!inner(role)')
       .eq('partner_roles.role', 'customer')
       .eq('is_deleted', false);
+    
+    query = applySegmentFilter(query, params.segmentId);
+    
+    const { data: customers, error: customersError } = await query;
 
     if (customersError) {
       return {
@@ -431,11 +470,15 @@ async function getCustomerSegmentationData(params: any) {
 
 async function getCustomerLifetimeValueData(params: any) {
   try {
-    const { data: customers, error: customersError } = await supabaseAdmin
+    let customersQuery = supabaseAdmin
       .from('partners')
       .select('id, name, created_at, status, partner_roles!inner(role)')
       .eq('partner_roles.role', 'customer')
       .eq('is_deleted', false);
+    
+    customersQuery = applySegmentFilter(customersQuery, params.segmentId);
+    
+    const { data: customers, error: customersError } = await customersQuery;
 
     if (customersError) {
       console.error('❌ Erro ao buscar clientes:', customersError);
@@ -443,10 +486,12 @@ async function getCustomerLifetimeValueData(params: any) {
     }
 
     // Buscar vendas para calcular LTV
-    const { data: sales, error: salesError } = await supabaseAdmin
+    let salesQuery = supabaseAdmin
       .from('sales')
       .select('customer_id, total, date, status')
       .in('status', ['Concluída', 'completed']);
+    salesQuery = applySegmentFilter(salesQuery, params.segmentId);
+    const { data: sales, error: salesError } = await salesQuery;
 
     if (salesError) {
       console.error('❌ Erro ao buscar vendas:', salesError);
@@ -520,7 +565,7 @@ async function getCustomerLifetimeValueData(params: any) {
 // === RELATÓRIOS DE FORNECEDORES ===
 async function getSupplierListData(params: any) {
   try {
-    const { data: suppliers, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('partners')
       .select(`
         id,
@@ -536,26 +581,39 @@ async function getSupplierListData(params: any) {
         partner_roles!inner(role)
       `)
       .eq('partner_roles.role', 'supplier')
-      .eq('is_deleted', false)
-      .gte('created_at', params.startDate || '2024-01-01')
-      .lte('created_at', params.endDate || '2024-12-31')
+      .eq('is_deleted', false);
+    
+    query = applySegmentFilter(query, params.segmentId);
+    
+    const { data: suppliers, error } = await query
       .order('created_at', { ascending: false });
+    
+    // Filtrar por data no código se necessário
+    let filteredSuppliers = suppliers || [];
+    if (params.startDate && params.endDate) {
+      filteredSuppliers = suppliers?.filter(supplier => {
+        const supplierDate = new Date(supplier.created_at);
+        const startDate = new Date(params.startDate);
+        const endDate = new Date(params.endDate);
+        return supplierDate >= startDate && supplierDate <= endDate;
+      }) || [];
+    }
 
     if (error) {
       console.error('❌ Erro ao buscar fornecedores:', error);
       throw error;
     }
 
-    console.log('🏭 Fornecedores encontrados:', suppliers?.length || 0);
+    console.log('🏭 Fornecedores encontrados:', filteredSuppliers.length);
 
     return {
       title: 'Lista de Fornecedores',
       period: `${params.startDate} a ${params.endDate}`,
       data: {
-        suppliers: suppliers || [],
-        totalSuppliers: suppliers?.length || 0,
-        activeSuppliers: suppliers?.filter(s => s.status === 'active').length || 0,
-        inactiveSuppliers: suppliers?.filter(s => s.status === 'inactive').length || 0
+        suppliers: filteredSuppliers,
+        totalSuppliers: filteredSuppliers.length,
+        activeSuppliers: filteredSuppliers.filter(s => s.status === 'active').length,
+        inactiveSuppliers: filteredSuppliers.filter(s => s.status === 'inactive').length
       }
     };
   } catch (error) {
@@ -715,25 +773,148 @@ async function getPurchaseAnalysisData(params: any) {
 async function getCashFlowData(params: any) {
   console.log('💰 Calculando fluxo de caixa...');
   
+  // Buscar vendas (entradas de caixa)
+  const startDate = params.startDate || '2024-01-01';
+  const endDate = params.endDate || '2024-12-31';
+  
+  // Buscar todas as vendas primeiro (sem filtro de data na query, pois pode ter date ou sale_date)
+  let salesQuery = supabaseAdmin
+    .from('sales')
+    .select('total, total_amount, date, sale_date, status')
+    .eq('is_deleted', false)
+    .in('status', ['Concluída', 'completed']);
+  
+  salesQuery = applySegmentFilter(salesQuery, params.segmentId);
+  const { data: sales, error: salesError } = await salesQuery;
+  
+  // Filtrar por data no código (usando date ou sale_date)
+  const filteredSales = (sales || []).filter(sale => {
+    const saleDate = sale.sale_date || sale.date;
+    if (!saleDate) return false;
+    return saleDate >= startDate && saleDate <= endDate;
+  });
+  
+  console.log('💰 Vendas encontradas:', { total: sales?.length || 0, filtradas: filteredSales.length, startDate, endDate });
+
+  if (salesError) {
+    console.error('Erro ao buscar vendas:', salesError);
+  }
+
+  // Buscar contas a receber pagas
+  let receivablesQuery = supabaseAdmin
+    .from('financial_documents')
+    .select('amount, due_date, status')
+    .eq('direction', 'receivable')
+    .gte('due_date', params.startDate || '2024-01-01')
+    .lte('due_date', params.endDate || '2024-12-31')
+    .eq('status', 'paid');
+  receivablesQuery = applySegmentFilter(receivablesQuery, params.segmentId);
+  const { data: receivables, error: receivablesError } = await receivablesQuery;
+
+  if (receivablesError) {
+    console.error('Erro ao buscar contas a receber:', receivablesError);
+  }
+
+  // Buscar contas a pagar (saídas de caixa)
+  let payablesQuery = supabaseAdmin
+    .from('accounts_payable')
+    .select('valor, data_pagamento, status')
+    .gte('data_pagamento', params.startDate || '2024-01-01')
+    .lte('data_pagamento', params.endDate || '2024-12-31')
+    .eq('status', 'paga');
+  payablesQuery = applySegmentFilter(payablesQuery, params.segmentId);
+  const { data: payables, error: payablesError } = await payablesQuery;
+
+  if (payablesError) {
+    console.error('Erro ao buscar contas a pagar:', payablesError);
+  }
+
+  // Calcular entradas
+  const salesInflows = filteredSales.reduce((sum, sale) => {
+    const amount = parseFloat(sale.total_amount || sale.total || 0);
+    return sum + amount;
+  }, 0);
+  const receivablesInflows = (receivables || []).reduce((sum, rec) => sum + (parseFloat(rec.amount) || 0), 0);
+  const totalInflows = salesInflows + receivablesInflows;
+
+  // Calcular saídas
+  const totalOutflows = (payables || []).reduce((sum, pay) => sum + (parseFloat(pay.valor) || 0), 0);
+
+  // Calcular saldo
+  const balance = totalInflows - totalOutflows;
+
+  console.log('💰 Fluxo de caixa calculado:', {
+    salesInflows,
+    receivablesInflows,
+    totalInflows,
+    totalOutflows,
+    balance
+  });
+
+  return {
+    title: 'Fluxo de Caixa',
+    period: `${params.startDate} a ${params.endDate}`,
+    data: {
+      inflows: totalInflows,
+      outflows: totalOutflows,
+      balance: balance,
+      breakdown: {
+        sales: salesInflows,
+        receivables: receivablesInflows,
+        payables: totalOutflows
+      },
+      summary: {
+        totalSales: filteredSales.length,
+        totalReceivables: (receivables || []).length,
+        totalPayables: (payables || []).length
+      }
+    }
+  };
+}
+
 // === RELATÓRIOS DE VENDAS ===
 async function getSalesPerformanceData(params: any) {
-  console.log('📈 Analisando performance de vendas...');
+  console.log('📈 Analisando performance de vendas...', { params });
   
   try {
-    const { data: sales, error } = await supabaseAdmin
+    // Buscar todas as vendas primeiro (filtrar por data no código)
+    const startDate = params.startDate || '2024-01-01';
+    const endDate = params.endDate || '2024-12-31';
+    
+    let query = supabaseAdmin
       .from('sales')
-      .select('id, total, date, status, customer_id')
-      .gte('date', params.startDate || '2024-01-01')
-      .lte('date', params.endDate || '2024-12-31');
+      .select('id, total, total_amount, date, sale_date, status, customer_id')
+      .eq('is_deleted', false)
+      .in('status', ['Concluída', 'completed']);
+    
+    query = applySegmentFilter(query, params.segmentId);
+    
+    console.log('🔍 Query de vendas:', { startDate, endDate, segmentId: params.segmentId });
+    
+    const { data: sales, error } = await query;
+    
+    console.log('📊 Vendas encontradas (antes do filtro de data):', sales?.length || 0);
 
     if (error) {
       console.error('❌ Erro ao buscar vendas:', error);
       throw error;
     }
 
-    const completedSales = sales?.filter(s => s.status === 'Concluída' || s.status === 'completed') || [];
+    // Filtrar por data no código também
+    const filteredSales = (sales || []).filter(sale => {
+      const saleDate = sale.sale_date || sale.date;
+      if (!saleDate) return false;
+      return saleDate >= startDate && saleDate <= endDate;
+    });
+    
+    console.log('📊 Vendas filtradas por data:', filteredSales.length);
+    
+    const completedSales = filteredSales.filter(s => s.status === 'Concluída' || s.status === 'completed');
     const totalSales = completedSales.length;
-    const totalRevenue = completedSales.reduce((sum, s) => sum + (parseFloat(s.total) || 0), 0);
+    const totalRevenue = completedSales.reduce((sum, s) => {
+      const amount = parseFloat(s.total_amount || s.total || 0);
+      return sum + amount;
+    }, 0);
     const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
 
     // Calcular crescimento (simples comparação com período anterior)
@@ -741,12 +922,14 @@ async function getSalesPerformanceData(params: any) {
     const previousStartDate = new Date(new Date(params.startDate).getTime() - (periodDays * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
     const previousEndDate = new Date(new Date(params.startDate).getTime() - (24 * 60 * 60 * 1000)).toISOString().split('T')[0];
 
-    const { data: previousSales } = await supabaseAdmin
+    let previousSalesQuery = supabaseAdmin
       .from('sales')
       .select('total, status')
       .gte('date', previousStartDate)
       .lte('date', previousEndDate)
       .in('status', ['Concluída', 'completed']);
+    previousSalesQuery = applySegmentFilter(previousSalesQuery, params.segmentId);
+    const { data: previousSales } = await previousSalesQuery;
 
     const previousRevenue = previousSales?.reduce((sum, s) => sum + (parseFloat(s.total) || 0), 0) || 0;
     const growth = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
@@ -874,11 +1057,12 @@ async function getSalesForecastData(params: any) {
   console.log('🔮 Calculando previsão de vendas...');
   
   try {
-    const { data: sales, error } = await supabaseAdmin
+    let salesQuery = supabaseAdmin
       .from('sales')
       .select('total, date, status')
-      .in('status', ['Concluída', 'completed'])
-      .order('date', { ascending: true });
+      .in('status', ['Concluída', 'completed']);
+    salesQuery = applySegmentFilter(salesQuery, params.segmentId);
+    const { data: sales, error } = await salesQuery.order('date', { ascending: true });
 
     if (error) {
       console.error('❌ Erro ao buscar vendas para previsão:', error);
@@ -954,12 +1138,14 @@ async function getCustomerAnalysisData(params: any) {
       throw error;
     }
 
-    const { data: sales, error: salesError } = await supabaseAdmin
+    let salesQuery = supabaseAdmin
       .from('sales')
       .select('customer_id, total, date, status')
       .in('status', ['Concluída', 'completed'])
       .gte('date', params.startDate || '2024-01-01')
       .lte('date', params.endDate || '2024-12-31');
+    salesQuery = applySegmentFilter(salesQuery, params.segmentId);
+    const { data: sales, error: salesError } = await salesQuery;
 
     if (salesError) {
       console.error('❌ Erro ao buscar vendas:', salesError);
@@ -1018,113 +1204,52 @@ async function getCustomerAnalysisData(params: any) {
   }
 }
 
-  // Buscar vendas (entradas de caixa)
-  const { data: sales, error: salesError } = await supabaseAdmin
-    .from('sales')
-    .select('total, date, status')
-    .gte('date', params.startDate || '2024-01-01')
-    .lte('date', params.endDate || '2024-12-31')
-    .eq('status', 'Concluída');
-
-  if (salesError) {
-    console.error('Erro ao buscar vendas:', salesError);
-  }
-
-  // Buscar contas a receber pagas
-  const { data: receivables, error: receivablesError } = await supabaseAdmin
-    .from('financial_documents')
-    .select('amount, due_date, status')
-    .eq('direction', 'receivable')
-    .gte('due_date', params.startDate || '2024-01-01')
-    .lte('due_date', params.endDate || '2024-12-31')
-    .eq('status', 'paid');
-
-  if (receivablesError) {
-    console.error('Erro ao buscar contas a receber:', receivablesError);
-  }
-
-  // Buscar contas a pagar (saídas de caixa)
-  const { data: payables, error: payablesError } = await supabaseAdmin
-    .from('accounts_payable')
-    .select('valor, data_pagamento, status')
-    .gte('data_pagamento', params.startDate || '2024-01-01')
-    .lte('data_pagamento', params.endDate || '2024-12-31')
-    .eq('status', 'paga');
-
-  if (payablesError) {
-    console.error('Erro ao buscar contas a pagar:', payablesError);
-  }
-
-  // Calcular entradas
-  const salesInflows = (sales || []).reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0);
-  const receivablesInflows = (receivables || []).reduce((sum, rec) => sum + (parseFloat(rec.amount) || 0), 0);
-  const totalInflows = salesInflows + receivablesInflows;
-
-  // Calcular saídas
-  const totalOutflows = (payables || []).reduce((sum, pay) => sum + (parseFloat(pay.valor) || 0), 0);
-
-  // Calcular saldo
-  const balance = totalInflows - totalOutflows;
-
-  console.log('💰 Fluxo de caixa calculado:', {
-    salesInflows,
-    receivablesInflows,
-    totalInflows,
-    totalOutflows,
-    balance
-  });
-
-  return {
-    title: 'Fluxo de Caixa',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: {
-      inflows: totalInflows,
-      outflows: totalOutflows,
-      balance: balance,
-      breakdown: {
-        sales: salesInflows,
-        receivables: receivablesInflows,
-        payables: totalOutflows
-      },
-      summary: {
-        totalSales: (sales || []).length,
-        totalReceivables: (receivables || []).length,
-        totalPayables: (payables || []).length
-      }
-    }
-  };
-}
-
 async function getProfitLossData(params: any) {
-  console.log('📊 Calculando DRE...');
+  console.log('📊 Calculando DRE...', { params });
+  
+  const startDate = params.startDate || '2024-01-01';
+  const endDate = params.endDate || '2024-12-31';
   
   // Buscar receitas (vendas)
-  const { data: sales, error: salesError } = await supabaseAdmin
+  let salesQuery = supabaseAdmin
     .from('sales')
-    .select('total, date, status')
-    .gte('date', params.startDate || '2024-01-01')
-    .lte('date', params.endDate || '2024-12-31')
-    .eq('status', 'Concluída');
+    .select('total, total_amount, date, sale_date, status')
+    .eq('is_deleted', false)
+    .in('status', ['Concluída', 'completed']);
+  salesQuery = applySegmentFilter(salesQuery, params.segmentId);
+  const { data: sales, error: salesError } = await salesQuery;
+  
+  // Filtrar por data no código
+  const filteredSales = (sales || []).filter(sale => {
+    const saleDate = sale.sale_date || sale.date;
+    if (!saleDate) return false;
+    return saleDate >= startDate && saleDate <= endDate;
+  });
 
   if (salesError) {
     console.error('Erro ao buscar vendas:', salesError);
   }
 
   // Buscar custos (compras de produtos)
-  const { data: purchases, error: purchasesError } = await supabaseAdmin
+  let purchasesQuery = supabaseAdmin
     .from('accounts_payable')
     .select('valor, descricao, data_pagamento, status')
     .gte('data_pagamento', params.startDate || '2024-01-01')
     .lte('data_pagamento', params.endDate || '2024-12-31')
     .eq('status', 'paga')
     .ilike('descricao', '%produto%');
+  purchasesQuery = applySegmentFilter(purchasesQuery, params.segmentId);
+  const { data: purchases, error: purchasesError } = await purchasesQuery;
 
   if (purchasesError) {
     console.error('Erro ao buscar compras:', purchasesError);
   }
 
   // Calcular receitas
-  const totalRevenue = (sales || []).reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0);
+  const totalRevenue = filteredSales.reduce((sum, sale) => {
+    const amount = parseFloat(sale.total_amount || sale.total || 0);
+    return sum + amount;
+  }, 0);
 
   // Calcular custos
   const totalCosts = (purchases || []).reduce((sum, purchase) => sum + (parseFloat(purchase.valor) || 0), 0);
@@ -1154,7 +1279,7 @@ async function getProfitLossData(params: any) {
         otherCosts: 0
       },
       summary: {
-        totalSales: (sales || []).length,
+        totalSales: filteredSales.length,
         totalPurchases: (purchases || []).length
       }
     }
@@ -1166,26 +1291,34 @@ async function getBalanceSheetData(params: any) {
   
   try {
     // Buscar dados reais para o balanço
-    const { data: salesData } = await supabaseAdmin
+    let salesQuery = supabaseAdmin
       .from('sales')
       .select('total')
       .in('status', ['Concluída', 'completed']);
+    salesQuery = applySegmentFilter(salesQuery, params.segmentId);
+    const { data: salesData } = await salesQuery;
 
-    const { data: payablesData } = await supabaseAdmin
+    let payablesQuery = supabaseAdmin
       .from('accounts_payable')
       .select('valor')
       .eq('status', 'pendente');
+    payablesQuery = applySegmentFilter(payablesQuery, params.segmentId);
+    const { data: payablesData } = await payablesQuery;
 
-    const { data: receivablesData } = await supabaseAdmin
+    let receivablesQuery = supabaseAdmin
       .from('financial_documents')
       .select('amount')
       .eq('direction', 'receivable')
       .eq('status', 'open');
+    receivablesQuery = applySegmentFilter(receivablesQuery, params.segmentId);
+    const { data: receivablesData } = await receivablesQuery;
 
-    const { data: productsData } = await supabaseAdmin
+    let productsQuery = supabaseAdmin
       .from('products')
       .select('price, stock_quantity')
       .eq('is_deleted', false);
+    productsQuery = applySegmentFilter(productsQuery, params.segmentId);
+    const { data: productsData } = await productsQuery;
 
     // Calcular ativos
     const totalSales = salesData?.reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0) || 0;
@@ -1237,35 +1370,55 @@ async function getBalanceSheetData(params: any) {
 }
 
 async function getFinancialAnalysisData(params: any) {
-  console.log('📊 Calculando análise financeira...');
+  console.log('📊 Calculando análise financeira...', { params });
   
   try {
+    const startDate = params.startDate || '2024-01-01';
+    const endDate = params.endDate || '2024-12-31';
+    
     // Buscar dados reais para análise financeira
-    const { data: salesData } = await supabaseAdmin
+    let salesQuery = supabaseAdmin
       .from('sales')
-      .select('total, date')
-      .in('status', ['Concluída', 'completed'])
-      .gte('date', params.startDate || '2024-01-01')
-      .lte('date', params.endDate || '2024-12-31');
+      .select('total, total_amount, date, sale_date')
+      .eq('is_deleted', false)
+      .in('status', ['Concluída', 'completed']);
+    salesQuery = applySegmentFilter(salesQuery, params.segmentId);
+    const { data: salesData } = await salesQuery;
+    
+    // Filtrar por data no código
+    const filteredSales = (salesData || []).filter(sale => {
+      const saleDate = sale.sale_date || sale.date;
+      if (!saleDate) return false;
+      return saleDate >= startDate && saleDate <= endDate;
+    });
 
-    const { data: payablesData } = await supabaseAdmin
+    let payablesQuery = supabaseAdmin
       .from('accounts_payable')
       .select('valor, data_vencimento')
       .eq('status', 'pendente');
+    payablesQuery = applySegmentFilter(payablesQuery, params.segmentId);
+    const { data: payablesData } = await payablesQuery;
 
-    const { data: receivablesData } = await supabaseAdmin
+    let receivablesQuery = supabaseAdmin
       .from('financial_documents')
       .select('amount, due_date')
       .eq('direction', 'receivable')
       .eq('status', 'open');
+    receivablesQuery = applySegmentFilter(receivablesQuery, params.segmentId);
+    const { data: receivablesData } = await receivablesQuery;
 
-    const { data: productsData } = await supabaseAdmin
+    let productsQuery = supabaseAdmin
       .from('products')
       .select('price, stock_quantity, cost')
       .eq('is_deleted', false);
+    productsQuery = applySegmentFilter(productsQuery, params.segmentId);
+    const { data: productsData } = await productsQuery;
 
     // Calcular métricas financeiras
-    const totalRevenue = salesData?.reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0) || 0;
+    const totalRevenue = filteredSales.reduce((sum, sale) => {
+      const amount = parseFloat(sale.total_amount || sale.total || 0);
+      return sum + amount;
+    }, 0);
     const totalPayables = payablesData?.reduce((sum, pay) => sum + (parseFloat(pay.valor) || 0), 0) || 0;
     const totalReceivables = receivablesData?.reduce((sum, rec) => sum + (parseFloat(rec.amount) || 0), 0) || 0;
     const totalInventory = productsData?.reduce((sum, product) => sum + ((parseFloat(product.price) || 0) * (product.stock_quantity || 0)), 0) || 0;
@@ -1836,24 +1989,41 @@ async function getNfeStatusData(params: any) {
 
 // Implementações para Dashboard
 async function getKpiOverviewData(params: any) {
-  console.log('📊 Analisando KPIs gerais...');
+  console.log('📊 Analisando KPIs gerais...', { params });
   
   try {
-    // Buscar dados reais
-    const { data: customersData } = await supabaseAdmin
+    // Buscar dados reais com filtro de segmento
+    let customersQuery = supabaseAdmin
       .from('partners')
       .select('id, partner_roles!inner(role)')
       .eq('partner_roles.role', 'customer')
       .eq('is_deleted', false);
+    customersQuery = applySegmentFilter(customersQuery, params.segmentId);
+    const { data: customersData } = await customersQuery;
 
-    const { data: salesData } = await supabaseAdmin
+    let salesQuery = supabaseAdmin
       .from('sales')
-      .select('total, status')
+      .select('total, total_amount, date, sale_date, status')
+      .eq('is_deleted', false)
       .in('status', ['Concluída', 'completed']);
+    salesQuery = applySegmentFilter(salesQuery, params.segmentId);
+    const { data: salesData } = await salesQuery;
+    
+    // Filtrar por data no código
+    const startDate = params.startDate || '2024-01-01';
+    const endDate = params.endDate || '2024-12-31';
+    const filteredSales = (salesData || []).filter(sale => {
+      const saleDate = sale.sale_date || sale.date;
+      if (!saleDate) return false;
+      return saleDate >= startDate && saleDate <= endDate;
+    });
 
     const totalCustomers = customersData?.length || 0;
-    const totalSales = salesData?.length || 0;
-    const totalRevenue = salesData?.reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0) || 0;
+    const totalSales = filteredSales.length;
+    const totalRevenue = filteredSales.reduce((sum, sale) => {
+      const amount = parseFloat(sale.total_amount || sale.total || 0);
+      return sum + amount;
+    }, 0);
     const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
 
     console.log('📊 KPIs gerais:', {
@@ -1889,25 +2059,42 @@ async function getKpiOverviewData(params: any) {
 }
 
 async function getExecutiveSummaryData(params: any) {
-  console.log('📋 Gerando resumo executivo...');
+  console.log('📋 Gerando resumo executivo...', { params });
   
   try {
-    // Buscar dados para o resumo
-    const { data: customersData } = await supabaseAdmin
+    // Buscar dados para o resumo com filtro de segmento
+    let customersQuery = supabaseAdmin
       .from('partners')
       .select('id, status, partner_roles!inner(role)')
       .eq('partner_roles.role', 'customer')
       .eq('is_deleted', false);
+    customersQuery = applySegmentFilter(customersQuery, params.segmentId);
+    const { data: customersData } = await customersQuery;
 
-    const { data: salesData } = await supabaseAdmin
+    let salesQuery = supabaseAdmin
       .from('sales')
-      .select('total, status, date')
+      .select('total, total_amount, status, date, sale_date')
+      .eq('is_deleted', false)
       .in('status', ['Concluída', 'completed']);
+    salesQuery = applySegmentFilter(salesQuery, params.segmentId);
+    const { data: salesData } = await salesQuery;
+    
+    // Filtrar por data no código
+    const startDate = params.startDate || '2024-01-01';
+    const endDate = params.endDate || '2024-12-31';
+    const filteredSales = (salesData || []).filter(sale => {
+      const saleDate = sale.sale_date || sale.date;
+      if (!saleDate) return false;
+      return saleDate >= startDate && saleDate <= endDate;
+    });
 
     const totalCustomers = customersData?.length || 0;
     const activeCustomers = customersData?.filter(c => c.status === 'active' || c.status === 'ativo').length || 0;
-    const totalSales = salesData?.length || 0;
-    const totalRevenue = salesData?.reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0) || 0;
+    const totalSales = filteredSales.length;
+    const totalRevenue = filteredSales.reduce((sum, sale) => {
+      const amount = parseFloat(sale.total_amount || sale.total || 0);
+      return sum + amount;
+    }, 0);
 
     const keyMetrics = {
       totalRevenue,
@@ -1957,179 +2144,400 @@ async function getExecutiveSummaryData(params: any) {
 
 // Implementações para Contas a Pagar
 async function getPayablesAgingData(params: any) {
-  console.log('📊 Analisando aging de contas a pagar...');
+  console.log('📊 ===== INICIANDO getPayablesAgingData =====');
+  console.log('📊 Parâmetros:', params);
   
-  const { data, error } = await supabaseAdmin
-    .from('accounts_payable')
-    .select('*')
-    .order('data_vencimento', { ascending: true });
-
-  if (error) {
-    console.error('Erro ao buscar contas a pagar para aging:', error);
-    throw error;
-  }
-
-  const accounts = data || [];
-  const now = new Date();
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-
-  let current = 0;
-  let overdue30 = 0;
-  let overdue60 = 0;
-  let overdue90 = 0;
-
-  accounts.forEach(account => {
-    if (account.due_date) {
-      const dueDate = new Date(account.due_date);
-      if (account.status === 'paid') return; // Pular contas pagas
+  try {
+    let data: any[] = [];
+    
+    // Buscar TODOS os dados primeiro (sem filtro de segmento) para debug
+    console.log('🔍 Buscando TODOS os financial_documents (payable)...');
+    const allFinancial = await supabaseAdmin
+      .from('financial_documents')
+      .select('id, amount, due_date, status, direction, segment_id')
+      .eq('direction', 'payable')
+      .limit(100);
+    
+    console.log('📊 Total financial_documents (payable):', allFinancial.data?.length || 0);
+    if (allFinancial.data && allFinancial.data.length > 0) {
+      console.log('📊 Amostra financial_documents:', allFinancial.data.slice(0, 3));
+    }
+    
+    // Buscar TODOS os accounts_payable para debug
+    console.log('🔍 Buscando TODOS os accounts_payable...');
+    const allAccounts = await supabaseAdmin
+      .from('accounts_payable')
+      .select('id, valor, data_vencimento, status, segment_id')
+      .limit(100);
+    
+    console.log('📊 Total accounts_payable:', allAccounts.data?.length || 0);
+    if (allAccounts.data && allAccounts.data.length > 0) {
+      console.log('📊 Amostra accounts_payable:', allAccounts.data.slice(0, 3));
+    }
+    
+    // Agora buscar com filtro de segmento
+    console.log('🔍 Buscando com filtro de segmento:', params.segmentId);
+    
+    // Tentar financial_documents primeiro
+    let financialQuery = supabaseAdmin
+      .from('financial_documents')
+      .select('*')
+      .eq('direction', 'payable');
+    
+    if (params.segmentId && params.segmentId !== 'null' && params.segmentId !== '0') {
+      financialQuery = financialQuery.or(`segment_id.eq.${params.segmentId},segment_id.is.null`);
+    }
+    
+    const financialResult = await financialQuery.order('due_date', { ascending: true });
+    
+    console.log('📊 Resultado com filtro financial_documents:', financialResult.data?.length || 0);
+    
+    if (financialResult.data && financialResult.data.length > 0) {
+      // Filtrar contas pagas
+      const filteredDocs = financialResult.data.filter((doc: any) => {
+        const status = doc.status?.toLowerCase();
+        return status !== 'paid' && status !== 'paga';
+      });
       
-      if (dueDate >= now) {
-        current++;
-      } else if (dueDate >= thirtyDaysAgo) {
-        overdue30++;
-      } else if (dueDate >= sixtyDaysAgo) {
-        overdue60++;
-      } else {
-        overdue90++;
+      console.log(`📊 Após filtrar pagas: ${financialResult.data.length} -> ${filteredDocs.length}`);
+      
+      if (filteredDocs.length > 0) {
+        data = filteredDocs.map((doc: any) => ({
+          id: doc.id,
+          valor: doc.amount,
+          amount: doc.amount,
+          data_vencimento: doc.due_date,
+          due_date: doc.due_date,
+          status: doc.status === 'paid' ? 'paga' : (doc.status === 'open' ? 'pendente' : doc.status),
+          descricao: doc.description || doc.notes || '',
+          segment_id: doc.segment_id,
+          created_at: doc.created_at,
+          updated_at: doc.updated_at
+        }));
+        console.log('✅ Usando dados de financial_documents:', data.length);
       }
     }
-  });
-
-  console.log('📊 Aging de contas a pagar:', {
-    current,
-    overdue30,
-    overdue60,
-    overdue90
-  });
-
-  return {
-    title: 'Aging de Contas a Pagar',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: {
-      current,
-      overdue30,
-      overdue60,
-      overdue90
+    
+    // Se não encontrar, tentar accounts_payable
+    if (data.length === 0) {
+      console.log('⚠️ Tentando accounts_payable...');
+      let query = supabaseAdmin
+        .from('accounts_payable')
+        .select('*');
+      
+      if (params.segmentId && params.segmentId !== 'null' && params.segmentId !== '0') {
+        query = query.or(`segment_id.eq.${params.segmentId},segment_id.is.null`);
+      }
+      
+      const result = await query.order('data_vencimento', { ascending: true });
+      
+      console.log('📊 Resultado accounts_payable:', result.data?.length || 0);
+      
+      if (result.data && result.data.length > 0) {
+        data = result.data.filter((account: any) => {
+          const status = account.status?.toLowerCase();
+          return status !== 'paga' && status !== 'paid';
+        });
+        console.log(`📊 Após filtrar pagas: ${result.data.length} -> ${data.length}`);
+      }
     }
-  };
+
+    const accounts = data || [];
+    console.log('📊 Contas encontradas:', {
+      total: accounts.length,
+      segmentId: params.segmentId,
+      sample: accounts.slice(0, 2).map(a => ({
+        id: a.id,
+        valor: a.valor || a.amount,
+        status: a.status,
+        data_vencimento: a.data_vencimento || a.due_date,
+        segment_id: a.segment_id
+      }))
+    });
+    
+    if (accounts.length === 0) {
+      console.warn('⚠️ Nenhuma conta encontrada. Verificando se há dados sem filtro de segmento...');
+      // Buscar sem filtro de segmento para debug
+      const debugQuery = await supabaseAdmin
+        .from('accounts_payable')
+        .select('id, valor, status, data_vencimento, segment_id')
+        .limit(5);
+      console.log('🔍 Debug - Total sem filtro:', debugQuery.data?.length || 0, debugQuery.data);
+    }
+    
+    const now = new Date();
+    
+    // Inicializar contadores e valores
+    let current = 0;
+    let currentAmount = 0;
+    let overdue30 = 0;
+    let overdue30Amount = 0;
+    let overdue60 = 0;
+    let overdue60Amount = 0;
+    let overdue90 = 0;
+    let overdue90Amount = 0;
+    let totalAmount = 0;
+    let overdueCount = 0;
+    let overdueAmount = 0;
+    let upcomingCount = 0;
+    let upcomingAmount = 0;
+
+    accounts.forEach(account => {
+      // Usar data_vencimento ou due_date
+      const dueDateStr = account.data_vencimento || account.due_date;
+      if (!dueDateStr) return;
+      
+      const valor = parseFloat(account.valor || account.amount || 0);
+      totalAmount += valor;
+      
+      const dueDate = new Date(dueDateStr);
+      
+      if (dueDate >= now) {
+        // Contas a vencer
+        current++;
+        currentAmount += valor;
+        upcomingCount++;
+        upcomingAmount += valor;
+      } else {
+        // Contas vencidas
+        overdueCount++;
+        overdueAmount += valor;
+        
+        const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysOverdue <= 30) {
+          overdue30++;
+          overdue30Amount += valor;
+        } else if (daysOverdue <= 60) {
+          overdue60++;
+          overdue60Amount += valor;
+        } else {
+          overdue90++;
+          overdue90Amount += valor;
+        }
+      }
+    });
+
+    console.log('📊 Aging de contas a pagar:', {
+      total: accounts.length,
+      totalAmount,
+      current,
+      currentAmount,
+      overdueCount,
+      overdueAmount,
+      overdue30,
+      overdue30Amount,
+      overdue60,
+      overdue60Amount,
+      overdue90,
+      overdue90Amount
+    });
+
+    return {
+      title: 'Aging de Contas a Pagar',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        // Formato para o frontend (aging-analysis)
+        totalAmount,
+        overdueCount,
+        overdueAmount,
+        upcomingCount,
+        upcomingAmount,
+        // Formato detalhado (aging)
+        current,
+        currentAmount,
+        overdue30,
+        overdue30Amount,
+        overdue60,
+        overdue60Amount,
+        overdue90,
+        overdue90Amount,
+        total: accounts.length,
+        // Detalhamento por faixa
+        aging: [
+          { label: 'A Vencer', count: current, amount: currentAmount },
+          { label: '0-30 dias', count: overdue30, amount: overdue30Amount },
+          { label: '31-60 dias', count: overdue60, amount: overdue60Amount },
+          { label: 'Mais de 60 dias', count: overdue90, amount: overdue90Amount }
+        ]
+      }
+    };
+  } catch (error) {
+    console.error('❌ Erro ao calcular aging de contas a pagar:', error);
+    return {
+      title: 'Aging de Contas a Pagar',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: {
+        totalAmount: 0,
+        overdueCount: 0,
+        overdueAmount: 0,
+        upcomingCount: 0,
+        upcomingAmount: 0,
+        current: 0,
+        currentAmount: 0,
+        overdue30: 0,
+        overdue30Amount: 0,
+        overdue60: 0,
+        overdue60Amount: 0,
+        overdue90: 0,
+        overdue90Amount: 0,
+        total: 0,
+        aging: []
+      }
+    };
+  }
 }
 
 async function getSupplierPaymentsData(params: any) {
-  console.log('📊 Analisando pagamentos por fornecedor...');
+  console.log('📊 Analisando pagamentos por fornecedor...', { params });
   
-  const { data, error } = await supabaseAdmin
-    .from('accounts_payable')
-    .select(`
-      *,
-      supplier:suppliers(name, id)
-    `)
-    .eq('status', 'paga')
-    .order('updated_at', { ascending: false });
-
-  if (error) {
-    console.error('Erro ao buscar pagamentos por fornecedor:', error);
-    throw error;
-  }
-
-  const payments = data || [];
-  
-  // Agrupar por fornecedor
-  const supplierPayments: Record<string, any> = {};
-  
-  payments.forEach(payment => {
-    const supplierId = payment.partner_id || 'sem-fornecedor';
-    const supplierName = payment.partner?.name || 'Fornecedor não identificado';
+  try {
+    let query = supabaseAdmin
+      .from('accounts_payable')
+      .select(`
+        *,
+        partner:partners(name, id)
+      `)
+      .eq('status', 'paga');
     
-    if (!supplierPayments[supplierId]) {
-      supplierPayments[supplierId] = {
-        supplier_id: supplierId,
-        supplier_name: supplierName,
-        total_amount: 0,
-        payment_count: 0,
-        last_payment: null,
-        payments: []
-      };
+    query = applySegmentFilter(query, params.segmentId);
+    
+    // Filtrar por período se fornecido
+    const startDate = params.startDate;
+    const endDate = params.endDate;
+    if (startDate && endDate) {
+      // Filtrar por data_pagamento se existir
+      query = query.gte('data_pagamento', startDate).lte('data_pagamento', endDate);
     }
     
-    supplierPayments[supplierId].total_amount += parseFloat(payment.valor) || 0;
-    supplierPayments[supplierId].payment_count++;
-    supplierPayments[supplierId].last_payment = payment.updated_at;
-    supplierPayments[supplierId].payments.push({
-      id: payment.id,
-      amount: payment.valor,
-      description: payment.descricao,
-      payment_date: payment.updated_at
+    const { data, error } = await query.order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao buscar pagamentos por fornecedor:', error);
+      throw error;
+    }
+
+    const payments = data || [];
+    
+    // Agrupar por fornecedor
+    const supplierPayments: Record<string, any> = {};
+    
+    payments.forEach(payment => {
+      const supplierId = payment.partner_id || payment.supplier_id || 'sem-fornecedor';
+      const supplierName = payment.partner?.name || payment.supplier?.name || payment.fornecedor_nome || 'Fornecedor não identificado';
+      
+      if (!supplierPayments[supplierId]) {
+        supplierPayments[supplierId] = {
+          supplier_id: supplierId,
+          supplier_name: supplierName,
+          total_amount: 0,
+          payment_count: 0,
+          last_payment: null,
+          payments: []
+        };
+      }
+      
+      supplierPayments[supplierId].total_amount += parseFloat(payment.valor || payment.amount || 0) || 0;
+      supplierPayments[supplierId].payment_count++;
+      supplierPayments[supplierId].last_payment = payment.data_pagamento || payment.payment_date || payment.updated_at;
+      supplierPayments[supplierId].payments.push({
+        id: payment.id,
+        amount: payment.valor || payment.amount,
+        description: payment.descricao || payment.description,
+        payment_date: payment.data_pagamento || payment.payment_date || payment.updated_at
+      });
     });
-  });
 
-  const result = Object.values(supplierPayments).sort((a: any, b: any) => b.total_amount - a.total_amount);
+    const result = Object.values(supplierPayments).sort((a: any, b: any) => b.total_amount - a.total_amount);
 
-  console.log('📊 Pagamentos por fornecedor:', {
-    totalSuppliers: result.length,
-    totalAmount: result.reduce((sum: number, s: any) => sum + s.total_amount, 0)
-  });
+    console.log('📊 Pagamentos por fornecedor:', {
+      totalSuppliers: result.length,
+      totalAmount: result.reduce((sum: number, s: any) => sum + s.total_amount, 0)
+    });
 
-  return {
-    title: 'Pagamentos por Fornecedor',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: result
-  };
+    return {
+      title: 'Pagamentos por Fornecedor',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: result
+    };
+  } catch (error) {
+    console.error('❌ Erro ao calcular pagamentos por fornecedor:', error);
+    return {
+      title: 'Pagamentos por Fornecedor',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: []
+    };
+  }
 }
 
 async function getOverdueBillsData(params: any) {
-  console.log('📊 Analisando contas em atraso...');
+  console.log('📊 Analisando contas em atraso...', { params });
   
-  const { data, error } = await supabaseAdmin
-    .from('accounts_payable')
-    .select(`
-      *,
-      supplier:suppliers(name, id)
-    `)
-    .neq('status', 'paga')
-    .order('data_vencimento', { ascending: true });
-
-  if (error) {
-    console.error('Erro ao buscar contas em atraso:', error);
-    throw error;
-  }
-
-  const accounts = data || [];
-  const now = new Date();
-  
-  // Filtrar apenas contas vencidas
-  const overdueAccounts = accounts.filter(account => {
-    if (!account.due_date) return false;
-    const dueDate = new Date(account.due_date);
-    return dueDate < now;
-  });
-
-  // Calcular dias de atraso
-  const overdueWithDays = overdueAccounts.map(account => {
-    const dueDate = new Date(account.due_date);
-    const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+  try {
+    let query = supabaseAdmin
+      .from('accounts_payable')
+      .select(`
+        *,
+        partner:partners(name, id)
+      `)
+      .neq('status', 'paga');
     
+    query = applySegmentFilter(query, params.segmentId);
+    
+    const { data, error } = await query.order('data_vencimento', { ascending: true });
+
+    if (error) {
+      console.error('Erro ao buscar contas em atraso:', error);
+      throw error;
+    }
+
+    const accounts = data || [];
+    const now = new Date();
+    
+    // Filtrar apenas contas vencidas
+    const overdueAccounts = accounts.filter(account => {
+      const dueDateStr = account.data_vencimento || account.due_date;
+      if (!dueDateStr) return false;
+      const dueDate = new Date(dueDateStr);
+      return dueDate < now;
+    });
+
+    // Calcular dias de atraso
+    const overdueWithDays = overdueAccounts.map(account => {
+      const dueDateStr = account.data_vencimento || account.due_date;
+      const dueDate = new Date(dueDateStr);
+      const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      return {
+        ...account,
+        days_overdue: daysOverdue,
+        supplier_name: account.partner?.name || account.fornecedor_nome || 'Fornecedor não identificado',
+        valor: account.valor || account.amount || 0,
+        descricao: account.descricao || account.description || ''
+      };
+    });
+
+    // Ordenar por dias de atraso (maior atraso primeiro)
+    overdueWithDays.sort((a, b) => b.days_overdue - a.days_overdue);
+
+    console.log('📊 Contas em atraso:', {
+      totalOverdue: overdueWithDays.length,
+      totalAmount: overdueWithDays.reduce((sum, account) => sum + (parseFloat(account.valor) || 0), 0)
+    });
+
     return {
-      ...account,
-      days_overdue: daysOverdue,
-      supplier_name: account.partner?.name || 'Fornecedor não identificado'
+      title: 'Contas em Atraso',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: overdueWithDays
     };
-  });
-
-  // Ordenar por dias de atraso (maior atraso primeiro)
-  overdueWithDays.sort((a, b) => b.days_overdue - a.days_overdue);
-
-  console.log('📊 Contas em atraso:', {
-    totalOverdue: overdueWithDays.length,
-    totalAmount: overdueWithDays.reduce((sum, account) => sum + (parseFloat(account.valor) || 0), 0)
-  });
-
-  return {
-    title: 'Contas em Atraso',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: overdueWithDays
-  };
+  } catch (error) {
+    console.error('❌ Erro ao calcular contas em atraso:', error);
+    return {
+      title: 'Contas em Atraso',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: []
+    };
+  }
 }
 
 // Implementações para Cobranças
@@ -2613,263 +3021,3 @@ async function getLowStockAlertData(params: any) {
     data: productsWithUrgency
   };
 }
-
-// Implementações para Vendas
-async function getSalesPerformanceData(params: any) {
-  console.log('📊 Analisando performance de vendas...');
-  
-  const { data, error } = await supabaseAdmin
-    .from('sales')
-    .select('*')
-    .eq('is_deleted', false)
-    .eq('status', 'completed')
-    .order('sale_date', { ascending: false });
-
-  if (error) {
-    console.error('Erro ao buscar vendas para performance:', error);
-    throw error;
-  }
-
-  const sales = data || [];
-  
-  // Calcular métricas
-  const totalSales = sales.length;
-  const totalRevenue = sales.reduce((sum, sale) => sum + (parseFloat(sale.total_amount) || parseFloat(sale.total) || 0), 0);
-  const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
-  
-  // Calcular crescimento (comparar com período anterior)
-  const startDate = new Date(params.startDate);
-  const endDate = new Date(params.endDate);
-  const periodDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  const previousStartDate = new Date(startDate.getTime() - periodDays * 24 * 60 * 60 * 1000);
-  const previousEndDate = new Date(startDate.getTime() - 24 * 60 * 60 * 1000);
-  
-  const { data: previousSales } = await supabaseAdmin
-    .from('sales')
-    .select('total_amount, total')
-    .eq('is_deleted', false)
-    .eq('status', 'completed')
-    .gte('sale_date', previousStartDate.toISOString().split('T')[0])
-    .lte('sale_date', previousEndDate.toISOString().split('T')[0]);
-
-  const previousRevenue = (previousSales || []).reduce((sum, sale) => sum + (parseFloat(sale.total_amount) || parseFloat(sale.total) || 0), 0);
-  const growth = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
-
-  // Encontrar top vendedor (assumindo que há um campo vendedor ou usando customer_name)
-  const sellerCounts: Record<string, number> = {};
-  sales.forEach(sale => {
-    const seller = sale.customer_name || 'Vendedor não identificado';
-    sellerCounts[seller] = (sellerCounts[seller] || 0) + 1;
-  });
-  
-  const topSeller = Object.entries(sellerCounts)
-    .sort(([,a], [,b]) => b - a)[0]?.[0] || 'N/A';
-
-  console.log('📊 Performance de vendas:', {
-    totalSales,
-    totalRevenue,
-    averageTicket,
-    growth: growth.toFixed(2),
-    topSeller
-  });
-
-  return {
-    title: 'Performance de Vendas',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: {
-      totalSales,
-      totalRevenue,
-      averageTicket,
-      growth: parseFloat(growth.toFixed(2)),
-      topSeller,
-      previousRevenue
-    }
-  };
-}
-
-async function getTopProductsData(params: any) {
-  console.log('📊 Analisando produtos mais vendidos...');
-  
-  const { data, error } = await supabaseAdmin
-    .from('sales')
-    .select(`
-      *,
-      items:sale_items(
-        product_id,
-        quantity,
-        unit_price,
-        total_price
-      )
-    `)
-    .eq('is_deleted', false)
-    .eq('status', 'completed')
-    .order('sale_date', { ascending: false });
-
-  if (error) {
-    console.error('Erro ao buscar vendas para produtos mais vendidos:', error);
-    throw error;
-  }
-
-  const sales = data || [];
-  
-  // Calcular vendas por produto
-  const productSales: Record<string, any> = {};
-  
-  sales.forEach(sale => {
-    if (sale.items && Array.isArray(sale.items)) {
-      sale.items.forEach((item: any) => {
-        const productId = item.product_id || 'unknown';
-        const productName = `Produto ${productId}`;
-        
-        if (!productSales[productId]) {
-          productSales[productId] = {
-            product_id: productId,
-            product_name: productName,
-            total_quantity: 0,
-            total_revenue: 0,
-            sales_count: 0,
-            average_price: 0
-          };
-        }
-        
-        productSales[productId].total_quantity += item.quantity || 0;
-        productSales[productId].total_revenue += parseFloat(item.total_price) || 0;
-        productSales[productId].sales_count++;
-      });
-    } else {
-      // Para vendas antigas sem items
-      const productId = sale.product || 'unknown';
-      const productName = sale.product || 'Produto não identificado';
-      
-      if (!productSales[productId]) {
-        productSales[productId] = {
-          product_id: productId,
-          product_name: productName,
-          total_quantity: 0,
-          total_revenue: 0,
-          sales_count: 0,
-          average_price: 0
-        };
-      }
-      
-      productSales[productId].total_quantity += sale.quantity || 0;
-      productSales[productId].total_revenue += parseFloat(sale.total) || 0;
-      productSales[productId].sales_count++;
-    }
-  });
-
-  // Calcular preço médio e ordenar
-  const result = Object.values(productSales).map((product: any) => ({
-    ...product,
-    average_price: product.total_quantity > 0 ? product.total_revenue / product.total_quantity : 0
-  })).sort((a: any, b: any) => b.total_quantity - a.total_quantity);
-
-  console.log('📊 Produtos mais vendidos:', {
-    totalProducts: result.length,
-    topProduct: result[0]?.product_name || 'N/A',
-    totalQuantity: result.reduce((sum, p) => sum + p.total_quantity, 0)
-  });
-
-  return {
-    title: 'Produtos Mais Vendidos',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: result
-  };
-}
-
-async function getSalesForecastData(params: any) {
-  console.log('📊 Analisando previsão de vendas...');
-  
-  // Buscar vendas dos últimos 3 meses para calcular tendência
-  const endDate = new Date(params.endDate);
-  const threeMonthsAgo = new Date(endDate.getTime() - 90 * 24 * 60 * 60 * 1000);
-  
-  const { data, error } = await supabaseAdmin
-    .from('sales')
-    .select('sale_date, total_amount, total')
-    .eq('is_deleted', false)
-    .eq('status', 'completed')
-    .gte('sale_date', threeMonthsAgo.toISOString().split('T')[0])
-    .lte('sale_date', endDate.toISOString().split('T')[0])
-    .order('sale_date', { ascending: true });
-
-  if (error) {
-    console.error('Erro ao buscar vendas para previsão:', error);
-    throw error;
-  }
-
-  const sales = data || [];
-  
-  if (sales.length === 0) {
-    return {
-      title: 'Previsão de Vendas',
-      period: `${params.startDate} a ${params.endDate}`,
-      data: {
-        forecast: 0,
-        confidence: 0,
-        trend: 'stable',
-        historicalData: []
-      }
-    };
-  }
-
-  // Agrupar vendas por mês
-  const monthlySales: Record<string, number> = {};
-  sales.forEach(sale => {
-    const month = sale.sale_date.substring(0, 7); // YYYY-MM
-    const amount = parseFloat(sale.total_amount) || parseFloat(sale.total) || 0;
-    monthlySales[month] = (monthlySales[month] || 0) + amount;
-  });
-
-  // Calcular tendência
-  const months = Object.keys(monthlySales).sort();
-  const values = months.map(month => monthlySales[month]);
-  
-  let trend = 'stable';
-  let growthRate = 0;
-  
-  if (values.length >= 2) {
-    const firstValue = values[0];
-    const lastValue = values[values.length - 1];
-    growthRate = firstValue > 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
-    
-    if (growthRate > 5) trend = 'growing';
-    else if (growthRate < -5) trend = 'declining';
-  }
-
-  // Calcular previsão para próximo mês
-  const averageMonthly = values.reduce((sum, val) => sum + val, 0) / values.length;
-  const forecast = averageMonthly * (1 + growthRate / 100);
-  
-  // Calcular confiança baseada na consistência dos dados
-  const variance = values.length > 1 ? 
-    values.reduce((sum, val) => sum + Math.pow(val - averageMonthly, 2), 0) / values.length : 0;
-  const confidence = Math.max(0, Math.min(100, 100 - (variance / averageMonthly) * 100));
-
-  console.log('📊 Previsão de vendas:', {
-    monthsAnalyzed: months.length,
-    averageMonthly,
-    growthRate: growthRate.toFixed(2),
-    forecast,
-    confidence: confidence.toFixed(2),
-    trend
-  });
-
-  return {
-    title: 'Previsão de Vendas',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: {
-      forecast: parseFloat(forecast.toFixed(2)),
-      confidence: parseFloat(confidence.toFixed(2)),
-      trend,
-      growthRate: parseFloat(growthRate.toFixed(2)),
-      averageMonthly: parseFloat(averageMonthly.toFixed(2)),
-      historicalData: months.map(month => ({
-        month,
-        revenue: monthlySales[month]
-      }))
-    }
-  };
-}
-
-

@@ -204,7 +204,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
     try {
       setLoading(true);
       
-      // Load all data in parallel
+      // Load all data in parallel - tratar erros 404 silenciosamente para rotas não implementadas
       const [
         transactionsResponse,
         productsResponse,
@@ -220,19 +220,19 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
         integrationsResponse,
         usersResponse
       ] = await Promise.all([
-        listTransactions({ segment_id: activeSegmentId ?? null }),
-        listProducts({ segment_id: activeSegmentId ?? null }),
-        listSales({ segment_id: activeSegmentId ?? null }),
-        getCustomers({ segment_id: activeSegmentId ?? null }),
-        listPartners({ segment_id: activeSegmentId ?? null }),
-        listNFes({ segment_id: activeSegmentId ?? null }),
-        listBillings({ segment_id: activeSegmentId ?? null }),
-        listCostCenters({ segment_id: activeSegmentId ?? null }),
-        listAccountsPayable({ segment_id: activeSegmentId ?? null }),
-        listAccountsReceivable(),
-        getFinancialDocuments({ segment_id: activeSegmentId ?? null }),
-        listIntegrations(),
-        getUsers({ segment_id: activeSegmentId ?? null })
+        listTransactions({ segment_id: activeSegmentId ?? null }).catch(() => ({ data: { transactions: [] }, success: false })),
+        listProducts({ segment_id: activeSegmentId ?? null }).catch(() => ({ data: { products: [] }, success: false })),
+        listSales({ segment_id: activeSegmentId ?? null }).catch(() => ({ data: { sales: [] }, success: false })),
+        getCustomers({ segment_id: activeSegmentId ?? null }).catch(() => ({ data: { customers: [] }, success: false })),
+        listPartners({ segment_id: activeSegmentId ?? null }).catch(() => ({ data: { partners: [] }, success: false })),
+        listNFes({ segment_id: activeSegmentId ?? null }).catch(() => ({ data: { nfes: [] }, success: false })),
+        listBillings({ segment_id: activeSegmentId ?? null }).catch(() => ({ data: { billings: [] }, success: false })),
+        listCostCenters({ segment_id: activeSegmentId ?? null }).catch(() => ({ data: { costCenters: [] }, success: false })),
+        listAccountsPayable({ segment_id: activeSegmentId ?? null }).catch(() => ({ data: { accounts_payable: [] }, success: false })),
+        listAccountsReceivable().catch(() => ({ data: { accounts_receivable: [] }, success: false })),
+        getFinancialDocuments({ segment_id: activeSegmentId ?? null }).catch(() => ({ data: { financialDocuments: [] }, success: false })),
+        listIntegrations().catch(() => ({ data: { integrations: { imobzi: { apiKey: '', enabled: false } } }, success: false })),
+        getUsers({ segment_id: activeSegmentId ?? null }).catch(() => ({ data: { users: [] }, success: false }))
       ]);
 
       setData({

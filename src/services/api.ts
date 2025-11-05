@@ -151,8 +151,8 @@ class ApiService {
       
       return data as T;
     } catch (error: any) {
-      // Evitar logs ruidosos em 401 (já redireciona)
-      if (error?.status !== 401) {
+      // Evitar logs ruidosos em 401 (já redireciona) e 404 (rotas não implementadas)
+      if (error?.status !== 401 && error?.status !== 404) {
         console.error(`API Error (${endpoint}):`, error);
       }
       throw error;
