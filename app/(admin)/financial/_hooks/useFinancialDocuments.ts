@@ -27,7 +27,7 @@ const PAGE_SIZE = 20;
 
 // Usando a função normalizeFinancialDocument do service
 
-export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: string, dateEnd?: string) {
+export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: string, dateEnd?: string, segmentId?: string) {
   const [state, setState] = useState<State>({ items: [], loading: false, refetching: false, page: 1, hasMore: true });
 
   const fetchPage = useCallback(async (page: number) => {
@@ -40,6 +40,11 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
       }
       if (dateEnd) {
         params.dateEnd = dateEnd;
+      }
+      
+      // Adicionar filtro de segmento se fornecido
+      if (segmentId && segmentId !== '') {
+        params.segment_id = segmentId;
       }
       
       const response = await getFinancialDocuments(params);
@@ -69,7 +74,7 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
       console.error('Erro ao buscar documentos financeiros:', error);
       return [];
     }
-  }, [pageSize, dateStart, dateEnd]);
+  }, [pageSize, dateStart, dateEnd, segmentId]);
 
   const load = useCallback(async (reset: boolean = false) => {
     setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));

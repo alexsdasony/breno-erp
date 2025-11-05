@@ -42,13 +42,17 @@ export default function FinancialView() {
     return '';
   }, [dateEnd]);
   
-  const { items, loading, refetching, hasMore, loadMore, create, update, remove, load } = useFinancialDocuments(pageSize, dateStartISO, dateEndISO);
   const { paymentMethods } = usePaymentMethodsContext();
   const { activeSegmentId } = useAppData();
   const [type, setType] = React.useState<string>(''); // receita, despesa, transferencia
   const [partner, setPartner] = React.useState<string>('');
   const [segment, setSegment] = React.useState<string>('');
   const [status, setStatus] = React.useState<string>('');
+  
+  // Quando um segmento específico é selecionado no filtro, usar ele; caso contrário, usar o activeSegmentId global
+  const segmentIdForApi = segment || activeSegmentId || '';
+  
+  const { items, loading, refetching, hasMore, loadMore, create, update, remove, load } = useFinancialDocuments(pageSize, dateStartISO, dateEndISO, segmentIdForApi);
 
   // Modal state (criar/editar)
   const [showForm, setShowForm] = React.useState(false);
@@ -116,18 +120,15 @@ export default function FinancialView() {
     fetchKpis();
   }, [activeSegmentId]);
 
-  // Recarregar dados quando os filtros de data mudarem (com debounce)
+  // Recarregar dados quando os filtros de data ou segmento mudarem (com debounce)
   React.useEffect(() => {
-    // Só busca se uma data completa foi fornecida (10 caracteres = DD/MM/AAAA)
-    if (dateStart.length === 10 || dateEnd.length === 10) {
-      const timer = setTimeout(() => {
-        console.log('🔄 Filtros de data alterados, recarregando dados...', { dateStartISO, dateEndISO });
-        load(true);
-      }, 500); // Aguarda 500ms após parar de digitar
-      
-      return () => clearTimeout(timer);
-    }
-  }, [dateStartISO, dateEndISO, dateStart, dateEnd]);
+    const timer = setTimeout(() => {
+      console.log('🔄 Filtros alterados, recarregando dados...', { dateStartISO, dateEndISO, segmentIdForApi, segment });
+      load(true);
+    }, 300); // Aguarda 300ms após parar de digitar
+    
+    return () => clearTimeout(timer);
+  }, [dateStartISO, dateEndISO, segment, segmentIdForApi, load]);
 
   const { entradas, saidas, saldo } = kpis;
 
@@ -211,12 +212,11 @@ export default function FinancialView() {
       // Filtro por status
       const matchesStatus = !status || (it.status || '') === status;
       
-      // Filtro por segmento ativo
-      const matchesSegment = !activeSegmentId || activeSegmentId === '0' ||
-                            (it.segment_id && it.segment_id === activeSegmentId);
-      
-      // Filtro por segmento específico (se selecionado)
-      const matchesSpecificSegment = !segment || (it.segment_id && it.segment_id === segment);
+      // Filtro por segmento: se um segmento específico foi selecionado no filtro, usar apenas ele
+      // Caso contrário, usar o activeSegmentId global
+      const segmentToMatch = segment || activeSegmentId;
+      const matchesSegment = !segmentToMatch || segmentToMatch === '0' ||
+                            (it.segment_id && String(it.segment_id) === String(segmentToMatch));
       
       // Filtro por data de emissão
       let matchesDateStart = true;
@@ -244,9 +244,9 @@ export default function FinancialView() {
         }
       }
       
-      return matchesPartner && matchesType && matchesStatus && matchesSegment && matchesSpecificSegment && matchesDateStart && matchesDateEnd;
+      return matchesPartner && matchesType && matchesStatus && matchesSegment && matchesDateStart && matchesDateEnd;
     });
-  }, [items, partner, type, status, activeSegmentId, segment, dateStart, dateEnd]);
+  }, [items, partner, type, status, activeSegmentId, segment, dateStart, dateEnd, segmentIdForApi]);
 
   return (
     <div className="p-6 space-y-6">

@@ -43,11 +43,6 @@ export async function GET(request: NextRequest) {
 
     console.log('💰 Financial documents API request:', { page, pageSize, segmentId, dateStart, dateEnd });
 
-    // Construir filtros baseados no segmento
-    const segmentFilter = segmentId && segmentId !== 'null' && segmentId !== '0' 
-      ? { segment_id: segmentId } 
-      : {};
-
     // Buscar documentos financeiros da tabela financial_documents
     let query = supabaseAdmin
       .from('financial_documents')
@@ -55,9 +50,15 @@ export async function GET(request: NextRequest) {
         *,
         partner:partners(name, id),
         payment_method_data:payment_methods(name, id)
-      `)
-      .match(segmentFilter)
-      .order('issue_date', { ascending: false });
+      `);
+
+    // Aplicar filtro de segmento se fornecido
+    if (segmentId && segmentId !== 'null' && segmentId !== '0') {
+      query = query.eq('segment_id', segmentId);
+      console.log('🔍 Aplicando filtro de segmento:', segmentId);
+    }
+    
+    query = query.order('issue_date', { ascending: false });
 
     // Aplicar filtros de data se fornecidos
     if (dateStart) {
