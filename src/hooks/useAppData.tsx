@@ -134,15 +134,21 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
     } catch (error) {
       console.error('❌ Erro ao carregar métricas:', error);
       // Fallback para cálculo local se API falhar
-      const localMetrics = calculateMetrics(data, activeSegmentId !== null ? Number(activeSegmentId) : null);
+      // Usar data atual sem adicionar como dependência para evitar loops
+      const currentData = data;
+      const localMetrics = calculateMetrics(currentData, activeSegmentId !== null ? Number(activeSegmentId) : null);
       setMetrics(localMetrics);
     }
-  }, [currentUser, activeSegmentId, data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, activeSegmentId]); // Removido 'data' das dependências para evitar loops infinitos
 
-  // Fetch metrics when segment changes
+  // Fetch metrics when segment changes (apenas quando necessário)
   React.useEffect(() => {
-    fetchMetrics();
-  }, [fetchMetrics]);
+    if (currentUser) {
+      fetchMetrics();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, activeSegmentId]); // Dependências explícitas sem fetchMetrics para evitar loops
 
   // Atualizar cache em memória quando dados mudarem
   useEffect(() => {

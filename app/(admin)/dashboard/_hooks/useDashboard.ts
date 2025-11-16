@@ -88,9 +88,11 @@ export function useDashboard() {
     }
   }, [period, customStart, customEnd, activeSegmentId]);
 
+  // Usar dependências explícitas em vez de fetchMetrics para evitar loops
   useEffect(() => {
     void fetchMetrics();
-  }, [fetchMetrics]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period, customStart, customEnd, activeSegmentId]);
 
   const api: Api = useMemo(() => ({ 
     reload: fetchMetrics, 

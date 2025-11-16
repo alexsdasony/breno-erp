@@ -13,6 +13,7 @@ import ConfirmDelete from './ConfirmDelete';
 import FinancialFilters from './FinancialFilters';
 import FinancialTable from './FinancialTable';
 import FinancialFormModal from './FinancialFormModal';
+import PluggyConnectButton from '@/components/pluggy/PluggyConnectButton';
 
 export default function FinancialView() {
   const [pageSize, setPageSize] = React.useState<number>(20);
@@ -276,6 +277,13 @@ export default function FinancialView() {
               (Total: {totalRecords} registros)
             </span>
           </div>
+          <PluggyConnectButton 
+            onSuccess={(itemId) => {
+              console.log('✅ Conta conectada:', itemId);
+              // Recarregar dados após conectar conta
+              load(true);
+            }}
+          />
           <Button variant="outline"><Filter className="w-4 h-4 mr-2" />Filtros</Button>
           <Button variant="outline" disabled><FileDown className="w-4 h-4 mr-2" />Exportar</Button>
           <Button id="financial-new" onClick={openNew}><Plus className="w-4 h-4 mr-2" />Novo</Button>

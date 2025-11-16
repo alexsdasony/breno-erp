@@ -381,6 +381,19 @@ CREATE TABLE public.financial_payments ( id uuid DEFAULT uuid_generate_v4() NOT 
 COMMENT ON TABLE public.financial_payments IS 'Pagamentos/Recebimentos registrados';
 
 
+-- public.financial_transactions definition
+
+-- Drop table
+
+-- DROP TABLE public.financial_transactions;
+
+CREATE TABLE public.financial_transactions ( id serial4 NOT NULL, external_id varchar(100) NULL, "date" date NOT NULL, description text NULL, amount numeric(12, 2) NOT NULL, "type" varchar(20) NOT NULL, institution varchar(100) NULL, account_id varchar(50) NOT NULL, balance numeric(12, 2) NULL, created_at timestamp DEFAULT now() NULL, updated_at timestamp DEFAULT now() NULL, CONSTRAINT financial_transactions_pkey PRIMARY KEY (id), CONSTRAINT financial_transactions_type_check CHECK (((type)::text = ANY ((ARRAY['receita'::character varying, 'despesa'::character varying])::text[]))));
+CREATE UNIQUE INDEX idx_financial_transactions_external_id ON public.financial_transactions USING btree (external_id) WHERE (external_id IS NOT NULL);
+CREATE INDEX idx_financial_transactions_account_id ON public.financial_transactions USING btree (account_id);
+CREATE INDEX idx_financial_transactions_date ON public.financial_transactions USING btree (date);
+COMMENT ON TABLE public.financial_transactions IS 'Transações financeiras importadas de integrações bancárias';
+
+
 -- public.fornecedores definition
 
 -- Drop table

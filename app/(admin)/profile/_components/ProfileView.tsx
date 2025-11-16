@@ -25,6 +25,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
 import { useAppData } from '@/hooks/useAppData';
 import apiService from '@/services/api';
+import PluggyConnectButton from '@/components/pluggy/PluggyConnectButton';
 
 export default function ProfileView() {
   const { currentUser, authLoading, updateUserProfile, changeUserPassword } = useAppData();
@@ -552,6 +553,22 @@ export default function ProfileView() {
         </Card>
       </motion.div>
 
+      {/* Integrações Bancárias */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <PluggyConnectButton
+          onItemConnected={(itemId) => {
+            console.log('Item conectado:', itemId);
+            toast({
+              title: 'Conta conectada!',
+              description: 'A sincronização será iniciada automaticamente.',
+            });
+          }}
+        />
+      </motion.div>
 
     </div>
   );
