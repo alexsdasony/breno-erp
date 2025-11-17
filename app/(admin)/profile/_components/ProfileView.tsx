@@ -560,7 +560,7 @@ export default function ProfileView() {
         transition={{ delay: 0.3 }}
       >
         <PluggyConnectButton
-          onItemConnected={(itemId) => {
+          onSuccess={(itemId) => {
             console.log('Item conectado:', itemId);
             toast({
               title: 'Conta conectada!',
