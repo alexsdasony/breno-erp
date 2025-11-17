@@ -105,8 +105,12 @@ export default function PluggyConnectButton({
         const errorMessage = errorData.error || `Erro ao criar connect token (${res.status})`;
         
         // Mensagem mais amigável para credenciais não configuradas
-        if (errorMessage.includes('Credenciais Pluggy não configuradas')) {
-          throw new Error('Integração Pluggy não está configurada. Entre em contato com o administrador do sistema.');
+        if (errorMessage.includes('Credenciais Pluggy não configuradas') || 
+            errorMessage.includes('PLUGGY_CLIENT_ID') || 
+            errorMessage.includes('PLUGGY_CLIENT_SECRET')) {
+          const friendlyError = new Error('Integração Pluggy não está configurada no servidor. Por favor, configure as variáveis de ambiente PLUGGY_CLIENT_ID e PLUGGY_CLIENT_SECRET.');
+          (friendlyError as any).isConfigError = true;
+          throw friendlyError;
         }
         
         throw new Error(errorMessage);
