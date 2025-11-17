@@ -13,10 +13,10 @@ export async function listPartners(params: Record<string, any> = {}): Promise<Ap
 }
 
 export async function createPartner(payload: PartnerPayload): Promise<ApiResponse<{ partner: Partner }>> {
-  const response = await apiService.post<{ success: boolean; partners: Partner }>('/partners', payload)
+  const response = await apiService.post<{ success: boolean; partner: Partner }>('/partners', payload)
   return {
     data: {
-      partner: response.partners
+      partner: response.partner || (response as any).partners
     },
     success: response.success || false
   } as ApiResponse<{ partner: Partner }>

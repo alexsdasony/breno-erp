@@ -4,7 +4,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useFinancialDocuments } from '../_hooks/useFinancialDocuments';
-import { Plus, Filter, FileDown } from 'lucide-react';
+import { Plus, Filter, FileDown, Zap } from 'lucide-react';
 import { listSegments } from '@/services/segmentsService';
 import { usePaymentMethodsContext } from '@/contexts/PaymentMethodsContext';
 import { useAppData } from '@/hooks/useAppData';
@@ -13,6 +13,7 @@ import ConfirmDelete from './ConfirmDelete';
 import FinancialFilters from './FinancialFilters';
 import FinancialTable from './FinancialTable';
 import FinancialFormModal from './FinancialFormModal';
+import FinancialQuickEntryModal from './FinancialQuickEntryModal';
 import PluggyConnectButton from '@/components/pluggy/PluggyConnectButton';
 
 export default function FinancialView() {
@@ -58,6 +59,9 @@ export default function FinancialView() {
   // Modal state (criar/editar)
   const [showForm, setShowForm] = React.useState(false);
   const [editingDoc, setEditingDoc] = React.useState<any | null>(null);
+  
+  // Modal state (lançamento avulso)
+  const [showQuickEntry, setShowQuickEntry] = React.useState(false);
 
   // Form state movido para FinancialFormModal
 
@@ -299,6 +303,14 @@ export default function FinancialView() {
           />
           <Button variant="outline"><Filter className="w-4 h-4 mr-2" />Filtros</Button>
           <Button variant="outline" disabled><FileDown className="w-4 h-4 mr-2" />Exportar</Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowQuickEntry(true)}
+            className="bg-primary/10 hover:bg-primary/20"
+          >
+            <Zap className="w-4 h-4 mr-2" />
+            Lançamento Avulso
+          </Button>
           <Button id="financial-new" onClick={openNew}><Plus className="w-4 h-4 mr-2" />Novo</Button>
         </div>
       </div>
@@ -386,6 +398,16 @@ export default function FinancialView() {
         paymentMethods={paymentMethods}
         onCreate={async (payload) => { return await create(payload); }}
         onUpdate={async (id, payload) => { return await update(id, payload); }}
+      />
+
+      {/* Modal de Lançamento Avulso */}
+      <FinancialQuickEntryModal
+        open={showQuickEntry}
+        onClose={() => setShowQuickEntry(false)}
+        segments={segments}
+        onCreate={() => {
+          load(true); // Recarregar lista após criar
+        }}
       />
 
       {/* Confirmação de exclusão */}
