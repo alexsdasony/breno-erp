@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { getFinancialDocuments, createFinancialDocument, updateFinancialDocument, deleteFinancialDocument, normalizeFinancialDocument } from '@/services/financialDocumentsService';
 import type { FinancialDocument } from '@/types/FinancialDocument';
@@ -29,6 +29,12 @@ const PAGE_SIZE = 20;
 
 export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: string, dateEnd?: string, segmentId?: string) {
   const [state, setState] = useState<State>({ items: [], loading: false, refetching: false, page: 1, hasMore: true });
+  const stateRef = useRef<State>(state);
+  
+  // Manter ref atualizado
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const fetchPage = useCallback(async (page: number) => {
     try {
@@ -77,14 +83,16 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
   }, [pageSize, dateStart, dateEnd, segmentId]);
 
   const load = useCallback(async (reset: boolean = false) => {
-    setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
+    let currentPage = 1;
+    
+    setState((s) => {
+      currentPage = reset ? 1 : s.page;
+      return { ...s, loading: true, ...(reset ? { page: 1, hasMore: true } : {}) };
+    });
+    
     try {
-      let currentPage: number;
-      setState((s) => {
-        currentPage = reset ? 1 : s.page;
-        return s;
-      });
-      const list = await fetchPage(currentPage!);
+      const list = await fetchPage(currentPage);
+      console.log('📊 Load - Registros carregados:', list.length, 'página:', currentPage);
       setState((s) => {
         const newItems = reset ? list : [...s.items, ...list];
         return {
@@ -92,40 +100,62 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
           items: newItems,
           loading: false,
           refetching: false,
-          page: currentPage!,
-          hasMore: list.length === PAGE_SIZE,
+          page: currentPage,
+          hasMore: list.length === pageSize, // Se retornou menos que pageSize, não há mais páginas
         };
       });
     } catch (e) {
       setState((s) => ({ ...s, loading: false, refetching: false }));
       toast({ title: 'Falha ao carregar documentos financeiros', description: 'Tente novamente em instantes.', variant: 'destructive' });
     }
-  }, [fetchPage]);
+  }, [fetchPage, pageSize]); // Adicionar pageSize às dependências
 
   const loadMore = useCallback(async () => {
-    let canLoad = false;
-    let nextPage: number;
-    setState((s) => {
-      canLoad = !s.loading && s.hasMore;
-      nextPage = s.page + 1;
-      return canLoad ? { ...s, page: nextPage, loading: true } : s;
-    });
+    // Obter estado atual usando ref
+    const currentState = stateRef.current;
     
-    if (!canLoad) return;
+    const canLoad = !currentState.loading && currentState.hasMore;
+    
+    if (!canLoad) {
+      console.log('⚠️ Não é possível carregar mais:', { 
+        loading: currentState.loading, 
+        hasMore: currentState.hasMore,
+        page: currentState.page 
+      });
+      return;
+    }
+    
+    const nextPage = currentState.page + 1;
+    console.log('🔄 Carregando mais registros, página:', nextPage);
+    
+    // Atualizar estado para loading
+    setState((s) => ({ ...s, loading: true, page: nextPage }));
     
     try {
-      const list = await fetchPage(nextPage!);
+      const list = await fetchPage(nextPage);
+      console.log('✅ Registros carregados:', list.length, 'de', pageSize, 'esperados');
+      
+      const hasMore = list.length === pageSize; // Se retornou menos que pageSize, não há mais páginas
+      
       setState((s) => ({
         ...s,
         items: [...s.items, ...list],
-        hasMore: list.length === PAGE_SIZE,
+        hasMore,
         loading: false,
+        page: nextPage,
       }));
+      
+      console.log('✅ Estado atualizado:', { 
+        totalItems: currentState.items.length + list.length,
+        hasMore,
+        page: nextPage
+      });
     } catch (e) {
+      console.error('❌ Erro ao carregar mais:', e);
       setState((s) => ({ ...s, loading: false }));
       toast({ title: 'Falha ao carregar mais documentos', description: 'Tente novamente.', variant: 'destructive' });
     }
-  }, [fetchPage]);
+  }, [fetchPage, pageSize]); // Adicionar pageSize às dependências
 
   const refetch = useCallback(async () => {
     setState((s) => ({ ...s, refetching: true }));
@@ -142,7 +172,7 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
         items: sortedList,
         refetching: false,
         page: 1,
-        hasMore: list.length === PAGE_SIZE,
+        hasMore: list.length === pageSize, // Usar pageSize em vez de PAGE_SIZE constante
       }));
     } catch (e) {
       setState((s) => ({ ...s, refetching: false }));

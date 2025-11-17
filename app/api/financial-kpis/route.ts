@@ -5,8 +5,9 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const segmentId = searchParams.get('segment_id');
+    const direction = searchParams.get('direction'); // Filtro por tipo: 'receivable' ou 'payable'
 
-    console.log('📊 Financial KPIs request:', { segmentId });
+    console.log('📊 Financial KPIs request:', { segmentId, direction });
 
     // CORREÇÃO: Construir filtros baseados no segmento de forma consistente
     const hasSegmentFilter = segmentId && segmentId !== 'null' && segmentId !== '0';
@@ -24,6 +25,11 @@ export async function GET(request: NextRequest) {
     }
     // Se não há filtro (todos os segmentos): buscar TODOS (incluindo NULL)
     // Registros com segment_id = NULL são despesas/receitas gerais
+    
+    // Aplicar filtro de tipo (direction) se fornecido
+    if (direction && (direction === 'receivable' || direction === 'payable')) {
+      query = query.eq('direction', direction);
+    }
     
     const { data: allDocuments, error } = await query;
 

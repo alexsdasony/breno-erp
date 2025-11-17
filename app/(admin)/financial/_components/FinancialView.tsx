@@ -98,18 +98,30 @@ export default function FinancialView() {
   const [kpisLoading, setKpisLoading] = React.useState(false);
   const [totalRecords, setTotalRecords] = React.useState(0);
 
-  // Buscar KPIs reais quando o segmento mudar
+  // Buscar KPIs reais quando o segmento ou tipo mudar (considerando filtros locais também)
   React.useEffect(() => {
     const fetchKpis = async () => {
       setKpisLoading(true);
       try {
-        const response = await fetch(`/api/financial-kpis?segment_id=${activeSegmentId || 'null'}`);
+        // Usar segmentIdForApi que considera tanto o filtro local quanto o global
+        const segmentIdToUse = segmentIdForApi || 'null';
+        
+        // Construir query string com filtros
+        const params = new URLSearchParams();
+        params.set('segment_id', segmentIdToUse);
+        
+        // Adicionar filtro de tipo se selecionado
+        if (type && (type === 'receivable' || type === 'payable')) {
+          params.set('direction', type);
+        }
+        
+        const response = await fetch(`/api/financial-kpis?${params.toString()}`);
         const data = await response.json();
         
         if (data.success && data.kpis) {
           setKpis(data.kpis);
           setTotalRecords(data.totalRecords || 0);
-          console.log('📊 KPIs carregados:', data.kpis);
+          console.log('📊 KPIs carregados:', data.kpis, 'para segmento:', segmentIdToUse, 'tipo:', type || 'todos');
         }
       } catch (error) {
         console.error('❌ Erro ao carregar KPIs:', error);
@@ -119,7 +131,7 @@ export default function FinancialView() {
     };
 
     fetchKpis();
-  }, [activeSegmentId]);
+  }, [segmentIdForApi, type]); // Adicionar 'type' às dependências para atualizar quando o tipo mudar
 
   // Recarregar dados quando os filtros de data ou segmento mudarem (com debounce)
   React.useEffect(() => {
@@ -208,6 +220,7 @@ export default function FinancialView() {
       const matchesPartner = !p || `${it.partner_name || it.partner?.name || ''}`.toLowerCase().includes(p) || `${it.partner_id || ''}`.toLowerCase().includes(p);
       
       // Filtro por tipo (direction)
+      // O tipo pode ser 'receivable' (Contas a Receber) ou 'payable' (Contas a Pagar)
       const matchesType = !type || (it.direction || '') === type;
       
       // Filtro por status
