@@ -326,9 +326,10 @@ export default function PluggyConnectButton({
 
       toast({
         title: isConfigError ? 'Configuração necessária' : 'Erro',
-        description: errorMessage,
+        description: isConfigError 
+          ? `${errorMessage}\n\nPor favor, configure as variáveis de ambiente PLUGGY_CLIENT_ID e PLUGGY_CLIENT_SECRET no servidor.`
+          : errorMessage,
         variant: 'destructive',
-        duration: isConfigError ? 10000 : 5000, // Mostrar por mais tempo se for erro de configuração
       });
 
       if (onError) {
