@@ -19,6 +19,21 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🔗 Criando Connect Token Pluggy');
 
+    // Verificar se as credenciais estão configuradas
+    const clientId = process.env.PLUGGY_CLIENT_ID;
+    const clientSecret = process.env.PLUGGY_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      console.error('❌ Credenciais Pluggy não configuradas');
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Credenciais Pluggy não configuradas. Verifique as variáveis de ambiente PLUGGY_CLIENT_ID e PLUGGY_CLIENT_SECRET.',
+        },
+        { status: 500 }
+      );
+    }
+
     const body: CreateConnectTokenBody = await request.json().catch(() => ({}));
 
     // 1. Obter API Key da Pluggy
@@ -26,8 +41,8 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        clientId: process.env.PLUGGY_CLIENT_ID,
-        clientSecret: process.env.PLUGGY_CLIENT_SECRET,
+        clientId,
+        clientSecret,
       }),
     });
 
@@ -97,13 +112,28 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    // Verificar se as credenciais estão configuradas
+    const clientId = process.env.PLUGGY_CLIENT_ID;
+    const clientSecret = process.env.PLUGGY_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      console.error('❌ Credenciais Pluggy não configuradas');
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Credenciais Pluggy não configuradas. Verifique as variáveis de ambiente PLUGGY_CLIENT_ID e PLUGGY_CLIENT_SECRET.',
+        },
+        { status: 500 }
+      );
+    }
+
     // Obter API Key
     const authRes = await fetch('https://api.pluggy.ai/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        clientId: process.env.PLUGGY_CLIENT_ID,
-        clientSecret: process.env.PLUGGY_CLIENT_SECRET,
+        clientId,
+        clientSecret,
       }),
     });
 
