@@ -315,11 +315,20 @@ export default function PluggyConnectButton({
       const errorMessage = error instanceof Error 
         ? error.message 
         : 'Erro desconhecido ao conectar conta';
+      
+      // Detectar se é erro de configuração
+      const isConfigError = error instanceof Error && 
+        (errorMessage.includes('Credenciais Pluggy') || 
+         errorMessage.includes('PLUGGY_CLIENT_ID') || 
+         errorMessage.includes('PLUGGY_CLIENT_SECRET') ||
+         errorMessage.includes('não está configurada') ||
+         (error as any)?.isConfigError);
 
       toast({
-        title: 'Erro',
+        title: isConfigError ? 'Configuração necessária' : 'Erro',
         description: errorMessage,
         variant: 'destructive',
+        duration: isConfigError ? 10000 : 5000, // Mostrar por mais tempo se for erro de configuração
       });
 
       if (onError) {
