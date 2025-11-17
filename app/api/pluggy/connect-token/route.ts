@@ -48,7 +48,11 @@ export async function POST(request: NextRequest) {
 
     if (!authRes.ok) {
       const errorText = await authRes.text();
-      throw new Error(`Erro ao obter API Key: ${authRes.status} - ${errorText}`);
+      console.error('❌ Erro na autenticação Pluggy:', {
+        status: authRes.status,
+        error: errorText.substring(0, 200), // Limitar tamanho do log
+      });
+      throw new Error(`Erro ao obter API Key: ${authRes.status} - ${errorText.substring(0, 100)}`);
     }
 
     const { apiKey } = await authRes.json();
