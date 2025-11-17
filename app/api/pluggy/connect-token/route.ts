@@ -23,8 +23,21 @@ export async function POST(request: NextRequest) {
     const clientId = process.env.PLUGGY_CLIENT_ID;
     const clientSecret = process.env.PLUGGY_CLIENT_SECRET;
 
+    // Log de debug (sem expor valores completos)
+    console.log('🔍 Verificando credenciais Pluggy:', {
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret,
+      clientIdLength: clientId?.length || 0,
+      clientSecretLength: clientSecret?.length || 0,
+      clientIdPrefix: clientId?.substring(0, 5) || 'N/A',
+    });
+
     if (!clientId || !clientSecret) {
-      console.error('❌ Credenciais Pluggy não configuradas');
+      console.error('❌ Credenciais Pluggy não configuradas:', {
+        clientId: clientId ? 'presente' : 'ausente',
+        clientSecret: clientSecret ? 'presente' : 'ausente',
+        allEnvKeys: Object.keys(process.env).filter(k => k.includes('PLUGGY')),
+      });
       return NextResponse.json(
         {
           success: false,
