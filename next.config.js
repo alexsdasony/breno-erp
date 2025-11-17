@@ -12,6 +12,11 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   
+  // Ignorar TypeScript errors em scripts durante o build
+  typescript: {
+    ignoreBuildErrors: false, // Manter verificação de tipos, mas excluir scripts
+  },
+  
   // Configuração para garantir que as variáveis de ambiente sejam aplicadas
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
