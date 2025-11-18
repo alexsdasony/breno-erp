@@ -24,24 +24,38 @@ export async function POST(request: NextRequest) {
     const clientSecret = process.env.PLUGGY_CLIENT_SECRET;
 
     // Log de debug (sem expor valores completos)
+    const allPluggyKeys = Object.keys(process.env).filter(k => k.includes('PLUGGY'));
     console.log('🔍 Verificando credenciais Pluggy:', {
       hasClientId: !!clientId,
       hasClientSecret: !!clientSecret,
       clientIdLength: clientId?.length || 0,
       clientSecretLength: clientSecret?.length || 0,
       clientIdPrefix: clientId?.substring(0, 5) || 'N/A',
+      allPluggyKeys,
+      nodeEnv: process.env.NODE_ENV,
     });
 
     if (!clientId || !clientSecret) {
+      // Verificar se as variáveis existem mas estão vazias
+      const clientIdRaw = process.env.PLUGGY_CLIENT_ID;
+      const clientSecretRaw = process.env.PLUGGY_CLIENT_SECRET;
+      
       console.error('❌ Credenciais Pluggy não configuradas:', {
-        clientId: clientId ? 'presente' : 'ausente',
-        clientSecret: clientSecret ? 'presente' : 'ausente',
-        allEnvKeys: Object.keys(process.env).filter(k => k.includes('PLUGGY')),
+        clientId: clientIdRaw ? `presente (length: ${clientIdRaw.length})` : 'ausente',
+        clientSecret: clientSecretRaw ? `presente (length: ${clientSecretRaw.length})` : 'ausente',
+        allPluggyKeys,
+        allEnvKeysSample: Object.keys(process.env).slice(0, 20), // Primeiras 20 variáveis para debug
       });
+      
       return NextResponse.json(
         {
           success: false,
-          error: 'Credenciais Pluggy não configuradas. Verifique as variáveis de ambiente PLUGGY_CLIENT_ID e PLUGGY_CLIENT_SECRET.',
+          error: 'Credenciais Pluggy não configuradas. Verifique as variáveis de ambiente PLUGGY_CLIENT_ID e PLUGGY_CLIENT_SECRET. Certifique-se de que o serviço foi reiniciado após adicionar as variáveis.',
+          debug: {
+            hasClientId: !!clientIdRaw,
+            hasClientSecret: !!clientSecretRaw,
+            allPluggyKeys,
+          }
         },
         { status: 500 }
       );
