@@ -82,7 +82,10 @@ export function useCostCenters() {
         name: data.name,
         description: data.description,
         is_active: data.is_active,
-        segment_id: data.segment_id
+        segment_id: data.segment_id,
+        manager_id: (data as any).manager_id || null,
+        budget: (data as any).budget ? parseFloat(String((data as any).budget)) : null,
+        status: (data as any).status || 'active'
       };
       
       const response = await createCostCenter(payload);
@@ -114,7 +117,10 @@ export function useCostCenters() {
         name: data.name,
         description: data.description,
         is_active: data.is_active,
-        segment_id: data.segment_id
+        segment_id: data.segment_id,
+        manager_id: (data as any).manager_id !== undefined ? ((data as any).manager_id || null) : undefined,
+        budget: (data as any).budget !== undefined ? ((data as any).budget ? parseFloat(String((data as any).budget)) : null) : undefined,
+        status: (data as any).status || undefined
       };
       
       const response = await updateCostCenter(id, payload);

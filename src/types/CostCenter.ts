@@ -13,4 +13,7 @@ export interface CostCenterPayload {
   description?: string | null
   is_active?: boolean
   segment_id?: ID | null
+  manager_id?: ID | null
+  budget?: number | null
+  status?: 'active' | 'inactive'
 }

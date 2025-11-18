@@ -289,14 +289,20 @@ export default function CostCentersView() {
       await update(editingId, {
         name: trimmed,
         description: description || null,
+        manager_id: managerId || null,
+        budget: budget ? parseFloat(budget) : null,
+        status: status,
         // Não alterar segmento no update pelo formulário de edição
-      });
+      } as any);
     } else {
       await create({
         name: trimmed,
         description: description || null,
         segment_id: segmentId || null,
-      });
+        manager_id: managerId || null,
+        budget: budget ? parseFloat(budget) : null,
+        status: status,
+      } as any);
     }
     // Reset
     setEditingId(null);
@@ -530,11 +536,14 @@ export default function CostCentersView() {
                 </select>
               </div>
               <div className="md:col-span-4">
-                <label htmlFor="costCenterManager" className="block text-sm font-medium mb-1">Responsável</label>
+                <label htmlFor="costCenterManager" className="block text-sm font-medium mb-1">Responsável <span className="text-xs text-muted-foreground">(opcional)</span></label>
                 <select
                   id="costCenterManager"
                   value={managerId}
-                  onChange={(e) => setManagerId(e.target.value)}
+                  onChange={(e) => {
+                    setManagerId(e.target.value);
+                    setManagerError(null);
+                  }}
                   onBlur={() => setManagerError(managerId && !isUuid(managerId) ? 'Responsável inválido.' : null)}
                   className={`w-full p-3 bg-muted border rounded-lg focus:ring-2 ${managerError ? 'border-red-500 focus:ring-red-500' : 'border-border focus:ring-primary'}`}
                   aria-invalid={!!managerError}
