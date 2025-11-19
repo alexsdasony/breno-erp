@@ -93,6 +93,7 @@ serve(async (req) => {
 
       // Mapear e validar campos permitidos (schema extendido)
       const allowedStatus = ['active', 'inactive'] as const
+      const allowedTypes = ['despesa', 'receita'] as const
       const isUuid = (v: any) => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)
 
       const payload: {
@@ -102,6 +103,7 @@ serve(async (req) => {
         budget?: number
         status?: typeof allowedStatus[number]
         manager_id?: string | null
+        type?: typeof allowedTypes[number] | null
       } = {
         name: body?.name,
         segment_id: body?.segment_id ?? null,
@@ -109,6 +111,7 @@ serve(async (req) => {
         budget: typeof body?.budget === 'number' ? body.budget : (body?.budget ? Number(body.budget) : 0),
         status: allowedStatus.includes(body?.status) ? body.status : 'active',
         manager_id: body?.manager_id ?? null,
+        type: allowedTypes.includes(body?.type) ? body.type : (body?.type === null || body?.type === '') ? null : null,
       }
 
       // Validação básica
@@ -137,6 +140,12 @@ serve(async (req) => {
       if (payload.budget !== undefined && (isNaN(payload.budget) || payload.budget < 0)) {
         return new Response(
           JSON.stringify({ error: 'budget inválido' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      if (payload.type !== null && payload.type !== undefined && !allowedTypes.includes(payload.type)) {
+        return new Response(
+          JSON.stringify({ error: 'type inválido. Deve ser "despesa" ou "receita"' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
@@ -176,6 +185,7 @@ serve(async (req) => {
       const body = await req.json()
 
       const allowedStatus = ['active', 'inactive'] as const
+      const allowedTypes = ['despesa', 'receita'] as const
       const isUuid = (v: any) => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)
 
       // Apenas colunas válidas no schema atual
@@ -186,6 +196,7 @@ serve(async (req) => {
         budget?: number
         status?: typeof allowedStatus[number]
         manager_id?: string | null
+        type?: typeof allowedTypes[number] | null
       } = {}
       if (typeof body?.name === 'string') payload.name = body.name
       if (body?.segment_id !== undefined) payload.segment_id = body.segment_id ?? null
@@ -217,6 +228,15 @@ serve(async (req) => {
           )
         }
         payload.manager_id = body.manager_id
+      }
+      if (body?.type !== undefined) {
+        if (body.type !== null && body.type !== '' && !allowedTypes.includes(body.type)) {
+          return new Response(
+            JSON.stringify({ error: 'type inválido. Deve ser "despesa" ou "receita"' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+        payload.type = body.type === null || body.type === '' ? null : body.type
       }
 
       if (Object.keys(payload).length === 0) {

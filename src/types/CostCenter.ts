@@ -6,6 +6,7 @@ export interface CostCenter extends Timestamped {
   description?: string | null
   is_active?: boolean
   segment_id?: ID | null
+  type?: 'despesa' | 'receita' | null
 }
 
 export interface CostCenterPayload {
@@ -16,4 +17,5 @@ export interface CostCenterPayload {
   manager_id?: ID | null
   budget?: number | null
   status?: 'active' | 'inactive'
+  type?: 'despesa' | 'receita' | null
 }
