@@ -44,31 +44,88 @@ export async function GET(request: NextRequest) {
     console.log('💰 Financial documents API request:', { page, pageSize, segmentId, dateStart, dateEnd });
 
     // Buscar documentos financeiros da tabela financial_documents
-    let query = supabaseAdmin
+    let queryDocs = supabaseAdmin
       .from('financial_documents')
       .select(`
         *,
         partner:partners(name, id),
         payment_method_data:payment_methods(name, id)
-      `);
+      `)
+      .eq('is_deleted', false);
 
     // Aplicar filtro de segmento se fornecido
     if (segmentId && segmentId !== 'null' && segmentId !== '0') {
-      query = query.eq('segment_id', segmentId);
+      queryDocs = queryDocs.eq('segment_id', segmentId);
       console.log('🔍 Aplicando filtro de segmento:', segmentId);
     }
     
-    query = query.order('issue_date', { ascending: false });
+    queryDocs = queryDocs.order('issue_date', { ascending: false });
 
     // Aplicar filtros de data se fornecidos
     if (dateStart) {
-      query = query.gte('issue_date', dateStart);
+      queryDocs = queryDocs.gte('issue_date', dateStart);
     }
     if (dateEnd) {
-      query = query.lte('issue_date', dateEnd);
+      queryDocs = queryDocs.lte('issue_date', dateEnd);
     }
 
-    const { data: financialDocuments, error: financialDocsError } = await query;
+    const { data: financialDocuments, error: financialDocsError } = await queryDocs;
+
+    // Buscar transações da Pluggy (financial_transactions) e converter para formato de documentos
+    let queryTransactions = supabaseAdmin
+      .from('financial_transactions')
+      .select('*');
+
+    // Aplicar filtro de segmento se fornecido
+    if (segmentId && segmentId !== 'null' && segmentId !== '0') {
+      queryTransactions = queryTransactions.eq('segment_id', segmentId);
+    }
+    // Se não há filtro de segmento, buscar todas (incluindo NULL)
+
+    // Aplicar filtros de data se fornecidos
+    if (dateStart) {
+      queryTransactions = queryTransactions.gte('date', dateStart);
+    }
+    if (dateEnd) {
+      queryTransactions = queryTransactions.lte('date', dateEnd);
+    }
+
+    queryTransactions = queryTransactions.order('date', { ascending: false });
+
+    const { data: pluggyTransactions, error: transactionsError } = await queryTransactions;
+
+    if (transactionsError) {
+      console.warn('⚠️ Erro ao buscar transações Pluggy (não crítico):', transactionsError);
+    }
+
+    // Converter transações Pluggy para formato de documentos financeiros
+    const convertedTransactions = (pluggyTransactions || []).map((tx: any) => ({
+      id: tx.id,
+      partner_id: null,
+      direction: tx.direction || (tx.type === 'receita' ? 'receivable' : 'payable'),
+      doc_no: tx.pluggy_id || tx.external_id || null,
+      issue_date: tx.date,
+      due_date: tx.date,
+      amount: Math.abs(Number(tx.amount) || 0),
+      balance: Math.abs(Number(tx.amount) || 0),
+      status: tx.status === 'POSTED' ? 'paid' : 'open',
+      category_id: null,
+      segment_id: tx.segment_id,
+      description: tx.description || 'Transação Pluggy',
+      payment_method: 'PIX',
+      notes: `Importado da Pluggy - ${tx.institution || 'Banco'} - ${tx.category || ''}`,
+      created_at: tx.created_at,
+      updated_at: tx.updated_at,
+      deleted_at: null,
+      is_deleted: false,
+      payment_method_id: null,
+      partner: null,
+      payment_method_data: null,
+      _source: 'pluggy', // Flag para identificar origem
+      pluggy_id: tx.pluggy_id,
+      account_id: tx.account_id,
+      institution: tx.institution
+    }));
 
     if (financialDocsError) {
       console.error('❌ Erro ao buscar documentos financeiros:', financialDocsError);
@@ -82,12 +139,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Combinar documentos e transações Pluggy
+    const allDocuments = [
+      ...(financialDocuments || []).map((doc: any) => ({ ...doc, _source: 'manual' })),
+      ...convertedTransactions
+    ];
+
+    // Ordenar por data (mais recente primeiro)
+    allDocuments.sort((a: any, b: any) => {
+      const dateA = new Date(a.issue_date || a.date || 0).getTime();
+      const dateB = new Date(b.issue_date || b.date || 0).getTime();
+      return dateB - dateA;
+    });
+
     // Aplicar paginação
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const paginatedDocuments = (financialDocuments || []).slice(startIndex, endIndex);
+    const paginatedDocuments = allDocuments.slice(startIndex, endIndex);
 
+    const total = allDocuments.length;
     console.log('📊 Documentos financeiros encontrados:', financialDocuments?.length || 0);
+    console.log('📊 Transações Pluggy encontradas:', pluggyTransactions?.length || 0);
+    console.log('📊 Total combinado:', total);
     console.log('📊 Documentos paginados:', paginatedDocuments?.length || 0);
 
     const response = {
@@ -96,8 +169,8 @@ export async function GET(request: NextRequest) {
       pagination: {
         page,
         pageSize,
-        total: financialDocuments?.length || 0,
-        totalPages: Math.ceil((financialDocuments?.length || 0) / pageSize)
+        total,
+        totalPages: Math.ceil(total / pageSize)
       }
     };
 

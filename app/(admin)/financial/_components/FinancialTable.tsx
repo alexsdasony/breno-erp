@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit, Eye, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Edit, Eye, Trash2, TrendingUp, TrendingDown, Zap } from 'lucide-react';
 
 export type FinancialDoc = any;
 
@@ -68,39 +68,62 @@ export default function FinancialTable({ items, currency, pmMap, onDetails, onEd
               <th className="text-right p-3">Valor</th>
               <th className="text-left p-3">Método</th>
               <th className="text-left p-3">Status</th>
+              <th className="text-left p-3">Origem</th>
               <th className="text-center p-3">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {items.map((d) => (
-              <tr key={d.id} className="border-b border-border hover:bg-muted/30">
-                <td className="p-3">{formatDateToBR(d.issue_date)}</td>
-                <td className="p-3">{formatDateToBR(d.due_date)}</td>
-                <td className="p-3">{typeLabel(d.direction)}</td>
-                <td className="p-3">{getPartnerName(d)}</td>
-                <td className="p-3 text-right">{currency(Number(d.amount || 0))}</td>
-                <td className="p-3">{d.payment_method ? (pmMap[d.payment_method] || d.payment_method) : '-'}</td>
-                <td className="p-3">
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    d.status === 'paid' ? 'bg-green-500/20 text-green-400' : d.status === 'canceled' ? 'bg-gray-500/20 text-gray-400' : 'bg-amber-500/20 text-amber-400'
-                  }`}>
-                    {d.status === 'paid' ? 'Pago' : d.status === 'canceled' ? 'Cancelado' : 'Pendente'}
-                  </span>
-                </td>
-                <td className="p-3 text-center">
-                  <div className="flex justify-center gap-1">
-                    <Button variant="ghost" size="sm" title="Ver detalhes" onClick={() => onDetails(d)}>
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" title="Editar" onClick={(e) => onEdit(d, e)}><Edit className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="sm" title="Excluir" onClick={() => onAskDelete(d.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {items.map((d) => {
+              const isPluggy = d._source === 'pluggy' || d.pluggy_id;
+              return (
+                <tr 
+                  key={d.id} 
+                  className={`border-b border-border hover:bg-muted/30 ${isPluggy ? 'bg-blue-500/5' : ''}`}
+                >
+                  <td className="p-3">{formatDateToBR(d.issue_date)}</td>
+                  <td className="p-3">{formatDateToBR(d.due_date)}</td>
+                  <td className="p-3">{typeLabel(d.direction)}</td>
+                  <td className="p-3">{getPartnerName(d)}</td>
+                  <td className="p-3 text-right">{currency(Number(d.amount || 0))}</td>
+                  <td className="p-3">{d.payment_method ? (pmMap[d.payment_method] || d.payment_method) : '-'}</td>
+                  <td className="p-3">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      d.status === 'paid' ? 'bg-green-500/20 text-green-400' : d.status === 'canceled' ? 'bg-gray-500/20 text-gray-400' : 'bg-amber-500/20 text-amber-400'
+                    }`}>
+                      {d.status === 'paid' ? 'Pago' : d.status === 'canceled' ? 'Cancelado' : 'Pendente'}
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    {isPluggy ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400">
+                        <Zap className="w-3 h-3" />
+                        Pluggy
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-500/20 text-gray-400">
+                        Manual
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-3 text-center">
+                    <div className="flex justify-center gap-1">
+                      <Button variant="ghost" size="sm" title="Ver detalhes" onClick={() => onDetails(d)}>
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      {!isPluggy && (
+                        <>
+                          <Button variant="ghost" size="sm" title="Editar" onClick={(e) => onEdit(d, e)}><Edit className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="sm" title="Excluir" onClick={() => onAskDelete(d.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
             {items.length === 0 && (
               <tr>
-                <td colSpan={8} className="p-6 text-center text-muted-foreground">Nenhum documento encontrado.</td>
+                <td colSpan={9} className="p-6 text-center text-muted-foreground">Nenhum documento encontrado.</td>
               </tr>
             )}
           </tbody>
