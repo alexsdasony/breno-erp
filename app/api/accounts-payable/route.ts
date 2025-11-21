@@ -78,33 +78,39 @@ export async function GET(request: NextRequest) {
     }
 
     // Converter transações Pluggy para formato de contas a pagar
-    const convertedTransactions = (pluggyTransactions || []).map((tx: any) => ({
-      id: tx.id,
-      partner_id: null,
-      direction: 'payable',
-      doc_no: tx.pluggy_id || tx.external_id || null,
-      issue_date: tx.date,
-      due_date: tx.date,
-      amount: Math.abs(Number(tx.amount) || 0),
-      balance: Math.abs(Number(tx.amount) || 0),
-      status: tx.status === 'POSTED' ? 'paid' : 'open',
-      category_id: null,
-      segment_id: tx.segment_id,
-      description: tx.description || 'Transação Pluggy',
-      payment_method: 'PIX',
-      notes: `Importado da Pluggy - ${tx.institution || 'Banco'} - ${tx.category || ''}`,
-      created_at: tx.created_at,
-      updated_at: tx.updated_at,
-      deleted_at: null,
-      is_deleted: false,
-      payment_method_id: null,
-      partner: null,
-      payment_method_data: null,
-      _source: 'pluggy', // Flag para identificar origem
-      pluggy_id: tx.pluggy_id,
-      account_id: tx.account_id,
-      institution: tx.institution
-    }));
+    // GARANTIR: Todas as transações com pluggy_id são sempre marcadas como 'pluggy'
+    const convertedTransactions = (pluggyTransactions || []).map((tx: any) => {
+      // Garantir que sempre tenha pluggy_id (se não tiver, não é Pluggy)
+      const pluggyId = tx.pluggy_id || tx.external_id;
+      
+      return {
+        id: tx.id,
+        partner_id: null,
+        direction: 'payable',
+        doc_no: pluggyId || null,
+        issue_date: tx.date,
+        due_date: tx.date,
+        amount: Math.abs(Number(tx.amount) || 0),
+        balance: Math.abs(Number(tx.amount) || 0),
+        status: tx.status === 'POSTED' ? 'paid' : 'open',
+        category_id: null,
+        segment_id: tx.segment_id,
+        description: tx.description || 'Transação Pluggy',
+        payment_method: 'PIX',
+        notes: `Importado da Pluggy - ${tx.institution || 'Banco'} - ${tx.category || ''}`,
+        created_at: tx.created_at,
+        updated_at: tx.updated_at,
+        deleted_at: null,
+        is_deleted: false,
+        payment_method_id: null,
+        partner: null,
+        payment_method_data: null,
+        _source: 'pluggy', // SEMPRE 'pluggy' para transações da tabela financial_transactions
+        pluggy_id: pluggyId, // SEMPRE preenchido para transações Pluggy
+        account_id: tx.account_id,
+        institution: tx.institution
+      };
+    });
 
     // Combinar documentos e transações Pluggy
     // Marcar documentos manuais: se data <= 29/10/2025 OU se não tem pluggy_id
