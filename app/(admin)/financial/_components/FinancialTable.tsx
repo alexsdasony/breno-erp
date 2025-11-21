@@ -74,7 +74,14 @@ export default function FinancialTable({ items, currency, pmMap, onDetails, onEd
           </thead>
           <tbody>
             {items.map((d) => {
-              const isPluggy = d._source === 'pluggy' || d.pluggy_id;
+              // Identificar origem: Pluggy ou Manual
+              // Critério 1: Campo _source explícito
+              // Critério 2: Tem pluggy_id
+              // Critério 3: Data >= 31/10/2025 (sem _source='manual')
+              const issueDate = d.issue_date || d.date;
+              const isPluggyBySource = d._source === 'pluggy' || d.pluggy_id;
+              const isPluggyByDate = issueDate && issueDate >= '2025-10-31' && d._source !== 'manual';
+              const isPluggy = isPluggyBySource || isPluggyByDate;
               return (
                 <tr 
                   key={d.id} 

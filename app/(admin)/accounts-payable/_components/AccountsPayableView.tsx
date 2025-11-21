@@ -497,7 +497,14 @@ export default function AccountsPayableView() {
                 <tbody className="divide-y divide-border">
                   {filteredItems.map((item: any) => {
                     console.log('🔍 Renderizando item:', item);
-                    const isPluggy = item._source === 'pluggy' || item.pluggy_id;
+                    // Identificar origem: Pluggy ou Manual
+                    // Critério 1: Campo _source explícito
+                    // Critério 2: Tem pluggy_id
+                    // Critério 3: Data >= 31/10/2025 (sem _source='manual')
+                    const issueDate = item.issue_date || item.data_vencimento;
+                    const isPluggyBySource = item._source === 'pluggy' || item.pluggy_id;
+                    const isPluggyByDate = issueDate && issueDate >= '2025-10-31' && item._source !== 'manual';
+                    const isPluggy = isPluggyBySource || isPluggyByDate;
                     return (
                     <tr 
                       key={item.id} 
