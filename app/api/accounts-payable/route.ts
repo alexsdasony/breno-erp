@@ -107,8 +107,13 @@ export async function GET(request: NextRequest) {
     }));
 
     // Combinar documentos e transações Pluggy
+    // Marcar documentos manuais: se data <= 29/10/2025 OU se não tem pluggy_id
     const allAccountsPayable = [
-      ...(financialDocuments || []).map((doc: any) => ({ ...doc, _source: 'manual' })),
+      ...(financialDocuments || []).map((doc: any) => {
+        const issueDate = doc.issue_date || doc.due_date;
+        const isManual = !doc.pluggy_id && (!issueDate || issueDate <= '2025-10-29');
+        return { ...doc, _source: isManual ? 'manual' : (doc._source || 'manual') };
+      }),
       ...convertedTransactions
     ];
 

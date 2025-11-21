@@ -6,12 +6,27 @@ import type { FinancialDocument, FinancialDocumentPayload } from '@/types/Financ
 /**
  * Normaliza um documento financeiro do formato do backend para o formato esperado pelo frontend
  */
-export function normalizeFinancialDocument(row: any): FinancialDocument {
+export function normalizeFinancialDocument(row: any): FinancialDocument & { _source?: string; pluggy_id?: string } {
   // Garantir que partner_name seja extraído corretamente
   const partnerName = row.partner?.name || row.partner_name || null;
   
   // Garantir que payment_method seja extraído corretamente
   const paymentMethod = row.payment_method_data?.name || row.payment_method || null;
+  
+  // Determinar origem: Pluggy ou Manual
+  // Critério 1: Se tem _source='pluggy' ou pluggy_id, é Pluggy
+  // Critério 2: Se a data é >= 31/10/2025 e não tem _source='manual', é Pluggy
+  // Critério 3: Se a data é <= 29/10/2025, é Manual
+  const issueDate = row.issue_date || row.date;
+  const isPluggyByDate = issueDate && issueDate >= '2025-10-31';
+  const isPluggyBySource = row._source === 'pluggy' || row.pluggy_id;
+  const isManualByDate = issueDate && issueDate <= '2025-10-29';
+  
+  const source = isPluggyBySource || (isPluggyByDate && row._source !== 'manual') 
+    ? 'pluggy' 
+    : isManualByDate || row._source === 'manual' 
+      ? 'manual' 
+      : row._source || (isPluggyByDate ? 'pluggy' : 'manual');
   
   return {
     id: row.id,
@@ -38,7 +53,10 @@ export function normalizeFinancialDocument(row: any): FinancialDocument {
     partner_name: partnerName,
     created_at: row.created_at,
     updated_at: row.updated_at,
-  };
+    // Preservar campos extras para identificação Pluggy
+    _source: source,
+    pluggy_id: row.pluggy_id,
+  } as FinancialDocument & { _source?: string; pluggy_id?: string };
 }
 
 /**
