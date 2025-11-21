@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAccountsPayable } from '../_hooks/useAccountsPayable';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Edit, Trash2, Search, Filter, FileDown, Eye, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Search, Filter, FileDown, Eye, CheckCircle, AlertCircle, Clock, Zap } from 'lucide-react';
 import { useAppData } from '@/hooks/useAppData';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { listSegments } from '@/services/segmentsService';
@@ -486,16 +486,23 @@ export default function AccountsPayableView() {
                     <th className="px-6 py-4 text-left text-sm font-semibold">
                       Status
                     </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">
+                      Origem
+                    </th>
                     <th className="px-6 py-4 text-center text-sm font-semibold">
                       Ações
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filteredItems.map((item) => {
+                  {filteredItems.map((item: any) => {
                     console.log('🔍 Renderizando item:', item);
+                    const isPluggy = item._source === 'pluggy' || item.pluggy_id;
                     return (
-                    <tr key={item.id} className="hover:bg-muted/50 transition-colors">
+                    <tr 
+                      key={item.id} 
+                      className={`hover:bg-muted/50 transition-colors ${isPluggy ? 'bg-blue-500/5' : ''}`}
+                    >
                       <td className="px-6 py-4 text-sm font-medium">
                         {item.display_name || item.partner_name || item.supplier_id || 'N/A'}
                       </td>
@@ -524,6 +531,18 @@ export default function AccountsPayableView() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
+                        {isPluggy ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400">
+                            <Zap className="w-3 h-3" />
+                            Pluggy
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-500/20 text-gray-400">
+                            Manual
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
                         <div className="flex items-center justify-center gap-2">
                           <Button
                             variant="ghost"
@@ -536,43 +555,47 @@ export default function AccountsPayableView() {
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => {
-                              console.log('🔍 Dados do item para edição:', item);
-                              setCurrentAccount(item);
-                              const formDataToSet = {
-                                supplier_id: item.supplier_id || '',
-                                descricao: item.descricao || '',
-                                valor: item.valor?.toString() || '',
-                                data_vencimento: item.data_vencimento || '',
-                                data_pagamento: item.data_pagamento || '',
-                                status: item.status || 'pending',
-                                categoria_id: item.categoria_id || '',
-                                forma_pagamento: item.forma_pagamento || 'boleto',
-                                observacoes: item.observacoes || '',
-                                segment_id: item.segment_id || activeSegmentId
-                              };
-                              console.log('🔍 FormData a ser definido:', formDataToSet);
-                              setFormData(formDataToSet);
-                              setShowEditModal(true);
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => {
-                              setCurrentAccount(item);
-                              setShowDeleteConfirm(true);
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {!isPluggy && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => {
+                                  console.log('🔍 Dados do item para edição:', item);
+                                  setCurrentAccount(item);
+                                  const formDataToSet = {
+                                    supplier_id: item.supplier_id || '',
+                                    descricao: item.descricao || '',
+                                    valor: item.valor?.toString() || '',
+                                    data_vencimento: item.data_vencimento || '',
+                                    data_pagamento: item.data_pagamento || '',
+                                    status: item.status || 'pending',
+                                    categoria_id: item.categoria_id || '',
+                                    forma_pagamento: item.forma_pagamento || 'boleto',
+                                    observacoes: item.observacoes || '',
+                                    segment_id: item.segment_id || activeSegmentId
+                                  };
+                                  console.log('🔍 FormData a ser definido:', formDataToSet);
+                                  setFormData(formDataToSet);
+                                  setShowEditModal(true);
+                                }}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => {
+                                  setCurrentAccount(item);
+                                  setShowDeleteConfirm(true);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
