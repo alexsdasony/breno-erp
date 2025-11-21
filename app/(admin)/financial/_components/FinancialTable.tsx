@@ -112,19 +112,21 @@ export default function FinancialTable({ items, currency, pmMap, onDetails, onEd
                       </span>
                     )}
                   </td>
-                  <td className="p-3 text-center">
-                    <div className="flex justify-center gap-1">
-                      <Button variant="ghost" size="sm" title="Ver detalhes" onClick={() => onDetails(d)}>
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      {!isPluggy && (
-                        <>
-                          <Button variant="ghost" size="sm" title="Editar" onClick={(e) => onEdit(d, e)}><Edit className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="sm" title="Excluir" onClick={() => onAskDelete(d.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
-                        </>
-                      )}
-                    </div>
-                  </td>
+                      <td className="p-3 text-center">
+                        <div className="flex justify-center gap-1">
+                          <Button variant="ghost" size="sm" title="Ver detalhes" onClick={() => onDetails(d)}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" title="Editar" onClick={(e) => onEdit(d, e)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          {!isPluggy && (
+                            <Button variant="ghost" size="sm" title="Excluir" onClick={() => onAskDelete(d.id)}>
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
                 </tr>
               );
             })}

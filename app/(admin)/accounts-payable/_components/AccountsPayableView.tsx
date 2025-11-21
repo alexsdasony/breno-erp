@@ -562,46 +562,44 @@ export default function AccountsPayableView() {
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => {
+                              console.log('🔍 Dados do item para edição:', item);
+                              setCurrentAccount(item);
+                              const formDataToSet = {
+                                supplier_id: item.supplier_id || '',
+                                descricao: item.descricao || '',
+                                valor: item.valor?.toString() || '',
+                                data_vencimento: item.data_vencimento || '',
+                                data_pagamento: item.data_pagamento || '',
+                                status: item.status || 'pending',
+                                categoria_id: item.categoria_id || '',
+                                forma_pagamento: item.forma_pagamento || 'boleto',
+                                observacoes: item.observacoes || '',
+                                segment_id: item.segment_id || activeSegmentId
+                              };
+                              console.log('🔍 FormData a ser definido:', formDataToSet);
+                              setFormData(formDataToSet);
+                              setShowEditModal(true);
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
                           {!isPluggy && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={() => {
-                                  console.log('🔍 Dados do item para edição:', item);
-                                  setCurrentAccount(item);
-                                  const formDataToSet = {
-                                    supplier_id: item.supplier_id || '',
-                                    descricao: item.descricao || '',
-                                    valor: item.valor?.toString() || '',
-                                    data_vencimento: item.data_vencimento || '',
-                                    data_pagamento: item.data_pagamento || '',
-                                    status: item.status || 'pending',
-                                    categoria_id: item.categoria_id || '',
-                                    forma_pagamento: item.forma_pagamento || 'boleto',
-                                    observacoes: item.observacoes || '',
-                                    segment_id: item.segment_id || activeSegmentId
-                                  };
-                                  console.log('🔍 FormData a ser definido:', formDataToSet);
-                                  setFormData(formDataToSet);
-                                  setShowEditModal(true);
-                                }}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={() => {
-                                  setCurrentAccount(item);
-                                  setShowDeleteConfirm(true);
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => {
+                                setCurrentAccount(item);
+                                setShowDeleteConfirm(true);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           )}
                         </div>
                       </td>
