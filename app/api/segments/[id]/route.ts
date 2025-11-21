@@ -49,19 +49,13 @@ export async function PUT(
     const body = await request.json();
     console.log('📥 Payload recebido:', body);
     
-    // Mapear status para valores aceitos pela constraint do banco
-    const statusMap: Record<string, string> = {
-      'ativo': 'active',
-      'inativo': 'active',
-      'active': 'active',
-      'inactive': 'active'
-    };
-
-    // Normalizar o payload
-    const normalizedBody = {
-      ...body,
-      status: body.status ? statusMap[body.status] || 'active' : 'active'
-    };
+    // Remover campos que não existem na tabela segments
+    const { status, ...cleanBody } = body;
+    
+    // Normalizar o payload (apenas campos válidos: name, description)
+    const normalizedBody: { name?: string; description?: string } = {};
+    if (cleanBody.name !== undefined) normalizedBody.name = cleanBody.name;
+    if (cleanBody.description !== undefined) normalizedBody.description = cleanBody.description;
 
     console.log('🧹 Payload normalizado:', normalizedBody);
     
