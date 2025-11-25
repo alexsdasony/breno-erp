@@ -72,6 +72,47 @@ export function getPluggyBaseUrl(env: PluggyEnvironment): string {
 
 async function fetchTransactionsPage(params: FetchTransactionsParams, pageUrl?: string) {
   const { token, dateFrom, dateTo, itemId, accountId, limit = 500, page } = params;
+  
+  // VALIDAÇÃO RIGOROSA: Se accountId for fornecido, deve ser válido
+  // Se não fornecido, itemId deve ser válido
+  if (accountId) {
+    if (!accountId || accountId === '' || accountId === 'null' || accountId === 'undefined' || typeof accountId !== 'string') {
+      const errorMsg = `accountId inválido: ${JSON.stringify(accountId)}`;
+      console.error(`❌ ${errorMsg}`);
+      throw new Error(errorMsg);
+    }
+    // Validar formato UUID do accountId
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(accountId)) {
+      const errorMsg = `accountId não é um UUID válido: ${accountId}`;
+      console.error(`❌ ${errorMsg}`);
+      throw new Error(errorMsg);
+    }
+  }
+  
+  // Se accountId não foi fornecido, itemId é obrigatório
+  if (!accountId && (!itemId || itemId === '' || itemId === 'null' || itemId === 'undefined')) {
+    const errorMsg = `itemId é obrigatório quando accountId não é fornecido. Recebido: ${JSON.stringify(itemId)}`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+  
+  // Se itemId foi fornecido, validar formato UUID
+  if (itemId && (typeof itemId !== 'string' || itemId === '' || itemId === 'null' || itemId === 'undefined')) {
+    const errorMsg = `itemId inválido: ${JSON.stringify(itemId)}`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+  
+  if (itemId) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(itemId)) {
+      const errorMsg = `itemId não é um UUID válido: ${itemId}`;
+      console.error(`❌ ${errorMsg}`);
+      throw new Error(errorMsg);
+    }
+  }
+  
   const env = process.env.PLUGGY_ENV || 'development';
   const baseUrl = getPluggyBaseUrl(env);
 
@@ -85,6 +126,7 @@ async function fetchTransactionsPage(params: FetchTransactionsParams, pageUrl?: 
     url.searchParams.set('to', dateTo);
     url.searchParams.set('limit', String(Math.min(limit, 500))); // Máximo 500 por request
 
+    // itemId e accountId já validados acima
     if (itemId) {
       url.searchParams.set('item_id', itemId); // Pluggy usa item_id (com underscore)
     }
@@ -497,13 +539,28 @@ export interface PluggyAccountsResponse {
  * Lista todas as contas (accounts) de um item Pluggy
  */
 export async function listPluggyAccounts(itemId: string): Promise<PluggyAccountsResponse> {
+  // VALIDAÇÃO RIGOROSA: Garantir que itemId nunca seja null/undefined/string vazia
+  if (!itemId || itemId === '' || itemId === 'null' || itemId === 'undefined' || typeof itemId !== 'string') {
+    const errorMsg = `itemId inválido na função listPluggyAccounts: ${JSON.stringify(itemId)}`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  // Validar formato UUID
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(itemId)) {
+    const errorMsg = `itemId não é um UUID válido: ${itemId}`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
   const apiKey = await getPluggyApiKey();
   const env = process.env.PLUGGY_ENV || 'development';
   const baseUrl = getPluggyBaseUrl(env);
 
   // A API Pluggy usa item_id (com underscore) como parâmetro
   const url = new URL(`${baseUrl}/accounts`);
-  url.searchParams.set('item_id', itemId);
+  url.searchParams.set('item_id', itemId); // itemId já validado acima
 
   console.log(`🔍 Buscando contas da Pluggy para item ${itemId}: ${url.toString()}`);
 

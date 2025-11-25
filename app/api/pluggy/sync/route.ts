@@ -335,13 +335,52 @@ export async function POST(request: NextRequest) {
       // Sincronizar cada item encontrado
       // IMPORTANTE: Para cada item, primeiro buscar as contas, depois buscar transações de cada conta
       for (const itemId of itemIds) {
+        // VALIDAÇÃO RIGOROSA: Garantir que itemId é válido antes de qualquer operação
+        if (!itemId || itemId === '' || itemId === 'null' || itemId === 'undefined' || typeof itemId !== 'string') {
+          console.error(`❌ itemId inválido detectado:`, {
+            itemId,
+            tipo: typeof itemId,
+            valor: JSON.stringify(itemId)
+          });
+          syncResults.push({
+            itemId: String(itemId || 'INVALID'),
+            imported: 0,
+            updated: 0,
+            total: 0,
+            period: '',
+            error: `itemId inválido: ${itemId}`
+          });
+          continue; // Pular este item
+        }
+
+        // Validar formato UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(itemId)) {
+          console.error(`❌ itemId não é um UUID válido: ${itemId}`);
+          syncResults.push({
+            itemId,
+            imported: 0,
+            updated: 0,
+            total: 0,
+            period: '',
+            error: `itemId não é um UUID válido: ${itemId}`
+          });
+          continue; // Pular este item
+        }
+
         try {
-          console.log(`🔄 Sincronizando item: ${itemId}`);
+          console.log(`🔄 Sincronizando item: ${itemId} (UUID válido)`);
           
           // PASSO 1: Buscar todas as contas deste item
           let accounts: Array<{ id: string; name: string | null }> = [];
           try {
             console.log(`🔍 [${itemId}] Buscando contas do item...`);
+            
+            // VALIDAÇÃO ANTES DE CHAMAR API
+            if (!itemId || itemId === '' || itemId === 'null' || itemId === 'undefined') {
+              throw new Error(`itemId inválido antes de buscar contas: ${itemId}`);
+            }
+            
             const accountsResponse = await listPluggyAccounts(itemId);
             console.log(`📋 [${itemId}] Resposta da API de contas:`, {
               total: accountsResponse.results?.length || 0,
@@ -379,6 +418,11 @@ export async function POST(request: NextRequest) {
           if (accounts.length === 0) {
             console.warn(`⚠️ Nenhuma conta encontrada para o item ${itemId}, tentando buscar transações sem accountId...`);
             try {
+              // VALIDAÇÃO ANTES DE CHAMAR API
+              if (!itemId || itemId === '' || itemId === 'null' || itemId === 'undefined') {
+                throw new Error(`itemId inválido antes de buscar transações: ${itemId}`);
+              }
+              
               const { transactions, startDate, endDate } = await fetchPluggyTransactions({
                 dateFrom: body.dateFrom,
                 dateTo: body.dateTo,
@@ -422,14 +466,26 @@ export async function POST(request: NextRequest) {
 
           for (const account of accounts) {
             try {
+              // VALIDAÇÃO RIGOROSA: Verificar itemId e accountId antes de buscar transações
+              if (!itemId || itemId === '' || itemId === 'null' || itemId === 'undefined') {
+                console.error(`  ❌ [${itemId}] itemId inválido antes de buscar transações da conta ${account.id}`);
+                continue; // Pular esta conta
+              }
+              
+              if (!account.id || account.id === '' || account.id === 'null' || account.id === 'undefined') {
+                console.error(`  ❌ [${itemId}] accountId inválido: ${account.id}`);
+                continue; // Pular esta conta
+              }
+              
               console.log(`  🔄 [${itemId}] Buscando transações da conta ${account.id} (${account.name || 'sem nome'})`);
               console.log(`  📅 [${itemId}] Período: ${body.dateFrom || 'últimos 30 dias'} até ${body.dateTo || 'hoje'}`);
+              console.log(`  ✅ [${itemId}] Validação: itemId=${itemId} (válido), accountId=${account.id} (válido)`);
               
               const { transactions, startDate, endDate } = await fetchPluggyTransactions({
                 dateFrom: body.dateFrom,
                 dateTo: body.dateTo,
-                itemId,
-                accountId: account.id,
+                itemId, // Garantido válido pela validação acima
+                accountId: account.id, // Garantido válido pela validação acima
                 limit: body.limit || 500
               });
 
