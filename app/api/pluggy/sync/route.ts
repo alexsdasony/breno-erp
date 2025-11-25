@@ -206,34 +206,40 @@ async function resolveItemIds(
     }
   }
 
-  // ESTRATÉGIA 4: Tentar buscar itens conhecidos diretamente (fallback)
-  // Se não encontrou nenhum item, tentar buscar os IDs conhecidos diretamente da Pluggy
-  if (items.length === 0) {
-    console.log('🔍 Nenhum item encontrado, tentando buscar IDs conhecidos diretamente da Pluggy...');
-    
-    // IDs conhecidos que podem existir
-    const knownItemIds = [
-      'f892f7a3-1c7a-4875-b084-e8a376fa730f',
-      '67a1f002-5ca8-4f01-97d4-b04fe87aa26a',
-      '48c193bc-7276-4b53-9bf9-f91cd6a05fda'
-    ];
-    
-    const { getPluggyItem } = await import('@/lib/pluggyClient');
-    
-    for (const itemId of knownItemIds) {
-      try {
-        const item = await getPluggyItem(itemId);
-        if (item && item.id) {
+  // ESTRATÉGIA 4: SEMPRE tentar buscar itens conhecidos diretamente da Pluggy
+  // Estes são IDs que sabemos que existem e devem ser sincronizados
+  console.log('🔍 Tentando buscar IDs conhecidos diretamente da Pluggy...');
+  
+  // IDs conhecidos que devem existir
+  const knownItemIds = [
+    'f892f7a3-1c7a-4875-b084-e8a376fa730f',
+    '67a1f002-5ca8-4f01-97d4-b04fe87aa26a',
+    '48c193bc-7276-4b53-9bf9-f91cd6a05fda'
+  ];
+  
+  const { getPluggyItem } = await import('@/lib/pluggyClient');
+  
+  for (const itemId of knownItemIds) {
+    try {
+      console.log(`🔍 Verificando item conhecido: ${itemId}`);
+      const item = await getPluggyItem(itemId);
+      if (item && item.id) {
+        // Adicionar apenas se ainda não estiver na lista
+        if (!items.includes(item.id)) {
           items.push(item.id);
-          console.log(`✅ Item conhecido encontrado e válido: ${itemId}`, {
+          console.log(`✅ Item conhecido encontrado e adicionado: ${itemId}`, {
             status: item.status,
+            executionStatus: item.executionStatus,
             connector: item.connector?.name
           });
+        } else {
+          console.log(`ℹ️ Item conhecido ${itemId} já estava na lista`);
         }
-      } catch (error) {
-        // Item não existe ou não é acessível - ignorar silenciosamente
-        console.log(`ℹ️ Item ${itemId} não encontrado ou não acessível`);
+      } else {
+        console.warn(`⚠️ Item conhecido ${itemId} retornou sem ID válido`);
       }
+    } catch (error) {
+      console.warn(`⚠️ Item conhecido ${itemId} não encontrado ou erro ao buscar:`, error instanceof Error ? error.message : error);
     }
   }
 
