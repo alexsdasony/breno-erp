@@ -719,9 +719,22 @@ export async function POST(request: NextRequest) {
 
     // Mapear transações para o formato do banco
     // IMPORTANTE: Filtrar transações sem ID válido (não podem ser sincronizadas)
+    // pluggy_id é OBRIGATÓRIO para usar ON CONFLICT
     const validTransactions = transactions.filter(
       (t) => t.id && typeof t.id === 'string' && t.id.trim().length > 0
     );
+    
+    if (validTransactions.length === 0) {
+      console.warn('⚠️ Nenhuma transação válida para inserir (todas sem pluggy_id)');
+      return NextResponse.json({
+        success: true,
+        imported: 0,
+        updated: 0,
+        period: syncResults[0]?.period || 'N/A',
+        message: 'Nenhuma transação válida encontrada (todas sem ID da Pluggy).',
+        syncResults
+      });
+    }
     
     const records = validTransactions.map((transaction: TransactionWithItemId) => {
       const account = resolveAccountId(transaction);
@@ -740,9 +753,15 @@ export async function POST(request: NextRequest) {
         itemIdForRecord = itemIds.find(id => id === accountId) || null;
       }
 
+      // Garantir que pluggy_id nunca seja NULL (obrigatório para ON CONFLICT)
+      const pluggyId = transaction.id;
+      if (!pluggyId || typeof pluggyId !== 'string' || pluggyId.trim().length === 0) {
+        throw new Error(`Transação sem pluggy_id válido: ${JSON.stringify(transaction.id)}`);
+      }
+      
       return {
         // IDs e referências
-        pluggy_id: transaction.id, // ID único da Pluggy (evita duplicatas)
+        pluggy_id: pluggyId, // ID único da Pluggy (evita duplicatas) - OBRIGATÓRIO
         external_id: transaction.id, // Mantido para compatibilidade
         item_id: itemIdForRecord, // ID do item (conexão) da Pluggy
         account_id: account, // ID da conta na Pluggy
