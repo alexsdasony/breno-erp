@@ -85,21 +85,37 @@ async function resolveItemIds(
   // Se houver userId, buscar itens do usuário
   // Buscar todos os itens com status válido (não apenas UPDATED)
   if (authContext.userId) {
+    console.log(`🔍 Buscando itens Pluggy para usuário: ${authContext.userId}`);
+    
     const { data: userItems, error } = await supabaseAdmin
       .from('pluggy_items')
-      .select('item_id, status, execution_status')
+      .select('item_id, status, execution_status, connector_name')
       .eq('user_id', authContext.userId)
       .not('item_id', 'is', null)
       // Buscar itens que não estão em erro ou inválidos
       .not('status', 'eq', 'INVALID_CREDENTIALS')
       .not('status', 'eq', 'USER_INPUT_TIMEOUT');
 
-    if (!error && userItems && userItems.length > 0) {
-      const validItemIds = userItems
-        .map(item => item.item_id)
-        .filter((id): id is string => typeof id === 'string' && id.length > 0);
-      items.push(...validItemIds);
-      console.log(`📋 Encontrados ${validItemIds.length} itens conectados do usuário:`, validItemIds);
+    if (error) {
+      console.error('❌ Erro ao buscar itens Pluggy:', error);
+    } else {
+      console.log(`📋 Total de itens encontrados na tabela: ${userItems?.length || 0}`);
+      
+      if (userItems && userItems.length > 0) {
+        console.log('📋 Itens encontrados:', userItems.map(item => ({
+          item_id: item.item_id,
+          status: item.status,
+          connector: item.connector_name
+        })));
+        
+        const validItemIds = userItems
+          .map(item => item.item_id)
+          .filter((id): id is string => typeof id === 'string' && id.length > 0);
+        items.push(...validItemIds);
+        console.log(`✅ ${validItemIds.length} itens válidos para sincronização:`, validItemIds);
+      } else {
+        console.warn('⚠️ Nenhum item Pluggy encontrado para o usuário');
+      }
     }
   }
 
@@ -127,10 +143,20 @@ export async function POST(request: NextRequest) {
     const accountId = body.accountId;
 
     if (itemIds.length === 0 && !accountId) {
+      console.warn('⚠️ Nenhum item Pluggy encontrado para sincronização');
+      console.log('📋 Contexto:', {
+        userId: authContext.userId,
+        hasDefaultConnection: !!process.env.PLUGGY_DEFAULT_CONNECTION_ID,
+        defaultConnection: process.env.PLUGGY_DEFAULT_CONNECTION_ID || 'não configurado'
+      });
+      
       return NextResponse.json(
         {
           success: false,
-          error: 'Nenhum item Pluggy encontrado. Conecte uma conta bancária primeiro ou configure PLUGGY_DEFAULT_CONNECTION_ID.'
+          error: 'Nenhum item Pluggy encontrado. Conecte uma conta bancária primeiro ou configure PLUGGY_DEFAULT_CONNECTION_ID.',
+          itemsSincronizados: 0,
+          imported: 0,
+          updated: 0
         },
         { status: 400 }
       );

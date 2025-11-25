@@ -8,6 +8,7 @@ import { Plus, Filter, FileDown, Zap } from 'lucide-react';
 import { listSegments } from '@/services/segmentsService';
 import { usePaymentMethodsContext } from '@/contexts/PaymentMethodsContext';
 import { useAppData } from '@/hooks/useAppData';
+import { toast } from '@/components/ui/use-toast';
 import FinancialDetailsDialog from './FinancialDetailsDialog';
 import ConfirmDelete from './ConfirmDelete';
 import FinancialFilters from './FinancialFilters';
@@ -161,15 +162,38 @@ export default function FinancialView() {
           console.log('✅ Sincronização PLUGGY concluída:', {
             importadas: result.imported || 0,
             atualizadas: result.updated || 0,
-            periodo: result.period
+            periodo: result.period,
+            itemsSincronizados: result.itemsSincronizados || 0,
+            syncResults: result.syncResults
           });
           
-          // Recarregar dados após sincronização bem-sucedida
-          if (result.imported > 0 || result.updated > 0) {
-            load(true);
+          // Recarregar dados após sincronização bem-sucedida (sempre recarregar para garantir dados atualizados)
+          load(true);
+          
+          // Mostrar toast se houver novas importações
+          if (result.imported > 0) {
+            toast({
+              title: 'Sincronização concluída',
+              description: `${result.imported} transação(ões) importada(s) da PLUGGY`
+            });
+          } else if (result.itemsSincronizados === 0) {
+            toast({
+              title: 'Nenhuma conta conectada',
+              description: 'Conecte uma conta bancária para sincronizar transações',
+              variant: 'default'
+            });
           }
         } else {
           console.warn('⚠️ Sincronização PLUGGY não retornou sucesso:', result);
+          
+          // Mostrar erro ao usuário se houver mensagem de erro
+          if (result.error) {
+            toast({
+              title: 'Erro na sincronização',
+              description: result.error,
+              variant: 'destructive'
+            });
+          }
         }
       } catch (error) {
         if (isMounted) {
