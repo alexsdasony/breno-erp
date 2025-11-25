@@ -501,8 +501,11 @@ export async function listPluggyAccounts(itemId: string): Promise<PluggyAccounts
   const env = process.env.PLUGGY_ENV || 'development';
   const baseUrl = getPluggyBaseUrl(env);
 
+  // A API Pluggy usa item_id (com underscore) como parâmetro
   const url = new URL(`${baseUrl}/accounts`);
-  url.searchParams.set('itemId', itemId);
+  url.searchParams.set('item_id', itemId);
+
+  console.log(`🔍 Buscando contas da Pluggy para item ${itemId}: ${url.toString()}`);
 
   const response = await fetch(url.toString(), {
     method: 'GET',
@@ -515,10 +518,13 @@ export async function listPluggyAccounts(itemId: string): Promise<PluggyAccounts
 
   if (!response.ok) {
     const body = await response.text();
+    console.error(`❌ Erro ao buscar contas: ${response.status} - ${body}`);
     throw new Error(`Erro ao listar contas Pluggy: ${response.status} - ${body}`);
   }
 
-  return response.json();
+  const result = await response.json();
+  console.log(`✅ Contas encontradas: ${result.results?.length || 0}`);
+  return result;
 }
 
 export interface PluggyItemsResponse {

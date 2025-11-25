@@ -341,14 +341,29 @@ export async function POST(request: NextRequest) {
           // PASSO 1: Buscar todas as contas deste item
           let accounts: Array<{ id: string; name: string | null }> = [];
           try {
+            console.log(`🔍 [${itemId}] Buscando contas do item...`);
             const accountsResponse = await listPluggyAccounts(itemId);
+            console.log(`📋 [${itemId}] Resposta da API de contas:`, {
+              total: accountsResponse.results?.length || 0,
+              results: accountsResponse.results
+            });
+            
             accounts = (accountsResponse.results || []).map(acc => ({
               id: acc.id,
               name: acc.name || null
             }));
-            console.log(`📋 Encontradas ${accounts.length} contas para o item ${itemId}:`, accounts.map(a => ({ id: a.id, name: a.name })));
+            
+            console.log(`✅ [${itemId}] Encontradas ${accounts.length} contas:`, accounts.map(a => ({ id: a.id, name: a.name })));
+            
+            if (accounts.length === 0) {
+              console.warn(`⚠️ [${itemId}] Nenhuma conta encontrada para este item`);
+            }
           } catch (accountsError) {
-            console.error(`❌ Erro ao buscar contas do item ${itemId}:`, accountsError);
+            console.error(`❌ [${itemId}] Erro ao buscar contas:`, accountsError);
+            console.error(`❌ [${itemId}] Detalhes do erro:`, {
+              message: accountsError instanceof Error ? accountsError.message : 'Erro desconhecido',
+              stack: accountsError instanceof Error ? accountsError.stack : undefined
+            });
             syncResults.push({
               itemId,
               imported: 0,
@@ -407,7 +422,8 @@ export async function POST(request: NextRequest) {
 
           for (const account of accounts) {
             try {
-              console.log(`  🔄 Buscando transações da conta ${account.id} (${account.name || 'sem nome'})`);
+              console.log(`  🔄 [${itemId}] Buscando transações da conta ${account.id} (${account.name || 'sem nome'})`);
+              console.log(`  📅 [${itemId}] Período: ${body.dateFrom || 'últimos 30 dias'} até ${body.dateTo || 'hoje'}`);
               
               const { transactions, startDate, endDate } = await fetchPluggyTransactions({
                 dateFrom: body.dateFrom,
@@ -417,10 +433,11 @@ export async function POST(request: NextRequest) {
                 limit: body.limit || 500
               });
 
-              console.log(`  📦 Transações obtidas da conta ${account.id}:`, {
+              console.log(`  ✅ [${itemId}] Transações obtidas da conta ${account.id}:`, {
                 total: transactions.length,
                 startDate,
-                endDate
+                endDate,
+                primeiraTransacao: transactions[0] || null
               });
 
               // Marcar cada transação com o itemId correspondente
@@ -433,10 +450,16 @@ export async function POST(request: NextRequest) {
                 itemEndDate = endDate;
               }
             } catch (accountError) {
-              console.error(`  ❌ Erro ao buscar transações da conta ${account.id}:`, accountError);
+              console.error(`  ❌ [${itemId}] Erro ao buscar transações da conta ${account.id}:`, accountError);
+              console.error(`  ❌ [${itemId}] Detalhes do erro:`, {
+                message: accountError instanceof Error ? accountError.message : 'Erro desconhecido',
+                stack: accountError instanceof Error ? accountError.stack : undefined
+              });
               // Continuar com as outras contas mesmo se uma falhar
             }
           }
+          
+          console.log(`📊 [${itemId}] Resumo: ${itemTotalTransactions} transações encontradas de ${accounts.length} contas`);
 
           if (!globalStartDate && itemStartDate) {
             globalStartDate = itemStartDate;
