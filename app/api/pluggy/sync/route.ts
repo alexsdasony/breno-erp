@@ -225,40 +225,33 @@ async function resolveItemIds(
     }
   }
 
-  // ESTRATÉGIA 4: SEMPRE tentar buscar itens conhecidos diretamente da Pluggy
+  // ESTRATÉGIA 4: SEMPRE adicionar IDs conhecidos diretamente à lista
   // Estes são IDs que sabemos que existem e devem ser sincronizados
-  console.log('🔍 Tentando buscar IDs conhecidos diretamente da Pluggy...');
+  console.log('🔍 Adicionando IDs conhecidos diretamente à lista de sincronização...');
   
-  // IDs conhecidos que devem existir
+  // IDs conhecidos que devem existir - ADICIONAR DIRETAMENTE SEM VERIFICAR NA API
   const knownItemIds = [
     'f892f7a3-1c7a-4875-b084-e8a376fa730f',
     '67a1f002-5ca8-4f01-97d4-b04fe87aa26a',
     '48c193bc-7276-4b53-9bf9-f91cd6a05fda'
   ];
   
-  const { getPluggyItem } = await import('@/lib/pluggyClient');
+  // Validar formato UUID e adicionar diretamente
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   
   for (const itemId of knownItemIds) {
-    try {
-      console.log(`🔍 Verificando item conhecido: ${itemId}`);
-      const item = await getPluggyItem(itemId);
-      if (item && item.id) {
-        // Adicionar apenas se ainda não estiver na lista
-        if (!items.includes(item.id)) {
-          items.push(item.id);
-          console.log(`✅ Item conhecido encontrado e adicionado: ${itemId}`, {
-            status: item.status,
-            executionStatus: item.executionStatus,
-            connector: item.connector?.name
-          });
-        } else {
-          console.log(`ℹ️ Item conhecido ${itemId} já estava na lista`);
-        }
-      } else {
-        console.warn(`⚠️ Item conhecido ${itemId} retornou sem ID válido`);
-      }
-    } catch (error) {
-      console.warn(`⚠️ Item conhecido ${itemId} não encontrado ou erro ao buscar:`, error instanceof Error ? error.message : error);
+    // Validar formato UUID
+    if (!uuidRegex.test(itemId)) {
+      console.warn(`⚠️ ID conhecido não é um UUID válido, ignorando: ${itemId}`);
+      continue;
+    }
+    
+    // Adicionar apenas se ainda não estiver na lista
+    if (!items.includes(itemId)) {
+      items.push(itemId);
+      console.log(`✅ ID conhecido adicionado diretamente à lista: ${itemId}`);
+    } else {
+      console.log(`ℹ️ ID conhecido ${itemId} já estava na lista`);
     }
   }
 
