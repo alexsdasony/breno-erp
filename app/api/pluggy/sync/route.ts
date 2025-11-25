@@ -9,6 +9,7 @@ import {
   resolveTransactionBalance,
   sanitizeDescription,
   listPluggyItems,
+  listPluggyAccounts,
   type PluggyTransaction
 } from '@/lib/pluggyClient';
 
@@ -332,39 +333,122 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // Sincronizar cada item encontrado
+      // IMPORTANTE: Para cada item, primeiro buscar as contas, depois buscar transações de cada conta
       for (const itemId of itemIds) {
         try {
           console.log(`🔄 Sincronizando item: ${itemId}`);
           
-          const { transactions, startDate, endDate } = await fetchPluggyTransactions({
-            dateFrom: body.dateFrom,
-            dateTo: body.dateTo,
-            itemId,
-            accountId,
-            limit: body.limit || 500
-          });
+          // PASSO 1: Buscar todas as contas deste item
+          let accounts: Array<{ id: string; name: string | null }> = [];
+          try {
+            const accountsResponse = await listPluggyAccounts(itemId);
+            accounts = (accountsResponse.results || []).map(acc => ({
+              id: acc.id,
+              name: acc.name || null
+            }));
+            console.log(`📋 Encontradas ${accounts.length} contas para o item ${itemId}:`, accounts.map(a => ({ id: a.id, name: a.name })));
+          } catch (accountsError) {
+            console.error(`❌ Erro ao buscar contas do item ${itemId}:`, accountsError);
+            syncResults.push({
+              itemId,
+              imported: 0,
+              updated: 0,
+              total: 0,
+              period: '',
+              error: `Erro ao buscar contas: ${accountsError instanceof Error ? accountsError.message : 'Erro desconhecido'}`
+            });
+            continue; // Pular para o próximo item
+          }
 
-          console.log(`📦 Transações obtidas do item ${itemId}:`, {
-            total: transactions.length,
-            startDate,
-            endDate
-          });
+          // Se não encontrou contas, tentar buscar transações sem accountId (pode não funcionar)
+          if (accounts.length === 0) {
+            console.warn(`⚠️ Nenhuma conta encontrada para o item ${itemId}, tentando buscar transações sem accountId...`);
+            try {
+              const { transactions, startDate, endDate } = await fetchPluggyTransactions({
+                dateFrom: body.dateFrom,
+                dateTo: body.dateTo,
+                itemId,
+                limit: body.limit || 500
+              });
 
-          // Marcar cada transação com o itemId correspondente
-          const transactionsWithItemId = transactions.map(tx => ({ ...tx, _itemId: itemId }));
-          allTransactions.push(...transactionsWithItemId);
-          
-          if (!globalStartDate) {
-            globalStartDate = startDate;
-            globalEndDate = endDate;
+              const transactionsWithItemId = transactions.map(tx => ({ ...tx, _itemId: itemId }));
+              allTransactions.push(...transactionsWithItemId);
+              
+              if (!globalStartDate) {
+                globalStartDate = startDate;
+                globalEndDate = endDate;
+              }
+
+              syncResults.push({
+                itemId,
+                imported: 0,
+                updated: 0,
+                total: transactions.length,
+                period: `${startDate} a ${endDate}`
+              });
+            } catch (error) {
+              console.error(`❌ Erro ao buscar transações do item ${itemId} sem accountId:`, error);
+              syncResults.push({
+                itemId,
+                imported: 0,
+                updated: 0,
+                total: 0,
+                period: '',
+                error: error instanceof Error ? error.message : 'Erro desconhecido'
+              });
+            }
+            continue;
+          }
+
+          // PASSO 2: Para cada conta, buscar transações
+          let itemTotalTransactions = 0;
+          let itemStartDate = '';
+          let itemEndDate = '';
+
+          for (const account of accounts) {
+            try {
+              console.log(`  🔄 Buscando transações da conta ${account.id} (${account.name || 'sem nome'})`);
+              
+              const { transactions, startDate, endDate } = await fetchPluggyTransactions({
+                dateFrom: body.dateFrom,
+                dateTo: body.dateTo,
+                itemId,
+                accountId: account.id,
+                limit: body.limit || 500
+              });
+
+              console.log(`  📦 Transações obtidas da conta ${account.id}:`, {
+                total: transactions.length,
+                startDate,
+                endDate
+              });
+
+              // Marcar cada transação com o itemId correspondente
+              const transactionsWithItemId = transactions.map(tx => ({ ...tx, _itemId: itemId }));
+              allTransactions.push(...transactionsWithItemId);
+              itemTotalTransactions += transactions.length;
+              
+              if (!itemStartDate) {
+                itemStartDate = startDate;
+                itemEndDate = endDate;
+              }
+            } catch (accountError) {
+              console.error(`  ❌ Erro ao buscar transações da conta ${account.id}:`, accountError);
+              // Continuar com as outras contas mesmo se uma falhar
+            }
+          }
+
+          if (!globalStartDate && itemStartDate) {
+            globalStartDate = itemStartDate;
+            globalEndDate = itemEndDate;
           }
 
           syncResults.push({
             itemId,
             imported: 0, // Será calculado depois
             updated: 0, // Será calculado depois
-            total: transactions.length,
-            period: `${startDate} a ${endDate}`
+            total: itemTotalTransactions,
+            period: itemStartDate ? `${itemStartDate} a ${itemEndDate}` : ''
           });
         } catch (error) {
           console.error(`❌ Erro ao sincronizar item ${itemId}:`, error);

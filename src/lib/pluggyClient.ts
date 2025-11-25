@@ -472,6 +472,55 @@ export async function getPluggyItem(itemId: string): Promise<PluggyItem> {
   return response.json();
 }
 
+export interface PluggyAccount {
+  id: string;
+  type: string;
+  subtype: string | null;
+  name: string | null;
+  balance: number | null;
+  currencyCode: string | null;
+  itemId: string;
+  number: string | null;
+  [key: string]: unknown;
+}
+
+export interface PluggyAccountsResponse {
+  results: PluggyAccount[];
+  page?: number;
+  totalPages?: number;
+  totalResults?: number;
+  next?: string | null;
+  previous?: string | null;
+}
+
+/**
+ * Lista todas as contas (accounts) de um item Pluggy
+ */
+export async function listPluggyAccounts(itemId: string): Promise<PluggyAccountsResponse> {
+  const apiKey = await getPluggyApiKey();
+  const env = process.env.PLUGGY_ENV || 'development';
+  const baseUrl = getPluggyBaseUrl(env);
+
+  const url = new URL(`${baseUrl}/accounts`);
+  url.searchParams.set('itemId', itemId);
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      'X-API-KEY': apiKey,
+      'Content-Type': 'application/json'
+    },
+    cache: 'no-store'
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Erro ao listar contas Pluggy: ${response.status} - ${body}`);
+  }
+
+  return response.json();
+}
+
 export interface PluggyItemsResponse {
   results: PluggyItem[];
   page?: number;
