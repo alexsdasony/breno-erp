@@ -18,15 +18,54 @@ export async function POST(request: NextRequest) {
 
     const body: SaveItemBody = await request.json();
 
-    if (!body.itemId || !body.userId) {
+    // VALIDAÇÃO RIGOROSA: Garantir que itemId e userId sejam válidos
+    if (!body.itemId || body.itemId === '' || body.itemId === 'null' || body.itemId === 'undefined' || typeof body.itemId !== 'string') {
+      console.error('❌ itemId inválido recebido:', {
+        itemId: body.itemId,
+        tipo: typeof body.itemId,
+        body_completo: body
+      });
       return NextResponse.json(
         {
           success: false,
-          error: 'itemId e userId são obrigatórios'
+          error: `itemId inválido: ${JSON.stringify(body.itemId)}`
         },
         { status: 400 }
       );
     }
+
+    // Validar formato UUID do itemId
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(body.itemId)) {
+      console.error('❌ itemId não é um UUID válido:', body.itemId);
+      return NextResponse.json(
+        {
+          success: false,
+          error: `itemId não é um UUID válido: ${body.itemId}`
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!body.userId || body.userId === '' || body.userId === 'null' || body.userId === 'undefined' || typeof body.userId !== 'string') {
+      console.error('❌ userId inválido recebido:', {
+        userId: body.userId,
+        tipo: typeof body.userId
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: `userId inválido: ${JSON.stringify(body.userId)}`
+        },
+        { status: 400 }
+      );
+    }
+
+    console.log('✅ Validação passou:', {
+      itemId: body.itemId,
+      userId: body.userId,
+      itemIdValido: uuidRegex.test(body.itemId)
+    });
 
     // Buscar dados do item na Pluggy
     let pluggyItem;
@@ -50,9 +89,23 @@ export async function POST(request: NextRequest) {
       .eq('item_id', body.itemId)
       .single();
 
+    // VALIDAÇÃO FINAL: Garantir que item_id nunca seja null/undefined
+    const finalItemId = body.itemId; // Já validado acima
+    if (!finalItemId || finalItemId === '' || finalItemId === 'null' || finalItemId === 'undefined') {
+      const errorMsg = `itemId inválido ao criar itemData: ${JSON.stringify(finalItemId)}`;
+      console.error(`❌ ${errorMsg}`);
+      return NextResponse.json(
+        {
+          success: false,
+          error: errorMsg
+        },
+        { status: 500 }
+      );
+    }
+
     const itemData = {
-      item_id: body.itemId,
-      user_id: body.userId,
+      item_id: finalItemId, // Garantido válido pela validação acima
+      user_id: body.userId, // Garantido válido pela validação acima
       segment_id: body.segmentId || null,
       connector_id: pluggyItem.connector?.id || null,
       connector_name: pluggyItem.connector?.name || null,
@@ -64,6 +117,13 @@ export async function POST(request: NextRequest) {
       created_at: existing?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
+
+    console.log('💾 Salvando item no banco:', {
+      item_id: itemData.item_id,
+      user_id: itemData.user_id,
+      connector_name: itemData.connector_name,
+      status: itemData.status
+    });
 
     // Upsert (inserir ou atualizar)
     const { data, error } = await supabaseAdmin
@@ -108,4 +168,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
 
