@@ -538,7 +538,6 @@ export async function POST(request: NextRequest) {
               console.log(`  🔄 [${itemId}] Buscando transações da conta ${account.id} (${account.name || 'sem nome'})`);
               console.log(`  📅 [${itemId}] Período: ${body.dateFrom || 'últimos 30 dias'} até ${body.dateTo || 'hoje'}`);
               console.log(`  ✅ [${itemId}] Validação: itemId=${itemId} (UUID válido), accountId=${account.id} (UUID válido)`);
-              console.log(`  🔍 [${itemId}] Chamando fetchPluggyTransactions com itemId=${itemId}, accountId=${account.id}`);
               
               // Garantir que itemId nunca seja null/undefined ao passar para a função
               const itemIdToSend = itemId; // Já validado acima
@@ -547,6 +546,12 @@ export async function POST(request: NextRequest) {
               if (!itemIdToSend || itemIdToSend === null || itemIdToSend === undefined) {
                 throw new Error(`itemId tornou-se inválido antes da chamada: ${JSON.stringify(itemIdToSend)}`);
               }
+              
+              if (!accountIdToSend || accountIdToSend === null || accountIdToSend === undefined) {
+                throw new Error(`accountId tornou-se inválido antes da chamada: ${JSON.stringify(accountIdToSend)}`);
+              }
+              
+              console.log(`  🔍 [${itemId}] Enviando itemId=${itemIdToSend} e accountId=${accountIdToSend} para fetchPluggyTransactions`);
               
               const { transactions, startDate, endDate } = await fetchPluggyTransactions({
                 dateFrom: body.dateFrom,
