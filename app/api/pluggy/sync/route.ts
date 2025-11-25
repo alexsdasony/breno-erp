@@ -485,25 +485,46 @@ export async function POST(request: NextRequest) {
           for (const account of accounts) {
             try {
               // VALIDAÇÃO RIGOROSA: Verificar itemId e accountId antes de buscar transações
-              if (!itemId || itemId === '' || itemId === 'null' || itemId === 'undefined') {
+              if (!itemId || itemId === '' || itemId === 'null' || itemId === 'undefined' || typeof itemId !== 'string') {
                 console.error(`  ❌ [${itemId}] itemId inválido antes de buscar transações da conta ${account.id}`);
                 continue; // Pular esta conta
               }
               
-              if (!account.id || account.id === '' || account.id === 'null' || account.id === 'undefined') {
+              if (!account.id || account.id === '' || account.id === 'null' || account.id === 'undefined' || typeof account.id !== 'string') {
                 console.error(`  ❌ [${itemId}] accountId inválido: ${account.id}`);
                 continue; // Pular esta conta
               }
               
+              // Validar formato UUID
+              const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+              if (!uuidRegex.test(itemId)) {
+                console.error(`  ❌ [${itemId}] itemId não é um UUID válido`);
+                continue;
+              }
+              
+              if (!uuidRegex.test(account.id)) {
+                console.error(`  ❌ [${itemId}] accountId não é um UUID válido: ${account.id}`);
+                continue;
+              }
+              
               console.log(`  🔄 [${itemId}] Buscando transações da conta ${account.id} (${account.name || 'sem nome'})`);
               console.log(`  📅 [${itemId}] Período: ${body.dateFrom || 'últimos 30 dias'} até ${body.dateTo || 'hoje'}`);
-              console.log(`  ✅ [${itemId}] Validação: itemId=${itemId} (válido), accountId=${account.id} (válido)`);
+              console.log(`  ✅ [${itemId}] Validação: itemId=${itemId} (UUID válido), accountId=${account.id} (UUID válido)`);
+              console.log(`  🔍 [${itemId}] Chamando fetchPluggyTransactions com itemId=${itemId}, accountId=${account.id}`);
+              
+              // Garantir que itemId nunca seja null/undefined ao passar para a função
+              const itemIdToSend = itemId; // Já validado acima
+              const accountIdToSend = account.id; // Já validado acima
+              
+              if (!itemIdToSend || itemIdToSend === null || itemIdToSend === undefined) {
+                throw new Error(`itemId tornou-se inválido antes da chamada: ${JSON.stringify(itemIdToSend)}`);
+              }
               
               const { transactions, startDate, endDate } = await fetchPluggyTransactions({
                 dateFrom: body.dateFrom,
                 dateTo: body.dateTo,
-                itemId, // Garantido válido pela validação acima
-                accountId: account.id, // Garantido válido pela validação acima
+                itemId: itemIdToSend, // Garantido válido - SEMPRE enviado
+                accountId: accountIdToSend, // Garantido válido
                 limit: body.limit || 500
               });
 
