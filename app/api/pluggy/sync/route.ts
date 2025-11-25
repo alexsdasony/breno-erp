@@ -70,13 +70,49 @@ async function ensureAuthorization(request: NextRequest): Promise<AuthContext> {
   };
 }
 
-function resolveItemId(requestBody: SyncRequestBody): string | undefined {
+async function resolveItemIds(
+  requestBody: SyncRequestBody,
+  authContext: AuthContext
+): Promise<string[]> {
+  // Se itemId específico foi fornecido, usar apenas ele
   if (requestBody.itemId) {
-    return requestBody.itemId;
+    return [requestBody.itemId];
   }
 
-  const defaultConnection = process.env.PLUGGY_DEFAULT_CONNECTION_ID;
-  return defaultConnection || undefined;
+  // Buscar todos os itens conectados do usuário ou do sistema
+  const items: string[] = [];
+
+  // Se houver userId, buscar itens do usuário
+  // Buscar todos os itens com status válido (não apenas UPDATED)
+  if (authContext.userId) {
+    const { data: userItems, error } = await supabaseAdmin
+      .from('pluggy_items')
+      .select('item_id, status, execution_status')
+      .eq('user_id', authContext.userId)
+      .not('item_id', 'is', null)
+      // Buscar itens que não estão em erro ou inválidos
+      .not('status', 'eq', 'INVALID_CREDENTIALS')
+      .not('status', 'eq', 'USER_INPUT_TIMEOUT');
+
+    if (!error && userItems && userItems.length > 0) {
+      const validItemIds = userItems
+        .map(item => item.item_id)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0);
+      items.push(...validItemIds);
+      console.log(`📋 Encontrados ${validItemIds.length} itens conectados do usuário:`, validItemIds);
+    }
+  }
+
+  // Se não encontrou itens do usuário, tentar item padrão do sistema
+  if (items.length === 0) {
+    const defaultConnection = process.env.PLUGGY_DEFAULT_CONNECTION_ID;
+    if (defaultConnection) {
+      items.push(defaultConnection);
+      console.log('📋 Usando item padrão do sistema:', defaultConnection);
+    }
+  }
+
+  return items;
 }
 
 export async function POST(request: NextRequest) {
@@ -86,44 +122,127 @@ export async function POST(request: NextRequest) {
     const authContext = await ensureAuthorization(request);
     const body: SyncRequestBody = await request.json().catch(() => ({}));
 
-    const itemId = resolveItemId(body);
+    // Buscar todos os itemIds disponíveis
+    const itemIds = await resolveItemIds(body, authContext);
     const accountId = body.accountId;
 
-    if (!itemId && !accountId) {
+    if (itemIds.length === 0 && !accountId) {
       return NextResponse.json(
         {
           success: false,
-          error: 'É necessário informar itemId ou configurar PLUGGY_DEFAULT_CONNECTION_ID.'
+          error: 'Nenhum item Pluggy encontrado. Conecte uma conta bancária primeiro ou configure PLUGGY_DEFAULT_CONNECTION_ID.'
         },
         { status: 400 }
       );
     }
 
-    const { transactions, startDate, endDate } = await fetchPluggyTransactions({
-      dateFrom: body.dateFrom,
-      dateTo: body.dateTo,
-      itemId,
-      accountId,
-      limit: body.limit || 500 // Máximo 500 por request conforme documentação Pluggy
+    // Sincronizar cada item encontrado
+    const syncResults: Array<{
+      itemId: string;
+      imported: number;
+      updated: number;
+      total: number;
+      period: string;
+      error?: string;
+    }> = [];
+
+    // Mapear transações para seus respectivos itemIds
+    interface TransactionWithItemId extends PluggyTransaction {
+      _itemId?: string; // Item ID associado à transação
+    }
+
+    let allTransactions: TransactionWithItemId[] = [];
+    let globalStartDate = '';
+    let globalEndDate = '';
+
+    // Se accountId foi fornecido, sincronizar apenas essa conta
+    if (accountId) {
+      const { transactions, startDate, endDate } = await fetchPluggyTransactions({
+        dateFrom: body.dateFrom,
+        dateTo: body.dateTo,
+        accountId,
+        limit: body.limit || 500
+      });
+
+      allTransactions = transactions.map(tx => ({ ...tx, _itemId: undefined }));
+      globalStartDate = startDate;
+      globalEndDate = endDate;
+      syncResults.push({
+        itemId: accountId,
+        imported: 0, // Será calculado depois
+        updated: 0, // Será calculado depois
+        total: transactions.length,
+        period: `${startDate} a ${endDate}`
+      });
+    } else {
+      // Sincronizar cada item encontrado
+      for (const itemId of itemIds) {
+        try {
+          console.log(`🔄 Sincronizando item: ${itemId}`);
+          
+          const { transactions, startDate, endDate } = await fetchPluggyTransactions({
+            dateFrom: body.dateFrom,
+            dateTo: body.dateTo,
+            itemId,
+            accountId,
+            limit: body.limit || 500
+          });
+
+          console.log(`📦 Transações obtidas do item ${itemId}:`, {
+            total: transactions.length,
+            startDate,
+            endDate
+          });
+
+          // Marcar cada transação com o itemId correspondente
+          const transactionsWithItemId = transactions.map(tx => ({ ...tx, _itemId: itemId }));
+          allTransactions.push(...transactionsWithItemId);
+          
+          if (!globalStartDate) {
+            globalStartDate = startDate;
+            globalEndDate = endDate;
+          }
+
+          syncResults.push({
+            itemId,
+            imported: 0, // Será calculado depois
+            updated: 0, // Será calculado depois
+            total: transactions.length,
+            period: `${startDate} a ${endDate}`
+          });
+        } catch (error) {
+          console.error(`❌ Erro ao sincronizar item ${itemId}:`, error);
+          syncResults.push({
+            itemId,
+            imported: 0,
+            updated: 0,
+            total: 0,
+            period: '',
+            error: error instanceof Error ? error.message : 'Erro desconhecido'
+          });
+        }
+      }
+    }
+
+    console.log('📦 Total de transações obtidas da Pluggy:', {
+      total: allTransactions.length,
+      itemsSincronizados: itemIds.length || (accountId ? 1 : 0)
     });
 
-    console.log('📦 Transações obtidas da Pluggy:', {
-      total: transactions.length,
-      startDate,
-      endDate,
-      itemId,
-      accountId
-    });
-
-    if (!transactions.length) {
+    if (!allTransactions.length) {
       return NextResponse.json({
         success: true,
         imported: 0,
         updated: 0,
-        period: `${startDate} a ${endDate}`,
-        message: 'Nenhuma transação nova encontrada no período informado.'
+        period: syncResults[0]?.period || 'N/A',
+        message: 'Nenhuma transação encontrada nos itens conectados.',
+        syncResults
       });
     }
+
+    const transactions = allTransactions;
+    const startDate = globalStartDate || syncResults[0]?.period.split(' a ')[0] || '';
+    const endDate = globalEndDate || syncResults[0]?.period.split(' a ')[1] || '';
 
     // Verificar duplicatas usando pluggy_id (ou external_id como fallback)
     const pluggyIds = transactions.map((t) => t.id).filter(Boolean);
@@ -183,17 +302,28 @@ export async function POST(request: NextRequest) {
       (t) => t.id && typeof t.id === 'string' && t.id.trim().length > 0
     );
     
-    const records = validTransactions.map((transaction: PluggyTransaction) => {
+    const records = validTransactions.map((transaction: TransactionWithItemId) => {
       const account = resolveAccountId(transaction);
       const type = mapPluggyTypeToErp(transaction.type, transaction.amount);
       const direction = mapPluggyTypeToDirection(transaction.type, transaction.amount);
       const balance = resolveTransactionBalance(transaction);
+      
+      // Determinar item_id: usar o _itemId marcado ou tentar encontrar pelo accountId
+      let itemIdForRecord: string | null = null;
+      if (transaction._itemId) {
+        itemIdForRecord = transaction._itemId;
+      } else if (itemIds.length === 1) {
+        itemIdForRecord = itemIds[0];
+      } else if (accountId) {
+        // Se accountId foi fornecido, tentar encontrar o item correspondente
+        itemIdForRecord = itemIds.find(id => id === accountId) || null;
+      }
 
       return {
         // IDs e referências
         pluggy_id: transaction.id, // ID único da Pluggy (evita duplicatas)
         external_id: transaction.id, // Mantido para compatibilidade
-        item_id: itemId || null, // ID do item (conexão) da Pluggy
+        item_id: itemIdForRecord, // ID do item (conexão) da Pluggy
         account_id: account, // ID da conta na Pluggy
         
         // Dados da transação
@@ -241,9 +371,9 @@ export async function POST(request: NextRequest) {
     const importedCount = newRecords.length;
     const updatedCount = records.length - importedCount;
 
-    // Atualizar last_sync_at do item (se itemId foi fornecido)
-    if (itemId) {
-      await supabaseAdmin
+    // Atualizar last_sync_at de todos os itens sincronizados
+    const updatePromises = itemIds.map(itemId =>
+      supabaseAdmin
         .from('pluggy_items')
         .update({ 
           last_sync_at: new Date().toISOString(),
@@ -252,10 +382,28 @@ export async function POST(request: NextRequest) {
         .eq('item_id', itemId)
         .then(({ error }) => {
           if (error) {
-            console.warn('⚠️ Erro ao atualizar last_sync_at:', error);
+            console.warn(`⚠️ Erro ao atualizar last_sync_at do item ${itemId}:`, error);
           }
-        });
-    }
+        })
+    );
+
+    await Promise.all(updatePromises);
+
+    // Atualizar resultados com contagens reais (distribuir proporcionalmente)
+    // Como todas as transações foram processadas juntas, vamos distribuir igualmente
+    const itemsCount = itemIds.length || (accountId ? 1 : 0);
+    const importedPerItem = itemsCount > 0 ? Math.floor(importedCount / itemsCount) : 0;
+    const updatedPerItem = itemsCount > 0 ? Math.floor(updatedCount / itemsCount) : 0;
+    
+    const finalSyncResults = syncResults.map((result, index) => ({
+      ...result,
+      imported: index === syncResults.length - 1 
+        ? importedCount - (importedPerItem * (syncResults.length - 1)) // Último item recebe o resto
+        : importedPerItem,
+      updated: index === syncResults.length - 1
+        ? updatedCount - (updatedPerItem * (syncResults.length - 1)) // Último item recebe o resto
+        : updatedPerItem
+    }));
 
     console.log('✅ Sincronização Pluggy concluída:', {
       total: records.length,
@@ -264,14 +412,17 @@ export async function POST(request: NextRequest) {
       period: `${startDate} a ${endDate}`,
       scope: authContext.scope,
       userId: authContext.userId,
-      itemId
+      itemsSincronizados: itemIds.length || (accountId ? 1 : 0),
+      syncResults: finalSyncResults
     });
 
     return NextResponse.json({
       success: true,
       imported: importedCount,
       updated: updatedCount,
-      period: `${startDate} a ${endDate}`
+      period: `${startDate} a ${endDate}`,
+      itemsSincronizados: itemIds.length || (accountId ? 1 : 0),
+      syncResults: finalSyncResults
     });
   } catch (error) {
     console.error('❌ Erro na sincronização Pluggy:', error);

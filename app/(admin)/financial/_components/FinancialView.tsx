@@ -45,7 +45,7 @@ export default function FinancialView() {
   }, [dateEnd]);
   
   const { paymentMethods } = usePaymentMethodsContext();
-  const { activeSegmentId } = useAppData();
+  const { activeSegmentId, currentUser } = useAppData();
   const [type, setType] = React.useState<string>(''); // receita, despesa, transferencia
   const [partner, setPartner] = React.useState<string>('');
   const [segment, setSegment] = React.useState<string>('');
@@ -96,6 +96,107 @@ export default function FinancialView() {
     }, 0);
     return () => window.clearTimeout(t);
   }, []);
+
+  // Ref para controlar sincronização em andamento (evita problemas de stale closure)
+  const isSyncingRef = React.useRef(false);
+
+  // Sincronização automática com PLUGGY ao abrir o menu financeiro
+  React.useEffect(() => {
+    let isMounted = true;
+    let syncTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const syncPluggy = async () => {
+      // Evitar múltiplas sincronizações simultâneas
+      if (isSyncingRef.current) {
+        console.log('⏸️ Sincronização PLUGGY já em andamento, ignorando...');
+        return;
+      }
+
+      if (!currentUser?.id) {
+        console.log('⏸️ Usuário não autenticado, ignorando sincronização PLUGGY...');
+        return;
+      }
+
+      try {
+        isSyncingRef.current = true;
+        console.log('🔄 Iniciando sincronização automática com PLUGGY...');
+        
+        // Criar token base64 para X-User-Token (formato esperado pela API)
+        let userToken = null;
+        try {
+          const tokenPayload = {
+            user_id: currentUser.id,
+            email: currentUser.email || ''
+          };
+          // Usar btoa para criar base64 no browser
+          userToken = typeof window !== 'undefined' 
+            ? btoa(JSON.stringify(tokenPayload))
+            : null;
+        } catch (error) {
+          console.warn('⚠️ Erro ao criar token de usuário:', error);
+          return;
+        }
+
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+
+        if (userToken) {
+          headers['X-User-Token'] = userToken;
+        }
+
+        const response = await fetch('/api/pluggy/sync', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            segmentId: segmentIdForApi || null
+          })
+        });
+
+        if (!isMounted) return;
+
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+          console.log('✅ Sincronização PLUGGY concluída:', {
+            importadas: result.imported || 0,
+            atualizadas: result.updated || 0,
+            periodo: result.period
+          });
+          
+          // Recarregar dados após sincronização bem-sucedida
+          if (result.imported > 0 || result.updated > 0) {
+            load(true);
+          }
+        } else {
+          console.warn('⚠️ Sincronização PLUGGY não retornou sucesso:', result);
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error('❌ Erro ao sincronizar com PLUGGY:', error);
+          // Não mostrar erro ao usuário, apenas logar
+        }
+      } finally {
+        if (isMounted) {
+          isSyncingRef.current = false;
+        }
+      }
+    };
+
+    // Executar sincronização após um pequeno delay para não bloquear a renderização inicial
+    syncTimeout = setTimeout(() => {
+      if (isMounted && currentUser) {
+        syncPluggy();
+      }
+    }, 1000); // Delay de 1 segundo após montar o componente
+
+    return () => {
+      isMounted = false;
+      if (syncTimeout) {
+        clearTimeout(syncTimeout);
+      }
+    };
+  }, [currentUser?.id, segmentIdForApi, load]); // Executar quando usuário ou segmento mudar
 
   // KPIs reais buscados da API dedicada
   const [kpis, setKpis] = React.useState({ entradas: 0, saidas: 0, saldo: 0 });
