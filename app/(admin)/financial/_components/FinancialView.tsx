@@ -156,7 +156,20 @@ export default function FinancialView() {
 
         if (!isMounted) return;
 
-        const result = await response.json();
+        let result: any = {};
+        try {
+          result = await response.json();
+        } catch (parseError) {
+          console.error('❌ Erro ao parsear resposta:', parseError);
+          const text = await response.text();
+          console.error('📄 Resposta bruta:', text);
+        }
+        
+        console.log('📥 Resposta completa da sincronização:', {
+          status: response.status,
+          ok: response.ok,
+          result
+        });
         
         if (response.ok && result.success) {
           console.log('✅ Sincronização PLUGGY concluída:', {
@@ -176,21 +189,24 @@ export default function FinancialView() {
               title: 'Sincronização concluída',
               description: `${result.imported} transação(ões) importada(s) da PLUGGY`
             });
-          } else if (result.itemsSincronizados === 0) {
-            toast({
-              title: 'Nenhuma conta conectada',
-              description: 'Conecte uma conta bancária para sincronizar transações',
-              variant: 'default'
-            });
           }
         } else {
-          console.warn('⚠️ Sincronização PLUGGY não retornou sucesso:', result);
+          console.warn('⚠️ Sincronização PLUGGY não retornou sucesso:', {
+            status: response.status,
+            result
+          });
           
-          // Mostrar erro ao usuário se houver mensagem de erro
-          if (result.error) {
+          // Tratar erro 400 (sem itens conectados) de forma diferente
+          if (response.status === 400) {
+            console.log('ℹ️ Nenhum item Pluggy encontrado - isso é normal se não houver contas conectadas');
+            // Não mostrar erro para o usuário, apenas logar
+            // O usuário pode conectar uma conta usando o botão "Conectar Conta Bancária"
+          } else {
+            // Mostrar erro ao usuário para outros tipos de erro
+            const errorMessage = result.error || result.message || 'Erro desconhecido na sincronização';
             toast({
               title: 'Erro na sincronização',
-              description: result.error,
+              description: errorMessage,
               variant: 'destructive'
             });
           }

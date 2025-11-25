@@ -83,10 +83,30 @@ async function resolveItemIds(
   const items: string[] = [];
 
   // Se houver userId, buscar itens do usuário
-  // Buscar todos os itens com status válido (não apenas UPDATED)
   if (authContext.userId) {
     console.log(`🔍 Buscando itens Pluggy para usuário: ${authContext.userId}`);
     
+    // Primeiro, buscar TODOS os itens (incluindo com erro) para debug
+    const { data: allUserItems, error: allError } = await supabaseAdmin
+      .from('pluggy_items')
+      .select('item_id, status, execution_status, connector_name, user_id')
+      .eq('user_id', authContext.userId);
+    
+    if (allError) {
+      console.error('❌ Erro ao buscar todos os itens Pluggy:', allError);
+    } else {
+      console.log(`📋 Total de itens na tabela para este usuário: ${allUserItems?.length || 0}`);
+      if (allUserItems && allUserItems.length > 0) {
+        console.log('📋 Todos os itens encontrados:', allUserItems.map(item => ({
+          item_id: item.item_id,
+          status: item.status,
+          execution_status: item.execution_status,
+          connector: item.connector_name
+        })));
+      }
+    }
+    
+    // Agora buscar apenas itens válidos para sincronização
     const { data: userItems, error } = await supabaseAdmin
       .from('pluggy_items')
       .select('item_id, status, execution_status, connector_name')
@@ -97,12 +117,12 @@ async function resolveItemIds(
       .not('status', 'eq', 'USER_INPUT_TIMEOUT');
 
     if (error) {
-      console.error('❌ Erro ao buscar itens Pluggy:', error);
+      console.error('❌ Erro ao buscar itens Pluggy válidos:', error);
     } else {
-      console.log(`📋 Total de itens encontrados na tabela: ${userItems?.length || 0}`);
+      console.log(`📋 Total de itens válidos encontrados: ${userItems?.length || 0}`);
       
       if (userItems && userItems.length > 0) {
-        console.log('📋 Itens encontrados:', userItems.map(item => ({
+        console.log('📋 Itens válidos encontrados:', userItems.map(item => ({
           item_id: item.item_id,
           status: item.status,
           connector: item.connector_name
@@ -114,7 +134,8 @@ async function resolveItemIds(
         items.push(...validItemIds);
         console.log(`✅ ${validItemIds.length} itens válidos para sincronização:`, validItemIds);
       } else {
-        console.warn('⚠️ Nenhum item Pluggy encontrado para o usuário');
+        console.warn('⚠️ Nenhum item Pluggy válido encontrado para o usuário');
+        console.log('💡 Dica: Conecte uma conta bancária usando o botão "Conectar Conta Bancária"');
       }
     }
   }
@@ -150,15 +171,18 @@ export async function POST(request: NextRequest) {
         defaultConnection: process.env.PLUGGY_DEFAULT_CONNECTION_ID || 'não configurado'
       });
       
+      // Retornar sucesso mas com zero importações (não é um erro crítico)
       return NextResponse.json(
         {
-          success: false,
-          error: 'Nenhum item Pluggy encontrado. Conecte uma conta bancária primeiro ou configure PLUGGY_DEFAULT_CONNECTION_ID.',
+          success: true,
+          error: null,
+          message: 'Nenhum item Pluggy encontrado. Conecte uma conta bancária primeiro.',
           itemsSincronizados: 0,
           imported: 0,
-          updated: 0
+          updated: 0,
+          period: 'N/A'
         },
-        { status: 400 }
+        { status: 200 } // Mudar para 200 ao invés de 400
       );
     }
 
