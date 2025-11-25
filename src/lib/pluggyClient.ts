@@ -585,24 +585,40 @@ export async function listPluggyAccounts(itemId: string): Promise<PluggyAccounts
 
   console.log(`🔗 URL Pluggy final para /accounts: ${url.toString()}`);
 
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: {
-      'X-API-KEY': apiKey,
-      'Content-Type': 'application/json'
-    },
-    cache: 'no-store'
-  });
+  try {
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'X-API-KEY': apiKey,
+        'Content-Type': 'application/json'
+      },
+      cache: 'no-store'
+    });
 
-  if (!response.ok) {
-    const body = await response.text();
-    console.error(`❌ Erro ao buscar contas: ${response.status} - ${body}`);
-    throw new Error(`Erro ao listar contas Pluggy: ${response.status} - ${body}`);
+    console.log(`📡 Resposta da API Pluggy /accounts:`, {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      console.error(`❌ Erro ao buscar contas: ${response.status} - ${body}`);
+      console.error(`❌ URL que causou o erro: ${url.toString()}`);
+      console.error(`❌ itemId usado: ${itemId}`);
+      throw new Error(`Erro ao listar contas Pluggy: ${response.status} - ${body}`);
+    }
+
+    const result = await response.json();
+    console.log(`✅ Contas encontradas: ${result.results?.length || 0}`);
+    return result;
+  } catch (fetchError) {
+    console.error(`❌ Erro na requisição fetch para /accounts:`, fetchError);
+    console.error(`❌ URL que causou o erro: ${url.toString()}`);
+    console.error(`❌ itemId usado: ${itemId}`);
+    throw fetchError;
   }
-
-  const result = await response.json();
-  console.log(`✅ Contas encontradas: ${result.results?.length || 0}`);
-  return result;
 }
 
 export interface PluggyItemsResponse {
