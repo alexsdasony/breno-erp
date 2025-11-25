@@ -395,11 +395,25 @@ export async function POST(request: NextRequest) {
             console.log(`🔍 [${itemId}] Buscando contas do item...`);
             
             // VALIDAÇÃO ANTES DE CHAMAR API
-            if (!itemId || itemId === '' || itemId === 'null' || itemId === 'undefined') {
-              throw new Error(`itemId inválido antes de buscar contas: ${itemId}`);
+            if (!itemId || itemId === null || itemId === undefined || itemId === '' || itemId === 'null' || itemId === 'undefined' || typeof itemId !== 'string') {
+              throw new Error(`itemId inválido antes de buscar contas: ${JSON.stringify(itemId)}`);
             }
             
-            const accountsResponse = await listPluggyAccounts(itemId);
+            // Validar formato UUID
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(itemId)) {
+              throw new Error(`itemId não é um UUID válido antes de buscar contas: ${itemId}`);
+            }
+            
+            // Garantir que itemId nunca seja null/undefined ao passar para a função
+            const itemIdForAccounts = itemId; // Já validado acima
+            console.log(`🔍 [${itemId}] Enviando itemId=${itemIdForAccounts} para listPluggyAccounts`);
+            
+            if (!itemIdForAccounts || itemIdForAccounts === null || itemIdForAccounts === undefined) {
+              throw new Error(`itemId tornou-se inválido antes da chamada listPluggyAccounts: ${JSON.stringify(itemIdForAccounts)}`);
+            }
+            
+            const accountsResponse = await listPluggyAccounts(itemIdForAccounts);
             console.log(`📋 [${itemId}] Resposta da API de contas:`, {
               total: accountsResponse.results?.length || 0,
               results: accountsResponse.results
@@ -437,14 +451,28 @@ export async function POST(request: NextRequest) {
             console.warn(`⚠️ Nenhuma conta encontrada para o item ${itemId}, tentando buscar transações sem accountId...`);
             try {
               // VALIDAÇÃO ANTES DE CHAMAR API
-              if (!itemId || itemId === '' || itemId === 'null' || itemId === 'undefined') {
-                throw new Error(`itemId inválido antes de buscar transações: ${itemId}`);
-    }
+              if (!itemId || itemId === null || itemId === undefined || itemId === '' || itemId === 'null' || itemId === 'undefined' || typeof itemId !== 'string') {
+                throw new Error(`itemId inválido antes de buscar transações: ${JSON.stringify(itemId)}`);
+              }
+              
+              // Validar formato UUID
+              const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+              if (!uuidRegex.test(itemId)) {
+                throw new Error(`itemId não é um UUID válido antes de buscar transações: ${itemId}`);
+              }
+              
+              // Garantir que itemId nunca seja null/undefined ao passar para a função
+              const itemIdForTransactions = itemId; // Já validado acima
+              console.log(`🔍 [${itemId}] Enviando itemId=${itemIdForTransactions} para fetchPluggyTransactions (sem accountId)`);
+              
+              if (!itemIdForTransactions || itemIdForTransactions === null || itemIdForTransactions === undefined) {
+                throw new Error(`itemId tornou-se inválido antes da chamada fetchPluggyTransactions: ${JSON.stringify(itemIdForTransactions)}`);
+              }
 
-    const { transactions, startDate, endDate } = await fetchPluggyTransactions({
-      dateFrom: body.dateFrom,
-      dateTo: body.dateTo,
-      itemId,
+              const { transactions, startDate, endDate } = await fetchPluggyTransactions({
+                dateFrom: body.dateFrom,
+                dateTo: body.dateTo,
+                itemId: itemIdForTransactions, // Garantido válido - SEMPRE enviado
                 limit: body.limit || 500
               });
 
