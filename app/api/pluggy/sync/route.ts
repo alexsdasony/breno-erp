@@ -8,6 +8,7 @@ import {
   resolveAccountId,
   resolveTransactionBalance,
   sanitizeDescription,
+  listPluggyItems,
   type PluggyTransaction
 } from '@/lib/pluggyClient';
 
@@ -82,9 +83,60 @@ async function resolveItemIds(
   // Buscar todos os itens conectados do usuário ou do sistema
   const items: string[] = [];
 
-  // Se houver userId, buscar itens do usuário
+  // ESTRATÉGIA 1: Buscar itens diretamente da API Pluggy (se disponível)
+  try {
+    console.log('🔍 Tentando buscar itens diretamente da API Pluggy...');
+    
+    // Tentar buscar itens usando clientUserId se disponível
+    if (authContext.userId) {
+      const pluggyItemsResponse = await listPluggyItems({
+        clientUserId: authContext.userId,
+        pageSize: 100
+      });
+      
+      if (pluggyItemsResponse.results && pluggyItemsResponse.results.length > 0) {
+        const pluggyItemIds = pluggyItemsResponse.results
+          .map(item => item.id)
+          .filter((id): id is string => typeof id === 'string' && id.length > 0);
+        
+        items.push(...pluggyItemIds);
+        console.log(`✅ ${pluggyItemIds.length} itens encontrados diretamente na Pluggy (com clientUserId):`, pluggyItemIds);
+      }
+    }
+    
+    // Tentar buscar TODOS os itens sem filtro (pode não funcionar por segurança)
+    try {
+      const allPluggyItemsResponse = await listPluggyItems({
+        pageSize: 100
+      });
+      
+      if (allPluggyItemsResponse.results && allPluggyItemsResponse.results.length > 0) {
+        const allItemIds = allPluggyItemsResponse.results
+          .map(item => item.id)
+          .filter((id): id is string => typeof id === 'string' && id.length > 0);
+        
+        // Adicionar apenas itens que ainda não estão na lista
+        for (const itemId of allItemIds) {
+          if (!items.includes(itemId)) {
+            items.push(itemId);
+          }
+        }
+        console.log(`✅ ${allItemIds.length} itens adicionais encontrados na Pluggy (sem filtro):`, allItemIds);
+      }
+    } catch (allError) {
+      console.log('ℹ️ Não foi possível buscar todos os itens (comportamento esperado - API pode não permitir)');
+    }
+    
+    if (items.length === 0) {
+      console.log('ℹ️ Nenhum item encontrado diretamente na API Pluggy (comportamento esperado se a API não permitir)');
+    }
+  } catch (error) {
+    console.warn('⚠️ Erro ao buscar itens diretamente da Pluggy (pode ser comportamento esperado):', error instanceof Error ? error.message : error);
+  }
+
+  // ESTRATÉGIA 2: Buscar itens salvos no banco de dados
   if (authContext.userId) {
-    console.log(`🔍 Buscando itens Pluggy para usuário: ${authContext.userId}`);
+    console.log(`🔍 Buscando itens Pluggy no banco para usuário: ${authContext.userId}`);
     
     // Primeiro, buscar TODOS os itens (incluindo com erro) para debug
     const { data: allUserItems, error: allError } = await supabaseAdmin
@@ -97,7 +149,7 @@ async function resolveItemIds(
     } else {
       console.log(`📋 Total de itens na tabela para este usuário: ${allUserItems?.length || 0}`);
       if (allUserItems && allUserItems.length > 0) {
-        console.log('📋 Todos os itens encontrados:', allUserItems.map(item => ({
+        console.log('📋 Todos os itens encontrados no banco:', allUserItems.map(item => ({
           item_id: item.item_id,
           status: item.status,
           execution_status: item.execution_status,
@@ -119,10 +171,10 @@ async function resolveItemIds(
     if (error) {
       console.error('❌ Erro ao buscar itens Pluggy válidos:', error);
     } else {
-      console.log(`📋 Total de itens válidos encontrados: ${userItems?.length || 0}`);
+      console.log(`📋 Total de itens válidos encontrados no banco: ${userItems?.length || 0}`);
       
       if (userItems && userItems.length > 0) {
-        console.log('📋 Itens válidos encontrados:', userItems.map(item => ({
+        console.log('📋 Itens válidos encontrados no banco:', userItems.map(item => ({
           item_id: item.item_id,
           status: item.status,
           connector: item.connector_name
@@ -131,16 +183,21 @@ async function resolveItemIds(
         const validItemIds = userItems
           .map(item => item.item_id)
           .filter((id): id is string => typeof id === 'string' && id.length > 0);
-        items.push(...validItemIds);
-        console.log(`✅ ${validItemIds.length} itens válidos para sincronização:`, validItemIds);
+        
+        // Adicionar apenas itens que ainda não estão na lista
+        for (const itemId of validItemIds) {
+          if (!items.includes(itemId)) {
+            items.push(itemId);
+          }
+        }
+        console.log(`✅ ${validItemIds.length} itens válidos adicionados do banco`);
       } else {
-        console.warn('⚠️ Nenhum item Pluggy válido encontrado para o usuário');
-        console.log('💡 Dica: Conecte uma conta bancária usando o botão "Conectar Conta Bancária"');
+        console.warn('⚠️ Nenhum item Pluggy válido encontrado no banco para o usuário');
       }
     }
   }
 
-  // Se não encontrou itens do usuário, tentar item padrão do sistema
+  // ESTRATÉGIA 3: Se não encontrou itens, tentar item padrão do sistema
   if (items.length === 0) {
     const defaultConnection = process.env.PLUGGY_DEFAULT_CONNECTION_ID;
     if (defaultConnection) {
@@ -149,7 +206,11 @@ async function resolveItemIds(
     }
   }
 
-  return items;
+  // Remover duplicatas
+  const uniqueItems = Array.from(new Set(items));
+  console.log(`📊 Total de itens únicos encontrados para sincronização: ${uniqueItems.length}`, uniqueItems);
+
+  return uniqueItems;
 }
 
 export async function POST(request: NextRequest) {

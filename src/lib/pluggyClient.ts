@@ -472,6 +472,63 @@ export async function getPluggyItem(itemId: string): Promise<PluggyItem> {
   return response.json();
 }
 
+export interface PluggyItemsResponse {
+  results: PluggyItem[];
+  page?: number;
+  totalPages?: number;
+  totalResults?: number;
+  next?: string | null;
+  previous?: string | null;
+}
+
+/**
+ * Lista todos os itens da Pluggy (se disponível)
+ * Nota: A Pluggy pode não permitir listar todos os itens por segurança
+ * Esta função tenta buscar usando filtros opcionais
+ */
+export async function listPluggyItems(params?: {
+  page?: number;
+  pageSize?: number;
+  clientUserId?: string;
+}): Promise<PluggyItemsResponse> {
+  const apiKey = await getPluggyApiKey();
+  const env = process.env.PLUGGY_ENV || 'development';
+  const baseUrl = getPluggyBaseUrl(env);
+
+  const url = new URL(`${baseUrl}/items`);
+  
+  if (params?.page) {
+    url.searchParams.set('page', String(params.page));
+  }
+  if (params?.pageSize) {
+    url.searchParams.set('pageSize', String(params.pageSize));
+  }
+  if (params?.clientUserId) {
+    url.searchParams.set('clientUserId', params.clientUserId);
+  }
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      'X-API-KEY': apiKey,
+      'Content-Type': 'application/json'
+    },
+    cache: 'no-store'
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    // Se retornar 404 ou 403, pode ser que a API não permita listar todos os itens
+    if (response.status === 404 || response.status === 403) {
+      console.warn('⚠️ API Pluggy não permite listar todos os itens (comportamento esperado)');
+      return { results: [] };
+    }
+    throw new Error(`Erro ao listar itens Pluggy: ${response.status} - ${body}`);
+  }
+
+  return response.json();
+}
+
 // ========================================
 // WEBHOOKS
 // ========================================
