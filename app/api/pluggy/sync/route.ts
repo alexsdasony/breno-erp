@@ -435,20 +435,26 @@ export async function POST(request: NextRequest) {
               console.warn(`⚠️ [${itemId}] Nenhuma conta encontrada para este item`);
             }
           } catch (accountsError) {
-            console.error(`❌ [${itemId}] Erro ao buscar contas:`, accountsError);
+            const errorMessage = accountsError instanceof Error ? accountsError.message : String(accountsError);
+            const errorStack = accountsError instanceof Error ? accountsError.stack : undefined;
+            
+            console.error(`❌ [${itemId}] Erro ao buscar contas:`, errorMessage);
             console.error(`❌ [${itemId}] Detalhes do erro:`, {
-              message: accountsError instanceof Error ? accountsError.message : 'Erro desconhecido',
-              stack: accountsError instanceof Error ? accountsError.stack : undefined
+              message: errorMessage,
+              stack: errorStack,
+              errorType: accountsError?.constructor?.name || typeof accountsError
             });
+            
+            // Não lançar exceção, apenas registrar e continuar
             syncResults.push({
               itemId,
               imported: 0,
               updated: 0,
               total: 0,
               period: '',
-              error: `Erro ao buscar contas: ${accountsError instanceof Error ? accountsError.message : 'Erro desconhecido'}`
+              error: `Erro ao buscar contas: ${errorMessage}`
             });
-            continue; // Pular para o próximo item
+            continue; // Pular para o próximo item sem quebrar o fluxo
           }
 
           // Se não encontrou contas, tentar buscar transações sem accountId (pode não funcionar)
@@ -497,14 +503,18 @@ export async function POST(request: NextRequest) {
                 period: `${startDate} a ${endDate}`
               });
             } catch (error) {
-              console.error(`❌ Erro ao buscar transações do item ${itemId} sem accountId:`, error);
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              console.error(`❌ Erro ao buscar transações do item ${itemId} sem accountId:`, errorMessage);
+              console.error(`❌ [${itemId}] Stack trace:`, error instanceof Error ? error.stack : undefined);
+              
+              // Não lançar exceção, apenas registrar e continuar
               syncResults.push({
                 itemId,
                 imported: 0,
                 updated: 0,
                 total: 0,
                 period: '',
-                error: error instanceof Error ? error.message : 'Erro desconhecido'
+                error: errorMessage
               });
             }
             continue;
@@ -587,12 +597,16 @@ export async function POST(request: NextRequest) {
                 itemEndDate = endDate;
               }
             } catch (accountError) {
-              console.error(`  ❌ [${itemId}] Erro ao buscar transações da conta ${account.id}:`, accountError);
+              const errorMessage = accountError instanceof Error ? accountError.message : String(accountError);
+              const errorStack = accountError instanceof Error ? accountError.stack : undefined;
+              
+              console.error(`  ❌ [${itemId}] Erro ao buscar transações da conta ${account.id}:`, errorMessage);
               console.error(`  ❌ [${itemId}] Detalhes do erro:`, {
-                message: accountError instanceof Error ? accountError.message : 'Erro desconhecido',
-                stack: accountError instanceof Error ? accountError.stack : undefined
+                message: errorMessage,
+                stack: errorStack,
+                errorType: accountError?.constructor?.name || typeof accountError
               });
-              // Continuar com as outras contas mesmo se uma falhar
+              // Continuar com as outras contas mesmo se uma falhar - não lançar exceção
             }
           }
           
@@ -611,14 +625,21 @@ export async function POST(request: NextRequest) {
             period: itemStartDate ? `${itemStartDate} a ${itemEndDate}` : ''
           });
         } catch (error) {
-          console.error(`❌ Erro ao sincronizar item ${itemId}:`, error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorStack = error instanceof Error ? error.stack : undefined;
+          
+          console.error(`❌ Erro ao sincronizar item ${itemId}:`, errorMessage);
+          console.error(`❌ [${itemId}] Stack trace completo:`, errorStack);
+          console.error(`❌ [${itemId}] Tipo do erro:`, error?.constructor?.name || typeof error);
+          
+          // Não lançar exceção, apenas registrar e continuar com próximo item
           syncResults.push({
-      itemId,
+            itemId,
             imported: 0,
             updated: 0,
             total: 0,
             period: '',
-            error: error instanceof Error ? error.message : 'Erro desconhecido'
+            error: errorMessage
           });
         }
       }
@@ -825,13 +846,27 @@ export async function POST(request: NextRequest) {
       syncResults: finalSyncResults
     });
   } catch (error) {
-    console.error('❌ Erro na sincronização Pluggy:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    const isUnauthorized = error instanceof Error && error.message === 'Unauthorized';
+    
+    console.error('❌ Erro crítico na sincronização Pluggy:', errorMessage);
+    console.error('❌ Stack trace completo:', errorStack);
+    console.error('❌ Tipo do erro:', error?.constructor?.name || typeof error);
+    
+    // Sempre retornar uma resposta válida, mesmo em caso de erro
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido durante sincronização'
+        error: errorMessage,
+        message: 'Erro durante sincronização. Verifique os logs do servidor para mais detalhes.',
+        imported: 0,
+        updated: 0,
+        period: 'N/A',
+        itemsSincronizados: 0,
+        syncResults: []
       },
-      { status: error instanceof Error && error.message === 'Unauthorized' ? 401 : 500 }
+      { status: isUnauthorized ? 401 : 500 }
     );
   }
 }
