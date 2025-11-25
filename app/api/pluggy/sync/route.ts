@@ -135,7 +135,14 @@ async function resolveItemIds(
     console.warn('⚠️ Erro ao buscar itens diretamente da Pluggy (pode ser comportamento esperado):', error instanceof Error ? error.message : error);
   }
 
-  // ESTRATÉGIA 2: Buscar itens salvos no banco de dados
+  // IDs inválidos conhecidos que devem ser ignorados do banco (mas ainda sincronizados da API)
+  const invalidItemIds = [
+    'f892f7a3-1c7a-4875-b084-e8a376fa730f',
+    '67a1f002-5ca8-4f01-97d4-b04fe87aa26a',
+    '48c193bc-7276-4b53-9bf9-f91cd6a05fda'
+  ];
+
+  // ESTRATÉGIA 2: Buscar itens salvos no banco de dados (EXCLUINDO IDs inválidos conhecidos)
   if (authContext.userId) {
     console.log(`🔍 Buscando itens Pluggy no banco para usuário: ${authContext.userId}`);
     
@@ -159,7 +166,7 @@ async function resolveItemIds(
       }
     }
     
-    // Agora buscar apenas itens válidos para sincronização
+    // Agora buscar apenas itens válidos para sincronização (EXCLUINDO IDs inválidos conhecidos)
     const { data: userItems, error } = await supabaseAdmin
       .from('pluggy_items')
       .select('item_id, status, execution_status, connector_name')
@@ -199,6 +206,11 @@ async function resolveItemIds(
               console.error(`❌ item_id não é um UUID válido: ${id}`);
               return null;
             }
+            // EXCLUIR IDs inválidos conhecidos (mesmo que tenham UUID válido, são inválidos na Pluggy)
+            if (invalidItemIds.includes(id)) {
+              console.warn(`⚠️ Item inválido conhecido ignorado do banco: ${id}`);
+              return null;
+            }
             return id;
           })
           .filter((id): id is string => id !== null && typeof id === 'string' && id.length > 0);
@@ -209,7 +221,7 @@ async function resolveItemIds(
             items.push(itemId);
           }
         }
-        console.log(`✅ ${validItemIds.length} itens válidos adicionados do banco`);
+        console.log(`✅ ${validItemIds.length} itens válidos adicionados do banco (IDs inválidos conhecidos foram ignorados)`);
       } else {
         console.warn('⚠️ Nenhum item Pluggy válido encontrado no banco para o usuário');
       }

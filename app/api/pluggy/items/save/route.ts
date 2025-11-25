@@ -47,6 +47,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // IDs inválidos conhecidos que não devem ser salvos no banco
+    const invalidItemIds = [
+      'f892f7a3-1c7a-4875-b084-e8a376fa730f',
+      '67a1f002-5ca8-4f01-97d4-b04fe87aa26a',
+      '48c193bc-7276-4b53-9bf9-f91cd6a05fda'
+    ];
+
+    // Não salvar IDs inválidos conhecidos (mesmo que sejam UUIDs válidos)
+    if (invalidItemIds.includes(body.itemId)) {
+      console.warn(`⚠️ Tentativa de salvar item inválido conhecido ignorada: ${body.itemId}`);
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Este item não deve ser salvo no banco (item inválido conhecido): ${body.itemId}`
+        },
+        { status: 400 }
+      );
+    }
+
     if (!body.userId || body.userId === '' || body.userId === 'null' || body.userId === 'undefined' || typeof body.userId !== 'string') {
       console.error('❌ userId inválido recebido:', {
         userId: body.userId,
