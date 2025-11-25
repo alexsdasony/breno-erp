@@ -168,7 +168,7 @@ export default function FinancialView() {
         console.log('📥 Resposta completa da sincronização:', {
           status: response.status,
           ok: response.ok,
-          result
+          result: JSON.stringify(result, null, 2)
         });
         
         if (response.ok && result.success) {
@@ -179,6 +179,21 @@ export default function FinancialView() {
             itemsSincronizados: result.itemsSincronizados || 0,
             syncResults: result.syncResults
           });
+          
+          // Log detalhado dos resultados
+          if (result.syncResults && Array.isArray(result.syncResults)) {
+            console.log('📋 Detalhes dos itens sincronizados:');
+            result.syncResults.forEach((syncResult: any, index: number) => {
+              console.log(`  Item ${index + 1}:`, {
+                itemId: syncResult.itemId,
+                total: syncResult.total,
+                imported: syncResult.imported,
+                updated: syncResult.updated,
+                period: syncResult.period,
+                error: syncResult.error
+              });
+            });
+          }
           
           // Recarregar dados após sincronização bem-sucedida (sempre recarregar para garantir dados atualizados)
           load(true);
