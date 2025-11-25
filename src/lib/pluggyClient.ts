@@ -111,19 +111,21 @@ async function fetchTransactionsPage(params: FetchTransactionsParams, pageUrl?: 
     : new URL(`${baseUrl}/transactions`);
 
   if (!pageUrl) {
-    // API Pluggy usa: item_id, account_id, from, to, limit
+    // API Pluggy usa: itemId, accountId, from, to, limit (camelCase)
     url.searchParams.set('from', dateFrom);
     url.searchParams.set('to', dateTo);
     url.searchParams.set('limit', String(Math.min(limit, 500))); // Máximo 500 por request
 
     // itemId é SEMPRE obrigatório e já validado acima
     console.log(`🔍 Enviando itemId para Pluggy /transactions: ${itemId}`);
-    url.searchParams.set('item_id', itemId); // Pluggy usa item_id (com underscore) - SEMPRE enviado
+    url.searchParams.set('itemId', itemId); // Pluggy usa itemId (camelCase) - SEMPRE enviado
 
     if (accountId) {
       console.log(`🔍 Enviando accountId para Pluggy /transactions: ${accountId}`);
-      url.searchParams.set('account_id', accountId); // Pluggy usa account_id (com underscore)
+      url.searchParams.set('accountId', accountId); // Pluggy usa accountId (camelCase)
     }
+    
+    console.log(`🔗 URL Pluggy final para /transactions: ${url.toString()}`);
 
     // Se houver paginação manual (não recomendado, mas suportado)
     if (page && page > 1) {
@@ -577,11 +579,11 @@ export async function listPluggyAccounts(itemId: string): Promise<PluggyAccounts
   const env = process.env.PLUGGY_ENV || 'development';
   const baseUrl = getPluggyBaseUrl(env);
 
-  // A API Pluggy usa item_id (com underscore) como parâmetro
+  // A API Pluggy usa itemId (camelCase) como query parameter
   const url = new URL(`${baseUrl}/accounts`);
-  url.searchParams.set('item_id', itemId); // itemId já validado acima, SEMPRE válido
+  url.searchParams.set('itemId', itemId); // itemId já validado acima, SEMPRE válido
 
-  console.log(`🔍 Buscando contas da Pluggy para item ${itemId}: ${url.toString()}`);
+  console.log(`🔗 URL Pluggy final para /accounts: ${url.toString()}`);
 
   const response = await fetch(url.toString(), {
     method: 'GET',
