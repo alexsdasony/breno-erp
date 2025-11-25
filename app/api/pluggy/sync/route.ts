@@ -517,27 +517,28 @@ export async function POST(request: NextRequest) {
 
           for (const account of accounts) {
             try {
-              // VALIDAÇÃO RIGOROSA: Verificar itemId e accountId antes de buscar transações
-              if (!itemId || itemId === '' || itemId === 'null' || itemId === 'undefined' || typeof itemId !== 'string') {
-                console.error(`  ❌ [${itemId}] itemId inválido antes de buscar transações da conta ${account.id}`);
-                continue; // Pular esta conta
+              // VALIDAÇÃO RIGOROSA ANTES DE CHAMAR API /transactions
+              // Não chamar /transactions se itemId ou accountId forem inválidos
+              if (!itemId || itemId === null || itemId === undefined || itemId === '' || itemId === 'null' || itemId === 'undefined' || typeof itemId !== 'string') {
+                console.error(`  ❌ [${itemId}] itemId inválido antes de buscar transações da conta ${account.id} - PULANDO conta`);
+                continue; // Pular esta conta sem gerar erro crítico
               }
               
-              if (!account.id || account.id === '' || account.id === 'null' || account.id === 'undefined' || typeof account.id !== 'string') {
-                console.error(`  ❌ [${itemId}] accountId inválido: ${account.id}`);
-                continue; // Pular esta conta
+              if (!account.id || account.id === null || account.id === undefined || account.id === '' || account.id === 'null' || account.id === 'undefined' || typeof account.id !== 'string') {
+                console.error(`  ❌ [${itemId}] accountId inválido: ${account.id} - PULANDO conta`);
+                continue; // Pular esta conta sem gerar erro crítico
               }
               
               // Validar formato UUID
               const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
               if (!uuidRegex.test(itemId)) {
-                console.error(`  ❌ [${itemId}] itemId não é um UUID válido`);
-                continue;
+                console.error(`  ❌ [${itemId}] itemId não é um UUID válido - PULANDO conta`);
+                continue; // Pular esta conta sem gerar erro crítico
               }
               
               if (!uuidRegex.test(account.id)) {
-                console.error(`  ❌ [${itemId}] accountId não é um UUID válido: ${account.id}`);
-                continue;
+                console.error(`  ❌ [${itemId}] accountId não é um UUID válido: ${account.id} - PULANDO conta`);
+                continue; // Pular esta conta sem gerar erro crítico
               }
               
               console.log(`  🔄 [${itemId}] Buscando transações da conta ${account.id} (${account.name || 'sem nome'})`);
@@ -549,15 +550,18 @@ export async function POST(request: NextRequest) {
               const accountIdToSend = account.id; // Já validado acima
               
               if (!itemIdToSend || itemIdToSend === null || itemIdToSend === undefined) {
-                throw new Error(`itemId tornou-se inválido antes da chamada: ${JSON.stringify(itemIdToSend)}`);
+                console.error(`  ❌ [${itemId}] itemId tornou-se inválido antes da chamada - PULANDO conta`);
+                continue; // Pular sem gerar erro crítico
               }
               
               if (!accountIdToSend || accountIdToSend === null || accountIdToSend === undefined) {
-                throw new Error(`accountId tornou-se inválido antes da chamada: ${JSON.stringify(accountIdToSend)}`);
+                console.error(`  ❌ [${itemId}] accountId tornou-se inválido antes da chamada - PULANDO conta`);
+                continue; // Pular sem gerar erro crítico
               }
               
               console.log(`  🔍 [${itemId}] Enviando itemId=${itemIdToSend} e accountId=${accountIdToSend} para fetchPluggyTransactions`);
               
+              // CHAMADA API: /transactions - apenas para itemId e accountId válidos
               const { transactions, startDate, endDate } = await fetchPluggyTransactions({
                 dateFrom: body.dateFrom,
                 dateTo: body.dateTo,
