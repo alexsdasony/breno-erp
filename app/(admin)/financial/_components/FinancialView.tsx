@@ -181,6 +181,8 @@ export default function FinancialView() {
           });
           
           // Log detalhado dos resultados
+          console.log('📋 Detalhes completos da sincronização:', JSON.stringify(result, null, 2));
+          
           if (result.syncResults && Array.isArray(result.syncResults)) {
             console.log('📋 Detalhes dos itens sincronizados:');
             result.syncResults.forEach((syncResult: any, index: number) => {
