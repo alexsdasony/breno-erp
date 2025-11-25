@@ -556,9 +556,9 @@ export interface PluggyAccountsResponse {
  * Lista todas as contas (accounts) de um item Pluggy
  */
 export async function listPluggyAccounts(itemId: string): Promise<PluggyAccountsResponse> {
-  // VALIDAÇÃO RIGOROSA: Garantir que itemId nunca seja null/undefined/string vazia
-  if (!itemId || itemId === '' || itemId === 'null' || itemId === 'undefined' || typeof itemId !== 'string') {
-    const errorMsg = `itemId inválido na função listPluggyAccounts: ${JSON.stringify(itemId)}`;
+  // VALIDAÇÃO OBRIGATÓRIA: itemId nunca pode ser null/undefined/string vazia
+  if (!itemId || itemId === null || itemId === undefined || itemId === '' || itemId === 'null' || itemId === 'undefined' || typeof itemId !== 'string') {
+    const errorMsg = `Pluggy Sync Error: itemId inválido (${JSON.stringify(itemId)}). itemId é obrigatório.`;
     console.error(`❌ ${errorMsg}`);
     throw new Error(errorMsg);
   }
@@ -566,10 +566,12 @@ export async function listPluggyAccounts(itemId: string): Promise<PluggyAccounts
   // Validar formato UUID
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuidRegex.test(itemId)) {
-    const errorMsg = `itemId não é um UUID válido: ${itemId}`;
+    const errorMsg = `Pluggy Sync Error: itemId não é um UUID válido (${itemId})`;
     console.error(`❌ ${errorMsg}`);
     throw new Error(errorMsg);
   }
+
+  console.log(`🔍 Enviando itemId para Pluggy /accounts: ${itemId}`);
 
   const apiKey = await getPluggyApiKey();
   const env = process.env.PLUGGY_ENV || 'development';
@@ -577,7 +579,7 @@ export async function listPluggyAccounts(itemId: string): Promise<PluggyAccounts
 
   // A API Pluggy usa item_id (com underscore) como parâmetro
   const url = new URL(`${baseUrl}/accounts`);
-  url.searchParams.set('item_id', itemId); // itemId já validado acima
+  url.searchParams.set('item_id', itemId); // itemId já validado acima, SEMPRE válido
 
   console.log(`🔍 Buscando contas da Pluggy para item ${itemId}: ${url.toString()}`);
 
