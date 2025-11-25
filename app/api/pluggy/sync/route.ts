@@ -182,8 +182,26 @@ async function resolveItemIds(
         })));
         
         const validItemIds = userItems
-          .map(item => item.item_id)
-          .filter((id): id is string => typeof id === 'string' && id.length > 0);
+          .map(item => {
+            const id = item.item_id;
+            // VALIDAÇÃO RIGOROSA: Verificar se item_id é válido
+            if (!id || id === '' || id === 'null' || id === 'undefined' || typeof id !== 'string') {
+              console.error(`❌ item_id inválido encontrado no banco:`, {
+                item_id: id,
+                tipo: typeof id,
+                item_completo: item
+              });
+              return null;
+            }
+            // Validar formato UUID
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(id)) {
+              console.error(`❌ item_id não é um UUID válido: ${id}`);
+              return null;
+            }
+            return id;
+          })
+          .filter((id): id is string => id !== null && typeof id === 'string' && id.length > 0);
         
         // Adicionar apenas itens que ainda não estão na lista
         for (const itemId of validItemIds) {
@@ -200,7 +218,7 @@ async function resolveItemIds(
 
   // ESTRATÉGIA 3: Se não encontrou itens, tentar item padrão do sistema
   if (items.length === 0) {
-    const defaultConnection = process.env.PLUGGY_DEFAULT_CONNECTION_ID;
+  const defaultConnection = process.env.PLUGGY_DEFAULT_CONNECTION_ID;
     if (defaultConnection) {
       items.push(defaultConnection);
       console.log('📋 Usando item padrão do sistema:', defaultConnection);
@@ -421,12 +439,12 @@ export async function POST(request: NextRequest) {
               // VALIDAÇÃO ANTES DE CHAMAR API
               if (!itemId || itemId === '' || itemId === 'null' || itemId === 'undefined') {
                 throw new Error(`itemId inválido antes de buscar transações: ${itemId}`);
-              }
-              
-              const { transactions, startDate, endDate } = await fetchPluggyTransactions({
-                dateFrom: body.dateFrom,
-                dateTo: body.dateTo,
-                itemId,
+    }
+
+    const { transactions, startDate, endDate } = await fetchPluggyTransactions({
+      dateFrom: body.dateFrom,
+      dateTo: body.dateTo,
+      itemId,
                 limit: body.limit || 500
               });
 
@@ -490,9 +508,9 @@ export async function POST(request: NextRequest) {
               });
 
               console.log(`  ✅ [${itemId}] Transações obtidas da conta ${account.id}:`, {
-                total: transactions.length,
-                startDate,
-                endDate,
+      total: transactions.length,
+      startDate,
+      endDate,
                 primeiraTransacao: transactions[0] || null
               });
 
@@ -532,7 +550,7 @@ export async function POST(request: NextRequest) {
         } catch (error) {
           console.error(`❌ Erro ao sincronizar item ${itemId}:`, error);
           syncResults.push({
-            itemId,
+      itemId,
             imported: 0,
             updated: 0,
             total: 0,
