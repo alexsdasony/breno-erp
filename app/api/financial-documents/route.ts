@@ -41,9 +41,12 @@ export async function GET(request: NextRequest) {
     const dateStart = searchParams.get('dateStart');
     const dateEnd = searchParams.get('dateEnd');
 
+    console.log('GET financial-documents: listagem simples, sem sync');
     console.log('💰 Financial documents API request:', { page, pageSize, segmentId, dateStart, dateEnd });
 
     // Buscar documentos financeiros da tabela financial_documents
+    // IMPORTANTE: Esta rota NUNCA cria, modifica ou sincroniza documentos
+    // Apenas retorna documentos existentes em financial_documents
     let queryDocs = supabaseAdmin
       .from('financial_documents')
       .select(`
