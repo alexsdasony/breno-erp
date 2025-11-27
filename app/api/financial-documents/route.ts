@@ -213,7 +213,7 @@ export async function GET(request: NextRequest) {
         const isManual = !doc.pluggy_id && (!issueDate || issueDate <= '2025-10-29');
         return { ...doc, _source: isManual ? 'manual' : (doc._source || 'manual') };
       }),
-      ...convertedTransactions
+      ...validConvertedTransactions
     ];
 
     // Ordenar por data (mais recente primeiro)
