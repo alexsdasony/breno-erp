@@ -56,7 +56,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     console.log('🔍 [FD UPDATE] id:', id);
     console.log('📥 Payload recebido:', body);
 
-    // Validar se o ID não está vazio (deixar Supabase validar formato UUID)
+    // Validar se o ID não está vazio
     if (!id || id.trim().length === 0) {
       console.error('❌ ID vazio ou inválido:', id);
       return NextResponse.json(
@@ -67,6 +67,70 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         },
         { status: 400 }
       );
+    }
+
+    // Verificar se o ID é numérico (vem de financial_transactions)
+    // Se for numérico, buscar o documento usando doc_no que contém o pluggy_id
+    const isNumericId = /^\d+$/.test(id);
+    let documentId = id;
+    
+    if (isNumericId) {
+      console.log(`🔍 ID numérico detectado (${id}), buscando documento via financial_transactions...`);
+      
+      // Buscar a transação na tabela financial_transactions
+      const { data: transaction, error: txError } = await supabaseAdmin
+        .from('financial_transactions')
+        .select('pluggy_id, external_id, doc_no')
+        .eq('id', parseInt(id))
+        .single();
+      
+      if (txError || !transaction) {
+        console.error('❌ Transação não encontrada:', txError);
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Transação não encontrada.',
+            details: `ID ${id} não existe em financial_transactions`
+          },
+          { status: 404 }
+        );
+      }
+      
+      // Buscar o documento financeiro usando doc_no (que contém o pluggy_id)
+      const pluggyId = transaction.pluggy_id || transaction.external_id;
+      if (pluggyId) {
+        const { data: doc, error: docError } = await supabaseAdmin
+          .from('financial_documents')
+          .select('id')
+          .eq('doc_no', pluggyId)
+          .single();
+        
+        if (!docError && doc?.id) {
+          documentId = doc.id;
+          console.log(`✅ Documento encontrado via doc_no: ${documentId}`);
+        } else {
+          // Se não encontrou, criar um novo documento a partir da transação
+          console.log(`⚠️ Documento não encontrado, criando novo a partir da transação...`);
+          // Retornar erro informando que precisa criar primeiro
+          return NextResponse.json(
+            { 
+              success: false, 
+              error: 'Documento financeiro não existe. A transação Pluggy precisa ser convertida em documento primeiro.',
+              details: `Transação ${id} não possui documento financeiro correspondente`
+            },
+            { status: 404 }
+          );
+        }
+      } else {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Transação sem pluggy_id.',
+            details: `Transação ${id} não possui pluggy_id para buscar documento`
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Usar sempre a tabela financial_documents
@@ -93,7 +157,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { data, error } = await supabaseAdmin
       .from(table)
       .update(normalizedBody)
-      .eq('id', id)
+      .eq('id', documentId) // Usar documentId (pode ser o UUID encontrado ou o original)
       .select()
       .single();
 
