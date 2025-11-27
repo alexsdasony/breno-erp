@@ -56,14 +56,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     console.log('🔍 [FD UPDATE] id:', id);
     console.log('📥 Payload recebido:', body);
 
-    // Validar se o ID é um UUID válido
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(id)) {
-      console.error('❌ ID inválido:', id);
+    // Validar se o ID não está vazio (deixar Supabase validar formato UUID)
+    if (!id || id.trim().length === 0) {
+      console.error('❌ ID vazio ou inválido:', id);
       return NextResponse.json(
         { 
           success: false, 
-          error: 'ID inválido. Deve ser um UUID válido.',
+          error: 'ID não pode ser vazio.',
           details: `ID recebido: ${id}`
         },
         { status: 400 }
