@@ -71,128 +71,6 @@ export async function GET(request: NextRequest) {
 
     const { data: financialDocuments, error: financialDocsError } = await queryDocs;
 
-    // Buscar transações da Pluggy (financial_transactions) e converter para formato de documentos
-    let queryTransactions = supabaseAdmin
-      .from('financial_transactions')
-      .select('*');
-
-    // Aplicar filtro de segmento se fornecido
-    if (segmentId && segmentId !== 'null' && segmentId !== '0') {
-      queryTransactions = queryTransactions.eq('segment_id', segmentId);
-    }
-    // Se não há filtro de segmento, buscar todas (incluindo NULL)
-
-    // Aplicar filtros de data se fornecidos
-    if (dateStart) {
-      queryTransactions = queryTransactions.gte('date', dateStart);
-    }
-    if (dateEnd) {
-      queryTransactions = queryTransactions.lte('date', dateEnd);
-    }
-
-    queryTransactions = queryTransactions.order('date', { ascending: false });
-
-    const { data: pluggyTransactions, error: transactionsError } = await queryTransactions;
-
-    if (transactionsError) {
-      console.warn('⚠️ Erro ao buscar transações Pluggy (não crítico):', transactionsError);
-    }
-
-    // Converter transações Pluggy para formato de documentos financeiros
-    // IMPORTANTE: Para cada transação Pluggy, buscar ou criar documento em financial_documents
-    // e usar o UUID do documento como id (não o ID numérico da transação)
-    const convertedTransactions = await Promise.all((pluggyTransactions || []).map(async (tx: any) => {
-      // Garantir que sempre tenha pluggy_id (se não tiver, não é Pluggy)
-      const pluggyId = tx.pluggy_id || tx.external_id;
-      
-      if (!pluggyId) {
-        console.warn('⚠️ Transação sem pluggy_id, ignorando:', tx.id);
-        return null;
-      }
-      
-      // Buscar documento existente em financial_documents usando doc_no
-      const { data: existingDoc, error: docError } = await supabaseAdmin
-        .from('financial_documents')
-        .select('*')
-        .eq('doc_no', pluggyId)
-        .eq('is_deleted', false)
-        .single();
-      
-      let docId: string;
-      let docData: any;
-      
-      if (!docError && existingDoc) {
-        // Documento já existe, usar o UUID dele
-        docId = existingDoc.id;
-        docData = existingDoc;
-        console.log(`✅ Documento encontrado para transação Pluggy ${tx.id}: ${docId}`);
-      } else {
-        // Criar novo documento em financial_documents para esta transação
-        const newDoc = {
-          partner_id: null,
-          direction: tx.direction || (tx.type === 'receita' ? 'receivable' : 'payable'),
-          doc_no: pluggyId,
-          issue_date: tx.date,
-          due_date: tx.date,
-          amount: Math.abs(Number(tx.amount) || 0),
-          balance: Math.abs(Number(tx.amount) || 0),
-          status: 'open',
-          category_id: null,
-          segment_id: tx.segment_id,
-          description: tx.description || 'Transação Pluggy',
-          payment_method: 'PIX',
-          notes: `Importado da Pluggy - ${tx.institution || 'Banco'} - ${tx.category || ''}`,
-          payment_method_id: null
-        };
-        
-        const { data: createdDoc, error: createError } = await supabaseAdmin
-          .from('financial_documents')
-          .insert(newDoc)
-          .select()
-          .single();
-        
-        if (createError || !createdDoc) {
-          console.error(`❌ Erro ao criar documento para transação ${tx.id}:`, createError);
-          return null;
-        }
-        
-        docId = createdDoc.id;
-        docData = createdDoc;
-        console.log(`✅ Documento criado para transação Pluggy ${tx.id}: ${docId}`);
-      }
-      
-      return {
-        id: docId, // SEMPRE UUID de financial_documents
-        partner_id: docData.partner_id,
-        direction: docData.direction,
-        doc_no: docData.doc_no,
-        issue_date: docData.issue_date,
-        due_date: docData.due_date,
-        amount: docData.amount,
-        balance: docData.balance,
-        status: docData.status,
-        category_id: docData.category_id,
-        segment_id: docData.segment_id,
-        description: docData.description,
-        payment_method: docData.payment_method,
-        notes: docData.notes,
-        created_at: docData.created_at,
-        updated_at: docData.updated_at,
-        deleted_at: docData.deleted_at,
-        is_deleted: docData.is_deleted || false,
-        payment_method_id: docData.payment_method_id,
-        partner: docData.partner || null,
-        payment_method_data: docData.payment_method_data || null,
-        _source: 'pluggy', // SEMPRE 'pluggy' para transações da tabela financial_transactions
-        pluggy_id: pluggyId, // SEMPRE preenchido para transações Pluggy
-        account_id: tx.account_id,
-        institution: tx.institution
-      };
-    }));
-    
-    // Filtrar nulls (transações sem pluggy_id ou com erro ao criar documento)
-    const validConvertedTransactions = convertedTransactions.filter((tx: any) => tx !== null);
-
     if (financialDocsError) {
       console.error('❌ Erro ao buscar documentos financeiros:', financialDocsError);
       return NextResponse.json(
@@ -205,16 +83,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Combinar documentos e transações Pluggy convertidas
-    // Marcar documentos manuais: se data <= 29/10/2025 OU se não tem pluggy_id
-    const allDocuments = [
-      ...(financialDocuments || []).map((doc: any) => {
-        const issueDate = doc.issue_date;
-        const isManual = !doc.pluggy_id && (!issueDate || issueDate <= '2025-10-29');
-        return { ...doc, _source: isManual ? 'manual' : (doc._source || 'manual') };
-      }),
-      ...validConvertedTransactions
-    ];
+    // Apenas documentos de financial_documents (sem processamento de transações)
+    const allDocuments = (financialDocuments || []).map((doc: any) => {
+      // Marcar origem baseado em pluggy_id/doc_no (se tem doc_no que parece UUID, é Pluggy)
+      const hasPluggyId = doc.doc_no && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(doc.doc_no);
+      const issueDate = doc.issue_date;
+      const isManual = !hasPluggyId && (!issueDate || issueDate <= '2025-10-29');
+      return { 
+        ...doc, 
+        _source: hasPluggyId ? 'pluggy' : (isManual ? 'manual' : (doc._source || 'manual'))
+      };
+    });
 
     // Ordenar por data (mais recente primeiro)
     allDocuments.sort((a: any, b: any) => {
@@ -229,9 +108,7 @@ export async function GET(request: NextRequest) {
     const paginatedDocuments = allDocuments.slice(startIndex, endIndex);
 
     const total = allDocuments.length;
-    console.log('📊 Documentos financeiros encontrados:', financialDocuments?.length || 0);
-    console.log('📊 Transações Pluggy encontradas:', pluggyTransactions?.length || 0);
-    console.log('📊 Total combinado:', total);
+    console.log('📊 Documentos financeiros encontrados:', total);
     console.log('📊 Documentos paginados:', paginatedDocuments?.length || 0);
 
     const response = {
