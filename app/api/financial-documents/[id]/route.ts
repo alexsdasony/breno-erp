@@ -75,61 +75,76 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     let documentId = id;
     
     if (isNumericId) {
-      console.log(`🔍 ID numérico detectado (${id}), buscando documento via financial_transactions...`);
+      console.log(`🔍 ID numérico detectado (${id}), buscando documento correspondente...`);
       
-      // Buscar a transação na tabela financial_transactions
-      const { data: transaction, error: txError } = await supabaseAdmin
-        .from('financial_transactions')
-        .select('pluggy_id, external_id, doc_no')
-        .eq('id', parseInt(id))
-        .single();
-      
-      if (txError || !transaction) {
-        console.error('❌ Transação não encontrada:', txError);
-        return NextResponse.json(
-          { 
-            success: false, 
-            error: 'Transação não encontrada.',
-            details: `ID ${id} não existe em financial_transactions`
-          },
-          { status: 404 }
-        );
-      }
-      
-      // Buscar o documento financeiro usando doc_no (que contém o pluggy_id)
-      const pluggyId = transaction.pluggy_id || transaction.external_id;
-      if (pluggyId) {
-        const { data: doc, error: docError } = await supabaseAdmin
+      // PRIMEIRA TENTATIVA: Usar doc_no do payload se disponível
+      if (body.doc_no && typeof body.doc_no === 'string') {
+        console.log(`🔍 Tentando buscar documento usando doc_no do payload: ${body.doc_no}`);
+        const { data: docByDocNo, error: docNoError } = await supabaseAdmin
           .from('financial_documents')
           .select('id')
-          .eq('doc_no', pluggyId)
+          .eq('doc_no', body.doc_no)
           .single();
         
-        if (!docError && doc?.id) {
-          documentId = doc.id;
-          console.log(`✅ Documento encontrado via doc_no: ${documentId}`);
-        } else {
-          // Se não encontrou, criar um novo documento a partir da transação
-          console.log(`⚠️ Documento não encontrado, criando novo a partir da transação...`);
-          // Retornar erro informando que precisa criar primeiro
+        if (!docNoError && docByDocNo?.id) {
+          documentId = docByDocNo.id;
+          console.log(`✅ Documento encontrado via doc_no do payload: ${documentId}`);
+        }
+      }
+      
+      // SEGUNDA TENTATIVA: Buscar via financial_transactions se doc_no não funcionou
+      if (documentId === id) {
+        console.log(`🔍 Buscando documento via financial_transactions...`);
+        const { data: transaction, error: txError } = await supabaseAdmin
+          .from('financial_transactions')
+          .select('pluggy_id, external_id')
+          .eq('id', parseInt(id))
+          .single();
+        
+        if (txError || !transaction) {
+          console.error('❌ Transação não encontrada:', txError);
           return NextResponse.json(
             { 
               success: false, 
-              error: 'Documento financeiro não existe. A transação Pluggy precisa ser convertida em documento primeiro.',
-              details: `Transação ${id} não possui documento financeiro correspondente`
+              error: 'Transação não encontrada.',
+              details: `ID ${id} não existe em financial_transactions`
             },
             { status: 404 }
           );
         }
-      } else {
-        return NextResponse.json(
-          { 
-            success: false, 
-            error: 'Transação sem pluggy_id.',
-            details: `Transação ${id} não possui pluggy_id para buscar documento`
-          },
-          { status: 400 }
-        );
+        
+        // Buscar o documento financeiro usando pluggy_id/external_id como doc_no
+        const pluggyId = transaction.pluggy_id || transaction.external_id;
+        if (pluggyId) {
+          const { data: doc, error: docError } = await supabaseAdmin
+            .from('financial_documents')
+            .select('id')
+            .eq('doc_no', pluggyId)
+            .single();
+          
+          if (!docError && doc?.id) {
+            documentId = doc.id;
+            console.log(`✅ Documento encontrado via pluggy_id: ${documentId}`);
+          } else {
+            return NextResponse.json(
+              { 
+                success: false, 
+                error: 'Documento financeiro não encontrado.',
+                details: `Nenhum documento encontrado com doc_no = ${pluggyId} para a transação ${id}`
+              },
+              { status: 404 }
+            );
+          }
+        } else {
+          return NextResponse.json(
+            { 
+              success: false, 
+              error: 'Transação sem pluggy_id.',
+              details: `Transação ${id} não possui pluggy_id para buscar documento`
+            },
+            { status: 400 }
+          );
+        }
       }
     }
 
