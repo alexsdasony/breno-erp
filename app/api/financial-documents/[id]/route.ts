@@ -56,7 +56,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     console.log('🔍 [FD UPDATE] id:', id);
     console.log('📥 Payload recebido:', body);
 
-    // Validar se o ID não está vazio
+    // Validar se o ID é um UUID válido (financial_documents sempre usa UUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!id || id.trim().length === 0) {
       console.error('❌ ID vazio ou inválido:', id);
       return NextResponse.json(
@@ -68,84 +69,17 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         { status: 400 }
       );
     }
-
-    // Verificar se o ID é numérico (vem de financial_transactions)
-    // Se for numérico, buscar o documento usando doc_no que contém o pluggy_id
-    const isNumericId = /^\d+$/.test(id);
-    let documentId = id;
     
-    if (isNumericId) {
-      console.log(`🔍 ID numérico detectado (${id}), buscando documento correspondente...`);
-      
-      // PRIMEIRA TENTATIVA: Usar doc_no do payload se disponível
-      if (body.doc_no && typeof body.doc_no === 'string') {
-        console.log(`🔍 Tentando buscar documento usando doc_no do payload: ${body.doc_no}`);
-        const { data: docByDocNo, error: docNoError } = await supabaseAdmin
-          .from('financial_documents')
-          .select('id')
-          .eq('doc_no', body.doc_no)
-          .single();
-        
-        if (!docNoError && docByDocNo?.id) {
-          documentId = docByDocNo.id;
-          console.log(`✅ Documento encontrado via doc_no do payload: ${documentId}`);
-        }
-      }
-      
-      // SEGUNDA TENTATIVA: Buscar via financial_transactions se doc_no não funcionou
-      if (documentId === id) {
-        console.log(`🔍 Buscando documento via financial_transactions...`);
-        const { data: transaction, error: txError } = await supabaseAdmin
-          .from('financial_transactions')
-          .select('pluggy_id, external_id')
-          .eq('id', parseInt(id))
-          .single();
-        
-        if (txError || !transaction) {
-          console.error('❌ Transação não encontrada:', txError);
-          return NextResponse.json(
-            { 
-              success: false, 
-              error: 'Transação não encontrada.',
-              details: `ID ${id} não existe em financial_transactions`
-            },
-            { status: 404 }
-          );
-        }
-        
-        // Buscar o documento financeiro usando pluggy_id/external_id como doc_no
-        const pluggyId = transaction.pluggy_id || transaction.external_id;
-        if (pluggyId) {
-          const { data: doc, error: docError } = await supabaseAdmin
-            .from('financial_documents')
-            .select('id')
-            .eq('doc_no', pluggyId)
-            .single();
-          
-          if (!docError && doc?.id) {
-            documentId = doc.id;
-            console.log(`✅ Documento encontrado via pluggy_id: ${documentId}`);
-          } else {
-            return NextResponse.json(
-              { 
-                success: false, 
-                error: 'Documento financeiro não encontrado.',
-                details: `Nenhum documento encontrado com doc_no = ${pluggyId} para a transação ${id}`
-              },
-              { status: 404 }
-            );
-          }
-        } else {
-          return NextResponse.json(
-            { 
-              success: false, 
-              error: 'Transação sem pluggy_id.',
-              details: `Transação ${id} não possui pluggy_id para buscar documento`
-            },
-            { status: 400 }
-          );
-        }
-      }
+    if (!uuidRegex.test(id)) {
+      console.error('❌ ID inválido - deve ser UUID de financial_documents:', id);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'ID inválido. Deve ser um UUID válido de financial_documents.',
+          details: `ID recebido: ${id}. O frontend deve sempre enviar o UUID de financial_documents, não o ID numérico de financial_transactions.`
+        },
+        { status: 400 }
+      );
     }
 
     // Usar sempre a tabela financial_documents
@@ -172,7 +106,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { data, error } = await supabaseAdmin
       .from(table)
       .update(normalizedBody)
-      .eq('id', documentId) // Usar documentId (pode ser o UUID encontrado ou o original)
+      .eq('id', id) // Sempre usar o UUID recebido (já validado acima)
       .select()
       .single();
 
