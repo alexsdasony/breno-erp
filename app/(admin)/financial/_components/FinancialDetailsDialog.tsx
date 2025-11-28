@@ -8,11 +8,12 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   doc: any | null;
   pmMap: Record<string, string>;
+  segments: Array<{ id: string; name?: string; code?: string }>;
   onEdit: (e: React.MouseEvent) => void;
   currency: (n: number) => string;
 };
 
-export default function FinancialDetailsDialog({ open, onOpenChange, doc, pmMap, onEdit, currency }: Props) {
+export default function FinancialDetailsDialog({ open, onOpenChange, doc, pmMap, segments, onEdit, currency }: Props) {
   // Alias JS components to any to avoid TS prop typing issues
   const DialogRoot = Dialog as any;
   const DialogC = DialogContent as any;
@@ -27,6 +28,13 @@ export default function FinancialDetailsDialog({ open, onOpenChange, doc, pmMap,
       case 'transfer': return 'Transferência';
       default: return '-';
     }
+  };
+  
+  // Buscar nome do segmento pelo segment_id
+  const getSegmentName = (segmentId?: string | null) => {
+    if (!segmentId) return '-';
+    const segment = segments.find(s => s.id === segmentId);
+    return segment?.name || segment?.code || segmentId;
   };
   return (
     <DialogRoot open={open} onOpenChange={onOpenChange}>
@@ -73,6 +81,10 @@ export default function FinancialDetailsDialog({ open, onOpenChange, doc, pmMap,
               <div>
                 <div className="text-xs text-muted-foreground">Saldo</div>
                 <div className="text-sm font-medium">{currency(Number(doc.balance || 0))}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Segmento</div>
+                <div className="text-sm font-medium">{getSegmentName(doc.segment_id)}</div>
               </div>
             </div>
             <div>

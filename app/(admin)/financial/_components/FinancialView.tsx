@@ -581,6 +581,7 @@ export default function FinancialView() {
         onOpenChange={setDetailsOpen}
         doc={detailsDoc}
         pmMap={pmMap}
+        segments={segments}
         currency={currency}
         onEdit={(e) => { setDetailsOpen(false); openEdit(detailsDoc, e as any); }}
       />
