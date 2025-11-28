@@ -216,18 +216,14 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
       }
       const item = normalizeFinancialDocument(documentData);
       console.log('PUT /financial-documents/' + id + ' - Dados normalizados', item);
-      // Atualizar estado local diretamente (padrão cost-centers)
-      if (item) {
-        setState((s) => ({
-          ...s,
-          items: s.items.map((it) => (it.id === id ? item : it)),
-        }));
-      }
       
       toast({ title: 'Documento atualizado', description: item?.description || 'Registro atualizado.' });
-      // Refetch
+      
+      // Refetch completo para evitar duplicatas quando segmento muda
+      // Não atualizar estado local antes do refetch para evitar duplicação
       console.log('PUT /financial-documents/' + id + ' - Forçando refresh completo dos dados financeiros');
       await refetch();
+      
       return item;
     } catch (e) {
       console.error('Erro ao atualizar documento:', e);
