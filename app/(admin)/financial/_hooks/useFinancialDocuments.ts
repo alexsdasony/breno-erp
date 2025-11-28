@@ -167,9 +167,15 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
         const dateB = new Date(b.issue_date || 0).getTime();
         return dateB - dateA;
       });
+      
+      // Remover duplicatas baseado no ID antes de atualizar o estado
+      const uniqueList = sortedList.filter((item: any, index: number, self: any[]) => 
+        index === self.findIndex((t: any) => t.id === item.id)
+      );
+      
       setState((s) => ({
         ...s,
-        items: sortedList,
+        items: uniqueList,
         refetching: false,
         page: 1,
         hasMore: list.length === pageSize, // Usar pageSize em vez de PAGE_SIZE constante
@@ -178,7 +184,7 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
       setState((s) => ({ ...s, refetching: false }));
       toast({ title: 'Falha ao recarregar dados', description: 'Tente novamente em instantes.', variant: 'destructive' });
     }
-  }, [fetchPage]);
+  }, [fetchPage, pageSize]);
 
   const create = useCallback(async (data: Partial<FinancialDocument>) => {
     try {
