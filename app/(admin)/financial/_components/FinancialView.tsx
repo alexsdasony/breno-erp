@@ -1326,6 +1326,265 @@ export default function FinancialView() {
     return dateStr;
   };
 
+  // Função para exportar dados em CSV
+  const handleExport = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Buscar todos os dados aplicando os filtros atuais (sem paginação)
+      const params = new URLSearchParams();
+      
+      // Aplicar filtros de data
+      if (dateStartISO) {
+        params.append('dateStart', dateStartISO);
+      }
+      if (dateEndISO) {
+        params.append('dateEnd', dateEndISO);
+      }
+      
+      // Aplicar filtro de segmento
+      if (segmentIdForApi) {
+        params.append('segment_id', segmentIdForApi);
+      }
+      
+      // Buscar com pageSize muito grande para pegar todos os registros
+      params.append('page', '1');
+      params.append('pageSize', '10000');
+      
+      const apiUrl = `/api/financial-documents?${params.toString()}`;
+      console.log('📤 [EXPORT] URL completa da requisição:', apiUrl);
+      console.log('📤 [EXPORT] Filtros aplicados:', {
+        dateStartISO,
+        dateEndISO,
+        segmentIdForApi,
+        dateStart,
+        dateEnd
+      });
+      
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Erro na resposta da API:', errorText);
+        throw new Error('Erro ao buscar dados para exportação');
+      }
+      
+      const data = await response.json();
+      console.log('📊 Dados recebidos para exportação:', {
+        success: data.success,
+        hasFinancialDocuments: !!data.financialDocuments,
+        documentsCount: data.financialDocuments?.length || 0,
+        dataStructure: Object.keys(data),
+        pagination: data.pagination
+      });
+      
+      // A API retorna { success: true, financialDocuments: [...], pagination: {...} }
+      const documents = data.financialDocuments || [];
+      
+      console.log('📋 [EXPORT] Total de documentos para exportar:', documents.length);
+      if (documents.length > 0) {
+        console.log('📋 [EXPORT] Primeiro documento:', {
+          id: documents[0].id,
+          issue_date: documents[0].issue_date,
+          due_date: documents[0].due_date,
+          description: documents[0].description
+        });
+        if (documents.length > 1) {
+          console.log('📋 [EXPORT] Último documento:', {
+            id: documents[documents.length - 1].id,
+            issue_date: documents[documents.length - 1].issue_date,
+            due_date: documents[documents.length - 1].due_date,
+            description: documents[documents.length - 1].description
+          });
+        }
+      }
+      
+      if (documents.length === 0) {
+        toast({
+          title: 'Nenhum dado para exportar',
+          description: 'Não há documentos financeiros com os filtros aplicados.',
+          variant: 'destructive'
+        });
+        return;
+      }
+      
+      console.log('📋 Primeiro documento para debug:', documents[0]);
+      
+      // Preparar dados para CSV
+      const csvHeaders = [
+        'ID',
+        'Tipo',
+        'Data Emissão',
+        'Data Vencimento',
+        'Parceiro',
+        'Descrição',
+        'Valor',
+        'Saldo',
+        'Status',
+        'Forma de Pagamento',
+        'Número do Documento',
+        'Observações'
+      ];
+      
+      const csvRows = documents.map((doc: any) => {
+        const formatDate = (dateStr: string | null | undefined) => {
+          if (!dateStr) return '';
+          if (dateStr.includes('-') && dateStr.length === 10) {
+            const [year, month, day] = dateStr.split('-');
+            return `${day}/${month}/${year}`;
+          }
+          return dateStr;
+        };
+        
+        const formatCurrency = (value: number | null | undefined) => {
+          if (value === null || value === undefined) return '0,00';
+          const numValue = typeof value === 'string' ? parseFloat(value) : value;
+          if (isNaN(numValue)) return '0,00';
+          return numValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
+        
+        const getTypeLabel = (direction: string | null | undefined) => {
+          if (direction === 'receivable') return 'Contas a Receber';
+          if (direction === 'payable') return 'Contas a Pagar';
+          return '';
+        };
+        
+        const getStatusLabel = (status: string | null | undefined) => {
+          const statusMap: Record<string, string> = {
+            'draft': 'Rascunho',
+            'open': 'Aberto',
+            'partially_paid': 'Parcialmente Pago',
+            'paid': 'Pago',
+            'canceled': 'Cancelado'
+          };
+          return statusMap[status || ''] || status || '';
+        };
+        
+        const partnerName = doc.partner?.name || doc.partner_name || '';
+        const paymentMethod = doc.payment_method_data?.name || doc.payment_method || '';
+        
+        const row = [
+          String(doc.id || ''),
+          getTypeLabel(doc.direction),
+          formatDate(doc.issue_date),
+          formatDate(doc.due_date),
+          String(partnerName),
+          String(doc.description || ''),
+          formatCurrency(doc.amount),
+          formatCurrency(doc.balance),
+          getStatusLabel(doc.status),
+          String(paymentMethod),
+          String(doc.doc_no || ''),
+          String(doc.notes || '')
+        ];
+        
+        return row;
+      });
+      
+      console.log('📋 Total de linhas CSV geradas:', csvRows.length);
+      console.log('📋 Primeira linha de exemplo:', csvRows[0]);
+      
+      // Criar conteúdo CSV com vírgula como separador (padrão internacional)
+      const csvRowsFormatted = csvRows.map(row => {
+        const formattedRow = row.map(cell => {
+          // Escapar células que contêm vírgula, aspas ou quebras de linha
+          const cellStr = String(cell || '').trim();
+          if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+            return `"${cellStr.replace(/"/g, '""')}"`;
+          }
+          return cellStr;
+        });
+        return formattedRow.join(',');
+      });
+      
+      const csvContent = [
+        csvHeaders.join(','),
+        ...csvRowsFormatted
+      ].join('\n');
+      
+      console.log('📄 Tamanho do conteúdo CSV:', csvContent.length);
+      console.log('📄 Primeiras 500 caracteres do CSV:', csvContent.substring(0, 500));
+      console.log('📄 Últimas 200 caracteres do CSV:', csvContent.substring(Math.max(0, csvContent.length - 200)));
+      
+      // Validar que o conteúdo não está vazio
+      if (!csvContent || csvContent.trim().length === 0) {
+        throw new Error('Conteúdo CSV está vazio');
+      }
+      
+      // Criar blob de forma simples e direta
+      console.log('📦 Criando blob com conteúdo CSV...');
+      console.log('📦 Tamanho do conteúdo CSV:', csvContent.length);
+      
+      // Adicionar BOM UTF-8 para Excel reconhecer corretamente
+      const BOM = '\uFEFF';
+      const csvWithBOM = BOM + csvContent;
+      
+      // Criar blob de forma simples
+      const blob = new Blob([csvWithBOM], { 
+        type: 'text/csv;charset=utf-8;' 
+      });
+      
+      console.log('📦 Blob criado:', {
+        size: blob.size,
+        type: blob.type,
+        csvContentLength: csvContent.length,
+        csvWithBOMLength: csvWithBOM.length
+      });
+      
+      // Verificar se o blob tem conteúdo
+      if (blob.size === 0) {
+        console.error('❌ Blob está vazio!');
+        throw new Error('Blob criado está vazio');
+      }
+      
+      // Verificar se o conteúdo CSV não está vazio
+      if (!csvContent || csvContent.trim().length === 0) {
+        console.error('❌ Conteúdo CSV está vazio!');
+        throw new Error('Conteúdo CSV está vazio');
+      }
+      
+      // Criar link de download
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `documentos_financeiros_${new Date().toISOString().split('T')[0]}.csv`;
+      link.style.display = 'none';
+      
+      // Adicionar ao DOM
+      document.body.appendChild(link);
+      
+      // Disparar download
+      link.click();
+      
+      // Limpar após um pequeno delay
+      setTimeout(() => {
+        if (document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
+        window.URL.revokeObjectURL(url);
+      }, 200);
+      
+      toast({
+        title: 'Exportação concluída',
+        description: `${documents.length} documento(s) exportado(s) com sucesso.`
+      });
+      
+    } catch (error) {
+      console.error('Erro ao exportar:', error);
+      toast({
+        title: 'Erro na exportação',
+        description: error instanceof Error ? error.message : 'Erro desconhecido ao exportar dados.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [dateStartISO, dateEndISO, segmentIdForApi, toast]);
+  
   // Filtro em memória - incluindo todos os filtros
   const filtered = React.useMemo(() => {
     const p = partner.trim().toLowerCase();
@@ -1417,7 +1676,13 @@ export default function FinancialView() {
             }}
           />
           <Button variant="outline"><Filter className="w-4 h-4 mr-2" />Filtros</Button>
-          <Button variant="outline" disabled><FileDown className="w-4 h-4 mr-2" />Exportar</Button>
+          <Button 
+            variant="outline" 
+            onClick={handleExport}
+            disabled={loading || items.length === 0}
+          >
+            <FileDown className="w-4 h-4 mr-2" />Exportar
+          </Button>
           <Button 
             variant="outline" 
             onClick={() => setShowQuickEntry(true)}

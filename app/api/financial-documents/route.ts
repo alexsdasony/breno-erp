@@ -28,6 +28,46 @@ async function createAuditLog(action: string, tableName: string, recordId: strin
   }
 }
 
+// Validação de data
+function isValidDate(dateStr: string | null): boolean {
+  if (!dateStr || typeof dateStr !== 'string' || dateStr.trim() === '') return false;
+  if (dateStr.includes('undefined')) return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+  
+  const [year, month, day] = dateStr.split('-').map(Number);
+  if (isNaN(year) || isNaN(month) || isNaN(day)) return false;
+  if (year < 1900 || year > 2100) return false;
+  if (month < 1 || month > 12) return false;
+  
+  const lastDayOfMonth = new Date(year, month, 0).getDate();
+  return day >= 1 && day <= lastDayOfMonth;
+}
+
+// Função para aplicar filtros diretamente na query
+function applyFilters(query: any, segmentId: string | null, dateStart: string | null, dateEnd: string | null) {
+  // 1. Filtro de segmento
+  if (segmentId && segmentId !== 'null' && segmentId !== '0') {
+    query = query.eq('segment_id', segmentId);
+    console.log('✅ [Listagem] Filtro de segmento aplicado:', segmentId);
+  }
+
+  // 2. Filtros de data - USAR APENAS issue_date (COLUNA OFICIAL)
+  if (dateStart) {
+    query = query.gte('issue_date', dateStart);
+    console.log('✅ [Listagem] Filtro de data inicial aplicado na coluna issue_date:', dateStart);
+  }
+  if (dateEnd) {
+    query = query.lte('issue_date', dateEnd);
+    console.log('✅ [Listagem] Filtro de data final aplicado na coluna issue_date:', dateEnd);
+  }
+  
+  if (dateStart || dateEnd) {
+    console.log('📅 [Listagem] Coluna oficial para filtro de data: issue_date');
+  }
+
+  return query;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -36,59 +76,121 @@ export async function GET(request: NextRequest) {
     
     // Validar e converter parâmetros de paginação
     const page = isNaN(parseInt(pageParam)) ? 1 : Math.max(1, parseInt(pageParam));
-    const pageSize = isNaN(parseInt(pageSizeParam)) ? 20 : Math.max(1, Math.min(100, parseInt(pageSizeParam)));
+    // Para exportação (pageSize >= 1000), permitir até 100000 registros
+    // Para listagem normal, limitar a 100 registros
+    const requestedPageSize = isNaN(parseInt(pageSizeParam)) ? 20 : parseInt(pageSizeParam);
+    const pageSize = requestedPageSize >= 1000 
+      ? Math.min(100000, requestedPageSize) // Exportação: até 100k registros
+      : Math.max(1, Math.min(100, requestedPageSize)); // Listagem normal: até 100 registros
     const segmentId = searchParams.get('segment_id');
-    const dateStart = searchParams.get('dateStart');
-    const dateEnd = searchParams.get('dateEnd');
+    const dateStartParam = searchParams.get('dateStart');
+    const dateEndParam = searchParams.get('dateEnd');
 
     console.log('GET financial-documents: listagem simples, sem sync');
-    console.log('💰 Financial documents API request:', { page, pageSize, segmentId, dateStart, dateEnd });
+    console.log('💰 Financial documents API request:', { page, pageSize, segmentId, dateStartParam, dateEndParam });
+    console.log('📅 [Listagem] Coluna oficial para filtro de data: issue_date');
+    
+    // LOG EXPLÍCITO DE PROPAGAÇÃO DE PARÂMETROS
+    if (dateStartParam) {
+      console.log('✅ DATE FILTER RECEIVED - dateStart:', dateStartParam);
+    } else {
+      console.log('❌ NO DATE FILTER RECEIVED - dateStart: null ou undefined');
+    }
+    if (dateEndParam) {
+      console.log('✅ DATE FILTER RECEIVED - dateEnd:', dateEndParam);
+    } else {
+      console.log('❌ NO DATE FILTER RECEIVED - dateEnd: null ou undefined');
+    }
 
-    // Buscar documentos financeiros da tabela financial_documents
-    // IMPORTANTE: Esta rota NUNCA cria, modifica ou sincroniza documentos
-    // Apenas retorna documentos existentes em financial_documents
-    let queryDocs = supabaseAdmin
+    // Validar datas - RETORNAR ERRO 400 SE INVÁLIDAS
+    if (dateStartParam && !isValidDate(dateStartParam)) {
+      console.error('❌ [Listagem] Data inicial inválida recebida:', dateStartParam);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Data inicial inválida',
+          details: `Formato esperado: YYYY-MM-DD. Recebido: ${dateStartParam}`
+        },
+        { status: 400 }
+      );
+    }
+    if (dateEndParam && !isValidDate(dateEndParam)) {
+      console.error('❌ [Listagem] Data final inválida recebida:', dateEndParam);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Data final inválida',
+          details: `Formato esperado: YYYY-MM-DD. Recebido: ${dateEndParam}`
+        },
+        { status: 400 }
+      );
+    }
+
+    const dateStart = dateStartParam && isValidDate(dateStartParam) ? dateStartParam : null;
+    const dateEnd = dateEndParam && isValidDate(dateEndParam) ? dateEndParam : null;
+
+    // CRIAR UMA ÚNICA QUERY COM COUNT E LISTAGEM
+    const selectFields = `
+      *,
+      partner:partners(name, id),
+      payment_method_data:payment_methods(name, id)
+    `;
+    
+    let query = supabaseAdmin
       .from('financial_documents')
-      .select(`
-        *,
-        partner:partners(name, id),
-        payment_method_data:payment_methods(name, id)
-      `)
+      .select(selectFields, { count: 'exact' })
       .eq('is_deleted', false);
 
-    // Aplicar filtro de segmento se fornecido
-    if (segmentId && segmentId !== 'null' && segmentId !== '0') {
-      queryDocs = queryDocs.eq('segment_id', segmentId);
-      console.log('🔍 Aplicando filtro de segmento:', segmentId);
-    }
+    // APLICAR FILTROS DIRETAMENTE NA MESMA QUERY
+    query = applyFilters(query, segmentId, dateStart, dateEnd);
+
+    // Aplicar order
+    query = query.order('issue_date', { ascending: false });
     
-    queryDocs = queryDocs.order('issue_date', { ascending: false });
-
-    // Aplicar filtros de data se fornecidos
-    if (dateStart) {
-      queryDocs = queryDocs.gte('issue_date', dateStart);
-    }
-    if (dateEnd) {
-      queryDocs = queryDocs.lte('issue_date', dateEnd);
+    // Para exportação (pageSize >= 1000), não aplicar range (buscar todos)
+    // Para listagem normal, aplicar range de paginação
+    if (pageSize < 1000) {
+      const from = (page - 1) * pageSize;
+      const to = page * pageSize - 1;
+      query = query.range(from, to);
     }
 
-    const { data: financialDocuments, error: financialDocsError } = await queryDocs;
+    console.log('QUERY FINAL COM FILTROS:', query);
+    console.log('🔍 [Listagem] Executando query com count e listagem na mesma chamada...');
+    
+    // EXECUTAR UMA ÚNICA QUERY QUE RETORNA COUNT E DATA
+    const { data: financialDocuments, count: totalCount, error: queryError } = await query;
 
-    if (financialDocsError) {
-      console.error('❌ Erro ao buscar documentos financeiros:', financialDocsError);
+    if (queryError) {
+      console.error('❌ Erro ao buscar documentos financeiros:', queryError);
+      // Detectar erro de data inválida do PostgreSQL (código 22008)
+      const isDateError = queryError.code === '22008' || 
+                         queryError.message?.includes('date') || 
+                         queryError.message?.includes('invalid input syntax');
+      
+      if (isDateError) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Data inválida',
+            details: `Erro ao processar filtro de data: ${queryError.message}`
+          },
+          { status: 400 }
+        );
+      }
+      
       return NextResponse.json(
         { 
           success: false, 
           error: 'Erro ao buscar documentos financeiros',
-          details: financialDocsError.message
+          details: queryError.message
         },
-        { status: 500 }
+        { status: 400 }
       );
     }
 
-    // Apenas documentos de financial_documents (sem processamento de transações)
+    // Processar documentos
     const allDocuments = (financialDocuments || []).map((doc: any) => {
-      // Marcar origem baseado em pluggy_id/doc_no (se tem doc_no que parece UUID, é Pluggy)
       const hasPluggyId = doc.doc_no && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(doc.doc_no);
       const issueDate = doc.issue_date;
       const isManual = !hasPluggyId && (!issueDate || issueDate <= '2025-10-29');
@@ -98,25 +200,18 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Ordenar por data (mais recente primeiro)
-    allDocuments.sort((a: any, b: any) => {
-      const dateA = new Date(a.issue_date || a.date || 0).getTime();
-      const dateB = new Date(b.issue_date || b.date || 0).getTime();
-      return dateB - dateA;
-    });
-
-    // Aplicar paginação
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const paginatedDocuments = allDocuments.slice(startIndex, endIndex);
-
-    const total = allDocuments.length;
-    console.log('📊 Documentos financeiros encontrados:', total);
-    console.log('📊 Documentos paginados:', paginatedDocuments?.length || 0);
+    const total = totalCount || 0;
+    console.log('📊 [Listagem] Total de documentos APÓS filtros (do count):', total);
+    console.log('📊 [Listagem] Documentos retornados (do data):', allDocuments.length);
+    
+    // VALIDAÇÃO: Se page = 1, count deve ser >= data.length
+    if (page === 1 && total < allDocuments.length) {
+      console.error('⚠️ [Listagem] INCONSISTÊNCIA: count < data.length', { total, dataLength: allDocuments.length });
+    }
 
     const response = {
       success: true,
-      financialDocuments: paginatedDocuments,
+      financialDocuments: allDocuments,
       pagination: {
         page,
         pageSize,
@@ -135,13 +230,32 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Erro na API financial-documents:', error);
+    
+    // Detectar erro de data inválida do PostgreSQL
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isDateError = errorMessage.includes('22008') || 
+                       errorMessage.includes('date') || 
+                       errorMessage.includes('invalid input syntax') ||
+                       errorMessage.includes('date/time field value out of range');
+    
+    if (isDateError) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Data inválida',
+          details: `Erro ao processar filtro de data: ${errorMessage}`
+        },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Erro interno do servidor',
-        details: error instanceof Error ? error.message : 'Erro desconhecido'
+        error: 'Erro ao processar requisição',
+        details: errorMessage
       },
-      { status: 500 }
+      { status: 400 }
     );
   }
 }
