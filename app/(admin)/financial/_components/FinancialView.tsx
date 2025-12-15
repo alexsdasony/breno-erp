@@ -1489,8 +1489,8 @@ export default function FinancialView() {
       console.log('📋 Primeira linha de exemplo:', csvRows[0]);
       
       // Criar conteúdo CSV com vírgula como separador (padrão internacional)
-      const csvRowsFormatted = csvRows.map(row => {
-        const formattedRow = row.map(cell => {
+      const csvRowsFormatted = csvRows.map((row: string[]) => {
+        const formattedRow = row.map((cell: any) => {
           // Escapar células que contêm vírgula, aspas ou quebras de linha
           const cellStr = String(cell || '').trim();
           if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
