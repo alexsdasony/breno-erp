@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { createFinancialDocument, updateFinancialDocument, deleteFinancialDocument, normalizeFinancialDocument } from '@/services/financialDocumentsService';
 import type { FinancialDocument } from '@/types/FinancialDocument';
-import { Plus, Filter, FileDown, Zap } from 'lucide-react';
+import { Plus, Filter, FileDown, Zap, Link } from 'lucide-react';
 import { listSegments } from '@/services/segmentsService';
 import { usePaymentMethodsContext } from '@/contexts/PaymentMethodsContext';
 import { useAppData } from '@/hooks/useAppData';
@@ -16,12 +16,13 @@ import FinancialFilters from './FinancialFilters';
 import FinancialTable from './FinancialTable';
 import FinancialFormModal from './FinancialFormModal';
 import FinancialQuickEntryModal from './FinancialQuickEntryModal';
-import PluggyConnectButton from '@/components/pluggy/PluggyConnectButton';
+import BankAccountConnectionModal from './BankAccountConnectionModal';
 
 export default function FinancialView() {
   console.log('🚀 [FinancialView] Componente renderizado - VERSÃO NOVA COM KPIs AUTOMÁTICOS');
   
   const [pageSize, setPageSize] = React.useState<number>(20);
+  const [connectionModalOpen, setConnectionModalOpen] = React.useState<boolean>(false);
   
   // UI state - filtros
   const [dateStart, setDateStart] = React.useState<string>('');
@@ -1663,10 +1664,19 @@ export default function FinancialView() {
               (Total: {totalRecords} registros)
             </span>
           </div>
-          <PluggyConnectButton 
+          <Button
+            onClick={() => setConnectionModalOpen(true)}
+            className="gap-2"
+          >
+            <Link className="w-4 h-4" />
+            Conectar Conta Bancária
+          </Button>
+          <BankAccountConnectionModal
+            open={connectionModalOpen}
+            onOpenChange={setConnectionModalOpen}
             onSuccess={async (itemId) => {
-              console.log('✅ Conta conectada:', itemId);
-              // Recarregar dados após conectar conta
+              console.log('✅ Conta conectada ou extrato importado:', itemId);
+              // Recarregar dados após conectar conta ou importar extrato
               if (abortControllerRef.current) {
                 abortControllerRef.current.abort();
               }

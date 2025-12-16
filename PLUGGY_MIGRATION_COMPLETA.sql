@@ -148,3 +148,4 @@ COMMENT ON COLUMN public.pluggy_items.last_sync_at IS 'Data/hora da última sinc
 -- FIM DA MIGRATION
 -- =====================================================
 
+

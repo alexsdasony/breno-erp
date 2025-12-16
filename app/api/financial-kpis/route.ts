@@ -85,7 +85,6 @@ export async function GET(request: NextRequest) {
       .from('financial_documents')
       .select('amount, direction, issue_date')
       .eq('is_deleted', false)
-      .not('issue_date', 'is', null); // ✅ GARANTIR que issue_date não é NULL
 
     // APLICAR APENAS FILTROS (sem paginação, sem order)
     // 1. Filtro de segmento

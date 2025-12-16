@@ -54,3 +54,4 @@ COMMENT ON TABLE public.pluggy_items IS 'Conexões (items) da Pluggy associadas 
 COMMENT ON COLUMN public.pluggy_items.item_id IS 'ID único do item na Pluggy';
 COMMENT ON COLUMN public.pluggy_items.last_sync_at IS 'Data/hora da última sincronização bem-sucedida';
 
+

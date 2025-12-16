@@ -49,3 +49,4 @@ COMMENT ON COLUMN public.financial_transactions.item_id IS 'ID do item (conexão
 COMMENT ON COLUMN public.financial_transactions.direction IS 'Direção da transação: receivable (receita) ou payable (despesa)';
 COMMENT ON COLUMN public.financial_transactions.raw IS 'Dados brutos da transação retornados pela API Pluggy';
 
+

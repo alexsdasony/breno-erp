@@ -64,7 +64,6 @@ export default function CostCentersView() {
   const [segmentId, setSegmentId] = React.useState<string>('');
   const [budget, setBudget] = React.useState<string>('');
   const [status, setStatus] = React.useState<'active' | 'inactive'>('active');
-  const [type, setType] = React.useState<'despesa' | 'receita' | ''>('');
   const [managerId, setManagerId] = React.useState<string>('');
   const [nameError, setNameError] = React.useState<string | null>(null);
   const [segmentError, setSegmentError] = React.useState<string | null>(null);
@@ -293,7 +292,6 @@ export default function CostCentersView() {
         manager_id: managerId || null,
         budget: budget ? parseFloat(budget) : null,
         status: status,
-        type: type || null,
         // Não alterar segmento no update pelo formulário de edição
       } as any);
     } else {
@@ -304,7 +302,6 @@ export default function CostCentersView() {
         manager_id: managerId || null,
         budget: budget ? parseFloat(budget) : null,
         status: status,
-        type: type || null,
       } as any);
     }
     // Reset
@@ -314,7 +311,6 @@ export default function CostCentersView() {
     setSegmentId('');
     setBudget('');
     setStatus('active');
-    setType('');
     setManagerId('');
     setShowForm(false);
   };
@@ -328,7 +324,6 @@ export default function CostCentersView() {
     setSegmentId(cc.segment_id || '');
     setBudget(cc.budget ? String(cc.budget) : '');
     setStatus((cc.status as any) || 'active');
-    setType((cc.type as any) || '');
     setManagerId(cc.manager_id || '');
     // Defer para evitar que o mesmo clique feche a modal via backdrop
     window.setTimeout(() => setShowForm(true), 0);
@@ -342,7 +337,6 @@ export default function CostCentersView() {
     setSegmentId('');
     setBudget('');
     setStatus('active');
-    setType('');
     setManagerId('');
     setShowForm(false);
   };
@@ -541,19 +535,6 @@ export default function CostCentersView() {
                   <option value="inactive">Inativo</option>
                 </select>
               </div>
-              <div className="md:col-span-6">
-                <label htmlFor="costCenterType" className="block text-sm font-medium mb-1">Tipo <span className="text-xs text-muted-foreground">(opcional)</span></label>
-                <select
-                  id="costCenterType"
-                  value={type}
-                  onChange={(e) => setType(e.target.value as any)}
-                  className="w-full p-3 bg-muted border rounded-lg focus:ring-2 border-border focus:ring-primary"
-                >
-                  <option value="">Selecione...</option>
-                  <option value="despesa">Despesa</option>
-                  <option value="receita">Receita</option>
-                </select>
-              </div>
               <div className="md:col-span-4">
                 <label htmlFor="costCenterManager" className="block text-sm font-medium mb-1">Responsável <span className="text-xs text-muted-foreground">(opcional)</span></label>
                 <select
@@ -604,9 +585,9 @@ export default function CostCentersView() {
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Centro de Custo</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Descrição</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Tipo</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Gestor</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Segmento</th>
+
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Status</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Ações</th>
                 </tr>
@@ -633,19 +614,6 @@ export default function CostCentersView() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-300">{cc.description || '-'}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {cc.type ? (
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          cc.type === 'receita' 
-                            ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                            : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                        }`}>
-                          {cc.type === 'receita' ? 'Receita' : 'Despesa'}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">-</span>
-                      )}
                     </td>
                     <td className="px-6 py-4">
                       {cc.manager_id ? (

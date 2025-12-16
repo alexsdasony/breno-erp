@@ -80,9 +80,10 @@ export async function getFinancialDocuments(params: Record<string, any> = {}): P
     const result = {
       success: true,
       data: {
-        financialDocuments: data.financialDocuments || []
+        financialDocuments: data.financialDocuments || [],
+        pagination: data.pagination || { page: 1, pageSize: 20, total: 0, totalPages: 1 }
       }
-    } as ApiResponse<{ financialDocuments: FinancialDocument[] }>;
+    } as ApiResponse<{ financialDocuments: FinancialDocument[]; pagination?: any }>;
     
     return result;
   } catch (error) {

@@ -108,3 +108,4 @@ Se a API Key não está sendo cacheada:
 2. Verifique logs para ver TTL sendo aplicado
 3. Verifique se não há múltiplas instâncias do servidor (cache é em memória)
 
+

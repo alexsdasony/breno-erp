@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
         due_date: tx.date,
         amount: Math.abs(Number(tx.amount) || 0),
         balance: Math.abs(Number(tx.amount) || 0),
-        status: tx.status === 'POSTED' ? 'paid' : 'open',
+        status: 'open', // Transações Pluggy sempre aparecem como "Aberto"
         category_id: null,
         segment_id: tx.segment_id,
         description: tx.description || 'Transação Pluggy',

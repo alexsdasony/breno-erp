@@ -61,3 +61,4 @@ if (process.env.PLUGGY_CRON_RUN_ON_START !== 'false') {
   runSync('inicial');
 }
 
+

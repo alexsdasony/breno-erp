@@ -43,3 +43,4 @@ CREATE TRIGGER trg_financial_transactions_updated_at
   EXECUTE FUNCTION public.update_financial_transactions_updated_at();
 
 
+

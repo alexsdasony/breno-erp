@@ -227,3 +227,4 @@ npm run pluggy:cron
 
 **Execute `node scripts/test-pluggy.js` sempre que quiser verificar o status completo!**
 
+

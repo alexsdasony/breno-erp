@@ -40,12 +40,19 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
     try {
       const params: Record<string, any> = { page, pageSize };
       
-      // Adicionar filtros de data se fornecidos
-      if (dateStart) {
-        params.dateStart = dateStart;
+      // Adicionar filtros de data - ENVIAR SEMPRE que existirem (backend validará)
+      // Garantir propagação dos parâmetros
+      if (dateStart !== undefined && dateStart !== null) {
+        params.dateStart = dateStart || '';
+        console.log('📤 [Listagem Hook] Enviando dateStart:', dateStart || '(vazio)');
+      } else {
+        console.log('📤 [Listagem Hook] dateStart não definido');
       }
-      if (dateEnd) {
-        params.dateEnd = dateEnd;
+      if (dateEnd !== undefined && dateEnd !== null) {
+        params.dateEnd = dateEnd || '';
+        console.log('📤 [Listagem Hook] Enviando dateEnd:', dateEnd || '(vazio)');
+      } else {
+        console.log('📤 [Listagem Hook] dateEnd não definido');
       }
       
       // Adicionar filtro de segmento se fornecido
@@ -55,30 +62,23 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
       
       const response = await getFinancialDocuments(params);
       const list = response.data?.financialDocuments || [];
+      const pagination = response.data?.pagination;
+      const totalPages = pagination?.totalPages || 1;
       
-      // Se não há dados, tentar buscar diretamente da API
-      if (list.length === 0) {
-        try {
-          const directResponse = await fetch(`/api/financial-documents?page=1&pageSize=${pageSize}`, {
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          });
-          const directData = await directResponse.json();
-          
-          if (directData.financialDocuments && directData.financialDocuments.length > 0) {
-            const directList = directData.financialDocuments || [];
-            return directList.map(normalizeFinancialDocument);
-          }
-        } catch (error) {
-          console.error('Erro na busca direta:', error);
-        }
+      // VALIDAR: Se page > totalPages, retornar lista vazia (não há mais páginas)
+      if (page > totalPages && totalPages > 0) {
+        console.warn(`⚠️ [Paginação] Página ${page} solicitada, mas totalPages é ${totalPages}. Retornando lista vazia.`);
+        return { list: [], totalPages, hasMore: false };
       }
       
-      return list.map(normalizeFinancialDocument);
+      // REMOVIDO: Fallback que buscava sem filtros
+      // Se não há dados, retornar lista vazia (não refazer busca sem filtros)
+      
+      const hasMore = page < totalPages;
+      return { list: list.map(normalizeFinancialDocument), totalPages, hasMore };
     } catch (error) {
       console.error('Erro ao buscar documentos financeiros:', error);
-      return [];
+      return { list: [], totalPages: 1, hasMore: false };
     }
   }, [pageSize, dateStart, dateEnd, segmentId]);
 
@@ -91,8 +91,11 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
     });
     
     try {
-      const list = await fetchPage(currentPage);
-      console.log('📊 Load - Registros carregados:', list.length, 'página:', currentPage);
+      const result = await fetchPage(currentPage);
+      const list = result.list || [];
+      const hasMore = result.hasMore || false;
+      
+      console.log('📊 Load - Registros carregados:', list.length, 'página:', currentPage, 'hasMore:', hasMore);
       setState((s) => {
         const newItems = reset ? list : [...s.items, ...list];
         return {
@@ -101,7 +104,7 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
           loading: false,
           refetching: false,
           page: currentPage,
-          hasMore: list.length === pageSize, // Se retornou menos que pageSize, não há mais páginas
+          hasMore: hasMore,
         };
       });
     } catch (e) {
@@ -132,10 +135,11 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
     setState((s) => ({ ...s, loading: true, page: nextPage }));
     
     try {
-      const list = await fetchPage(nextPage);
-      console.log('✅ Registros carregados:', list.length, 'de', pageSize, 'esperados');
+      const result = await fetchPage(nextPage);
+      const list = result.list || [];
+      const hasMore = result.hasMore || false;
       
-      const hasMore = list.length === pageSize; // Se retornou menos que pageSize, não há mais páginas
+      console.log('✅ Registros carregados:', list.length, 'hasMore:', hasMore);
       
       setState((s) => ({
         ...s,
@@ -160,7 +164,10 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
   const refetch = useCallback(async () => {
     setState((s) => ({ ...s, refetching: true }));
     try {
-      const list = await fetchPage(1);
+      const result = await fetchPage(1);
+      const list = result.list || [];
+      const hasMore = result.hasMore || false;
+      
       // Ordenar por data de emissão decrescente
       const sortedList = list.sort((a: any, b: any) => {
         const dateA = new Date(a.issue_date || 0).getTime();
@@ -178,7 +185,7 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
         items: uniqueList,
         refetching: false,
         page: 1,
-        hasMore: list.length === pageSize, // Usar pageSize em vez de PAGE_SIZE constante
+        hasMore: hasMore,
       }));
     } catch (e) {
       setState((s) => ({ ...s, refetching: false }));
@@ -259,10 +266,9 @@ export function useFinancialDocuments(pageSize: number = PAGE_SIZE, dateStart?: 
     }
   }, []);
 
-  useEffect(() => {
-    void load(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // REMOVIDO: useEffect automático no mount
+  // A listagem será carregada pelo componente pai quando necessário
+  // Isso evita chamadas "default" sem filtros
 
   const api: Api = useMemo(() => ({ load, loadMore, refetch, forceRefresh, create, update, remove }), [load, loadMore, refetch, forceRefresh, create, update, remove]);
 
