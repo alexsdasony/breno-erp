@@ -303,7 +303,10 @@ function parseQIFStatement(qifContent: string): BankStatementTransaction[] {
     
     switch (code) {
       case 'D': // Date
-        currentTransaction.date = parseDate(value);
+        const parsedDate = parseDate(value);
+        if (parsedDate) {
+          currentTransaction.date = parsedDate;
+        }
         break;
       case 'T': // Amount
         const amount = parseValue(value);
@@ -323,7 +326,7 @@ function parseQIFStatement(qifContent: string): BankStatementTransaction[] {
         }
         break;
       case 'N': // Number/Reference
-        currentTransaction.doc_no = value;
+        currentTransaction.doc_no = value ? value : undefined;
         break;
       case '^': // End of transaction
         if (currentTransaction.date && currentTransaction.amount && currentTransaction.direction) {
@@ -347,7 +350,7 @@ function parseQIFStatement(qifContent: string): BankStatementTransaction[] {
       description: currentTransaction.description || 'Transação bancária',
       amount: currentTransaction.amount,
       direction: currentTransaction.direction,
-      doc_no: currentTransaction.doc_no,
+      doc_no: currentTransaction.doc_no || undefined,
     });
   }
   
