@@ -179,7 +179,7 @@ export function parseCSVStatement(csvContent: string): BankStatementTransaction[
         amount: Math.abs(rawValue),
         direction: direction!,
         balance: balance !== null ? balance : undefined,
-        doc_no: docNo,
+        doc_no: docNo || undefined,
       });
     } catch (error) {
       console.warn(`⚠️ Erro ao processar linha ${i + 1}:`, error);
