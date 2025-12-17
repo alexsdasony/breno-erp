@@ -71,24 +71,64 @@ export async function POST(request: NextRequest) {
 
     console.log(`📊 Processando ${transactions.length} transações do extrato bancário`);
 
-    // Converter transações em documentos financeiros
-    // Verificar duplicatas usando descrição + data + valor
+    // 1. Verificar duplicatas DENTRO do arquivo (usando doc_no quando disponível)
+    const seenInFile = new Set<string>();
+    const uniqueTransactions: BankStatementTransaction[] = [];
+    let duplicatesInFile = 0;
+
+    for (const tx of transactions) {
+      // Criar chave única: usar doc_no se disponível, senão usar data+valor+direção
+      const uniqueKey = tx.doc_no 
+        ? `doc_no:${tx.doc_no}`
+        : `${tx.date}-${tx.amount}-${tx.direction}-${tx.description.substring(0, 30)}`;
+      
+      if (seenInFile.has(uniqueKey)) {
+        duplicatesInFile++;
+        continue;
+      }
+      
+      seenInFile.add(uniqueKey);
+      uniqueTransactions.push(tx);
+    }
+
+    if (duplicatesInFile > 0) {
+      console.log(`⚠️ ${duplicatesInFile} transação(ões) duplicada(s) encontrada(s) dentro do arquivo, ignoradas`);
+    }
+
+    // 2. Verificar duplicatas no banco de dados
     const documentsToInsert = [];
     let duplicateCount = 0;
     let importedCount = 0;
 
-    for (const tx of transactions) {
-      // Verificar se já existe documento com mesmos dados
-      const { data: existingDoc } = await supabaseAdmin
-        .from('financial_documents')
-        .select('id')
-        .eq('issue_date', tx.date)
-        .eq('amount', tx.amount)
-        .eq('direction', tx.direction)
-        .ilike('description', `%${tx.description.substring(0, 50)}%`)
-        .eq('is_deleted', false)
-        .limit(1)
-        .single();
+    for (const tx of uniqueTransactions) {
+      let existingDoc = null;
+
+      // Verificar duplicata usando doc_no se disponível (mais preciso)
+      if (tx.doc_no) {
+        const { data } = await supabaseAdmin
+          .from('financial_documents')
+          .select('id')
+          .eq('doc_no', tx.doc_no)
+          .eq('is_deleted', false)
+          .limit(1)
+          .single();
+        
+        existingDoc = data;
+      } else {
+        // Fallback: verificar usando data + valor + direção + descrição
+        const { data } = await supabaseAdmin
+          .from('financial_documents')
+          .select('id')
+          .eq('issue_date', tx.date)
+          .eq('amount', tx.amount)
+          .eq('direction', tx.direction)
+          .ilike('description', `%${tx.description.substring(0, 50)}%`)
+          .eq('is_deleted', false)
+          .limit(1)
+          .single();
+        
+        existingDoc = data;
+      }
 
       if (existingDoc) {
         duplicateCount++;
@@ -96,10 +136,13 @@ export async function POST(request: NextRequest) {
       }
 
       // Criar documento financeiro
+      // Se não tem doc_no, gerar um único baseado em timestamp + índice
+      const docNo: string = tx.doc_no || `IMPORT-${tx.date}-${tx.amount}-${Date.now()}-${documentsToInsert.length}`;
+      
       const document = {
         partner_id: null,
         direction: tx.direction,
-        doc_no: tx.doc_no || `IMPORT-${tx.date}-${tx.amount}-${Date.now()}`,
+        doc_no: docNo,
         issue_date: tx.date,
         due_date: tx.date,
         amount: tx.amount,
@@ -138,14 +181,15 @@ export async function POST(request: NextRequest) {
       importedCount = documentsToInsert.length;
     }
 
-    console.log(`✅ Importação concluída: ${importedCount} novos documentos, ${duplicateCount} duplicados ignorados`);
+    console.log(`✅ Importação concluída: ${importedCount} novos documentos, ${duplicateCount} duplicados no banco, ${duplicatesInFile} duplicados no arquivo`);
 
     return NextResponse.json({
       success: true,
       imported: importedCount,
-      duplicates: duplicateCount,
+      duplicatesInFile,
+      duplicatesInDatabase: duplicateCount,
       total: transactions.length,
-      message: `${importedCount} registro(s) importado(s) com sucesso${duplicateCount > 0 ? `, ${duplicateCount} duplicado(s) ignorado(s)` : ''}`,
+      message: `${importedCount} registro(s) importado(s) com sucesso${duplicateCount > 0 || duplicatesInFile > 0 ? `. ${duplicateCount} duplicado(s) no banco, ${duplicatesInFile} no arquivo ignorado(s)` : ''}`,
     });
 
   } catch (error) {
