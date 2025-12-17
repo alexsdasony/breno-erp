@@ -62,7 +62,7 @@ export function normalizeFinancialDocument(row: any): FinancialDocument & { _sou
 /**
  * Obtém a lista de documentos financeiros com paginação
  */
-export async function getFinancialDocuments(params: Record<string, any> = {}): Promise<ApiResponse<{ financialDocuments: FinancialDocument[] }>> {
+export async function getFinancialDocuments(params: Record<string, any> = {}): Promise<ApiResponse<{ financialDocuments: FinancialDocument[]; pagination?: { page: number; pageSize: number; total: number; totalPages: number } }>> {
   try {
     // Usar fetch direto em vez do apiService.get
     const queryString = new URLSearchParams(params).toString();
@@ -77,23 +77,22 @@ export async function getFinancialDocuments(params: Record<string, any> = {}): P
     const data = await response.json();
     
     // A resposta já vem com a estrutura correta da API
-    const result = {
+    return {
       success: true,
       data: {
         financialDocuments: data.financialDocuments || [],
         pagination: data.pagination || { page: 1, pageSize: 20, total: 0, totalPages: 1 }
       }
-    } as ApiResponse<{ financialDocuments: FinancialDocument[]; pagination?: any }>;
-    
-    return result;
+    };
   } catch (error) {
     console.error('Erro ao buscar documentos financeiros:', error);
     return {
       success: false,
       data: {
-        financialDocuments: []
+        financialDocuments: [],
+        pagination: { page: 1, pageSize: 20, total: 0, totalPages: 1 }
       }
-    } as ApiResponse<{ financialDocuments: FinancialDocument[] }>;
+    };
   }
 }
 
