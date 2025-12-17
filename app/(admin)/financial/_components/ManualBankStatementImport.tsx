@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, FileText, X, Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { useAppData } from '@/hooks/useAppData';
+import apiService from '@/services/api';
 
 interface ManualBankStatementImportProps {
   onSuccess?: () => void;
@@ -112,8 +113,17 @@ export default function ManualBankStatementImport({
       formData.append('file', file);
       formData.append('segmentId', currentUser.segment_id || '');
 
+      // Obter token para enviar no header
+      const token = apiService.getToken();
+      
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['X-User-Token'] = token;
+      }
+
       const response = await fetch('/api/financial-documents/import', {
         method: 'POST',
+        headers,
         body: formData,
       });
 

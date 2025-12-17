@@ -3,10 +3,36 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { parseCSVStatement, parseXMLStatement } from '@/lib/bankStatementParsers';
 import type { BankStatementTransaction } from '@/lib/bankStatementParsers';
 
-export async function POST(request: NextRequest) {
+// Função para obter usuário do token
+function parseUserToken(token: string | null): { user_id: string; email?: string } | null {
+  if (!token) return null;
+
   try {
-    // Verificar autenticação (se necessário)
-    // TODO: Adicionar verificação de autenticação se necessário
+    const decoded = Buffer.from(token, 'base64').toString();
+    const payload = JSON.parse(decoded);
+    if (payload?.user_id) {
+      return {
+        user_id: payload.user_id,
+        email: payload.email
+      };
+    }
+    return null;
+  } catch (error) {
+    console.warn('⚠️ Falha ao decodificar X-User-Token:', error);
+    return null;
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const importStartTime = new Date();
+  let importLogId: string | null = null;
+  
+  try {
+    // Obter usuário do token
+    const userHeader = request.headers.get('X-User-Token');
+    const userToken = parseUserToken(userHeader);
+    const userId = userToken?.user_id || null;
+    const userEmail = userToken?.email || null;
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -69,7 +95,51 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`📊 Processando ${transactions.length} transações do extrato bancário`);
+    // Calcular primeira e última data do extrato
+    const dates = transactions.map(tx => tx.date).filter(Boolean).sort();
+    const firstDate = dates[0] || null;
+    const lastDate = dates[dates.length - 1] || null;
+
+    if (!firstDate || !lastDate) {
+      return NextResponse.json(
+        { success: false, error: 'Não foi possível determinar o período do extrato (datas inválidas)' },
+        { status: 400 }
+      );
+    }
+
+    // Determinar tipo de arquivo
+    const fileType = isCSV ? 'CSV' : (isQIF ? 'QIF' : (fileName.endsWith('.ofx') ? 'OFX' : 'XML'));
+
+    // Criar log de importação ANTES de processar
+    const { data: importLog, error: logError } = await supabaseAdmin
+      .from('bank_statement_import_logs')
+      .insert({
+        user_id: userId,
+        user_email: userEmail,
+        file_name: file.name,
+        file_type: fileType,
+        file_size: file.size,
+        first_date: firstDate,
+        last_date: lastDate,
+        total_transactions: transactions.length,
+        imported_count: 0,
+        duplicates_in_file: 0,
+        duplicates_in_database: 0,
+        segment_id: segmentId || null,
+        status: 'processing',
+        import_started_at: importStartTime.toISOString(),
+      })
+      .select('id')
+      .single();
+
+    if (logError) {
+      console.error('⚠️ Erro ao criar log de importação (continuando mesmo assim):', logError);
+    } else {
+      importLogId = importLog.id;
+      console.log(`📝 Log de importação criado: ${importLogId}`);
+    }
+
+    console.log(`📊 Processando ${transactions.length} transações do extrato bancário (${firstDate} a ${lastDate})`);
 
     // 1. Verificar duplicatas DENTRO do arquivo (usando doc_no quando disponível)
     const seenInFile = new Set<string>();
@@ -181,7 +251,30 @@ export async function POST(request: NextRequest) {
       importedCount = documentsToInsert.length;
     }
 
+    const importEndTime = new Date();
+    const status = importedCount > 0 ? 'completed' : (duplicateCount > 0 || duplicatesInFile > 0 ? 'partial' : 'failed');
+    
     console.log(`✅ Importação concluída: ${importedCount} novos documentos, ${duplicateCount} duplicados no banco, ${duplicatesInFile} duplicados no arquivo`);
+
+    // Atualizar log de importação
+    if (importLogId) {
+      const { error: updateLogError } = await supabaseAdmin
+        .from('bank_statement_import_logs')
+        .update({
+          imported_count: importedCount,
+          duplicates_in_file: duplicatesInFile,
+          duplicates_in_database: duplicateCount,
+          status,
+          import_completed_at: importEndTime.toISOString(),
+        })
+        .eq('id', importLogId);
+
+      if (updateLogError) {
+        console.error('⚠️ Erro ao atualizar log de importação:', updateLogError);
+      } else {
+        console.log(`📝 Log de importação atualizado: ${importLogId}`);
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -189,6 +282,7 @@ export async function POST(request: NextRequest) {
       duplicatesInFile,
       duplicatesInDatabase: duplicateCount,
       total: transactions.length,
+      importLogId,
       message: `${importedCount} registro(s) importado(s) com sucesso${duplicateCount > 0 || duplicatesInFile > 0 ? `. ${duplicateCount} duplicado(s) no banco, ${duplicatesInFile} no arquivo ignorado(s)` : ''}`,
     });
 
