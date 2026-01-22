@@ -62,14 +62,19 @@ export async function GET(request: NextRequest) {
     console.log('📥 Resultado da listagem:', { count, error });
 
     if (error) {
+      const errCause = error instanceof Error && 'cause' in error ? (error as Error & { cause?: unknown }).cause : null;
       console.error('❌ Erro ao buscar fornecedores:', error);
-      return NextResponse.json(
-        { 
-          error: 'Erro ao buscar fornecedores',
-          details: error.message 
-        },
-        { status: 500 }
-      );
+      console.error('❌ cause (diagnóstico fetch/rede):', errCause);
+      const errPayload: Record<string, unknown> = {
+        error: 'Erro ao buscar fornecedores',
+        details: error.message,
+      };
+      const e = error as { details?: string; hint?: string; code?: string };
+      if (typeof e.details === 'string') {
+        if (e.hint) errPayload.hint = e.hint;
+        if (e.code) errPayload.code = e.code;
+      }
+      return NextResponse.json(errPayload, { status: 500 });
     }
 
     return NextResponse.json({
@@ -84,11 +89,14 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
+    const errCause = error instanceof Error && 'cause' in error ? (error as Error & { cause?: unknown }).cause : null;
     console.error('❌ Erro na API de fornecedores:', error);
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
+    console.error('❌ cause (diagnóstico fetch/rede):', errCause);
+    const payload: Record<string, unknown> = { error: 'Erro interno do servidor' };
+    if (process.env.NODE_ENV !== 'production' && errCause) {
+      payload.debugCause = String(errCause);
+    }
+    return NextResponse.json(payload, { status: 500 });
   }
 }
 
