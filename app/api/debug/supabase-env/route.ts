@@ -1,97 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-/**
- * GET /api/debug/supabase-env
- * Rota de debug para verificar variáveis Supabase e conectividade (Render/produção).
- *
- * ⚠️ ATENÇÃO: Não expõe chaves completas. Remover em produção ou proteger com autenticação.
- */
 export async function GET(request: NextRequest) {
   try {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    const env = {
-      hasUrl: !!url,
-      hasKey: !!key,
-      urlLength: url?.length ?? 0,
-      urlPrefix: url ? `${url.substring(0, 30)}...` : 'N/A',
-      keyLength: key?.length ?? 0,
-      keyPrefix: key ? `${key.substring(0, 20)}...` : 'N/A',
+    const envInfo = {
+      hasNextPublicSupabaseUrl: !!url,
+      hasSupabaseServiceRoleKey: !!key,
+      hasNextPublicSupabaseAnonKey: !!anonKey,
+      urlLength: url?.length || 0,
+      keyLength: key?.length || 0,
+      anonKeyLength: anonKey?.length || 0,
+      urlPrefix: url ? url.substring(0, 30) + '...' : 'N/A',
+      keyPrefix: key ? key.substring(0, 20) + '...' : 'N/A',
       nodeEnv: process.env.NODE_ENV,
-      renderServiceId: process.env.RENDER_SERVICE_ID ?? 'not set',
-      renderInstanceId: process.env.RENDER_INSTANCE_ID ?? 'not set',
+      allSupabaseKeys: Object.keys(process.env)
+        .filter(k => k.includes('SUPABASE'))
+        .map(k => ({
+          key: k,
+          hasValue: !!process.env[k],
+          length: process.env[k]?.length || 0
+        })),
     };
 
-    let connectivity: {
-      ok: boolean;
-      status?: number;
-      statusText?: string;
-      errorMessage?: string;
-      errorCause?: string;
-      errorCode?: string;
-    } = { ok: false };
-
-    if (url && key) {
-      const apiUrl = `${url.replace(/\/$/, '')}/rest/v1/partners?select=id&limit=1`;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15_000);
-      try {
-        const res = await fetch(apiUrl, {
-          method: 'GET',
-          headers: {
-            apikey: key,
-            Authorization: `Bearer ${key}`,
-            'Content-Type': 'application/json',
-            Prefer: 'return=minimal',
-          },
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-        connectivity = {
-          ok: res.ok,
-          status: res.status,
-          statusText: res.statusText,
-        };
-      } catch (e) {
-        clearTimeout(timeoutId);
-        const err = e instanceof Error ? e : new Error(String(e));
-        const cause = err.cause as { code?: string; message?: string } | undefined;
-        connectivity = {
-          ok: false,
-          errorMessage: err.message,
-          errorCause: cause ? String(cause) : undefined,
-          errorCode: cause?.code,
-        };
-      }
-    }
+    console.log('🔍 Debug Supabase Environment:', envInfo);
 
     return NextResponse.json({
       success: true,
-      environment: env,
-      connectivity,
-      message:
-        env.hasUrl && env.hasKey
-          ? connectivity.ok
-            ? '✅ Supabase configurado e acessível'
-            : `❌ Supabase configurado mas fetch falhou: ${connectivity.errorMessage ?? connectivity.statusText ?? 'erro desconhecido'}`
-          : '❌ Variáveis Supabase ausentes',
-      troubleshooting:
-        !env.hasUrl || !env.hasKey || !connectivity.ok
-          ? {
-              step1: 'Verifique NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no Render (Environment)',
-              step2: 'Supabase Dashboard → Settings → API: use a URL e a service_role key',
-              step3: 'Supabase → Database → Network: "Allow all" ou adicione IPs do Render',
-              step4: 'Após alterar variáveis: Manual Deploy no Render e aguarde 2–5 min',
-              step5: 'Se errorCause = ECONNRESET/ECONNREFUSED: problema de rede Render ↔ Supabase',
-            }
-          : null,
+      environment: envInfo,
+      status: {
+        canCreateClient: !!(url && key),
+        missing: {
+          url: !url,
+          serviceRoleKey: !key
+        }
+      }
     });
   } catch (error) {
+    console.error('❌ Erro no debug:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        error: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );
