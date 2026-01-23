@@ -26,17 +26,43 @@ async function fetchWithTimeoutAndRetry(
   init?: RequestInit
 ): Promise<Response> {
   let lastError: unknown;
+  const urlString = typeof input === 'string' ? input : input instanceof URL ? input.toString() : String(input);
+  
+  // Log da URL sendo acessada (apenas hostname para segurança)
+  const urlObj = typeof input === 'string' || input instanceof URL 
+    ? new URL(input.toString()) 
+    : null;
+  if (urlObj) {
+    console.log(`🌐 [fetchWithTimeoutAndRetry] Tentando conectar a: ${urlObj.hostname}`);
+  }
+  
   for (let attempt = 0; attempt <= FETCH_RETRIES; attempt++) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
     try {
       const res = await fetch(input, { ...init, signal: controller.signal });
       clearTimeout(timeoutId);
+      if (urlObj) {
+        console.log(`✅ [fetchWithTimeoutAndRetry] Conexão bem-sucedida com ${urlObj.hostname}`);
+      }
       return res;
     } catch (e) {
       clearTimeout(timeoutId);
       lastError = e;
       const cause = e instanceof Error && 'cause' in e ? (e as Error & { cause?: unknown }).cause : null;
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      
+      // Diagnóstico específico para ENOTFOUND (DNS)
+      if (errorMessage.includes('ENOTFOUND') || (cause && typeof cause === 'object' && 'code' in cause && cause.code === 'ENOTFOUND')) {
+        console.error(`❌ [fetchWithTimeoutAndRetry] Erro DNS (ENOTFOUND) - Hostname não pode ser resolvido`);
+        console.error(`❌ Hostname tentado: ${urlObj?.hostname || 'desconhecido'}`);
+        console.error(`❌ Isso geralmente significa:`);
+        console.error(`   1. A URL do Supabase está incorreta`);
+        console.error(`   2. O projeto Supabase foi deletado ou movido`);
+        console.error(`   3. Problema de DNS/rede no Render`);
+        console.error(`   4. Firewall bloqueando acesso ao Supabase`);
+      }
+      
       console.error(`❌ Supabase fetch failed (tentativa ${attempt + 1}/${FETCH_RETRIES + 1}):`, e);
       console.error('❌ cause (diagnóstico rede):', cause);
       if (attempt < FETCH_RETRIES && isRetryableFetchError(e)) {
@@ -113,6 +139,11 @@ export function getSupabaseAdmin(): SupabaseClient {
   // Validação básica do formato da chave (deve começar com eyJ)
   if (!cleanedKey.startsWith('eyJ')) {
     console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY pode estar em formato incorreto (não começa com eyJ)');
+  }
+
+  // Validação básica do formato da URL
+  if (!url.startsWith('https://') || !url.includes('.supabase.co')) {
+    console.warn('⚠️ NEXT_PUBLIC_SUPABASE_URL pode estar em formato incorreto:', url.substring(0, 50));
   }
 
   // Log de sucesso (também em produção para debug inicial)
