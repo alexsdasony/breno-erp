@@ -3,7 +3,7 @@
  * Esta função deve ser chamada APENAS em /api/pluggy/sync
  */
 
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 
 /**
  * Reconcilia transações Pluggy com documentos financeiros
@@ -40,6 +40,7 @@ export async function reconcilePluggyTransactionsToDocuments(
       }
       
       // Buscar documento existente em financial_documents usando doc_no
+      const supabaseAdmin = getSupabaseAdmin();
       const { data: existingDoc, error: docError } = await supabaseAdmin
         .from('financial_documents')
         .select('*')

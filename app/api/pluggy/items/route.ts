@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPluggyItem, getPluggyItem, listPluggyConnectors } from '@/lib/pluggyClient';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 
 interface CreateItemBody {
   connector: string;
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
     let savedItem = null;
     if (body.userId) {
       try {
-        const { supabaseAdmin } = await import('@/lib/supabaseAdmin');
+        const supabaseAdmin = getSupabaseAdmin();
         
         const itemData = {
           item_id: item.id,
@@ -162,7 +163,7 @@ export async function POST(request: NextRequest) {
         
         // Importar função de sincronização
         const { fetchPluggyTransactions } = await import('@/lib/pluggyClient');
-        const { supabaseAdmin } = await import('@/lib/supabaseAdmin');
+        const supabaseAdmin = getSupabaseAdmin();
         const {
           inferInstitution,
           mapPluggyTypeToErp,
