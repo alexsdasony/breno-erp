@@ -59,8 +59,25 @@ export async function GET(request: NextRequest) {
     
   } catch (error) {
     console.error('❌ Erro na API de produtos:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Se for erro de variável de ambiente, retornar mensagem clara
+    if (errorMessage.includes('não está definida') || errorMessage.includes('SUPABASE')) {
+      return NextResponse.json(
+        { 
+          error: 'Erro de configuração',
+          details: errorMessage,
+          hint: 'Verifique se NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY estão configuradas no Render'
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { 
+        error: 'Erro interno do servidor',
+        details: errorMessage
+      },
       { status: 500 }
     );
   }
@@ -117,8 +134,25 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     console.error('❌ Erro na criação de produto:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Se for erro de variável de ambiente, retornar mensagem clara
+    if (errorMessage.includes('não está definida') || errorMessage.includes('SUPABASE')) {
+      return NextResponse.json(
+        { 
+          error: 'Erro de configuração',
+          details: errorMessage,
+          hint: 'Verifique se NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY estão configuradas no Render'
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { 
+        error: 'Erro interno do servidor',
+        details: errorMessage
+      },
       { status: 500 }
     );
   }

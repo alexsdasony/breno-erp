@@ -71,11 +71,8 @@ export function getSupabaseAdmin(): SupabaseClient {
       hasNextPublicSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       hasSupabaseServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
       nodeEnv: process.env.NODE_ENV,
-      allEnvKeys: Object.keys(process.env).filter(k => k.includes('SUPABASE')).join(', '),
     });
-    const err = new Error(errorMsg);
-    (err as any).isConfigError = true;
-    throw err;
+    throw new Error(errorMsg);
   }
 
   if (!key) {
@@ -86,11 +83,8 @@ export function getSupabaseAdmin(): SupabaseClient {
       hasSupabaseServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
       nodeEnv: process.env.NODE_ENV,
       urlLength: url?.length || 0,
-      allEnvKeys: Object.keys(process.env).filter(k => k.includes('SUPABASE')).join(', '),
     });
-    const err = new Error(errorMsg);
-    (err as any).isConfigError = true;
-    throw err;
+    throw new Error(errorMsg);
   }
 
   // Validação adicional: verificar se a chave não está vazia após limpeza
@@ -107,14 +101,11 @@ export function getSupabaseAdmin(): SupabaseClient {
     console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY pode estar em formato incorreto (não começa com eyJ)');
   }
 
-  // Log apenas em desenvolvimento para não poluir logs de produção
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('✅ Supabase Admin client criado com sucesso', {
-      url: url.substring(0, 30) + '...',
-      keyLength: cleanedKey.length,
-      keyPrefix: cleanedKey.substring(0, 20) + '...',
-    });
-  }
+  console.log('✅ Supabase Admin client criado com sucesso', {
+    url: url.substring(0, 30) + '...',
+    keyLength: cleanedKey.length,
+    keyPrefix: cleanedKey.substring(0, 20) + '...',
+  });
 
   return createClient(url, cleanedKey, {
     auth: {
