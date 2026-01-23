@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 import {
   fetchBelvoTransactions,
   inferInstitution,
@@ -78,6 +78,7 @@ function resolveLinkId(requestBody: SyncRequestBody): string | undefined {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     console.log('🔄 Iniciando sincronização Belvo /api/belvo/sync');
 
     const authContext = await ensureAuthorization(request);

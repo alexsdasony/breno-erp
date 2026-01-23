@@ -1,32 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
-
-// Função para criar log de auditoria
-async function createAuditLog(action: string, tableName: string, recordId: string | null, oldValues: any = null, newValues: any = null, userId: string | null = null, userEmail: string | null = null) {
-  try {
-    const { error } = await supabaseAdmin
-      .from('audit_logs')
-      .insert({
-        action,
-        table_name: tableName,
-        record_id: recordId,
-        old_values: oldValues,
-        new_values: newValues,
-        user_id: userId,
-        user_email: userEmail,
-        ip_address: '127.0.0.1',
-        user_agent: 'Sistema de Auditoria'
-      });
-    
-    if (error) {
-      console.error('❌ Erro ao criar log de auditoria:', error);
-    } else {
-      console.log('✅ Log de auditoria criado:', { action, tableName, recordId });
-    }
-  } catch (error) {
-    console.error('❌ Erro ao criar log de auditoria:', error);
-  }
-}
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
+import { createAuditLog } from '@/lib/createAuditLog';
 
 // Validação de data
 function isValidDate(dateStr: string | null): boolean {
@@ -129,6 +103,8 @@ export async function GET(request: NextRequest) {
     const dateStart = dateStartParam && isValidDate(dateStartParam) ? dateStartParam : null;
     const dateEnd = dateEndParam && isValidDate(dateEndParam) ? dateEndParam : null;
 
+    const supabaseAdmin = getSupabaseAdmin();
+    
     // CRIAR UMA ÚNICA QUERY COM COUNT E LISTAGEM
     const selectFields = `
       *,
@@ -262,6 +238,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    
     const body = await request.json();
     console.log('💰 Criando novo documento financeiro:', body);
 

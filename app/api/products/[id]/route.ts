@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    
     const { id } = await params;
     const body = await request.json();
     console.log('📦 [PRODUCT UPDATE] Iniciando atualização');
@@ -70,6 +72,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    
     const { id } = await params;
     console.log('📦 Deletando produto:', { id });
 

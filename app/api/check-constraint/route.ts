@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 
 export async function GET() {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     // Consultar a constraint da tabela accounts_payable
     const { data, error } = await supabaseAdmin
       .rpc('get_constraint_info', {

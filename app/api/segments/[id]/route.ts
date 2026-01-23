@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { id } = await params;
     console.log('🏷️ API Route GET /api/segments/[id]:', id);
     
@@ -42,6 +43,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { id } = await params;
     console.log('🏷️ [SEGMENT UPDATE] Iniciando atualização');
     console.log('🔍 [SEGMENT UPDATE] id:', id);
@@ -107,6 +109,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { id } = await params;
     console.log('🏷️ API Route DELETE /api/segments/[id]:', id);
     

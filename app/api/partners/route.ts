@@ -1,9 +1,13 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 
 export async function GET(request: NextRequest) {
   try {
     console.log('🤝 API Route GET /api/partners');
+    
+    const supabaseAdmin = getSupabaseAdmin();
     
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -78,6 +82,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     console.log('🤝 API Route POST /api/partners');
+    
+    const supabaseAdmin = getSupabaseAdmin();
     
     const body = await request.json();
     console.log('📝 Dados recebidos:', body);

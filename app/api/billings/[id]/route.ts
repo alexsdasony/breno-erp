@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { id } = await params;
     console.log('💳 Buscando cobrança:', { id });
 
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { id } = await params;
     const body = await request.json();
     console.log('💳 Atualizando cobrança:', { id, body });
@@ -113,6 +115,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { id } = await params;
     console.log('💳 Excluindo cobrança:', { id });
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 
 // Validação de data
 function isValidDate(dateStr: string | null): boolean {
@@ -18,6 +18,7 @@ function isValidDate(dateStr: string | null): boolean {
 
 export async function GET(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { searchParams } = new URL(request.url);
     const segmentId = searchParams.get('segment_id');
     const direction = searchParams.get('direction');

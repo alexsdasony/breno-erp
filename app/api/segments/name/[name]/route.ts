@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ name: string }> }) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { name } = await params;
     console.log('🏷️ Buscando segmento por nome:', name);
 

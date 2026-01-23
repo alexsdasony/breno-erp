@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 
 /**
  * GET /api/pluggy/items/user?userId=xxx
@@ -7,6 +7,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
  */
 export async function GET(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchPluggyTransactions } from '@/lib/pluggyClient';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 import {
   inferInstitution,
   mapPluggyTypeToErp,
@@ -28,6 +28,7 @@ import {
  */
 export async function GET(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { searchParams } = new URL(request.url);
     const itemId = searchParams.get('itemId') || searchParams.get('item_id');
     const accountId = searchParams.get('accountId') || searchParams.get('account_id');

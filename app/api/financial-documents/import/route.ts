@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 import { parseCSVStatement, parseXMLStatement } from '@/lib/bankStatementParsers';
 import type { BankStatementTransaction } from '@/lib/bankStatementParsers';
 
@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
   let importLogId: string | null = null;
   
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     // Obter usuário do token
     const userHeader = request.headers.get('X-User-Token');
     const userToken = parseUserToken(userHeader);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 
 // Dados reais extraídos dos arquivos de importação
 const importedClients = [
@@ -36,6 +36,7 @@ const importedClients = [
 
 export async function POST(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     console.log('🔧 Iniciando correção automática de nomes de clientes...');
     
     // Buscar clientes com nome "CLIENTE"

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 
 export async function GET(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     console.log('\n🚀 ============================================');
     console.log('🚀 INICIANDO API Route GET /api/reports');
     console.log('🚀 ============================================');
@@ -101,87 +102,118 @@ export async function GET(request: NextRequest) {
 
 // Funções para gerar relatórios específicos
 async function generateDashboardReport(reportId: string, params: any) {
-  switch (reportId) {
-    case 'kpi-overview':
-      return await getKpiOverviewData(params);
-    case 'executive-summary':
-      return await getExecutiveSummaryData(params);
-    default:
-      throw new Error('Relatório de dashboard não encontrado');
+  try {
+    switch (reportId) {
+      case 'kpi-overview':
+        return await getKpiOverviewData(params);
+      case 'executive-summary':
+        return await getExecutiveSummaryData(params);
+      default:
+        throw new Error('Relatório de dashboard não encontrado');
+    }
+  } catch (error) {
+    console.error('Erro ao gerar relatório de dashboard:', error);
+    throw error;
   }
 }
 
 async function generateFinancialReport(reportId: string, params: any) {
-  switch (reportId) {
-    case 'cash-flow':
-      return await getCashFlowData(params);
-    case 'profit-loss':
-      return await getProfitLossData(params);
-    case 'balance-sheet':
-      return await getBalanceSheetData(params);
-    case 'financial-analysis':
-      return await getFinancialAnalysisData(params);
-    default:
-      throw new Error('Relatório financeiro não encontrado');
+  try {
+    switch (reportId) {
+      case 'cash-flow':
+        return await getCashFlowData(params);
+      case 'profit-loss':
+        return await getProfitLossData(params);
+      case 'balance-sheet':
+        return await getBalanceSheetData(params);
+      case 'financial-analysis':
+        return await getFinancialAnalysisData(params);
+      default:
+        throw new Error('Relatório financeiro não encontrado');
+    }
+  } catch (error) {
+    console.error('Erro ao gerar relatório financeiro:', error);
+    throw error;
   }
 }
 
 async function generateCustomersReport(reportId: string, params: any) {
-  switch (reportId) {
+  try {
+    switch (reportId) {
     case 'customer-list':
-      return await getCustomerListData(params);
+        return await getCustomerListData(params);
     case 'customer-segmentation':
       console.log('🎯 Chamando getCustomerSegmentationData com params:', params);
       return await getCustomerSegmentationData(params);
     case 'customer-lifetime-value':
-      return await getCustomerLifetimeValueData(params);
+        return await getCustomerLifetimeValueData(params);
     default:
       throw new Error('Relatório de clientes não encontrado');
+  }
+  } catch (error) {
+    console.error('Erro ao gerar relatório:', error);
+    throw error;
   }
 }
 
 async function generateSuppliersReport(reportId: string, params: any) {
-  switch (reportId) {
+  try {
+    switch (reportId) {
     case 'supplier-list':
-      return await getSupplierListData(params);
+        return await getSupplierListData(params);
     case 'supplier-performance':
-      return await getSupplierPerformanceData(params);
+        return await getSupplierPerformanceData(params);
     case 'purchase-analysis':
-      return await getPurchaseAnalysisData(params);
+        return await getPurchaseAnalysisData(params);
     default:
       throw new Error('Relatório de fornecedores não encontrado');
+  }
+  } catch (error) {
+    console.error('Erro ao gerar relatório:', error);
+    throw error;
   }
 }
 
 async function generateSalesReport(reportId: string, params: any) {
-  switch (reportId) {
+  try {
+    switch (reportId) {
     case 'sales-performance':
-      return await getSalesPerformanceData(params);
+        return await getSalesPerformanceData(params);
     case 'top-products':
-      return await getTopProductsData(params);
+        return await getTopProductsData(params);
     case 'sales-forecast':
-      return await getSalesForecastData(params);
+        return await getSalesForecastData(params);
     case 'customer-analysis':
-      return await getCustomerListData(params);
+        return await getCustomerListData(params);
     default:
       throw new Error('Relatório de vendas não encontrado');
+  }
+  } catch (error) {
+    console.error('Erro ao gerar relatório:', error);
+    throw error;
   }
 }
 
 async function generateProductsReport(reportId: string, params: any) {
-  switch (reportId) {
+  try {
+    switch (reportId) {
     case 'product-list':
-      return await getProductListData(params);
+        return await getProductListData(params);
     case 'inventory-analysis':
-      return await getInventoryAnalysisData(params);
+        return await getInventoryAnalysisData(params);
     default:
       throw new Error('Relatório de produtos não encontrado');
+  }
+  } catch (error) {
+    console.error('Erro ao gerar relatório:', error);
+    throw error;
   }
 }
 
 async function generateAccountsPayableReport(reportId: string, params: any) {
-  console.log('💳 generateAccountsPayableReport chamado:', { reportId, params });
-  switch (reportId) {
+  try {
+    console.log('💳 generateAccountsPayableReport chamado:', { reportId, params });
+    switch (reportId) {
     case 'payables-aging':
       console.log('💳 Chamando getPayablesAgingData...');
       const result = await getPayablesAgingData(params);
@@ -192,63 +224,87 @@ async function generateAccountsPayableReport(reportId: string, params: any) {
       });
       return result;
     case 'supplier-payments':
-      return await getSupplierPaymentsData(params);
+        return await getSupplierPaymentsData(params);
     case 'overdue-bills':
-      return await getOverdueBillsData(params);
+        return await getOverdueBillsData(params);
     default:
       throw new Error('Relatório de contas a pagar não encontrado');
+    }
+  } catch (error) {
+    console.error('Erro ao gerar relatório de contas a pagar:', error);
+    throw error;
   }
 }
 
 async function generateBillingReport(reportId: string, params: any) {
-  switch (reportId) {
-    case 'receivables-aging':
-      return await getReceivablesAgingData(params);
-    case 'collection-efficiency':
-      return await getCollectionEfficiencyData(params);
-    case 'customer-receivables':
-      return await getCustomerReceivablesData(params);
-    default:
-      throw new Error('Relatório de cobranças não encontrado');
+  try {
+    switch (reportId) {
+      case 'receivables-aging':
+        return await getReceivablesAgingData(params);
+      case 'collection-efficiency':
+        return await getCollectionEfficiencyData(params);
+      case 'customer-receivables':
+        return await getCustomerReceivablesData(params);
+      default:
+        throw new Error('Relatório de cobranças não encontrado');
+    }
+  } catch (error) {
+    console.error('Erro ao gerar relatório de cobranças:', error);
+    throw error;
   }
 }
 
 async function generateInventoryReport(reportId: string, params: any) {
-  switch (reportId) {
+  try {
+    switch (reportId) {
     case 'stock-levels':
-      return await getStockLevelsData(params);
+        return await getStockLevelsData(params);
     case 'stock-movement':
-      return await getStockMovementData(params);
+        return await getStockMovementData(params);
     case 'abc-analysis':
-      return await getAbcAnalysisData(params);
+        return await getAbcAnalysisData(params);
     case 'low-stock-alert':
-      return await getLowStockAlertData(params);
+        return await getLowStockAlertData(params);
     default:
       throw new Error('Relatório de estoque não encontrado');
+  }
+  } catch (error) {
+    console.error('Erro ao gerar relatório:', error);
+    throw error;
   }
 }
 
 async function generateAccountsReceivableReport(reportId: string, params: any) {
-  switch (reportId) {
+  try {
+    switch (reportId) {
     case 'receivable-list':
-      return await getAccountsReceivableData(params);
+        return await getAccountsReceivableData(params);
     case 'receivable-analysis':
-      return await getAccountsReceivableAnalysisData(params);
+        return await getAccountsReceivableAnalysisData(params);
     default:
       throw new Error('Relatório de contas a receber não encontrado');
+  }
+  } catch (error) {
+    console.error('Erro ao gerar relatório:', error);
+    throw error;
   }
 }
 
 async function generateNfeReport(reportId: string, params: any) {
-  switch (reportId) {
+  try {
+    switch (reportId) {
     case 'nfe-issued':
-      return await getNfeIssuedData(params);
+        return await getNfeIssuedData(params);
     case 'tax-summary':
-      return await getTaxSummaryData(params);
+        return await getTaxSummaryData(params);
     case 'nfe-status':
-      return await getNfeStatusData(params);
+        return await getNfeStatusData(params);
     default:
       throw new Error('Relatório de NFe não encontrado');
+  }
+  } catch (error) {
+    console.error('Erro ao gerar relatório:', error);
+    throw error;
   }
 }
 
@@ -272,6 +328,7 @@ function applySegmentFilter(query: any, segmentId: string | null | undefined) {
 // === RELATÓRIOS DE CLIENTES ===
 async function getCustomerListData(params: any) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     let query = supabaseAdmin
       .from('partners')
       .select(`
@@ -343,6 +400,8 @@ async function getCustomerListData(params: any) {
 
 async function getCustomerSegmentationData(params: any) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    
     // Buscar todos os clientes da tabela partners com type = 'customer'
     let query = supabaseAdmin
       .from('partners')
@@ -470,6 +529,7 @@ async function getCustomerSegmentationData(params: any) {
 
 async function getCustomerLifetimeValueData(params: any) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     let customersQuery = supabaseAdmin
       .from('partners')
       .select('id, name, created_at, status, partner_roles!inner(role)')
@@ -565,6 +625,7 @@ async function getCustomerLifetimeValueData(params: any) {
 // === RELATÓRIOS DE FORNECEDORES ===
 async function getSupplierListData(params: any) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     let query = supabaseAdmin
       .from('partners')
       .select(`
@@ -632,9 +693,10 @@ async function getSupplierListData(params: any) {
 }
 
 async function getSupplierPerformanceData(params: any) {
-  console.log('📊 Analisando performance de fornecedores...');
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando performance de fornecedores...');
+  
     const { data: suppliers, error } = await supabaseAdmin
       .from('partners')
       .select('id, name, status, created_at, partner_roles!inner(role)')
@@ -707,9 +769,10 @@ async function getSupplierPerformanceData(params: any) {
 }
 
 async function getPurchaseAnalysisData(params: any) {
-  console.log('💳 Analisando compras...');
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('💳 Analisando compras...');
+  
     const { data: purchases, error } = await supabaseAdmin
       .from('accounts_payable')
       .select(`
@@ -771,7 +834,9 @@ async function getPurchaseAnalysisData(params: any) {
 }
 
 async function getCashFlowData(params: any) {
-  console.log('💰 Calculando fluxo de caixa...');
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('💰 Calculando fluxo de caixa...');
   
   // Buscar vendas (entradas de caixa)
   const startDate = params.startDate || '2024-01-01';
@@ -794,7 +859,7 @@ async function getCashFlowData(params: any) {
     return saleDate >= startDate && saleDate <= endDate;
   });
   
-  console.log('💰 Vendas encontradas:', { total: sales?.length || 0, filtradas: filteredSales.length, startDate, endDate });
+    console.log('💰 Vendas encontradas:', { total: sales?.length || 0, filtradas: filteredSales.length, startDate, endDate });
 
   if (salesError) {
     console.error('Erro ao buscar vendas:', salesError);
@@ -843,7 +908,7 @@ async function getCashFlowData(params: any) {
   // Calcular saldo
   const balance = totalInflows - totalOutflows;
 
-  console.log('💰 Fluxo de caixa calculado:', {
+    console.log('💰 Fluxo de caixa calculado:', {
     salesInflows,
     receivablesInflows,
     totalInflows,
@@ -870,13 +935,18 @@ async function getCashFlowData(params: any) {
       }
     }
   };
+  } catch (error) {
+    console.error('Erro ao calcular fluxo de caixa:', error);
+    throw error;
+  }
 }
 
 // === RELATÓRIOS DE VENDAS ===
 async function getSalesPerformanceData(params: any) {
-  console.log('📈 Analisando performance de vendas...', { params });
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📈 Analisando performance de vendas...', { params });
+  
     // Buscar todas as vendas primeiro (filtrar por data no código)
     const startDate = params.startDate || '2024-01-01';
     const endDate = params.endDate || '2024-12-31';
@@ -970,9 +1040,10 @@ async function getSalesPerformanceData(params: any) {
 }
 
 async function getTopProductsData(params: any) {
-  console.log('🏆 Analisando produtos mais vendidos...');
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('🏆 Analisando produtos mais vendidos...');
+  
     const { data: salesItems, error } = await supabaseAdmin
       .from('sale_items')
       .select(`
@@ -1054,9 +1125,10 @@ async function getTopProductsData(params: any) {
 }
 
 async function getSalesForecastData(params: any) {
-  console.log('🔮 Calculando previsão de vendas...');
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('🔮 Calculando previsão de vendas...');
+  
     let salesQuery = supabaseAdmin
       .from('sales')
       .select('total, date, status')
@@ -1124,9 +1196,10 @@ async function getSalesForecastData(params: any) {
 }
 
 async function getCustomerAnalysisData(params: any) {
-  console.log('👤 Analisando clientes...');
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('👤 Analisando clientes...');
+  
     const { data: customers, error } = await supabaseAdmin
       .from('partners')
       .select('id, name, created_at, status, partner_roles!inner(role)')
@@ -1205,7 +1278,9 @@ async function getCustomerAnalysisData(params: any) {
 }
 
 async function getProfitLossData(params: any) {
-  console.log('📊 Calculando DRE...', { params });
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Calculando DRE...', { params });
   
   const startDate = params.startDate || '2024-01-01';
   const endDate = params.endDate || '2024-12-31';
@@ -1258,7 +1333,7 @@ async function getProfitLossData(params: any) {
   const profit = totalRevenue - totalCosts;
   const profitMargin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
 
-  console.log('📊 DRE calculado:', {
+    console.log('📊 DRE calculado:', {
     totalRevenue,
     totalCosts,
     profit,
@@ -1284,12 +1359,17 @@ async function getProfitLossData(params: any) {
       }
     }
   };
+  } catch (error) {
+    console.error('Erro ao calcular DRE:', error);
+    throw error;
+  }
 }
 
 async function getBalanceSheetData(params: any) {
-  console.log('📊 Calculando balanço patrimonial...');
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Calculando balanço patrimonial...');
+  
     // Buscar dados reais para o balanço
     let salesQuery = supabaseAdmin
       .from('sales')
@@ -1370,9 +1450,10 @@ async function getBalanceSheetData(params: any) {
 }
 
 async function getFinancialAnalysisData(params: any) {
-  console.log('📊 Calculando análise financeira...', { params });
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Calculando análise financeira...', { params });
+  
     const startDate = params.startDate || '2024-01-01';
     const endDate = params.endDate || '2024-12-31';
     
@@ -1474,26 +1555,33 @@ async function getFinancialAnalysisData(params: any) {
 
 
 async function getSalesSummaryData(params: any) {
-  const { data, error } = await supabaseAdmin
-    .from('sales')
-    .select('*')
-    .gte('date', params.startDate || '2024-01-01')
-    .lte('date', params.endDate || '2024-12-31')
-    .order('date', { ascending: false });
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data, error } = await supabaseAdmin
+      .from('sales')
+      .select('*')
+      .gte('date', params.startDate || '2024-01-01')
+      .lte('date', params.endDate || '2024-12-31')
+      .order('date', { ascending: false });
 
-  if (error) throw error;
+    if (error) throw error;
 
-  return {
-    title: 'Resumo de Vendas',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: data || []
-  };
+    return {
+      title: 'Resumo de Vendas',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: data || []
+    };
+  } catch (error) {
+    console.error('Erro ao buscar resumo de vendas:', error);
+    throw error;
+  }
 }
 
 async function getSalesAnalysisData(params: any) {
-  console.log('📊 Analisando dados de vendas...');
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando dados de vendas...');
+  
     // Buscar dados reais de vendas
     const { data: salesData, error: salesError } = await supabaseAdmin
       .from('sales')
@@ -1554,24 +1642,31 @@ async function getSalesAnalysisData(params: any) {
 }
 
 async function getProductListData(params: any) {
-  const { data, error } = await supabaseAdmin
-    .from('products')
-    .select('*')
-    .order('created_at', { ascending: false });
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  if (error) throw error;
+    if (error) throw error;
 
-  return {
-    title: 'Lista de Produtos',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: data || []
-  };
+    return {
+      title: 'Lista de Produtos',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: data || []
+    };
+  } catch (error) {
+    console.error('Erro ao buscar lista de produtos:', error);
+    throw error;
+  }
 }
 
 async function getInventoryAnalysisData(params: any) {
-  console.log('📊 Analisando estoque...');
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando estoque...');
+  
     // Buscar dados reais de produtos
     const { data: productsData, error: productsError } = await supabaseAdmin
       .from('products')
@@ -1629,9 +1724,11 @@ async function getInventoryAnalysisData(params: any) {
 }
 
 async function getAccountsPayableData(params: any) {
-  console.log('💳 Buscando contas a pagar...');
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('💳 Buscando contas a pagar...');
   
-  const { data, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
     .from('accounts_payable')
     .select('*')
     .order('data_vencimento', { ascending: true });
@@ -1648,7 +1745,7 @@ async function getAccountsPayableData(params: any) {
   ).length;
   const paidCount = accounts.filter(account => account.status === 'paga').length;
 
-  console.log('💳 Contas a pagar encontradas:', {
+    console.log('💳 Contas a pagar encontradas:', {
     total: accounts.length,
     totalAmount,
     overdueCount,
@@ -1667,12 +1764,18 @@ async function getAccountsPayableData(params: any) {
       pendingCount: accounts.length - paidCount
     }
   };
+  } catch (error) {
+    console.error('Erro ao buscar contas a pagar:', error);
+    throw error;
+  }
 }
 
 async function getAccountsPayableAnalysisData(params: any) {
-  console.log('📊 Analisando contas a pagar...');
-  
-  const { data, error } = await supabaseAdmin
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando contas a pagar...');
+    
+    const { data, error } = await supabaseAdmin
     .from('accounts_payable')
     .select('*')
     .order('data_vencimento', { ascending: true });
@@ -1695,7 +1798,7 @@ async function getAccountsPayableAnalysisData(params: any) {
   ).length;
   const paid = accounts.filter(account => account.status === 'paga').length;
 
-  console.log('📊 Análise de contas a pagar:', {
+    console.log('📊 Análise de contas a pagar:', {
     totalPayable,
     overdue,
     dueSoon,
@@ -1713,10 +1816,16 @@ async function getAccountsPayableAnalysisData(params: any) {
       pending: accounts.length - paid
     }
   };
+  } catch (error) {
+    console.error('Erro ao analisar contas a pagar:', error);
+    throw error;
+  }
 }
 
 async function getAccountsReceivableData(params: any) {
-  const { data, error } = await supabaseAdmin
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data, error } = await supabaseAdmin
     .from('financial_documents')
     .select('*')
     .eq('direction', 'receivable')
@@ -1729,12 +1838,17 @@ async function getAccountsReceivableData(params: any) {
     period: `${params.startDate} a ${params.endDate}`,
     data: data || []
   };
+  } catch (error) {
+    console.error('Erro ao buscar contas a receber:', error);
+    throw error;
+  }
 }
 
 async function getAccountsReceivableAnalysisData(params: any) {
-  console.log('📊 Analisando contas a receber...');
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando contas a receber...');
+  
     // Buscar dados reais de contas a receber
     const { data: receivablesData, error: receivablesError } = await supabaseAdmin
       .from('financial_documents')
@@ -1792,9 +1906,10 @@ async function getAccountsReceivableAnalysisData(params: any) {
 }
 
 async function getNfeIssuedData(params: any) {
-  console.log('📄 Analisando NFes emitidas...');
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📄 Analisando NFes emitidas...');
+  
     // Buscar dados reais de vendas para calcular NFes emitidas
     const { data: salesData, error: salesError } = await supabaseAdmin
       .from('sales')
@@ -1866,9 +1981,10 @@ async function getNfeIssuedData(params: any) {
 }
 
 async function getTaxSummaryData(params: any) {
-  console.log('💰 Analisando resumo de impostos...');
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('💰 Analisando resumo de impostos...');
+  
     // Buscar dados reais de vendas para calcular impostos
     const { data: salesData, error: salesError } = await supabaseAdmin
       .from('sales')
@@ -1930,9 +2046,10 @@ async function getTaxSummaryData(params: any) {
 }
 
 async function getNfeStatusData(params: any) {
-  console.log('📊 Analisando status das NFes...');
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando status das NFes...');
+  
     // Buscar dados reais de vendas para simular NFes baseadas em vendas
     const { data: salesData, error: salesError } = await supabaseAdmin
       .from('sales')
@@ -1989,9 +2106,10 @@ async function getNfeStatusData(params: any) {
 
 // Implementações para Dashboard
 async function getKpiOverviewData(params: any) {
-  console.log('📊 Analisando KPIs gerais...', { params });
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando KPIs gerais...', { params });
+  
     // Buscar dados reais com filtro de segmento
     let customersQuery = supabaseAdmin
       .from('partners')
@@ -2059,9 +2177,10 @@ async function getKpiOverviewData(params: any) {
 }
 
 async function getExecutiveSummaryData(params: any) {
-  console.log('📋 Gerando resumo executivo...', { params });
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📋 Gerando resumo executivo...', { params });
+  
     // Buscar dados para o resumo com filtro de segmento
     let customersQuery = supabaseAdmin
       .from('partners')
@@ -2144,10 +2263,11 @@ async function getExecutiveSummaryData(params: any) {
 
 // Implementações para Contas a Pagar
 async function getPayablesAgingData(params: any) {
-  console.log('📊 ===== INICIANDO getPayablesAgingData =====');
-  console.log('📊 Parâmetros:', params);
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 ===== INICIANDO getPayablesAgingData =====');
+    console.log('📊 Parâmetros:', params);
+  
     let data: any[] = [];
     
     // Buscar TODOS os dados primeiro (sem filtro de segmento) para debug
@@ -2389,9 +2509,10 @@ async function getPayablesAgingData(params: any) {
 }
 
 async function getSupplierPaymentsData(params: any) {
-  console.log('📊 Analisando pagamentos por fornecedor...', { params });
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando pagamentos por fornecedor...', { params });
+  
     let query = supabaseAdmin
       .from('accounts_payable')
       .select(`
@@ -2471,9 +2592,10 @@ async function getSupplierPaymentsData(params: any) {
 }
 
 async function getOverdueBillsData(params: any) {
-  console.log('📊 Analisando contas em atraso...', { params });
-  
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando contas em atraso...', { params });
+  
     let query = supabaseAdmin
       .from('accounts_payable')
       .select(`
@@ -2542,9 +2664,11 @@ async function getOverdueBillsData(params: any) {
 
 // Implementações para Cobranças
 async function getReceivablesAgingData(params: any) {
-  console.log('📊 Analisando aging de contas a receber...');
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando aging de contas a receber...');
   
-  const { data, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
     .from('financial_documents')
     .select('*')
     .eq('direction', 'receivable')
@@ -2583,7 +2707,7 @@ async function getReceivablesAgingData(params: any) {
     }
   });
 
-  console.log('📊 Aging de contas a receber:', {
+    console.log('📊 Aging de contas a receber:', {
     current,
     overdue30,
     overdue60,
@@ -2600,12 +2724,18 @@ async function getReceivablesAgingData(params: any) {
       overdue90
     }
   };
+  } catch (error) {
+    console.error('Erro ao analisar aging de contas a receber:', error);
+    throw error;
+  }
 }
 
 async function getCollectionEfficiencyData(params: any) {
-  console.log('📊 Analisando eficiência de cobrança...');
-  
-  const { data, error } = await supabaseAdmin
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando eficiência de cobrança...');
+    
+    const { data, error } = await supabaseAdmin
     .from('financial_documents')
     .select('*')
     .eq('direction', 'receivable');
@@ -2627,7 +2757,7 @@ async function getCollectionEfficiencyData(params: any) {
   const efficiency = totalAccounts > 0 ? (paidAccounts / totalAccounts) * 100 : 0;
   const successRate = totalAccounts > 0 ? ((totalAccounts - overdueAccounts) / totalAccounts) * 100 : 0;
 
-  console.log('📊 Eficiência de cobrança:', {
+    console.log('📊 Eficiência de cobrança:', {
     totalAccounts,
     paidAccounts,
     overdueAccounts,
@@ -2646,12 +2776,18 @@ async function getCollectionEfficiencyData(params: any) {
       overdueAccounts
     }
   };
+  } catch (error) {
+    console.error('Erro ao analisar eficiência de cobrança:', error);
+    throw error;
+  }
 }
 
 async function getCustomerReceivablesData(params: any) {
-  console.log('📊 Analisando recebíveis por cliente...');
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando recebíveis por cliente...');
   
-  const { data, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
     .from('financial_documents')
     .select(`
       *,
@@ -2705,7 +2841,7 @@ async function getCustomerReceivablesData(params: any) {
 
   const result = Object.values(customerReceivables).sort((a: any, b: any) => b.total_amount - a.total_amount);
 
-  console.log('📊 Recebíveis por cliente:', {
+    console.log('📊 Recebíveis por cliente:', {
     totalCustomers: result.length,
     totalAmount: result.reduce((sum: number, c: any) => sum + c.total_amount, 0)
   });
@@ -2715,13 +2851,19 @@ async function getCustomerReceivablesData(params: any) {
     period: `${params.startDate} a ${params.endDate}`,
     data: result
   };
+  } catch (error) {
+    console.error('Erro ao analisar recebíveis por cliente:', error);
+    throw error;
+  }
 }
 
 // Implementações para Estoque
 async function getStockLevelsData(params: any) {
-  console.log('📊 Analisando níveis de estoque...');
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando níveis de estoque...');
   
-  const { data, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
     .from('products')
     .select('*')
     .eq('is_deleted', false)
@@ -2753,7 +2895,7 @@ async function getStockLevelsData(params: any) {
     };
   });
 
-  console.log('📊 Níveis de estoque:', {
+    console.log('📊 Níveis de estoque:', {
     totalProducts: products.length,
     outOfStock: productsWithStatus.filter(p => p.status === 'out_of_stock').length,
     lowStock: productsWithStatus.filter(p => p.status === 'low_stock').length,
@@ -2765,10 +2907,16 @@ async function getStockLevelsData(params: any) {
     period: `${params.startDate} a ${params.endDate}`,
     data: productsWithStatus
   };
+  } catch (error) {
+    console.error('Erro ao analisar níveis de estoque:', error);
+    throw error;
+  }
 }
 
 async function getStockMovementData(params: any) {
-  console.log('📊 Analisando movimentação de estoque...');
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando movimentação de estoque...');
   
   // Buscar vendas para calcular saídas
   const { data: salesData, error: salesError } = await supabaseAdmin
@@ -2835,7 +2983,7 @@ async function getStockMovementData(params: any) {
   const balance = totalEntries - totalExits;
   const balanceValue = totalEntryValue - totalExitValue;
 
-  console.log('📊 Movimentação de estoque:', {
+    console.log('📊 Movimentação de estoque:', {
     entries: totalEntries,
     exits: totalExits,
     balance,
@@ -2856,10 +3004,16 @@ async function getStockMovementData(params: any) {
       balanceValue
     }
   };
+  } catch (error) {
+    console.error('Erro ao analisar movimentação de estoque:', error);
+    throw error;
+  }
 }
 
 async function getAbcAnalysisData(params: any) {
-  console.log('📊 Analisando classificação ABC...');
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando classificação ABC...');
   
   // Buscar vendas para calcular valor por produto
   const { data: salesData, error: salesError } = await supabaseAdmin
@@ -2925,7 +3079,7 @@ async function getAbcAnalysisData(params: any) {
     }
   });
 
-  console.log('📊 Análise ABC:', {
+    console.log('📊 Análise ABC:', {
     totalProducts: sortedProducts.length,
     totalValue,
     categoryA: categoryA.length,
@@ -2949,34 +3103,40 @@ async function getAbcAnalysisData(params: any) {
       }
     }
   };
+  } catch (error) {
+    console.error('Erro ao analisar classificação ABC:', error);
+    throw error;
+  }
 }
 
 async function getLowStockAlertData(params: any) {
-  console.log('📊 Analisando produtos com estoque baixo...');
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    console.log('📊 Analisando produtos com estoque baixo...');
   
-  const { data, error } = await supabaseAdmin
-    .from('products')
-    .select('*')
-    .eq('is_deleted', false)
-    .order('name', { ascending: true });
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('is_deleted', false)
+      .order('name', { ascending: true });
 
-  if (error) {
-    console.error('Erro ao buscar produtos para alerta de estoque baixo:', error);
-    throw error;
-  }
+    if (error) {
+      console.error('Erro ao buscar produtos para alerta de estoque baixo:', error);
+      throw error;
+    }
 
-  const products = data || [];
-  
-  // Filtrar produtos com estoque baixo ou zerado
-  const lowStockProducts = products.filter(product => {
+    const products = data || [];
+    
+    // Filtrar produtos com estoque baixo ou zerado
+    const lowStockProducts = products.filter(product => {
     const currentStock = product.stock_quantity || 0;
     const minStock = product.minimum_stock || product.min_stock || 0;
     
-    return currentStock <= minStock;
-  });
+      return currentStock <= minStock;
+    });
 
-  // Adicionar informações de urgência
-  const productsWithUrgency = lowStockProducts.map(product => {
+    // Adicionar informações de urgência
+    const productsWithUrgency = lowStockProducts.map(product => {
     const currentStock = product.stock_quantity || 0;
     const minStock = product.minimum_stock || product.min_stock || 0;
     
@@ -2990,12 +3150,12 @@ async function getLowStockAlertData(params: any) {
     return {
       ...product,
       urgency,
-      days_remaining: minStock > 0 ? Math.floor((currentStock / minStock) * 30) : 0
-    };
-  });
+        days_remaining: minStock > 0 ? Math.floor((currentStock / minStock) * 30) : 0
+      };
+    });
 
-  // Ordenar por urgência e estoque
-  productsWithUrgency.sort((a, b) => {
+    // Ordenar por urgência e estoque
+    productsWithUrgency.sort((a, b) => {
     const urgencyOrder = { critical: 3, high: 2, low: 1 };
     const aUrgency = urgencyOrder[a.urgency as keyof typeof urgencyOrder] || 0;
     const bUrgency = urgencyOrder[b.urgency as keyof typeof urgencyOrder] || 0;
@@ -3004,20 +3164,24 @@ async function getLowStockAlertData(params: any) {
       return bUrgency - aUrgency;
     }
     
-    return (a.stock_quantity || 0) - (b.stock_quantity || 0);
-  });
+      return (a.stock_quantity || 0) - (b.stock_quantity || 0);
+    });
 
-  console.log('📊 Produtos com estoque baixo:', {
-    totalProducts: products.length,
-    lowStockProducts: lowStockProducts.length,
-    critical: productsWithUrgency.filter(p => p.urgency === 'critical').length,
-    high: productsWithUrgency.filter(p => p.urgency === 'high').length,
-    low: productsWithUrgency.filter(p => p.urgency === 'low').length
-  });
+    console.log('📊 Produtos com estoque baixo:', {
+      totalProducts: products.length,
+      lowStockProducts: lowStockProducts.length,
+      critical: productsWithUrgency.filter(p => p.urgency === 'critical').length,
+      high: productsWithUrgency.filter(p => p.urgency === 'high').length,
+      low: productsWithUrgency.filter(p => p.urgency === 'low').length
+    });
 
-  return {
-    title: 'Produtos com Estoque Baixo',
-    period: `${params.startDate} a ${params.endDate}`,
-    data: productsWithUrgency
-  };
+    return {
+      title: 'Produtos com Estoque Baixo',
+      period: `${params.startDate} a ${params.endDate}`,
+      data: productsWithUrgency
+    };
+  } catch (error) {
+    console.error('Erro ao analisar produtos com estoque baixo:', error);
+    throw error;
+  }
 }

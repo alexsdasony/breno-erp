@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 
 export async function GET(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    
     const { searchParams } = new URL(request.url);
     const segmentId = searchParams.get('segment_id');
     
@@ -127,6 +129,8 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🔍 API Route POST /api/accounts-receivable');
     const body = await request.json();
+    const supabaseAdmin = getSupabaseAdmin();
+    
     console.log('📝 Body recebido:', body);
     
     // Garantir que direction seja 'receivable' para contas a receber

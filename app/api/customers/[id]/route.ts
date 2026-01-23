@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
+import { createAuditLog } from '@/lib/createAuditLog';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    
     const { id } = await params;
     console.log('👥 [CUSTOMER GET] Buscando cliente:', id);
 
@@ -59,6 +62,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    
     const { id } = await params;
     const body = await request.json();
     console.log('👥 [CUSTOMER UPDATE] Iniciando atualização');
@@ -166,6 +171,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    
     const { id } = await params;
     console.log('👥 Deletando cliente:', { id });
 

@@ -1,9 +1,13 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 
 export async function POST(request: NextRequest) {
   try {
     console.log('🔐 API Route POST /api/auth');
+    
+    const supabaseAdmin = getSupabaseAdmin();
     
     const body = await request.json();
     const { email, password } = body;

@@ -1,36 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+export const dynamic = 'force-dynamic';
 
-// Função para criar log de auditoria
-async function createAuditLog(action: string, tableName: string, recordId: string | null, oldValues: any = null, newValues: any = null, userId: string | null = null, userEmail: string | null = null) {
-  try {
-    const { error } = await supabaseAdmin
-      .from('audit_logs')
-      .insert({
-        action,
-        table_name: tableName,
-        record_id: recordId,
-        old_values: oldValues,
-        new_values: newValues,
-        user_id: userId,
-        user_email: userEmail,
-        ip_address: '127.0.0.1',
-        user_agent: 'Sistema de Auditoria'
-      });
-    
-    if (error) {
-      console.error('❌ Erro ao criar log de auditoria:', error);
-    } else {
-      console.log('✅ Log de auditoria criado:', { action, tableName, recordId });
-    }
-  } catch (error) {
-    console.error('❌ Erro ao criar log de auditoria:', error);
-  }
-}
+import { NextRequest, NextResponse } from 'next/server';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
+import { createAuditLog } from '@/lib/createAuditLog';
 
 export async function GET(request: NextRequest) {
   try {
     console.log('🏭 API Route GET /api/suppliers');
+    
+    const supabaseAdmin = getSupabaseAdmin();
     
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -62,14 +40,19 @@ export async function GET(request: NextRequest) {
     console.log('📥 Resultado da listagem:', { count, error });
 
     if (error) {
+      const errCause = error instanceof Error && 'cause' in error ? (error as Error & { cause?: unknown }).cause : null;
       console.error('❌ Erro ao buscar fornecedores:', error);
-      return NextResponse.json(
-        { 
-          error: 'Erro ao buscar fornecedores',
-          details: error.message 
-        },
-        { status: 500 }
-      );
+      console.error('❌ cause (diagnóstico fetch/rede):', errCause);
+      const errPayload: Record<string, unknown> = {
+        error: 'Erro ao buscar fornecedores',
+        details: error.message,
+      };
+      const e = error as { details?: string; hint?: string; code?: string };
+      if (typeof e.details === 'string') {
+        if (e.hint) errPayload.hint = e.hint;
+        if (e.code) errPayload.code = e.code;
+      }
+      return NextResponse.json(errPayload, { status: 500 });
     }
 
     return NextResponse.json({
@@ -84,17 +67,22 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
+    const errCause = error instanceof Error && 'cause' in error ? (error as Error & { cause?: unknown }).cause : null;
     console.error('❌ Erro na API de fornecedores:', error);
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
+    console.error('❌ cause (diagnóstico fetch/rede):', errCause);
+    const payload: Record<string, unknown> = { error: 'Erro interno do servidor' };
+    if (process.env.NODE_ENV !== 'production' && errCause) {
+      payload.debugCause = String(errCause);
+    }
+    return NextResponse.json(payload, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     console.log('🏭 API Route POST /api/suppliers');
+    
+    const supabaseAdmin = getSupabaseAdmin();
     
     const body = await request.json();
     console.log('📝 Dados recebidos:', JSON.stringify(body, null, 2));

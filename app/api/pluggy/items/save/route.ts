@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 import { getPluggyItem } from '@/lib/pluggyClient';
 
 interface SaveItemBody {
@@ -14,6 +14,7 @@ interface SaveItemBody {
  */
 export async function POST(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     console.log('💾 Salvando item Pluggy');
 
     const body: SaveItemBody = await request.json();

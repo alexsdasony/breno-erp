@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchPluggyTransactions } from '@/lib/pluggyClient';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 import {
   inferInstitution,
   mapPluggyTypeToErp,
@@ -31,6 +31,7 @@ import {
  */
 export async function POST(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     console.log('📨 Webhook Pluggy recebido');
 
     // Validação de segurança (opcional mas recomendado)

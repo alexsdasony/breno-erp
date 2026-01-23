@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 import {
   fetchPluggyTransactions,
   inferInstitution,
@@ -144,6 +144,8 @@ async function resolveItemIds(
 
   // ESTRATÉGIA 2: Buscar itens salvos no banco de dados (EXCLUINDO IDs inválidos conhecidos)
   if (authContext.userId) {
+    const supabaseAdmin = getSupabaseAdmin();
+    
     console.log(`🔍 Buscando itens Pluggy no banco para usuário: ${authContext.userId}`);
     
     // Primeiro, buscar TODOS os itens (incluindo com erro) para debug
@@ -276,6 +278,7 @@ async function resolveItemIds(
 
 export async function POST(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     console.log('🔄 Iniciando sincronização Pluggy /api/pluggy/sync');
 
     const authContext = await ensureAuthorization(request);
