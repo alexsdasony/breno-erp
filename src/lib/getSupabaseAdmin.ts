@@ -107,14 +107,13 @@ export function getSupabaseAdmin(): SupabaseClient {
     console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY pode estar em formato incorreto (não começa com eyJ)');
   }
 
-  // Log apenas em desenvolvimento para não poluir logs de produção
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('✅ Supabase Admin client criado com sucesso', {
-      url: url.substring(0, 30) + '...',
-      keyLength: cleanedKey.length,
-      keyPrefix: cleanedKey.substring(0, 20) + '...',
-    });
-  }
+  // Log de sucesso (também em produção para debug inicial)
+  console.log('✅ [getSupabaseAdmin] Supabase Admin client criado com sucesso', {
+    url: url.substring(0, 30) + '...',
+    keyLength: cleanedKey.length,
+    keyPrefix: cleanedKey.substring(0, 20) + '...',
+    timestamp: new Date().toISOString(),
+  });
 
   return createClient(url, cleanedKey, {
     auth: {
