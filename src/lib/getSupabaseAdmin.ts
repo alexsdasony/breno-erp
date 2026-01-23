@@ -60,6 +60,14 @@ async function fetchWithTimeoutAndRetry(
  * @throws Error se variáveis de ambiente não estiverem definidas
  */
 export function getSupabaseAdmin(): SupabaseClient {
+  // Log de diagnóstico em produção também para debug
+  console.log('🔍 [getSupabaseAdmin] Verificando variáveis de ambiente...', {
+    hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    nodeEnv: process.env.NODE_ENV,
+    timestamp: new Date().toISOString(),
+  });
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   let key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
