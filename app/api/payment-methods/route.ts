@@ -154,27 +154,10 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     console.error('❌ Erro na API de métodos de pagamento:', error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    
-    // Se for erro de variável de ambiente, retornar mensagem clara
-    if (errorMessage.includes('não está definida') || errorMessage.includes('SUPABASE')) {
-      return NextResponse.json(
-        { 
-          error: 'Erro de configuração',
-          details: errorMessage,
-          hint: 'Verifique se NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY estão configuradas no Render'
-        },
-        { status: 500 }
-      );
-    }
+    const errorInfo = analyzeSupabaseError(error);
     
     return NextResponse.json(
-      { 
-        error: 'Erro interno do servidor',
-        details: errorMessage,
-        ...(process.env.NODE_ENV !== 'production' && errorStack ? { stack: errorStack } : {})
-      },
+      formatSupabaseErrorResponse(errorInfo),
       { status: 500 }
     );
   }
