@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 import { createAuditLog } from '@/lib/createAuditLog';
+import { analyzeSupabaseError, formatSupabaseErrorResponse } from '@/lib/supabaseErrorHandler';
 
 export async function GET(request: NextRequest) {
   try {
@@ -67,57 +68,29 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    const errCause = error instanceof Error && 'cause' in error ? (error as Error & { cause?: unknown }).cause : null;
     console.error('❌ Erro na API de fornecedores:', error);
-    console.error('❌ cause (diagnóstico fetch/rede):', errCause);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
+    const errorInfo = analyzeSupabaseError(error);
     
-    // Se for erro de variável de ambiente, retornar mensagem clara
-    if (errorMessage.includes('não está definida') || errorMessage.includes('SUPABASE')) {
-      return NextResponse.json(
-        { 
-          error: 'Erro de configuração',
-          details: errorMessage,
-          hint: 'Verifique se NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY estão configuradas no Render'
+    // Para GET requests com erro de rede, retornar dados vazios em vez de quebrar o frontend
+    if (errorInfo.shouldReturnEmpty) {
+      console.warn('⚠️ Erro de rede detectado, retornando dados vazios para não quebrar o frontend');
+      return NextResponse.json({
+        success: true,
+        suppliers: [],
+        pagination: {
+          page: 1,
+          limit: 100,
+          total: 0,
+          totalPages: 0
         },
-        { status: 500 }
-      );
+        _warning: 'Erro de conexão com o banco de dados. Dados podem estar incompletos.'
+      });
     }
     
-    // Se for erro DNS (ENOTFOUND), retornar mensagem específica
-    const causeCode = errCause && typeof errCause === 'object' && 'code' in errCause ? String(errCause.code) : '';
-    if (errorMessage.includes('ENOTFOUND') || causeCode === 'ENOTFOUND') {
-      const hostname = errCause && typeof errCause === 'object' && 'hostname' in errCause 
-        ? String(errCause.hostname) 
-        : 'desconhecido';
-      return NextResponse.json(
-        { 
-          error: 'Erro de conexão com Supabase',
-          details: `Não foi possível resolver o hostname: ${hostname}`,
-          hint: 'Verifique se a URL do Supabase está correta e se o projeto ainda existe. Acesse o dashboard do Supabase para confirmar a URL.',
-          troubleshooting: [
-            '1. Verifique NEXT_PUBLIC_SUPABASE_URL no Render',
-            '2. Confirme que o projeto Supabase ainda existe',
-            '3. Verifique se há restrições de rede/firewall',
-            '4. Teste a URL diretamente no navegador'
-          ]
-        },
-        { status: 500 }
-      );
-    }
-    
-    const payload: Record<string, unknown> = { 
-      error: 'Erro interno do servidor',
-      details: errorMessage
-    };
-    if (process.env.NODE_ENV !== 'production' && errCause) {
-      payload.debugCause = String(errCause);
-    }
-    if (process.env.NODE_ENV !== 'production' && errorStack) {
-      payload.stack = errorStack;
-    }
-    return NextResponse.json(payload, { status: 500 });
+    return NextResponse.json(
+      formatSupabaseErrorResponse(errorInfo),
+      { status: 500 }
+    );
   }
 }
 

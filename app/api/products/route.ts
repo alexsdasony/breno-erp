@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 import { createAuditLog } from '@/lib/createAuditLog';
+import { analyzeSupabaseError, formatSupabaseErrorResponse } from '@/lib/supabaseErrorHandler';
 
 export async function GET(request: NextRequest) {
   try {
@@ -59,25 +60,26 @@ export async function GET(request: NextRequest) {
     
   } catch (error) {
     console.error('❌ Erro na API de produtos:', error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorInfo = analyzeSupabaseError(error);
     
-    // Se for erro de variável de ambiente, retornar mensagem clara
-    if (errorMessage.includes('não está definida') || errorMessage.includes('SUPABASE')) {
-      return NextResponse.json(
-        { 
-          error: 'Erro de configuração',
-          details: errorMessage,
-          hint: 'Verifique se NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY estão configuradas no Render'
+    // Para GET requests com erro de rede, retornar dados vazios em vez de quebrar o frontend
+    if (errorInfo.shouldReturnEmpty) {
+      console.warn('⚠️ Erro de rede detectado, retornando dados vazios para não quebrar o frontend');
+      return NextResponse.json({
+        success: true,
+        products: [],
+        pagination: {
+          page: 1,
+          limit: 100,
+          total: 0,
+          totalPages: 0
         },
-        { status: 500 }
-      );
+        _warning: 'Erro de conexão com o banco de dados. Dados podem estar incompletos.'
+      });
     }
     
     return NextResponse.json(
-      { 
-        error: 'Erro interno do servidor',
-        details: errorMessage
-      },
+      formatSupabaseErrorResponse(errorInfo),
       { status: 500 }
     );
   }

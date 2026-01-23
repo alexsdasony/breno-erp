@@ -1,7 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const FETCH_TIMEOUT_MS = 25_000;
-const FETCH_RETRIES = 1;
+const FETCH_TIMEOUT_MS = 30_000;
+const FETCH_RETRIES = 3; // Aumentar retries para erros de rede
 const RETRY_DELAY_MS = 2000;
 
 function isRetryableFetchError(e: unknown): boolean {
@@ -54,13 +54,18 @@ async function fetchWithTimeoutAndRetry(
       
       // Diagnóstico específico para ENOTFOUND (DNS)
       if (errorMessage.includes('ENOTFOUND') || (cause && typeof cause === 'object' && 'code' in cause && cause.code === 'ENOTFOUND')) {
-        console.error(`❌ [fetchWithTimeoutAndRetry] Erro DNS (ENOTFOUND) - Hostname não pode ser resolvido`);
+        console.error(`❌ [fetchWithTimeoutAndRetry] Erro DNS (ENOTFOUND) - Hostname não pode ser resolvido (tentativa ${attempt + 1}/${FETCH_RETRIES + 1})`);
         console.error(`❌ Hostname tentado: ${urlObj?.hostname || 'desconhecido'}`);
-        console.error(`❌ Isso geralmente significa:`);
-        console.error(`   1. A URL do Supabase está incorreta`);
-        console.error(`   2. O projeto Supabase foi deletado ou movido`);
-        console.error(`   3. Problema de DNS/rede no Render`);
-        console.error(`   4. Firewall bloqueando acesso ao Supabase`);
+        if (attempt < FETCH_RETRIES) {
+          console.log(`⏳ Aguardando ${RETRY_DELAY_MS}ms antes de tentar novamente...`);
+        } else {
+          console.error(`❌ Todas as tentativas falharam. Isso geralmente significa:`);
+          console.error(`   1. A URL do Supabase está incorreta`);
+          console.error(`   2. O projeto Supabase foi deletado, pausado ou movido`);
+          console.error(`   3. Problema de DNS/rede no Render`);
+          console.error(`   4. Firewall bloqueando acesso ao Supabase`);
+          console.error(`   5. Projeto Supabase precisa ser reativado no dashboard`);
+        }
       }
       
       console.error(`❌ Supabase fetch failed (tentativa ${attempt + 1}/${FETCH_RETRIES + 1}):`, e);

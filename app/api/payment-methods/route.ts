@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 import { createAuditLog } from '@/lib/createAuditLog';
+import { analyzeSupabaseError, formatSupabaseErrorResponse } from '@/lib/supabaseErrorHandler';
 
 export async function GET(request: NextRequest) {
   try {
