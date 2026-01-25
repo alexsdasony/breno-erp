@@ -109,7 +109,7 @@ export default function BankAccountConnectionModal({
               </div>
             </div>
 
-            {/* Opção 2: Importação Manual */}
+            {/* Opção 2: Importação via sistema (manual) */}
             <div
               className="border rounded-lg p-4 cursor-pointer hover:bg-accent transition-colors"
               onClick={() => setImportMethod('manual')}
@@ -120,10 +120,10 @@ export default function BankAccountConnectionModal({
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg mb-1">
-                    Importação Manual de Extrato
+                    Importação via sistema
                   </h3>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Faça upload de arquivos CSV ou XML com seus extratos bancários.
+                    Envie arquivos CSV, XML/OFX ou QIF com seus extratos. Escolha o segmento e importe para o menu financeiro.
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <span className="px-2 py-1 bg-secondary text-secondary-foreground text-xs rounded">
@@ -131,6 +131,9 @@ export default function BankAccountConnectionModal({
                     </span>
                     <span className="px-2 py-1 bg-secondary text-secondary-foreground text-xs rounded">
                       XML
+                    </span>
+                    <span className="px-2 py-1 bg-secondary text-secondary-foreground text-xs rounded">
+                      QIF
                     </span>
                   </div>
                 </div>

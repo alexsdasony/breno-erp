@@ -146,6 +146,9 @@ public/uploads/
 /imports/
 /reports/generated/
 
+# Extratos para importação local (não enviar ao remoto)
+scripts/extratos-local/
+
 # Don't ignore important config files
 !.gitignore
 !.nvmrc
