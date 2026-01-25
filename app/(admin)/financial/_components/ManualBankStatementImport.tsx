@@ -28,7 +28,7 @@ export default function ManualBankStatementImport({
   const [segmentsLoading, setSegmentsLoading] = useState(true);
   const [segmentId, setSegmentId] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { currentUser } = useAppData();
+  const { currentUser, refreshMetrics } = useAppData();
 
   useEffect(() => {
     let cancelled = false;
@@ -175,6 +175,7 @@ export default function ManualBankStatementImport({
         description,
       });
 
+      refreshMetrics();
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error('❌ Erro ao importar extrato:', error);

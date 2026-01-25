@@ -326,7 +326,11 @@ export default function FinancialView() {
   }, [dateEnd, normalizeDate]);
   
   const { paymentMethods } = usePaymentMethodsContext();
-  const { activeSegmentId, currentUser } = useAppData();
+  const { activeSegmentId, currentUser, refreshMetrics } = useAppData();
+
+  React.useEffect(() => {
+    refreshMetrics();
+  }, [refreshMetrics]);
   const [type, setType] = React.useState<string>(''); // receita, despesa, transferencia
   const [partner, setPartner] = React.useState<string>('');
   const [segment, setSegment] = React.useState<string>('');

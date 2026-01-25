@@ -51,6 +51,7 @@ interface AppDataContextType {
   refreshData: () => Promise<void>;
   reloadDashboardData: (segmentId?: string | null) => Promise<void>;
   refreshSegments: () => Promise<void>;
+  refreshMetrics: () => Promise<void>;
   loginUser: (email: string, password: string) => Promise<boolean>;
   registerUser: (name: string, email: string, password: string, segmentId?: string | null) => Promise<boolean>;
   logoutUser: () => Promise<void>;
@@ -142,13 +143,11 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, activeSegmentId]); // Removido 'data' das dependências para evitar loops infinitos
 
-  // Fetch metrics when segment changes (apenas quando necessário)
+  const refreshMetrics = React.useCallback(() => fetchMetrics(), [fetchMetrics]);
+
   React.useEffect(() => {
-    if (currentUser) {
-      fetchMetrics();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser, activeSegmentId]); // Dependências explícitas sem fetchMetrics para evitar loops
+    if (currentUser) fetchMetrics();
+  }, [currentUser, activeSegmentId, fetchMetrics]);
 
   // Atualizar cache em memória quando dados mudarem
   useEffect(() => {
@@ -384,6 +383,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
     refreshData,
     reloadDashboardData,
     refreshSegments,
+    refreshMetrics,
     loginUser,
     registerUser,
     logoutUser,

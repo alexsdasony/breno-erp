@@ -48,73 +48,44 @@ export async function GET(request: NextRequest) {
     
     console.log('🔍 Filtro de segmento aplicado:', { segment_id, hasSegmentFilter, segmentFilter });
 
-    // Buscar métricas básicas
+    // Buscar métricas básicas (exceto financial_documents — paginado em seguida)
     const [
       { data: customers, error: customersError },
       { data: suppliers, error: suppliersError },
       { data: products, error: productsError },
       { data: accountsPayable, error: payablesError },
       { data: billings, error: billingsError },
-      { data: sales, error: salesError },
-      { data: financialDocuments, error: financialError }
+      { data: sales, error: salesError }
     ] = await Promise.all([
-      // Total de clientes
       supabaseAdmin
         .from('partners')
         .select('id, status, partner_roles!inner(role)')
         .eq('partner_roles.role', 'customer')
         .match(segmentFilter),
-      
-      // Total de fornecedores
       supabaseAdmin
         .from('partners')
         .select('id, partner_roles!inner(role)')
         .eq('partner_roles.role', 'supplier')
         .match(segmentFilter),
-      
-      // Total de produtos
       supabaseAdmin
         .from('products')
         .select('id, stock_quantity')
         .match(segmentFilter),
-      
-      // Contas a pagar
       supabaseAdmin
         .from('accounts_payable')
         .select('valor, status, data_vencimento')
         .match(segmentFilter),
-      
-      // Cobranças (billings)
       supabaseAdmin
         .from('billings')
         .select('amount, status, due_date')
         .eq('is_deleted', false)
         .match(segmentFilter),
-      
-      // Vendas reais
       supabaseAdmin
         .from('sales')
         .select('id, total_amount, created_at, status')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
-        .match(segmentFilter),
-      
-                   // CORREÇÃO: Documentos financeiros - aplicar filtro de segmento corretamente
-       (() => {
-         let query = supabaseAdmin
-           .from('financial_documents')
-           .select('amount, direction, status, issue_date, created_at, segment_id');
-         
-         // Aplicar filtro de segmento apenas se fornecido
-         if (hasSegmentFilter) {
-           // Quando há filtro de segmento: buscar apenas documentos daquele segmento
-           query = query.eq('segment_id', segment_id);
-         }
-         // Se não há filtro (todos os segmentos): buscar TODOS (incluindo NULL)
-         // Registros com segment_id = NULL são despesas/receitas gerais
-         
-         return query;
-       })()
+        .match(segmentFilter)
     ]);
 
     if (customersError) console.error('❌ Erro ao buscar clientes:', customersError);
@@ -123,7 +94,31 @@ export async function GET(request: NextRequest) {
     if (payablesError) console.error('❌ Erro ao buscar contas a pagar:', payablesError);
     if (billingsError) console.error('❌ Erro ao buscar cobranças:', billingsError);
     if (salesError) console.error('❌ Erro ao buscar vendas:', salesError);
-    if (financialError) console.error('❌ Erro ao buscar documentos financeiros:', financialError);
+
+    // Receita/Despesas/Lucro: mesma query, paginação e agregação que /api/financial-kpis (fiel ao financeiro)
+    let fdQuery = supabaseAdmin
+      .from('financial_documents')
+      .select('amount, direction, issue_date')
+      .eq('is_deleted', false);
+    if (hasSegmentFilter) {
+      fdQuery = fdQuery.eq('segment_id', segment_id);
+    }
+    const FD_CHUNK = 1000;
+    const financialDocuments: any[] = [];
+    let fdOffset = 0;
+    let fdHasMore = true;
+    while (fdHasMore) {
+      const { data: fdChunk, error: financialError } = await fdQuery.range(fdOffset, fdOffset + FD_CHUNK - 1);
+      if (financialError) {
+        console.error('❌ Erro ao buscar documentos financeiros:', financialError);
+        break;
+      }
+      const rows = fdChunk || [];
+      financialDocuments.push(...rows);
+      fdHasMore = rows.length >= FD_CHUNK;
+      fdOffset += FD_CHUNK;
+    }
+    console.log('📄 [metrics] Documentos financeiros (paginado, alinhado a financial-kpis):', financialDocuments.length);
 
     // Calcular métricas
     const totalCustomers = customers?.length || 0;
@@ -163,47 +158,21 @@ export async function GET(request: NextRequest) {
       sum + (Number(sale.total_amount) || 0), 0) || 0;
     const avgTicket = totalSales > 0 ? salesRevenue / totalSales : 0;
 
-    // Calcular receitas e despesas dos documentos financeiros
-    console.log('📄 Documentos financeiros encontrados:', financialDocuments?.length || 0);
-    
-    // CORREÇÃO: Usar TODOS os documentos financeiros (removido filtro de data restritivo)
-    // O filtro de data estava causando problemas quando não havia dados no período
-    const filteredFinancialDocs = financialDocuments || [];
-    
-    const financialRevenue = filteredFinancialDocs?.filter(fd => fd.direction === 'receivable')
-      .reduce((sum, fd) => sum + (Number(fd.amount) || 0), 0) || 0;
-    
-    const financialExpenses = filteredFinancialDocs?.filter(fd => fd.direction === 'payable')
-      .reduce((sum, fd) => sum + (Number(fd.amount) || 0), 0) || 0;
-    
-    console.log('📊 Documentos por direção:', {
-      total: financialDocuments?.length || 0,
-      filtered: filteredFinancialDocs?.length || 0,
-      receivables: filteredFinancialDocs?.filter(fd => fd.direction === 'receivable').length || 0,
-      payables: filteredFinancialDocs?.filter(fd => fd.direction === 'payable').length || 0
-    });
+    // Agregação idêntica a /api/financial-kpis: entradas = receivable, saidas = payable, só financial_documents
+    const receivables = financialDocuments.filter((fd: any) => fd.direction === 'receivable');
+    const payables = financialDocuments.filter((fd: any) => fd.direction === 'payable');
+    const entradas = receivables.reduce((sum: number, fd: any) => sum + (Number(fd.amount) || 0), 0);
+    const saidas = payables.reduce((sum: number, fd: any) => sum + (Number(fd.amount) || 0), 0);
 
-    // CORREÇÃO: Receita total = APENAS documentos financeiros receivables (evitar duplicação com sales)
-    // Se não há documentos financeiros, usar vendas como fallback
-    const totalRevenue = financialRevenue > 0 ? financialRevenue : salesRevenue;
-    
-    // CORREÇÃO: Despesas totais = documentos financeiros payable + contas a pagar
-    const totalExpenses = financialExpenses + accountsPayableValue;
-    
-    console.log('💰 Cálculo de receitas e despesas:', {
-      salesRevenue,
-      financialRevenue,
-      financialExpenses,
-      accountsPayableValue,
+    const totalRevenue = entradas;
+    const totalExpenses = saidas;
+
+    console.log('📊 [metrics] Receita/Despesas/Lucro (fiel a financial-kpis):', {
       totalRevenue,
-      totalExpenses
-    });
-
-    console.log('📊 Dados reais de vendas:', { 
-      totalSales, 
-      totalRevenue, 
-      avgTicket,
-      salesCount: sales?.length || 0 
+      totalExpenses,
+      netProfit: totalRevenue - totalExpenses,
+      receivables: receivables.length,
+      payables: payables.length
     });
 
     // Gerar série de dados reais para gráficos (últimos 7 dias)
@@ -253,8 +222,8 @@ export async function GET(request: NextRequest) {
     const metrics = {
       total_sales: totalSales,
       total_revenue: totalRevenue,
-      total_expenses: totalExpenses, // CORREÇÃO: Usar totalExpenses (financial + payables)
-      net_profit: totalRevenue - totalExpenses, // CORREÇÃO: Usar totalExpenses
+      total_expenses: totalExpenses,
+      net_profit: totalRevenue - totalExpenses,
       avg_ticket: avgTicket,
       total_customers: totalCustomers,
       active_customers: activeCustomers,
