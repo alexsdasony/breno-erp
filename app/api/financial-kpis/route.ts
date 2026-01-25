@@ -140,42 +140,40 @@ export async function GET(request: NextRequest) {
       console.log('✅ [KPIs] Filtro de parceiro aplicado:', partner);
     }
     
-    // LOG OBRIGATÓRIO ANTES DO AWAIT
-    console.log('QUERY FINAL COM FILTROS (KPIs - 100% INDEPENDENTE):', query);
-    console.log('🔍 [KPIs] Executando query INDEPENDENTE (SEM range, SEM page, SEM order)...');
-    
-    // EXECUTAR QUERY INDEPENDENTE (SEM range, SEM page, SEM order)
-    const { data: allDocuments, error } = await query;
+    const CHUNK = 1000;
+    const allDocuments: any[] = [];
+    let offset = 0;
+    let hasMore = true;
 
-    if (error) {
-      console.error('❌ [KPIs] Erro na query:', error);
-      // Detectar erro de data inválida do PostgreSQL (código 22008)
-      const isDateError = error.code === '22008' || 
-                         error.message?.includes('date') || 
-                         error.message?.includes('invalid input syntax');
-      
-      if (isDateError) {
+    // Paginar para evitar limite padrão de 1000 rows do Supabase
+    while (hasMore) {
+      const chunkQuery = query.range(offset, offset + CHUNK - 1);
+      const { data: chunk, error } = await chunkQuery;
+
+      if (error) {
+        console.error('❌ [KPIs] Erro na query:', error);
+        const isDateError = error.code === '22008' || 
+                           error.message?.includes('date') || 
+                           error.message?.includes('invalid input syntax');
+        if (isDateError) {
+          return NextResponse.json(
+            { success: false, error: 'Data inválida', details: String(error.message) },
+            { status: 400 }
+          );
+        }
         return NextResponse.json(
-          { 
-            success: false, 
-            error: 'Data inválida',
-            details: `Erro ao processar filtro de data: ${error.message}`
-          },
+          { success: false, error: 'Erro ao buscar dados financeiros', details: error.message },
           { status: 400 }
         );
       }
-      
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Erro ao buscar dados financeiros', 
-          details: error.message 
-        },
-        { status: 400 }
-      );
+
+      const rows = chunk || [];
+      allDocuments.push(...rows);
+      hasMore = rows.length >= CHUNK;
+      offset += CHUNK;
     }
 
-    const totalRecords = allDocuments?.length || 0;
+    const totalRecords = allDocuments.length;
     console.log('📄 [KPIs] Total de documentos encontrados APÓS filtros:', totalRecords);
     console.log('🔍 [KPIs] Filtros aplicados na query:', {
       dateStart,
