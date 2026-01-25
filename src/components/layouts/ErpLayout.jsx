@@ -17,7 +17,7 @@ const ErpLayout = ({ children }) => {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
-  const { currentUser, logoutUser, segments, activeSegmentId, setActiveSegmentId, authLoading, metrics } = useAppData();
+  const { currentUser, logoutUser, segments, activeSegmentId, setActiveSegmentId, authLoading, metrics, headerFinancialKPIs } = useAppData();
 
   const isAdmin = currentUser?.role === 'admin';
   
@@ -223,24 +223,36 @@ const ErpLayout = ({ children }) => {
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* Quick Stats */}
+              {/* CRÍTICO (credibilidade): Em /financial NUNCA usar metrics. Apenas headerFinancialKPIs ou "Carregando...". Evitar divergência header vs página. */}
               <div className="hidden md:flex items-center space-x-4">
-                <div className="text-right">
+                <div className="text-right" data-testid="header-receita">
                   <p className="text-xs text-gray-400">Receita Total</p>
-                  <p className="text-sm font-semibold text-green-400">
-                    R$ {metrics?.total_revenue?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0,00'}
+                  <p className="text-sm font-semibold text-green-400" data-testid="header-receita-value">
+                    {pathname?.startsWith?.('/financial')
+                      ? (headerFinancialKPIs
+                          ? `R$ ${Number(headerFinancialKPIs.entradas).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                          : 'Carregando...')
+                      : `R$ ${(metrics?.total_revenue ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="text-right" data-testid="header-despesas">
                   <p className="text-xs text-gray-400">Despesas</p>
-                  <p className="text-sm font-semibold text-red-400">
-                    R$ {metrics?.total_expenses?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0,00'}
+                  <p className="text-sm font-semibold text-red-400" data-testid="header-despesas-value">
+                    {pathname?.startsWith?.('/financial')
+                      ? (headerFinancialKPIs
+                          ? `R$ ${Number(headerFinancialKPIs.saidas).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                          : 'Carregando...')
+                      : `R$ ${(metrics?.total_expenses ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="text-right" data-testid="header-lucro">
                   <p className="text-xs text-gray-400">Lucro</p>
-                  <p className="text-sm font-semibold text-blue-400">
-                    R$ {metrics?.net_profit?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0,00'}
+                  <p className="text-sm font-semibold text-blue-400" data-testid="header-lucro-value">
+                    {pathname?.startsWith?.('/financial')
+                      ? (headerFinancialKPIs
+                          ? `R$ ${Number(headerFinancialKPIs.saldo).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                          : 'Carregando...')
+                      : `R$ ${(metrics?.net_profit ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                   </p>
                 </div>
               </div>

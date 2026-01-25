@@ -21,6 +21,17 @@ Tipos alinhados, duplicações eliminadas, CRUD funcional.
 
 ---
 
+## Regra crítica: Header Financeiro = KPIs da página (credibilidade)
+
+Em `/financial`, **Receita Total / Despesas / Lucro** do header devem **sempre** coincidir com **Entradas / Saídas / Saldo** da página.
+
+- **Nunca** usar `metrics` (API `/metrics`) para esses três valores no header quando `pathname` for `/financial`. Usar apenas `headerFinancialKPIs` ou "Carregando...".
+- **Sempre** chamar `setHeaderFinancialKPIs({ entradas, saidas, saldo })` em `FinancialView` ao carregar KPIs; limpar com `setHeaderFinancialKPIs(null)` ao desmontar.
+- **E2E**: `tests/e2e/financial-header-kpis-match.spec.js` garante header = KPIs. Manter esse teste passando.
+- **Arquivos**: `ErpLayout.jsx` (header), `FinancialView.tsx` (KPIs + setHeaderFinancialKPIs), `useAppData` (headerFinancialKPIs).
+
+---
+
 # Módulos que Precisam de Correção
 
 ## ✅ CORRIGIDO: Financial

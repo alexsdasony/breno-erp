@@ -39,12 +39,20 @@ interface AppData {
   [key: string]: any;
 }
 
+export interface HeaderFinancialKPIs {
+  entradas: number;
+  saidas: number;
+  saldo: number;
+}
+
 interface AppDataContextType {
   data: AppData;
   loading: boolean;
   segments: any[];
   activeSegmentId: string | null;
   metrics: any;
+  headerFinancialKPIs: HeaderFinancialKPIs | null;
+  setHeaderFinancialKPIs: (k: HeaderFinancialKPIs | null) => void;
   currentUser: any;
   authLoading: boolean;
   setActiveSegmentId: (id: string | null) => void;
@@ -122,7 +130,8 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
 
   // Fetch metrics from API
   const [metrics, setMetrics] = React.useState<any>(null);
-  
+  const [headerFinancialKPIs, setHeaderFinancialKPIs] = React.useState<HeaderFinancialKPIs | null>(null);
+
   // Fetch dashboard metrics from API
   const fetchMetrics = React.useCallback(async () => {
     if (!currentUser) return;
@@ -377,6 +386,8 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
     segments,
     activeSegmentId,
     metrics,
+    headerFinancialKPIs,
+    setHeaderFinancialKPIs,
     currentUser,
     authLoading,
     setActiveSegmentId,

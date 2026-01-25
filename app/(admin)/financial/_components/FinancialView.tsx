@@ -326,11 +326,15 @@ export default function FinancialView() {
   }, [dateEnd, normalizeDate]);
   
   const { paymentMethods } = usePaymentMethodsContext();
-  const { activeSegmentId, currentUser, refreshMetrics } = useAppData();
+  const { activeSegmentId, currentUser, refreshMetrics, setHeaderFinancialKPIs } = useAppData();
 
   React.useEffect(() => {
     refreshMetrics();
   }, [refreshMetrics]);
+
+  React.useEffect(() => {
+    return () => { setHeaderFinancialKPIs(null); };
+  }, [setHeaderFinancialKPIs]);
   const [type, setType] = React.useState<string>(''); // receita, despesa, transferencia
   const [partner, setPartner] = React.useState<string>('');
   const [segment, setSegment] = React.useState<string>('');
@@ -1147,6 +1151,7 @@ export default function FinancialView() {
             });
             setKpis(newKpis);
             setTotalRecords(kpisData.totalRecords || 0);
+            setHeaderFinancialKPIs(newKpis);
           } else {
             console.error('❌ [KPIs] Resposta não tem success ou kpis:', kpisData);
           }
@@ -1709,23 +1714,23 @@ export default function FinancialView() {
         </div>
       </div>
 
-      {/* KPIs */}
+      {/* KPIs — CRÍTICO: sempre setHeaderFinancialKPIs ao carregar; header usa só isso em /financial (credibilidade). */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="glass-effect rounded-lg p-4 border">
+        <div className="glass-effect rounded-lg p-4 border" data-testid="financial-kpi-entradas">
           <div className="text-sm text-muted-foreground">Entradas</div>
-          <div className="text-xl font-semibold text-green-400">
+          <div className="text-xl font-semibold text-green-400" data-testid="financial-kpi-entradas-value">
             {kpisLoading ? 'Carregando...' : currency(entradas)}
           </div>
         </div>
-        <div className="glass-effect rounded-lg p-4 border">
+        <div className="glass-effect rounded-lg p-4 border" data-testid="financial-kpi-saidas">
           <div className="text-sm text-muted-foreground">Saídas</div>
-          <div className="text-xl font-semibold text-red-400">
+          <div className="text-xl font-semibold text-red-400" data-testid="financial-kpi-saidas-value">
             {kpisLoading ? 'Carregando...' : currency(Math.abs(saidas))}
           </div>
         </div>
-        <div className="glass-effect rounded-lg p-4 border">
+        <div className="glass-effect rounded-lg p-4 border" data-testid="financial-kpi-saldo">
           <div className="text-sm text-muted-foreground">Saldo</div>
-          <div className="text-xl font-semibold">
+          <div className="text-xl font-semibold" data-testid="financial-kpi-saldo-value">
             {kpisLoading ? 'Carregando...' : currency(saldo)}
           </div>
         </div>
