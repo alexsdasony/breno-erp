@@ -24,9 +24,11 @@ export interface BankStatementTransaction {
  */
 export function isBalanceDescription(description: string): boolean {
   if (!description || typeof description !== 'string') return false;
-  const d = description.trim().toLowerCase();
-  // Ex.: "S A L D O" ou "SALDO" → sem espaços vira "saldo"
-  if (d.replace(/\s+/g, '') === 'saldo') return true;
+  const d = description.trim().replace(/\s+/g, ' ').toLowerCase();
+  if (d === '') return true;
+  if (d === 'transação bancária' || d === 'transacao bancaria') return true;
+  const noSpaces = d.replace(/\s+/g, '');
+  if (noSpaces === 'saldo' || noSpaces === 'saldododia') return true;
   const patterns = [
     /saldo\s+banc[aá]rio/,
     /saldo\s+anterior/,
