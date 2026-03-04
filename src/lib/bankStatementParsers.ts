@@ -3,6 +3,9 @@
  * 
  * Suporta formatos dos principais bancos brasileiros:
  * - Banco do Brasil, Bradesco, Itaú, Santander, Caixa, Nubank, etc.
+ * 
+ * Linhas de SALDO (saldo bancário, saldo anterior, saldo final, etc.) não são
+ * importadas como transação para não inflar o saldo exibido.
  */
 
 export interface BankStatementTransaction {
@@ -13,6 +16,37 @@ export interface BankStatementTransaction {
   balance?: number; // Saldo após a transação
   doc_no?: string; // Número do documento/comprovante
   category?: string; // Categoria da transação
+}
+
+/**
+ * Verifica se a descrição indica uma linha de SALDO (não é movimento).
+ * Essas linhas não devem ser importadas como transação para não distorcer o saldo.
+ */
+export function isBalanceDescription(description: string): boolean {
+  if (!description || typeof description !== 'string') return false;
+  const d = description.trim().toLowerCase();
+  // Ex.: "S A L D O" ou "SALDO" → sem espaços vira "saldo"
+  if (d.replace(/\s+/g, '') === 'saldo') return true;
+  const patterns = [
+    /saldo\s+banc[aá]rio/,
+    /saldo\s+anterior/,
+    /saldo\s+final/,
+    /saldo\s+inicial/,
+    /saldo\s+em\s+conta/,
+    /saldo\s+no\s+per[ií]odo/,
+    /saldo\s+atual/,
+    /saldo\s+do\s+dia/,
+    /saldo\s+consolidado/,
+    /saldo\s+dispon[ií]vel/,
+    /saldo\s+acumulado/,
+    /saldo\s+ap[oó]s/,
+    /saldo\s+conta\s+corrente/,
+    /saldo\s+corrente/,
+    /^saldo\s+bancario\s*$/,
+    /^saldo\s+final\s*$/,
+    /^saldo\s+anterior\s*$/,
+  ];
+  return patterns.some(p => p.test(d));
 }
 
 /**
@@ -121,6 +155,9 @@ export function parseCSVStatement(csvContent: string): BankStatementTransaction[
 
       // Extrair descrição
       const descStr = getCellValue(cells, descIndices) || 'Transação bancária';
+
+      // Não importar linhas que são apenas saldo (evita inflar saldo exibido)
+      if (isBalanceDescription(descStr)) continue;
 
       // Extrair valor - pode vir de várias fontes
       let rawValue: number | null = null;
@@ -259,7 +296,10 @@ function parseOFXStatement(ofxContent: string): BankStatementTransaction[] {
     const memoMatch = transactionBlock.match(/<MEMO>([^<]+)<\/MEMO>/i);
     const nameMatch = transactionBlock.match(/<NAME>([^<]+)<\/NAME>/i);
     const description = (memoMatch?.[1] || nameMatch?.[1] || 'Transação bancária').trim();
-    
+
+    // Não importar linhas que são apenas saldo
+    if (isBalanceDescription(description)) continue;
+
     // Extrair FITID (ID único da transação)
     const fitidMatch = transactionBlock.match(/<FITID>([^<]+)<\/FITID>/i);
     const doc_no = fitidMatch?.[1]?.trim();
@@ -330,13 +370,16 @@ function parseQIFStatement(qifContent: string): BankStatementTransaction[] {
         break;
       case '^': // End of transaction
         if (currentTransaction.date && currentTransaction.amount && currentTransaction.direction) {
-          transactions.push({
-            date: currentTransaction.date,
-            description: currentTransaction.description || 'Transação bancária',
-            amount: currentTransaction.amount,
-            direction: currentTransaction.direction,
-            doc_no: currentTransaction.doc_no,
-          });
+          const desc = currentTransaction.description || 'Transação bancária';
+          if (!isBalanceDescription(desc)) {
+            transactions.push({
+              date: currentTransaction.date,
+              description: desc,
+              amount: currentTransaction.amount,
+              direction: currentTransaction.direction,
+              doc_no: currentTransaction.doc_no,
+            });
+          }
         }
         currentTransaction = {};
         break;
@@ -345,13 +388,16 @@ function parseQIFStatement(qifContent: string): BankStatementTransaction[] {
   
   // Adicionar última transação se não terminou com ^
   if (currentTransaction.date && currentTransaction.amount && currentTransaction.direction) {
-    transactions.push({
-      date: currentTransaction.date,
-      description: currentTransaction.description || 'Transação bancária',
-      amount: currentTransaction.amount,
-      direction: currentTransaction.direction,
-      doc_no: currentTransaction.doc_no || undefined,
-    });
+    const desc = currentTransaction.description || 'Transação bancária';
+    if (!isBalanceDescription(desc)) {
+      transactions.push({
+        date: currentTransaction.date,
+        description: desc,
+        amount: currentTransaction.amount,
+        direction: currentTransaction.direction,
+        doc_no: currentTransaction.doc_no || undefined,
+      });
+    }
   }
   
   if (transactions.length === 0) {

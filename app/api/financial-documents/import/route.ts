@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
-import { parseCSVStatement, parseXMLStatement } from '@/lib/bankStatementParsers';
+import { parseCSVStatement, parseXMLStatement, isBalanceDescription } from '@/lib/bankStatementParsers';
 import type { BankStatementTransaction } from '@/lib/bankStatementParsers';
 
 // Função para obter usuário do token
@@ -88,6 +88,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Remover linhas de saldo que eventualmente tenham vindo do arquivo (não importar como transação)
+    transactions = transactions.filter(tx => !isBalanceDescription(tx.description));
 
     if (transactions.length === 0) {
       return NextResponse.json(
