@@ -137,7 +137,7 @@ export const AppDataProvider = ({ children }: AppDataProviderProps) => {
     if (!currentUser) return;
     
     try {
-      const response = await apiService.get(`/metrics?filterby=day&tag=7d&segment_id=${activeSegmentId || 'null'}`);
+      const response = await apiService.get(`/metrics?tag=current_month&segment_id=${activeSegmentId || 'null'}`);
       if (response?.success && response?.metrics) {
         setMetrics(response.metrics);
       }

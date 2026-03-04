@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { listAccountsPayable, createAccountPayable, updateAccountPayable, deleteAccountPayable, normalizeAccountsPayable } from '@/services/accountsPayableService';
+import { useAppData } from '@/hooks/useAppData';
 import { AccountsPayable, AccountsPayablePayload } from '@/types';
+import { getDateRangeFromPeriod } from '@/lib/periodUtils';
 
 export type AccountPayableItem = AccountsPayable;
 
@@ -16,6 +18,7 @@ interface UseAccountsPayableReturn {
   items: AccountPayableItem[];
   loading: boolean;
   hasMore: boolean;
+  load: (reset?: boolean) => Promise<void>;
   loadMore: () => Promise<void>;
   create: (data: Partial<AccountPayableItem>) => Promise<AccountPayableItem | null>;
   update: (id: string, data: Partial<AccountPayableItem>) => Promise<AccountPayableItem | null>;
@@ -32,39 +35,43 @@ interface Api {
 
 const PAGE_SIZE = 20;
 
-export function useAccountsPayable() {
+export function useAccountsPayable(dateStart?: string, dateEnd?: string) {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
+  const { activeSegmentId } = useAppData();
 
-  const fetchPage = useCallback(async (page: number) => {
-    try {
-      const response = await listAccountsPayable({ page, pageSize: PAGE_SIZE });
-      const list = response.data?.accounts_payable || [];
-      
-      // Se não há dados, tentar buscar diretamente da API
-      if (list.length === 0) {
-        try {
-          const directResponse = await fetch('/api/accounts-payable?page=1&pageSize=20', {
-            headers: {
-              'Content-Type': 'application/json'
+  const fetchPage = useCallback(
+    async (page: number) => {
+      const range = dateStart && dateEnd ? { dateStart, dateEnd } : getDateRangeFromPeriod('current_month');
+      const params: Record<string, string> = {
+        page: String(page),
+        pageSize: String(PAGE_SIZE),
+        dateStart: range.dateStart,
+        dateEnd: range.dateEnd,
+      };
+      if (activeSegmentId && activeSegmentId !== '0') params.segment_id = activeSegmentId;
+      try {
+        const response = await listAccountsPayable(params);
+        const list = response.data?.accounts_payable || [];
+        if (list.length === 0) {
+          try {
+            const queryString = new URLSearchParams(params).toString();
+            const directResponse = await fetch(`/api/accounts-payable?${queryString}`);
+            const directData = await directResponse.json();
+            if (directData.accounts_payable?.length > 0) {
+              return directData.accounts_payable;
             }
-          });
-          const directData = await directResponse.json();
-          
-          if (directData.accounts_payable && directData.accounts_payable.length > 0) {
-            const directList = directData.accounts_payable || [];
-            return directList;
+          } catch {
+            // ignore
           }
-        } catch (error) {
-          console.error('Erro na busca direta:', error);
         }
+        return list;
+      } catch (error) {
+        console.error('Erro ao buscar contas a pagar:', error);
+        return [];
       }
-      
-      return list;
-    } catch (error) {
-      console.error('Erro ao buscar contas a pagar:', error);
-      return [];
-    }
-  }, []);
+    },
+    [activeSegmentId, dateStart, dateEnd]
+  );
 
   const load = useCallback(async (reset: boolean = false) => {
     setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
@@ -208,7 +215,7 @@ export function useAccountsPayable() {
   useEffect(() => {
     void load(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dateStart, dateEnd]);
 
   const api: Api = useMemo(() => ({ load, loadMore, create, update, remove }), [load, loadMore, create, update, remove]);
 

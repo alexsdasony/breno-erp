@@ -11,9 +11,16 @@ import { listSegments } from '@/services/segmentsService';
 import { toast } from '@/components/ui/use-toast';
 import type { AccountsPayableStatus, PaymentMethod } from '@/types/enums';
 import SupplierAutocomplete from './SupplierAutocomplete';
+import { PeriodSelector } from '@/components/PeriodSelector';
+import { getDateRangeFromPeriod, type Period } from '@/lib/periodUtils';
 
 export default function AccountsPayableView() {
-  const { items, loading, hasMore, loadMore, create, update, remove, load } = useAccountsPayable();
+  const [period, setPeriod] = useState<Period>('current_month');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const { dateStart, dateEnd } = getDateRangeFromPeriod(period, customStart, customEnd);
+
+  const { items, loading, hasMore, loadMore, create, update, remove, load } = useAccountsPayable(dateStart, dateEnd);
   const { activeSegmentId } = useAppData();
   
   // Debug logs
@@ -41,9 +48,6 @@ export default function AccountsPayableView() {
   // Estados para filtros e busca
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [periodType, setPeriodType] = useState('all');
-  const [customStart, setCustomStart] = useState('');
-  const [customEnd, setCustomEnd] = useState('');
   
   // Estados para modais
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -117,33 +121,7 @@ export default function AccountsPayableView() {
     return account.status;
   }
 
-  // Filtro de período
-  function isWithinPeriod(account: any) {
-    if (periodType === 'all') return true;
-    
-    const dueDate = new Date(account.data_vencimento || account.due_date);
-    const today = new Date();
-    
-    switch (periodType) {
-      case 'today':
-        return dueDate.toDateString() === today.toDateString();
-      case 'week':
-        const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-        return dueDate >= today && dueDate <= weekFromNow;
-      case 'month':
-        const monthFromNow = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
-        return dueDate >= today && dueDate <= monthFromNow;
-      case 'custom':
-        if (!customStart || !customEnd) return true;
-        const start = new Date(customStart);
-        const end = new Date(customEnd);
-        return dueDate >= start && dueDate <= end;
-      default:
-        return true;
-    }
-  }
-
-  // Filtrar itens baseado nos filtros
+  // Filtrar itens (período já vem da API; filtros locais: busca, status, segmento)
   const filteredItems = items
     .map(account => ({ ...account, status: getStatusWithDueDate(account) }))
     .filter(item => {
@@ -160,10 +138,9 @@ export default function AccountsPayableView() {
                           (item.segment_id && item.segment_id === activeSegmentId);
       
       return searchMatch && statusMatch && segmentMatch;
-    })
-    .filter(isWithinPeriod);
+    });
 
-  // Consolidado de valores por status (aplicando getStatusWithDueDate)
+  // Consolidado
   const totalPaid = filteredItems.filter(a => {
     const status = getStatusWithDueDate(a);
     return status === 'paga' || status === 'paid';
@@ -398,6 +375,18 @@ export default function AccountsPayableView() {
           </div>
         </motion.div>
 
+        {/* Período: Mês atual, 7d, 30d, etc. (igual ao Dashboard) */}
+        <div className="space-y-2 mb-6">
+          <PeriodSelector
+            period={period}
+            setPeriod={setPeriod}
+            customStart={customStart}
+            setCustomStart={setCustomStart}
+            customEnd={customEnd}
+            setCustomEnd={setCustomEnd}
+          />
+        </div>
+
         {/* Filtros simples */}
         <div className="glass-effect rounded-lg p-4 border space-y-4">
           <div className="flex flex-col lg:flex-row gap-4">
@@ -425,35 +414,6 @@ export default function AccountsPayableView() {
                 <option value="paid">Pago</option>
                 <option value="overdue">Vencido</option>
               </select>
-              
-              <select
-                value={periodType}
-                onChange={(e) => setPeriodType(e.target.value)}
-                className="px-3 py-2 bg-background border rounded-lg"
-              >
-                <option value="all">Todos os Períodos</option>
-                <option value="today">Hoje</option>
-                <option value="week">Esta Semana</option>
-                <option value="month">Este Mês</option>
-                <option value="custom">Período Personalizado</option>
-              </select>
-              
-              {periodType === 'custom' && (
-                <div className="flex gap-2">
-                  <input
-                    type="date"
-                    value={customStart}
-                    onChange={(e) => setCustomStart(e.target.value)}
-                    className="px-3 py-2 bg-background border rounded-lg"
-                  />
-                  <input
-                    type="date"
-                    value={customEnd}
-                    onChange={(e) => setCustomEnd(e.target.value)}
-                    className="px-3 py-2 bg-background border rounded-lg"
-                  />
-                </div>
-              )}
             </div>
           </div>
         </div>

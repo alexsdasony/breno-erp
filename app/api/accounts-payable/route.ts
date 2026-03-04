@@ -8,9 +8,11 @@ export async function GET(request: NextRequest) {
     
     const { searchParams } = new URL(request.url);
     const segmentId = searchParams.get('segment_id');
-    
-    console.log('🔍 API Route GET /api/accounts-payable', { segmentId });
-    
+    const dateStart = searchParams.get('dateStart');
+    const dateEnd = searchParams.get('dateEnd');
+
+    console.log('🔍 API Route GET /api/accounts-payable', { segmentId, dateStart, dateEnd });
+
     // Buscar documentos financeiros com direction = 'payable' (contas a pagar)
     let queryDocs = supabaseAdmin
       .from('financial_documents')
@@ -22,10 +24,15 @@ export async function GET(request: NextRequest) {
       .eq('direction', 'payable')
       .eq('is_deleted', false)
       .order('due_date', { ascending: false });
-    
-    // Filtrar por segmento se fornecido
+
     if (segmentId && segmentId !== 'null' && segmentId !== '0') {
       queryDocs = queryDocs.eq('segment_id', segmentId);
+    }
+    if (dateStart && /^\d{4}-\d{2}-\d{2}$/.test(dateStart)) {
+      queryDocs = queryDocs.gte('due_date', dateStart);
+    }
+    if (dateEnd && /^\d{4}-\d{2}-\d{2}$/.test(dateEnd)) {
+      queryDocs = queryDocs.lte('due_date', dateEnd);
     }
     
     const { data: financialDocuments, error: docsError } = await queryDocs;
@@ -40,11 +47,15 @@ export async function GET(request: NextRequest) {
       .select('*')
       .eq('direction', 'payable');
 
-    // Filtrar por segmento se fornecido
     if (segmentId && segmentId !== 'null' && segmentId !== '0') {
       queryTransactions = queryTransactions.eq('segment_id', segmentId);
     }
-
+    if (dateStart && /^\d{4}-\d{2}-\d{2}$/.test(dateStart)) {
+      queryTransactions = queryTransactions.gte('date', dateStart);
+    }
+    if (dateEnd && /^\d{4}-\d{2}-\d{2}$/.test(dateEnd)) {
+      queryTransactions = queryTransactions.lte('date', dateEnd);
+    }
     queryTransactions = queryTransactions.order('date', { ascending: false });
 
     const { data: pluggyTransactions, error: transactionsError } = await queryTransactions;

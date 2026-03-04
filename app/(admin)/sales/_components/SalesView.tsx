@@ -13,10 +13,16 @@ import { SaleViewModal } from './SaleViewModal';
 import { FormData, SaleItemUI } from './types';
 import { getCustomers } from '@/services/customersService';
 import { CustomerStatus } from '@/types/enums';
+import { PeriodSelector } from '@/components/PeriodSelector';
+import { getDateRangeFromPeriod, type Period } from '@/lib/periodUtils';
 
 export default function SalesView() {
-  // Estados principais
-  const { items, loading, hasMore, loadMore, create, update, remove } = useSales();
+  const [period, setPeriod] = useState<Period>('current_month');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const { dateStart, dateEnd } = getDateRangeFromPeriod(period, customStart, customEnd);
+
+  const { items, loading, hasMore, loadMore, create, update, remove } = useSales(dateStart, dateEnd);
   const [showForm, setShowForm] = useState(false);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
@@ -112,6 +118,18 @@ export default function SalesView() {
           <Plus className="w-4 h-4 mr-2" />
           Nova Venda
         </Button>
+      </div>
+
+      {/* Período: Mês atual, 7d, 30d, etc. (igual ao Dashboard) */}
+      <div className="space-y-2">
+        <PeriodSelector
+          period={period}
+          setPeriod={setPeriod}
+          customStart={customStart}
+          setCustomStart={setCustomStart}
+          customEnd={customEnd}
+          setCustomEnd={setCustomEnd}
+        />
       </div>
 
       {/* KPIs */}

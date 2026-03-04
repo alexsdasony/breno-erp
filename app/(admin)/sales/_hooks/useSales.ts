@@ -3,6 +3,7 @@ import { toast } from '@/components/ui/use-toast';
 import { listSales, createSale, updateSale, deleteSale } from '@/services/salesService';
 import { useAppData } from '@/hooks/useAppData';
 import { Sale, SaleItem } from '@/types';
+import { getDateRangeFromPeriod, type Period } from '@/lib/periodUtils';
 
 interface State {
   items: Sale[];
@@ -21,20 +22,25 @@ interface Api {
 
 const PAGE_SIZE = 20;
 
-export function useSales() {
+export function useSales(dateStart?: string, dateEnd?: string) {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
   const { activeSegmentId } = useAppData();
 
-  const fetchPage = useCallback(async (page: number) => {
-    console.log('🛒 fetchPage - page:', page, 'activeSegmentId:', activeSegmentId);
-    const response = await listSales({ page, pageSize: PAGE_SIZE, segment_id: activeSegmentId });
-    console.log('🛒 API Response:', response); // Log para debug
-    console.log('🛒 Response data:', response.data);
-    console.log('🛒 Sales array:', response.data?.sales);
-    const list = response.data?.sales || [];
-    console.log('🛒 List length:', list.length);
-    return list as Sale[];
-  }, [activeSegmentId]);
+  const fetchPage = useCallback(
+    async (page: number) => {
+      const range = dateStart && dateEnd ? { dateStart, dateEnd } : getDateRangeFromPeriod('current_month');
+      const response = await listSales({
+        page,
+        pageSize: PAGE_SIZE,
+        segment_id: activeSegmentId,
+        dateStart: range.dateStart,
+        dateEnd: range.dateEnd,
+      });
+      const list = response.data?.sales || [];
+      return list as Sale[];
+    },
+    [activeSegmentId, dateStart, dateEnd]
+  );
 
   const load = useCallback(async (reset: boolean = false) => {
     setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
@@ -122,7 +128,7 @@ export function useSales() {
   useEffect(() => {
     void load(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dateStart, dateEnd]);
 
   const api: Api = useMemo(() => ({ load, loadMore, create, update, remove }), [load, loadMore, create, update, remove]);
 

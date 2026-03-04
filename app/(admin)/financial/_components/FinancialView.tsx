@@ -17,6 +17,8 @@ import FinancialTable from './FinancialTable';
 import FinancialFormModal from './FinancialFormModal';
 import FinancialQuickEntryModal from './FinancialQuickEntryModal';
 import BankAccountConnectionModal from './BankAccountConnectionModal';
+import { PeriodSelector } from '@/components/PeriodSelector';
+import { getDateRangeFromPeriod, type Period } from '@/lib/periodUtils';
 
 export default function FinancialView() {
   console.log('🚀 [FinancialView] Componente renderizado - VERSÃO NOVA COM KPIs AUTOMÁTICOS');
@@ -24,9 +26,22 @@ export default function FinancialView() {
   const [pageSize, setPageSize] = React.useState<number>(20);
   const [connectionModalOpen, setConnectionModalOpen] = React.useState<boolean>(false);
   
-  // UI state - filtros
-  const [dateStart, setDateStart] = React.useState<string>('');
-  const [dateEnd, setDateEnd] = React.useState<string>('');
+  // UI state - filtros (padrão: mês corrente)
+  const now = new Date();
+  const firstDayMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const lastDayMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+  const [dateStart, setDateStart] = React.useState<string>(firstDayMonth);
+  const [dateEnd, setDateEnd] = React.useState<string>(lastDayMonth);
+  const [period, setPeriod] = React.useState<Period>('current_month');
+  const [customStart, setCustomStart] = React.useState<string>('');
+  const [customEnd, setCustomEnd] = React.useState<string>('');
+
+  // Sincronizar período rápido -> datas (igual ao Dashboard)
+  React.useEffect(() => {
+    const { dateStart: start, dateEnd: end } = getDateRangeFromPeriod(period, customStart, customEnd);
+    setDateStart(start);
+    setDateEnd(end);
+  }, [period, customStart, customEnd]);
   
   // Função para validar e normalizar data - GARANTE FORMATO YYYY-MM-DD VÁLIDO
   const normalizeDate = React.useCallback((dateStr: string): string => {
@@ -1734,6 +1749,18 @@ export default function FinancialView() {
             {kpisLoading ? 'Carregando...' : currency(saldo)}
           </div>
         </div>
+      </div>
+
+      {/* Período: Mês atual, 7d, 30d, etc. (igual ao Dashboard) */}
+      <div className="space-y-2">
+        <PeriodSelector
+          period={period}
+          setPeriod={setPeriod}
+          customStart={customStart}
+          setCustomStart={setCustomStart}
+          customEnd={customEnd}
+          setCustomEnd={setCustomEnd}
+        />
       </div>
 
       {/* Filtros avançados */}

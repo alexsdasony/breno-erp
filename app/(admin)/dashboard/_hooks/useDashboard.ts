@@ -1,107 +1,72 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { getDashboardMetrics, DashboardMetrics } from '@/services/dashboardService';
 import { useAppData } from '@/hooks/useAppData';
-
-// Usando a interface DashboardMetrics importada do serviço
 
 interface State {
   metrics: DashboardMetrics | null;
   loading: boolean;
 }
 
-interface Api {
-  reload: () => Promise<void>;
-  setPeriod: (p: Period) => void;
-  period: Period;
-  setCustomStart: (date: string) => void;
-  setCustomEnd: (date: string) => void;
-  customStart: string;
-  customEnd: string;
-}
+export type Period = 'current_month' | '7d' | '30d' | '90d' | '6mo' | '1yr' | 'last-year' | 'custom' | 'year-2021' | 'year-2022' | 'year-2023' | 'year-2024' | 'year-2025';
 
-export type Period = '7d' | '30d' | '90d' | '6mo' | '1yr' | 'last-year' | 'custom' | 'year-2021' | 'year-2022' | 'year-2023' | 'year-2024' | 'year-2025';
-
-function computeRange(period: Period, customStart?: string, customEnd?: string): { period?: string; from?: string; to?: string; filterby?: string; tag?: string } {
-  // Período personalizado
+function computeRange(period: Period, customStart?: string, customEnd?: string): Record<string, string | undefined> {
+  if (period === 'current_month') {
+    return { tag: 'current_month' };
+  }
   if (period === 'custom') {
     return { filterby: 'custom', from: customStart, to: customEnd };
   }
-  
-  // Filtro por ano específico
   if (period.startsWith('year-')) {
     const year = period.split('-')[1];
     return { filterby: 'year', tag: year };
   }
-  
-  // Períodos predefinidos com formato compatível com o backend
-  if (period === '7d') {
-    return { filterby: 'day', tag: '7d' };
-  }
-  
-  if (period === '30d') {
-    return { filterby: 'day', tag: '30d' };
-  }
-  
-  if (period === '90d') {
-    return { filterby: 'day', tag: '90d' };
-  }
-  
-  if (period === '6mo') {
-    return { filterby: 'month', tag: '6mo' };
-  }
-  
-  if (period === '1yr') {
-    return { filterby: 'year', tag: '1yr' };
-  }
-  
-  if (period === 'last-year') {
-    return { filterby: 'year', tag: 'last-year' };
-  }
-  
-  // Fallback para compatibilidade com código existente
-  return { period };
+  if (period === '7d') return { filterby: 'day', tag: '7d' };
+  if (period === '30d') return { filterby: 'day', tag: '30d' };
+  if (period === '90d') return { filterby: 'day', tag: '90d' };
+  if (period === '6mo') return { filterby: 'month', tag: '6mo' };
+  if (period === '1yr') return { filterby: 'year', tag: '1yr' };
+  if (period === 'last-year') return { filterby: 'year', tag: 'last-year' };
+  return { tag: 'current_month' };
 }
 
 export function useDashboard() {
   const [state, setState] = useState<State>({ metrics: null, loading: false });
-  const [period, setPeriod] = useState<Period>('7d');
+  const [period, setPeriod] = useState<Period>('current_month');
   const [customStart, setCustomStart] = useState<string>('');
   const [customEnd, setCustomEnd] = useState<string>('');
   const { activeSegmentId } = useAppData();
+  const fetchingRef = useRef(false);
 
   const fetchMetrics = useCallback(async () => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
     setState((s) => ({ ...s, loading: true }));
     try {
-      const params = computeRange(period, customStart, customEnd);
-      // Incluir segment_id nos parâmetros
-      const paramsWithSegment = {
-        ...params,
-        segment_id: activeSegmentId
-      };
-      const response = await getDashboardMetrics(paramsWithSegment);
+      const params = { ...computeRange(period, customStart, customEnd), segment_id: activeSegmentId };
+      const response = await getDashboardMetrics(params);
       const metrics = response.data?.metrics || {};
       setState({ metrics, loading: false });
     } catch (err) {
       setState({ metrics: null, loading: false });
       toast({ title: 'Falha ao carregar métricas', description: 'Tente novamente em instantes.', variant: 'destructive' });
+    } finally {
+      fetchingRef.current = false;
     }
   }, [period, customStart, customEnd, activeSegmentId]);
 
-  // Usar dependências explícitas em vez de fetchMetrics para evitar loops
   useEffect(() => {
     void fetchMetrics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, customStart, customEnd, activeSegmentId]);
+  }, [fetchMetrics]);
 
-  const api: Api = useMemo(() => ({ 
-    reload: fetchMetrics, 
-    setPeriod, 
-    period, 
-    setCustomStart, 
-    setCustomEnd, 
-    customStart, 
-    customEnd 
+  const api = useMemo(() => ({
+    reload: fetchMetrics,
+    setPeriod,
+    period,
+    setCustomStart,
+    setCustomEnd,
+    customStart,
+    customEnd
   }), [fetchMetrics, period, customStart, customEnd]);
 
   return { ...state, ...api };

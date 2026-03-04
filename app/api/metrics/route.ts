@@ -1,54 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/getSupabaseAdmin';
 
+/**
+ * Dashboard: padrão = mês corrente (timezone do servidor).
+ * Histórico: use tag (7d, 30d, 90d, 6mo, 1yr, last-year) ou filterby=custom com from/to.
+ */
 export async function GET(request: NextRequest) {
   try {
     const supabaseAdmin = getSupabaseAdmin();
     const { searchParams } = new URL(request.url);
-    const filterby = searchParams.get('filterby') || 'day';
-    const tag = searchParams.get('tag') || '7d';
     const segment_id = searchParams.get('segment_id');
+    const filterby = searchParams.get('filterby') || 'day';
+    const tag = searchParams.get('tag');
+    const from = searchParams.get('from');
+    const to = searchParams.get('to');
 
-    console.log('📊 Dashboard metrics request:', { filterby, tag, segment_id });
-
-    // Calcular datas baseado no período
     const now = new Date();
     let startDate: Date;
-    let endDate = new Date(now);
+    let endDate: Date;
+    let firstDayStr: string;
+    let lastDayStr: string;
+    let useCurrentMonth = !tag || tag === 'current_month';
 
-    switch (tag) {
-      case '7d':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case '30d':
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      case '90d':
-        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-        break;
-      case '6mo':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
-        break;
-      case '1yr':
-        startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-        break;
-      case 'last-year':
-        startDate = new Date(now.getFullYear() - 1, 0, 1);
-        endDate = new Date(now.getFullYear() - 1, 11, 31);
-        break;
-      default:
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    if (useCurrentMonth) {
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      startDate = firstDayOfMonth;
+      endDate = new Date(lastDayOfMonth.getFullYear(), lastDayOfMonth.getMonth(), lastDayOfMonth.getDate(), 23, 59, 59, 999);
+      firstDayStr = firstDayOfMonth.toISOString().split('T')[0];
+      lastDayStr = lastDayOfMonth.toISOString().split('T')[0];
+    } else if (filterby === 'custom' && from && to) {
+      startDate = new Date(from + 'T00:00:00');
+      endDate = new Date(to + 'T23:59:59.999');
+      firstDayStr = from;
+      lastDayStr = to;
+    } else {
+      switch (tag) {
+        case '7d':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          endDate = new Date(now);
+          break;
+        case '30d':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          endDate = new Date(now);
+          break;
+        case '90d':
+          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          endDate = new Date(now);
+          break;
+        case '6mo':
+          startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+          endDate = new Date(now);
+          break;
+        case '1yr':
+          startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+          endDate = new Date(now);
+          break;
+        case 'last-year':
+          startDate = new Date(now.getFullYear() - 1, 0, 1);
+          endDate = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+          break;
+        default:
+          if (tag && /^20\d{2}$/.test(tag)) {
+            startDate = new Date(parseInt(tag, 10), 0, 1);
+            endDate = new Date(parseInt(tag, 10), 11, 31, 23, 59, 59, 999);
+          } else {
+            useCurrentMonth = true;
+            const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            startDate = firstDayOfMonth;
+            endDate = new Date(lastDayOfMonth.getFullYear(), lastDayOfMonth.getMonth(), lastDayOfMonth.getDate(), 23, 59, 59, 999);
+          }
+          break;
+      }
+      firstDayStr = startDate.toISOString().split('T')[0];
+      lastDayStr = endDate.toISOString().split('T')[0];
     }
 
-    console.log('📅 Date range:', { startDate: startDate.toISOString(), endDate: endDate.toISOString() });
+    console.log('📊 Dashboard metrics:', { firstDayStr, lastDayStr, tag, segment_id });
 
-    // CORREÇÃO: Construir filtros baseados no segmento de forma mais consistente
     const hasSegmentFilter = segment_id && segment_id !== 'null' && segment_id !== '0';
     const segmentFilter = hasSegmentFilter ? { segment_id } : {};
-    
-    console.log('🔍 Filtro de segmento aplicado:', { segment_id, hasSegmentFilter, segmentFilter });
 
-    // Buscar métricas básicas (exceto financial_documents — paginado em seguida)
+    // Queries com filtro de data do mês corrente
     const [
       { data: customers, error: customersError },
       { data: suppliers, error: suppliersError },
@@ -74,11 +108,15 @@ export async function GET(request: NextRequest) {
       supabaseAdmin
         .from('accounts_payable')
         .select('valor, status, data_vencimento')
+        .gte('data_vencimento', firstDayStr)
+        .lte('data_vencimento', lastDayStr)
         .match(segmentFilter),
       supabaseAdmin
         .from('billings')
         .select('amount, status, due_date')
         .eq('is_deleted', false)
+        .gte('due_date', firstDayStr)
+        .lte('due_date', lastDayStr)
         .match(segmentFilter),
       supabaseAdmin
         .from('sales')
@@ -95,11 +133,13 @@ export async function GET(request: NextRequest) {
     if (billingsError) console.error('❌ Erro ao buscar cobranças:', billingsError);
     if (salesError) console.error('❌ Erro ao buscar vendas:', salesError);
 
-    // Receita/Despesas/Lucro: mesma query, paginação e agregação que /api/financial-kpis (fiel ao financeiro)
+    // Receita/Despesas/Lucro: apenas documentos do mês corrente (issue_date)
     let fdQuery = supabaseAdmin
       .from('financial_documents')
       .select('amount, direction, issue_date')
-      .eq('is_deleted', false);
+      .eq('is_deleted', false)
+      .gte('issue_date', firstDayStr)
+      .lte('issue_date', lastDayStr);
     if (hasSegmentFilter) {
       fdQuery = fdQuery.eq('segment_id', segment_id);
     }
@@ -175,45 +215,40 @@ export async function GET(request: NextRequest) {
       payables: payables.length
     });
 
-    // Gerar série de dados reais para gráficos (últimos 7 dias)
-    const seriesDays = [];
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-      const dateStr = date.toISOString().split('T')[0];
-      
-      // Buscar vendas do dia específico
+    // Série por dia para gráficos: até 31 pontos (mês = todos os dias; períodos longos = amostrados)
+    const seriesDays: Array<{ date: string; sales: number; revenue: number; payables: number; receivables: number; cash_in: number; cash_out: number }> = [];
+    const dayStrings: string[] = [];
+    for (let t = startDate.getTime(); t <= endDate.getTime(); t += 24 * 60 * 60 * 1000) {
+      dayStrings.push(new Date(t).toISOString().split('T')[0]);
+    }
+    const maxPoints = 31;
+    const toIterate = dayStrings.length === 0
+      ? []
+      : dayStrings.length <= maxPoints
+        ? dayStrings
+        : Array.from({ length: maxPoints }, (_, i) => dayStrings[Math.min(Math.floor((i * (dayStrings.length - 1)) / (maxPoints - 1)), dayStrings.length - 1)]);
+    for (const dateStr of toIterate) {
       const daySales = sales?.filter(sale => {
         const saleDate = new Date(sale.created_at).toISOString().split('T')[0];
         return saleDate === dateStr;
       }) || [];
-      
-      const dayRevenue = daySales.reduce((sum, sale) => 
-        sum + (Number(sale.total_amount) || 0), 0);
-      
-      // Buscar contas a pagar do dia
+      const dayRevenue = daySales.reduce((sum, sale) => sum + (Number(sale.total_amount) || 0), 0);
       const dayPayables = accountsPayable?.filter(ap => {
         const payableDate = new Date(ap.data_vencimento).toISOString().split('T')[0];
         return payableDate === dateStr;
       }) || [];
-      
-      const dayPayablesValue = dayPayables.reduce((sum, ap) => 
-        sum + (Number(ap.valor) || 0), 0);
-      
-      // Buscar cobranças do dia (billings)
+      const dayPayablesValue = dayPayables.reduce((sum, ap) => sum + (Number(ap.valor) || 0), 0);
       const dayBillings = billings?.filter(b => {
         const billingDate = new Date(b.due_date).toISOString().split('T')[0];
         return billingDate === dateStr;
       }) || [];
-      
-      const dayBillingsValue = dayBillings.reduce((sum, b) => 
-        sum + (Number(b.amount) || 0), 0);
-      
+      const dayBillingsValue = dayBillings.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
       seriesDays.push({
         date: dateStr,
         sales: daySales.length,
         revenue: dayRevenue,
         payables: dayPayablesValue,
-        receivables: dayBillingsValue, // Usar cobranças (billings)
+        receivables: dayBillingsValue,
         cash_in: dayRevenue + dayBillingsValue,
         cash_out: dayPayablesValue
       });
@@ -230,11 +265,14 @@ export async function GET(request: NextRequest) {
       total_suppliers: totalSuppliers,
       total_products: totalProducts,
       low_stock_count: lowStockCount,
-      pending_invoices: pendingBillings, // Usar cobranças (billings)
+      pending_invoices: pendingBillings,
       pending_payables: pendingPayables,
       total_payables_value: accountsPayableValue,
-      total_receivables_value: totalBillingsValue, // Valor total de cobranças pendentes
-      series_days: seriesDays
+      total_receivables_value: totalBillingsValue,
+      series_days: seriesDays,
+      current_month_start: firstDayStr,
+      current_month_end: lastDayStr,
+      current_month_label: `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`
     };
 
     console.log('📊 Métricas calculadas:', metrics);

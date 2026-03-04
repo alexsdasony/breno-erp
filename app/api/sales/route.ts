@@ -10,8 +10,10 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '20');
     const segmentId = searchParams.get('segment_id');
+    const dateStart = searchParams.get('dateStart');
+    const dateEnd = searchParams.get('dateEnd');
 
-    console.log('🛒 Sales API request:', { page, pageSize, segmentId });
+    console.log('🛒 Sales API request:', { page, pageSize, segmentId, dateStart, dateEnd });
 
     // Buscar vendas com dados do cliente usando uma abordagem mais robusta
     let query = supabaseAdmin
@@ -23,6 +25,14 @@ export async function GET(request: NextRequest) {
     // Filtrar por segmento se fornecido
     if (segmentId && segmentId !== 'null' && segmentId !== '0') {
       query = query.eq('segment_id', segmentId);
+    }
+
+    // Filtro por período (padrão: mês corrente se não informado)
+    if (dateStart && /^\d{4}-\d{2}-\d{2}$/.test(dateStart)) {
+      query = query.gte('sale_date', dateStart);
+    }
+    if (dateEnd && /^\d{4}-\d{2}-\d{2}$/.test(dateEnd)) {
+      query = query.lte('sale_date', dateEnd);
     }
 
     const { data: sales, error } = await query;

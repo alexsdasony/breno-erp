@@ -3,6 +3,7 @@ import { toast } from '@/components/ui/use-toast';
 import { listBillings, createBilling, updateBilling, deleteBilling } from '@/services/billingService';
 import { useAppData } from '@/hooks/useAppData';
 import type { Billing, BillingPayload } from '@/types';
+import { getDateRangeFromPeriod } from '@/lib/periodUtils';
 
 // Usando a interface Billing do sistema para manter consistência
 export type BillingItem = Billing;
@@ -24,17 +25,25 @@ interface Api {
 
 const PAGE_SIZE = 20;
 
-export function useBillings() {
+export function useBillings(dateStart?: string, dateEnd?: string) {
   const [state, setState] = useState<State>({ items: [], loading: false, page: 1, hasMore: true });
   const { data, activeSegmentId } = useAppData();
 
-  // O filtro por segmento é feito na API, não no frontend
-
-  const fetchPage = useCallback(async (page: number) => {
-    const response = await listBillings({ page, pageSize: PAGE_SIZE, segment_id: activeSegmentId });
-    const list = response.data?.billings || [];
-    return list as BillingItem[];
-  }, [activeSegmentId]);
+  const fetchPage = useCallback(
+    async (page: number) => {
+      const range = dateStart && dateEnd ? { dateStart, dateEnd } : getDateRangeFromPeriod('current_month');
+      const response = await listBillings({
+        page,
+        pageSize: PAGE_SIZE,
+        segment_id: activeSegmentId,
+        dateStart: range.dateStart,
+        dateEnd: range.dateEnd,
+      });
+      const list = response.data?.billings || [];
+      return list as BillingItem[];
+    },
+    [activeSegmentId, dateStart, dateEnd]
+  );
 
   const load = useCallback(async (reset: boolean = false) => {
     setState((s) => ({ ...s, loading: true, ...(reset ? { page: 1 } : {}) }));
@@ -128,7 +137,7 @@ export function useBillings() {
   useEffect(() => {
     void load(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dateStart, dateEnd]);
 
   const api: Api = useMemo(() => ({ load, loadMore, create, update, remove }), [load, loadMore, create, update, remove]);
 

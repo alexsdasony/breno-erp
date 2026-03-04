@@ -8,9 +8,16 @@ import { Plus, Filter, FileDown, Edit, Trash2, Eye, Search, AlertTriangle, Check
 import { useAppData } from '@/hooks/useAppData';
 import CustomerAutocomplete from './CustomerAutocomplete';
 import { BillingStatus } from '@/types/enums';
+import { PeriodSelector } from '@/components/PeriodSelector';
+import { getDateRangeFromPeriod, type Period } from '@/lib/periodUtils';
 
 export default function BillingView() {
-  const { items, loading, hasMore, loadMore, create, update, remove } = useBillings();
+  const [period, setPeriod] = React.useState<Period>('current_month');
+  const [customStart, setCustomStart] = React.useState('');
+  const [customEnd, setCustomEnd] = React.useState('');
+  const { dateStart, dateEnd } = getDateRangeFromPeriod(period, customStart, customEnd);
+
+  const { items, loading, hasMore, loadMore, create, update, remove } = useBillings(dateStart, dateEnd);
   const { activeSegmentId } = useAppData();
 
   // Estados para filtros e formulário
@@ -235,6 +242,18 @@ export default function BillingView() {
           </Button>
         </div>
       </motion.div>
+
+      {/* Período: Mês atual, 7d, 30d, etc. (igual ao Dashboard) */}
+      <div className="space-y-2">
+        <PeriodSelector
+          period={period}
+          setPeriod={setPeriod}
+          customStart={customStart}
+          setCustomStart={setCustomStart}
+          customEnd={customEnd}
+          setCustomEnd={setCustomEnd}
+        />
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

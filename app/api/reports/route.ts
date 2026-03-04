@@ -25,6 +25,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Histórico/Relatórios: exigir período explícito (não retornar todo o histórico por padrão)
+    const modulesRequiringPeriod = ['dashboard', 'financial', 'accounts-payable', 'billing', 'sales', 'customers', 'suppliers', 'nfe', 'inventory'];
+    if (modulesRequiringPeriod.includes(moduleId) && (!startDate || !endDate)) {
+      return NextResponse.json(
+        { error: 'Período obrigatório. Informe startDate e endDate (formato YYYY-MM-DD) para consultar o histórico.' },
+        { status: 400 }
+      );
+    }
+
     let data = null;
     
     // Preparar parâmetros com segment_id
