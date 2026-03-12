@@ -5,6 +5,7 @@ const routeMapping: Record<string, string> = {
   receita: '/receita',
   dashboard: '/dashboard',
   financial: '/financial',
+  financialForecast: '/financial-forecast',
   accountsPayable: '/accounts-payable',
   billing: '/billing',
   inventory: '/inventory',

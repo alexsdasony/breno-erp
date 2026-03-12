@@ -1,9 +1,10 @@
-import { LayoutDashboard, DollarSign, Package, ShoppingCart, BarChart3, Users, FileSpreadsheet, Zap, CreditCard, Building, Database, ListChecks, Briefcase, BookOpen, Search, Factory, UserCog } from 'lucide-react';
+import { LayoutDashboard, DollarSign, Package, ShoppingCart, BarChart3, Users, FileSpreadsheet, Zap, CreditCard, Building, Database, ListChecks, Briefcase, BookOpen, Search, Factory, UserCog, TrendingUp } from 'lucide-react';
 
 export const menuItems = [
   { id: 'receita', label: 'Receita Federal', icon: Search },
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'financial', label: 'Financeiro', icon: DollarSign },
+  { id: 'financialForecast', label: 'Previsão Financeira', icon: TrendingUp },
   { id: 'accountsPayable', label: 'Contas a Pagar', icon: ListChecks },
   { id: 'billing', label: 'Cobranças', icon: CreditCard },
   { id: 'inventory', label: 'Estoque', icon: Package },
